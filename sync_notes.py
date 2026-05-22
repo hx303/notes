@@ -28,6 +28,7 @@ EXCLUDE_PATTERNS = [
     "private", "templates", ".obsidian", ".trash",
     ".git", "__pycache__", "node_modules",
     "attachments", "assets",  # skip attachments
+    "_backup",  # skip backup files
 ]
 
 
@@ -55,15 +56,19 @@ def find_markdown_files(root_dir, exclude_patterns):
         ]
         rel_dir = os.path.relpath(dirpath, root_dir)
         for fname in filenames:
-            if fname.lower().endswith(".md"):
-                src_path = os.path.join(dirpath, fname)
-                rel_path = os.path.join(rel_dir, fname) if rel_dir != "." else fname
-                files.append({
-                    "src": src_path,
-                    "rel": rel_path,
-                    "size": os.path.getsize(src_path),
-                    "mtime": os.path.getmtime(src_path),
-                })
+            if not fname.lower().endswith(".md"):
+                continue
+            # Skip backup files
+            if "_backup" in fname.lower():
+                continue
+            src_path = os.path.join(dirpath, fname)
+            rel_path = os.path.join(rel_dir, fname) if rel_dir != "." else fname
+            files.append({
+                "src": src_path,
+                "rel": rel_path,
+                "size": os.path.getsize(src_path),
+                "mtime": os.path.getmtime(src_path),
+            })
     return files
 
 
