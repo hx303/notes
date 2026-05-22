@@ -104,15 +104,17 @@ def git_commit_and_push(message="Update notes"):
         f"git -C {QUARTZ_ROOT} push origin HEAD:main",
     ]
     for cmd in cmds:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
         if result.returncode != 0:
             # "nothing to commit" is not a real error
-            if "nothing to commit" in result.stderr or "nothing to commit" in result.stdout:
+            stderr = (result.stderr or "")
+            stdout = (result.stdout or "")
+            if "nothing to commit" in stderr or "nothing to commit" in stdout:
                 print("  (no changes to commit)")
                 return True
-            print(f"  ⚠️  {result.stderr.strip()}")
+            print(f"  ⚠️  {stderr.strip()}")
         else:
-            output = (result.stdout + result.stderr).strip()
+            output = ((result.stdout or "") + (result.stderr or "")).strip()
             if output:
                 print(f"  {output}")
     return True
