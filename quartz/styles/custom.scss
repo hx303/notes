@@ -1,3 +1,312 @@
 @use "./base.scss";
 
-// put your custom CSS here!
+// ========================
+// 🌿 中国风暖色调美化
+// ========================
+
+// --- 全局字体优化 ---
+:root {
+  --max-width: 750px;
+}
+
+// 中文字体渲染优化
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-feature-settings: "kern", "liga";
+  line-height: 1.8;
+}
+
+// --- 标题样式 ---
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+h1 {
+  font-size: 1.9rem;
+  border-bottom: 2px solid var(--lightgray);
+  padding-bottom: 0.3em;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+}
+
+// --- 段落与文字 ---
+p {
+  margin: 0.8em 0;
+  text-align: justify;
+}
+
+// --- 链接 ---
+a {
+  text-decoration: none;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  border-bottom: 1px solid transparent;
+
+  &:hover {
+    border-bottom-color: var(--secondary);
+  }
+}
+
+// --- 文章内容区 ---
+article {
+  max-width: var(--max-width);
+
+  // 首段 drop-cap 效果
+  & > p:first-of-type::first-letter {
+    float: left;
+    font-size: 3.2em;
+    line-height: 0.85;
+    padding-right: 0.1em;
+    padding-top: 0.05em;
+    font-weight: 700;
+    color: var(--secondary);
+  }
+}
+
+// --- 卡片式列表项 ---
+.page-listing {
+  .recent-notes,
+  .tag-list,
+  ul.overflow {
+    li.section-li {
+      margin: 0.5em 0;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+
+      &:hover {
+        background: var(--highlight);
+        border-color: var(--lightgray);
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      a {
+        text-decoration: none;
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+// --- Callout 美化 ---
+.callout {
+  border-radius: 8px;
+  border-left-width: 4px;
+  margin: 1em 0;
+  padding: 0.8em 1em;
+
+  &.callout[data-callout="note"] {
+    background: rgba(90, 125, 99, 0.08);
+    border-left-color: var(--tertiary);
+  }
+
+  &.callout[data-callout="warning"] {
+    background: rgba(200, 150, 50, 0.08);
+    border-left-color: #c89632;
+  }
+
+  &.callout[data-callout="tip"] {
+    background: rgba(100, 150, 200, 0.08);
+    border-left-color: #6496c8;
+  }
+
+  &.callout[data-callout="important"] {
+    background: rgba(180, 80, 80, 0.08);
+    border-left-color: #b45050;
+  }
+}
+
+// --- 代码块 ---
+pre {
+  border-radius: 8px;
+  margin: 1em 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+code {
+  font-size: 0.9em;
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+}
+
+// --- 表格 ---
+table {
+  margin: 1em 0;
+  border-collapse: collapse;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+
+  th {
+    background: var(--lightgray);
+    font-weight: 700;
+    padding: 0.6em 1em;
+  }
+
+  td {
+    padding: 0.5em 1em;
+    border-bottom: 1px solid var(--lightgray);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+// --- 引用块 ---
+blockquote {
+  border-left: 4px solid var(--tertiary);
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  background: rgba(90, 125, 99, 0.05);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: var(--darkgray);
+}
+
+// --- 面包屑 ---
+.breadcrumb {
+  font-size: 0.85em;
+  opacity: 0.75;
+  padding: 0.5em 0;
+
+  a {
+    border-bottom: none;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// --- 标签 ---
+.tag {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 4px;
+  font-size: 0.8em;
+  margin: 0.15em;
+  background: var(--highlight);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  &:hover {
+    border-color: var(--secondary);
+    transform: translateY(-1px);
+  }
+}
+
+// --- Explorer 文件树 ---
+.explorer {
+  & > *:first-child {
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .folder-outer {
+    .folder {
+      border-radius: 4px;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: var(--highlight);
+      }
+    }
+  }
+}
+
+// --- 搜索框 ---
+.search {
+  input {
+    border-radius: 6px;
+    border: 1px solid var(--lightgray);
+    padding: 0.4em 0.8em;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:focus {
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.15);
+      outline: none;
+    }
+  }
+}
+
+// --- 滚动条 ---
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray);
+  border-radius: 3px;
+
+  &:hover {
+    background: var(--darkgray);
+  }
+}
+
+// --- 页脚 ---
+footer {
+  margin-top: 3em;
+  padding: 1.5em 0;
+  text-align: center;
+  opacity: 0.7;
+  font-size: 0.85em;
+  border-top: 1px solid var(--lightgray);
+
+  a {
+    border-bottom: none;
+  }
+}
+
+// --- Popover ---
+.popover {
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--lightgray);
+}
+
+// --- 暗色模式微调 ---
+:root[saved-theme="dark"] {
+  --max-width: 750px;
+
+  .callout {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  pre {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .popover {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// --- 移动端 ---
+@media (max-width: 600px) {
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.1rem; }
+
+  article > p:first-of-type::first-letter {
+    font-size: 2.5em;
+  }
+}
