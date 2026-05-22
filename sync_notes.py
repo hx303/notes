@@ -27,9 +27,14 @@ STATE_FILE = r"G:\OpenClaw-Workspace\notes-website\.sync_state.json"
 EXCLUDE_PATTERNS = [
     "private", "templates", ".obsidian", ".trash",
     ".git", "__pycache__", "node_modules",
-    "attachments", "assets",  # skip attachments
     "_backup",  # skip backup files
 ]
+
+# Media file extensions to sync alongside notes
+MEDIA_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp",
+                    ".mp4", ".webm", ".mov", ".avi", ".mkv",
+                    ".mp3", ".wav", ".ogg", ".m4a",
+                    ".pdf"}
 
 
 def load_state():
@@ -87,11 +92,74 @@ def list_notes():
     return files
 
 
+def fix_frontmatter_yaml(content: str) -> str:
+    """Fix YAML frontmatter issues that crash Quartz build."""
+    lines = content.split('\n')
+    in_fm, fm_start, fm_end = False, -1, -1
+    for i, line in enumerate(lines):
+        if line.strip() == '---':
+            if not in_fm:
+                in_fm, fm_start = True, i
+            else:
+                fm_end = i
+                break
+    if fm_end < 0:
+        return content
+
+    result = lines.copy()
+    for i in range(fm_start + 1, fm_end):
+        line = lines[i]
+        if ':' not in line:
+            continue
+        col_idx = line.index(':')
+        key = line[:col_idx]
+        value_str = line[col_idx + 1:]
+        value = value_str.strip()
+
+        new_value = value
+        # Fix: backslashes in double-quoted strings → forward slashes
+        if value.startswith('"') and value.endswith('"'):
+            inner = value[1:-1]
+            if '\\' in inner:
+                new_value = '"' + inner.replace('\\', '/') + '"'
+            # Fix: nested double quotes
+            if '"' in inner.replace('\\"', ''):
+                new_value = '"' + inner.replace('"', '\\"') + '"'
+        if new_value != value:
+            result[i] = key + ':' + value_str[:len(value_str) - len(value)] + new_value
+    return '\n'.join(result)
+
+
+def find_media_files(root_dir, exclude_patterns):
+    """Find all media files alongside notes."""
+    files = []
+    for dirpath, dirnames, filenames in os.walk(root_dir, topdown=True):
+        dirnames[:] = [
+            d for d in dirnames
+            if not any(pat in (dirpath + "\\" + d).lower() for pat in exclude_patterns)
+        ]
+        rel_dir = os.path.relpath(dirpath, root_dir)
+        for fname in filenames:
+            ext = os.path.splitext(fname)[1].lower()
+            if ext not in MEDIA_EXTENSIONS:
+                continue
+            if "_backup" in fname.lower():
+                continue
+            src_path = os.path.join(dirpath, fname)
+            rel_path = os.path.join(rel_dir, fname) if rel_dir != "." else fname
+            files.append({"src": src_path, "rel": rel_path, "size": os.path.getsize(src_path)})
+    return files
+
+
 def copy_note_to_quartz(src_path, rel_path):
-    """Copy a single note to Quartz content directory."""
+    """Copy a single note to Quartz content directory, fixing YAML frontmatter."""
     dest = os.path.join(QUARTZ_CONTENT, rel_path)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    shutil.copy2(src_path, dest)
+    with open(src_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    content = fix_frontmatter_yaml(content)
+    with open(dest, "w", encoding="utf-8") as f:
+        f.write(content)
     return dest
 
 
@@ -199,13 +267,15 @@ def parse_selection(text, max_index):
 
 
 def sync_all():
-    """Sync all notes from Obsidian to Quartz."""
+    """Sync all notes and media from Obsidian to Quartz."""
     files = find_markdown_files(OBSIDIAN_DIR, EXCLUDE_PATTERNS)
-    if not files:
+    media = find_media_files(OBSIDIAN_DIR, EXCLUDE_PATTERNS)
+
+    if not files and not media:
         print("No notes found.")
         return
 
-    print(f"\n📋 Syncing all {len(files)} notes...")
+    print(f"\n📋 Syncing {len(files)} notes + {len(media)} media files...")
     state = load_state()
 
     for f in files:
@@ -215,12 +285,18 @@ def sync_all():
             "size": f["size"],
             "synced_at": datetime.now().isoformat(),
         }
-        print(f"  ✅ {f['rel']}")
+
+    for m in media:
+        dest = os.path.join(QUARTZ_CONTENT, m["rel"])
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copy2(m["src"], dest)
 
     save_state(state)
-    note_names = ", ".join(f["rel"].rsplit(".md", 1)[0] for f in files)
-    git_commit_and_push(f"Sync all notes ({len(files)} files)")
-    print(f"\n🎉 {len(files)} notes synced and pushed!")
+    total = len(files) + len(media)
+    git_commit_and_push(f"Sync all ({len(files)} notes + {len(media)} media files)")
+    print(f"\n✅ {len(files)} notes synced.")
+    print(f"✅ {len(media)} media files synced.")
+    print(f"\n🎉 Total: {total} files pushed!")
 
 
 def main():
