@@ -1,7 +1,7 @@
 ---
 title: "太阳能电池诊断技术文献集"
 created: 1775133832.4282138
-source: "C:\Users\23012\Desktop\笔记\文献检索\solar_cell_diagnosis_literature.html"
+source: "C:/Users/23012/Desktop/笔记/文献检索/solar_cell_diagnosis_literature.html"
 tags: [literature]
 ---
 
