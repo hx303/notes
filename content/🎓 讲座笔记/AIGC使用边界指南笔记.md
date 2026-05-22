@@ -1,7 +1,7 @@
 ---
 title: "学术出版中AIGC使用边界指南 2.0"
 created: 1774662024.451606
-source: "C:\Users\23012\Desktop\笔记\讲座笔记\3.27 CNKI讲座\AIGC使用边界指南笔记.html"
+source: "C:/Users/23012/Desktop/笔记/讲座笔记/3.27 CNKI讲座/AIGC使用边界指南笔记.html"
 tags: [lecture]
 ---
 
