@@ -1,7 +1,7 @@
 ---
 title: "CNKI AI 科研工具讲座笔记"
 created: 1774661564.010773
-source: "C:/Users/23012/Desktop/笔记/讲座笔记/3.27 CNKI讲座/CNKI_AI讲座笔记.html"
+source: "C:\Users\23012\Desktop\笔记\讲座笔记\3.27 CNKI讲座\CNKI_AI讲座笔记.html"
 tags: [lecture]
 ---
 
