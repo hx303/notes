@@ -1,8 +1,8 @@
 ---
 title: "🌊 荧光温度计文献集"
-created: 1775130810.592761
-source: "C:/Users/23012/Desktop/笔记/文献检索/luminescence_thermometry_literature.html"
 tags: [literature]
+date: 2026-05-22
+created: 1775130810.592761
 ---
 
 # 🌊 荧光温度计文献集

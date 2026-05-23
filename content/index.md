@@ -1,7 +1,6 @@
 ---
 title: "🏠 首页"
-cssclasses:
-  - landing
+date: 2026-05-22
 ---
 
 <div style="text-align: center; padding: 2em 0 1.5em;">

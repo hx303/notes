@@ -1,10 +1,8 @@
 ---
-tags:
-  - COMSOL
-  - 培训笔记
-  - 多物理场仿真
+title: "COMSOL 多物理场仿真基础强化培训"
+tags: 
+date: 2026-05-21
 created: 2026-05-21
-source: COMSOL 软件基础强化培训 训练营2、3 视频转录
 ---
 
 # COMSOL 多物理场仿真基础强化培训

@@ -1,3 +1,8 @@
+---
+title: "obsidian-chem 多端部署指南"
+date: 2026-05-22
+---
+
 # obsidian-chem 多端部署指南
 
 > 生成时间: 2026-05-14

@@ -1,3 +1,8 @@
+---
+title: "领域LLM适配方法论 —— 从 LLaMat 源码分析中提炼的通用框架"
+date: 2026-05-22
+---
+
 # 领域LLM适配方法论 —— 从 LLaMat 源码分析中提炼的通用框架
 
 > **来源**：2026-04-28 对 LLaMat (Nature Machine Intelligence, arXiv:2412.09560) 的源码深度分析  

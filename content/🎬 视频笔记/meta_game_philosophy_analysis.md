@@ -1,8 +1,8 @@
 ---
-title: "游戏应该怎么设计？"
-created: 1774367125.197431
-source: "C:/Users/23012/Desktop/笔记/视频笔记/游戏应该是怎么样的？一场狂妄的反游戏式“寓言”！/meta_game_philosophy_analysis.html"
+title: 游戏应该怎么设计？
 tags: [video]
+date: 2026-05-22
+created: 1774367125.197431
 ---
 
 # 游戏应该怎么设计？

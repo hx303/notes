@@ -1,8 +1,8 @@
 ---
 title: "Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制"
-created: 1774364226.4413695
-source: "C:/Users/23012/Desktop/笔记/科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读.html"
 tags: [research]
+date: 2026-05-22
+created: 1774364226.4413695
 ---
 
 # Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制

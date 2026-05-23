@@ -1,8 +1,8 @@
 ---
-title: "J-V曲线逆向工程验证实验报告"
-created: 1773117510.574526
-source: "C:/Users/23012/Desktop/笔记/科研笔记/J-V曲线逆向工程验证实验报告.html"
+title: J-V曲线逆向工程验证实验报告
 tags: [research]
+date: 2026-05-22
+created: 1773117510.574526
 ---
 
 # J-V曲线逆向工程验证实验报告
