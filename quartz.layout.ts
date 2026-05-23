@@ -36,7 +36,14 @@ export const defaultContentPageLayout: PageLayout = {
         { Component: Component.ReaderMode() },
       ],
     }),
-    Component.Explorer(),
+    Component.Explorer({
+      filterFn: (node) => {
+        if (node.slugSegment === "tags") return false
+        if (node.displayName === "attachments") return false
+        if (node.displayName.endsWith("_图片")) return false
+        return true
+      },
+    }),
   ],
   right: [
     Component.DesktopOnly(Component.TableOfContents()),
@@ -63,7 +70,14 @@ export const defaultListPageLayout: PageLayout = {
         { Component: Component.Darkmode() },
       ],
     }),
-    Component.Explorer(),
+    Component.Explorer({
+      filterFn: (node) => {
+        if (node.slugSegment === "tags") return false
+        if (node.displayName === "attachments") return false
+        if (node.displayName.endsWith("_图片")) return false
+        return true
+      },
+    }),
   ],
   right: [
     Component.RecentNotes({
