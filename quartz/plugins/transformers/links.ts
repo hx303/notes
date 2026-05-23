@@ -149,12 +149,18 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
 
                 if (!isAbsoluteUrl(node.properties.src, { httpOnly: false })) {
                   let dest = node.properties.src as RelativeURL
-                  dest = node.properties.src = transformLink(
-                    file.data.slug!,
-                    dest,
-                    transformOptions,
-                  )
-                  node.properties.src = dest
+                  // Only transform non-relative paths (wiki-link resolutions from OFM)
+                  // Relative paths (./ or ../) are already correct — keep them as-is
+                  if (dest.startsWith("./") || dest.startsWith("../")) {
+                    // Already relative to the current page — don't rewrite
+                  } else {
+                    dest = node.properties.src = transformLink(
+                      file.data.slug!,
+                      dest,
+                      transformOptions,
+                    )
+                    node.properties.src = dest
+                  }
                 }
               }
             })

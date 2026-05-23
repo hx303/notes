@@ -62,7 +62,7 @@ tags:
 
 正交相SrSeO₃的Sr格位与Se格位都严重偏离其所在的多面体中心。结合[HO₆]和[MO₉]多面体掺杂发光材料的研究，SrSeO₃可为多种掺杂离子提供合适的取代格位和晶体场环境，为实现相关掺杂离子的特征发射提供必要条件。
 
-![[attachments/SrSeO3_图1.jpeg]]
+![](./attachments/SrSeO3_图1.jpeg)
 
 > 图1. (a) 基于SrSeO₃标准卡片(ICSD-419386)构建的晶体结构示意图，黄/红/蓝色球分别代表Sr/Se/O原子；(b) [SrO₉]十二面体与[SeO₆]八面体；(c) Sr与Se原子的连接方式及与O原子间的键长；(d) 掺杂离子R³⁺(R=Bi, Eu, Ce)的取代示意图
 
@@ -73,11 +73,11 @@ tags:
 - ✅ 所合成样品为纯相
 - ✅ 0.5~6.0mol%的Sm³⁺和Eu³⁺离子掺杂量未引起杂相或晶相转变
 
-![[attachments/SrSeO3_图2.png]]
+![](./attachments/SrSeO3_图2.png)
 
 > 图2. 不同浓度Eu³⁺掺杂的SrSeO₃和ICSD-419386标准卡片的XRD衍射图谱
 
-![[attachments/SrSeO3_图3.png]]
+![](./attachments/SrSeO3_图3.png)
 
 > 图3. 不同浓度Sm³⁺掺杂的SrSeO₃和ICSD-419386标准卡片的XRD衍射图谱
 

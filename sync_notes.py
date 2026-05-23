@@ -117,14 +117,16 @@ def fix_frontmatter_yaml(content: str) -> str:
         value = value_str.strip()
 
         new_value = value
-        # Fix: backslashes in double-quoted strings → forward slashes
+        # Fix: backslashes + nested quotes in double-quoted strings
         if value.startswith('"') and value.endswith('"'):
             inner = value[1:-1]
-            if '\\' in inner:
-                new_value = '"' + inner.replace('\\', '/') + '"'
-            # Fix: nested double quotes
-            if '"' in inner.replace('\\"', ''):
-                new_value = '"' + inner.replace('"', '\\"') + '"'
+            fixed = inner
+            if '\\' in fixed:
+                fixed = fixed.replace('\\', '/')
+            if '"' in fixed:
+                fixed = fixed.replace('"', '\\"')
+            if fixed != inner:
+                new_value = '"' + fixed + '"'
         if new_value != value:
             result[i] = key + ':' + value_str[:len(value_str) - len(value)] + new_value
     return '\n'.join(result)
