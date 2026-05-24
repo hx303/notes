@@ -10,7 +10,7 @@ const config: QuartzConfig = {
     analytics: null,
     locale: "zh-CN",
     baseUrl: "wld030303.github.io/notes",
-    ignorePatterns: ["private", "templates", ".obsidian", "_backup", "_backups"],
+    ignorePatterns: ["private", "templates", ".obsidian", "_backup", "_backups", "attachments", "*_图片"],
     defaultDateType: "created",
     theme: {
       fontOrigin: "local",

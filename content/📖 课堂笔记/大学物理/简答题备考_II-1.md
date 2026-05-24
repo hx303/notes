@@ -2,7 +2,7 @@
 title: 简答题备考笔记（含完整解答）
 subject: 大学物理（理工）II-1
 tags: [physics, exam-prep, university-physics, 简答题, 备考, 完整解答]
-date: 2026-05-22
+date: 2026-04-26
 created: 2026-04-26
 ---
 

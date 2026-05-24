@@ -1,7 +1,7 @@
 ---
 title: "学术出版中AIGC使用边界指南 2.0"
 tags: [lecture]
-date: 2026-05-22
+date: 2026-04-26
 created: 1774662024.451606
 ---
 

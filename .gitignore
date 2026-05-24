@@ -9,3 +9,8 @@ tsconfig.tsbuildinfo
 private/
 .replit
 replit.nix
+# Don't track the old content backup or Obsidian-specific dirs
+content_backup/
+_backups/
+attachments/
+*_图片/
