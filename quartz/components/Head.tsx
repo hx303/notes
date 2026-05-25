@@ -69,13 +69,14 @@ export default (() => {
             <meta name="twitter:image" content={ogImageDefaultPath} />
             <meta
               property="og:image:type"
-              content={`image/${getFileExtension(ogImageDefaultPath) ?? "png"}`}
+              content={`image/${(getFileExtension(ogImageDefaultPath) ?? "png").replace(/^\./, "")}`}
             />
           </>
         )}
 
         {cfg.baseUrl && (
           <>
+            <link rel="canonical" href={socialUrl} />
             <meta property="twitter:domain" content={cfg.baseUrl}></meta>
             <meta property="og:url" content={socialUrl}></meta>
             <meta property="twitter:url" content={socialUrl}></meta>
@@ -85,6 +86,26 @@ export default (() => {
         <link rel="icon" href={iconPath} />
         <meta name="description" content={description} />
         <meta name="generator" content="Quartz" />
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": fileData.slug === "index" ? "WebSite" : "Article",
+            ...(fileData.slug === "index"
+              ? {
+                  name: cfg.pageTitle,
+                  url: socialUrl,
+                  description: description,
+                }
+              : {
+                  headline: title,
+                  url: socialUrl,
+                  description: description,
+                  datePublished: fileData.dates?.created,
+                  dateModified: fileData.dates?.modified,
+                }),
+          })}
+        </script>
 
         {css.map((resource) => CSSResourceToStyleElement(resource, true))}
         {js

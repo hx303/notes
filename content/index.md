@@ -1,6 +1,7 @@
 ---
 title: "🏠 首页"
 date: 2026-05-22
+description: "夔嵬的个人知识库 —— 课堂笔记、科研心得、读书摘录。涵盖线性代数、微积分、大学物理、COMSOL仿真、有机化学、中华民族史等 120+ 篇笔记。"
 ---
 
 <div style="text-align: center; padding: 2em 0 1.5em;">
