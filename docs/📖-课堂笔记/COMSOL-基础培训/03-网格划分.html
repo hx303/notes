@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>03 网格划分</title><meta charset="utf-8"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="📝 夔嵬的笔记"/><meta property="og:title" content="03 网格划分"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="03 网格划分"/><meta name="twitter:description" content="03 网格划分 📌 COMSOL 多物理场仿真基础强化培训 · 训练营3 · 167 分钟 一、网格基础 为什么需要网格？ 网格是有限元计算的基础——将连续几何离散化为有限个单元，物理方程在这些离散单元上求解。 网格的两个作用： 几何解析：用离散单元逼近连续几何形状 求解区域：物理方程实际求解的位置 网格精度权衡 细网格粗网格精度✅ 高❌ 低计算量❌ 大✅ 小几何解析✅ 好❌ 差（圆弧变折线） 🎯 核心原则：在精度与效率间取得平衡 网格无关性验证 当对精度要求极高时： 逐步细化网格 计算每个细化程度的结果 观察结果随网格数的收敛趋势 结果稳定 → 已达到网格无关 二、COMSOL 网格创建..."/><meta property="og:description" content="03 网格划分 📌 COMSOL 多物理场仿真基础强化培训 · 训练营3 · 167 分钟 一、网格基础 为什么需要网格？ 网格是有限元计算的基础——将连续几何离散化为有限个单元，物理方程在这些离散单元上求解。 网格的两个作用： 几何解析：用离散单元逼近连续几何形状 求解区域：物理方程实际求解的位置 网格精度权衡 细网格粗网格精度✅ 高❌ 低计算量❌ 大✅ 小几何解析✅ 好❌ 差（圆弧变折线） 🎯 核心原则：在精度与效率间取得平衡 网格无关性验证 当对精度要求极高时： 逐步细化网格 计算每个细化程度的结果 观察结果随网格数的收敛趋势 结果稳定 → 已达到网格无关 二、COMSOL 网格创建..."/><meta property="og:image:alt" content="03 网格划分 📌 COMSOL 多物理场仿真基础强化培训 · 训练营3 · 167 分钟 一、网格基础 为什么需要网格？ 网格是有限元计算的基础——将连续几何离散化为有限个单元，物理方程在这些离散单元上求解。 网格的两个作用： 几何解析：用离散单元逼近连续几何形状 求解区域：物理方程实际求解的位置 网格精度权衡 细网格粗网格精度✅ 高❌ 低计算量❌ 大✅ 小几何解析✅ 好❌ 差（圆弧变折线） 🎯 核心原则：在精度与效率间取得平衡 网格无关性验证 当对精度要求极高时： 逐步细化网格 计算每个细化程度的结果 观察结果随网格数的收敛趋势 结果稳定 → 已达到网格无关 二、COMSOL 网格创建..."/><meta property="og:image" content="https://wld030303.github.io/notes/static/og-image.png"/><meta property="og:image:url" content="https://wld030303.github.io/notes/static/og-image.png"/><meta name="twitter:image" content="https://wld030303.github.io/notes/static/og-image.png"/><meta property="og:image:type" content="image/png"/><link rel="canonical" href="https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/03-网格划分"/><meta property="twitter:domain" content="wld030303.github.io/notes"/><meta property="og:url" content="https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/03-网格划分"/><meta property="twitter:url" content="https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/03-网格划分"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="03 网格划分 📌 COMSOL 多物理场仿真基础强化培训 · 训练营3 · 167 分钟 一、网格基础 为什么需要网格？ 网格是有限元计算的基础——将连续几何离散化为有限个单元，物理方程在这些离散单元上求解。 网格的两个作用： 几何解析：用离散单元逼近连续几何形状 求解区域：物理方程实际求解的位置 网格精度权衡 细网格粗网格精度✅ 高❌ 低计算量❌ 大✅ 小几何解析✅ 好❌ 差（圆弧变折线） 🎯 核心原则：在精度与效率间取得平衡 网格无关性验证 当对精度要求极高时： 逐步细化网格 计算每个细化程度的结果 观察结果随网格数的收敛趋势 结果稳定 → 已达到网格无关 二、COMSOL 网格创建..."/><meta name="generator" content="Quartz"/><script type="application/ld+json">{&quot;@context&quot;:&quot;https://schema.org&quot;,&quot;@type&quot;:&quot;Article&quot;,&quot;headline&quot;:&quot;03 网格划分&quot;,&quot;url&quot;:&quot;https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/03-网格划分&quot;,&quot;description&quot;:&quot;03 网格划分 📌 COMSOL 多物理场仿真基础强化培训 · 训练营3 · 167 分钟 一、网格基础 为什么需要网格？ 网格是有限元计算的基础——将连续几何离散化为有限个单元，物理方程在这些离散单元上求解。 网格的两个作用： 几何解析：用离散单元逼近连续几何形状 求解区域：物理方程实际求解的位置 网格精度权衡 细网格粗网格精度✅ 高❌ 低计算量❌ 大✅ 小几何解析✅ 好❌ 差（圆弧变折线） 🎯 核心原则：在精度与效率间取得平衡 网格无关性验证 当对精度要求极高时： 逐步细化网格 计算每个细化程度的结果 观察结果随网格数的收敛趋势 结果稳定 → 已达到网格无关 二、COMSOL 网格创建...&quot;,&quot;datePublished&quot;:&quot;2026-05-20T16:00:00.000Z&quot;,&quot;dateModified&quot;:&quot;2026-05-20T16:00:00.000Z&quot;}</script><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiRzpcXE9wZW5DbGF3LVdvcmtzcGFjZVxcbm90ZXMtd2Vic2l0ZVxccXVhcnR6XFxjb21wb25lbnRzXFxzdHlsZXMiLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://wld030303.github.io/notes/index.xml"/></head><body data-slug="📖-课堂笔记/COMSOL-基础培训/03-网格划分"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">📝 夔嵬的笔记</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>!(node.slugSegment===\&quot;tags\&quot;||node.displayName===\&quot;attachments\&quot;||node.displayName.endsWith(\&quot;_\\u56FE\\u7247\&quot;))&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-31"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-31" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../📖-课堂笔记/">📖 课堂笔记</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../📖-课堂笔记/COMSOL-基础培训/">COMSOL 基础培训</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>03 网格划分</a></div></nav><h1 class="article-title">03 网格划分</h1><p show-comma="true" class="content-meta"><time datetime="2026-05-20T16:00:00.000Z">2026年5月21日</time><span>12分钟阅读</span></p></div></div><article class="popover-hint"><h1 id="03-网格划分">03 网格划分<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#03-网格划分" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<p><video src="../../📖-课堂笔记/COMSOL-基础培训/COMSOL-训练营3_网格划分.mp4" controls></video></p>
+<blockquote>
+<p>📌 COMSOL 多物理场仿真基础强化培训 · 训练营3 · 167 分钟</p>
+</blockquote>
+<hr/>
+<h2 id="一网格基础">一、网格基础<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一网格基础" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="为什么需要网格">为什么需要网格？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#为什么需要网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>网格是<strong>有限元计算的基础</strong>——将连续几何离散化为有限个单元，物理方程在这些离散单元上求解。</p>
+<p>网格的两个作用：</p>
+<ol>
+<li><strong>几何解析</strong>：用离散单元逼近连续几何形状</li>
+<li><strong>求解区域</strong>：物理方程实际求解的位置</li>
+</ol>
+<h3 id="网格精度权衡">网格精度权衡<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#网格精度权衡" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th></th><th>细网格</th><th>粗网格</th></tr></thead><tbody><tr><td>精度</td><td>✅ 高</td><td>❌ 低</td></tr><tr><td>计算量</td><td>❌ 大</td><td>✅ 小</td></tr><tr><td>几何解析</td><td>✅ 好</td><td>❌ 差（圆弧变折线）</td></tr></tbody></table></div>
+<blockquote>
+<p>🎯 核心原则：<strong>在精度与效率间取得平衡</strong></p>
+</blockquote>
+<h3 id="网格无关性验证">网格无关性验证<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#网格无关性验证" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>当对精度要求极高时：</p>
+<ol>
+<li>逐步细化网格</li>
+<li>计算每个细化程度的结果</li>
+<li>观察结果随网格数的收敛趋势</li>
+<li>结果稳定 → 已达到网格无关</li>
+</ol>
+<hr/>
+<h2 id="二comsol-网格创建途径">二、COMSOL 网格创建途径<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二comsol-网格创建途径" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    A[内部几何创建] --> C[COMSOL 网格划分]\n    B[外部 CAD 导入] --> C\n    D[外部网格导入] --> E[修改/编辑]\n    C --> F[仿真用网格]\n    E --> F\n    D --> G[转换为几何]\n    G --> C&quot;">graph LR
+    A[内部几何创建] --> C[COMSOL 网格划分]
+    B[外部 CAD 导入] --> C
+    D[外部网格导入] --> E[修改/编辑]
+    C --> F[仿真用网格]
+    E --> F
+    D --> G[转换为几何]
+    G --> C
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<blockquote>
+<p>💡 COMSOL 支持几何与网格的灵活组合：内部创建 + 外部导入可混合使用。</p>
+</blockquote>
+<hr/>
+<h2 id="三单元类型">三、单元类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三单元类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="2d-面单元">2D 面单元<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2d-面单元" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>类型</th><th>结构化程度</th></tr></thead><tbody><tr><td>三角形</td><td>非结构化</td></tr><tr><td>四边形</td><td>结构化</td></tr></tbody></table></div>
+<h3 id="3d-体单元">3D 体单元<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3d-体单元" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>类型</th><th>形状</th><th>结构化程度</th></tr></thead><tbody><tr><td>四面体</td><td>三角锥</td><td>非结构化</td></tr><tr><td>金字塔</td><td>四棱锥</td><td>过渡单元</td></tr><tr><td>棱柱</td><td>三棱柱</td><td>半结构化</td></tr><tr><td>六面体</td><td>立方体</td><td>结构化</td></tr></tbody></table></div>
+<hr/>
+<h2 id="四物理场控制网格自动">四、物理场控制网格（自动）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四物理场控制网格自动" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="特点">特点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#特点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>根据模型中已设置的物理场<strong>自动适配</strong></li>
+<li>自动选择类型、尺寸、区域</li>
+<li>物理场设置改变 → 网格自动更新</li>
+</ul>
+<h3 id="示例声学仿真">示例：声学仿真<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#示例声学仿真" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>自动确定解析波长的单元尺寸</li>
+<li>PML 区 → 自动创建结构化网格（六面体/棱柱）</li>
+<li>PML 内侧 → 自动插入边界层</li>
+<li>其余 → 四面体自由填充</li>
+</ul>
+<h3 id="9-级预定义尺寸">9 级预定义尺寸<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#9-级预定义尺寸" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>极细化 → 超细化 → 较细化 → 细化 → <strong>常规</strong> → 粗化 → 较粗化 → 超粗化 → 极粗化</p>
+<hr/>
+<h2 id="五用户控制网格手动">五、用户控制网格（手动）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五用户控制网格手动" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="网格序列">网格序列<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#网格序列" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>与几何序列类似，从上到下顺序执行网格操作节点：</p>
+<ul>
+<li>每个节点对应一种网格类型 + 操作区域</li>
+<li>子节点控制尺寸、分布等</li>
+</ul>
+<h3 id="典型工作流">典型工作流<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#典型工作流" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li>物理场控制网格生成初始网格</li>
+<li>切换为<strong>用户控制网格</strong></li>
+<li>在初始网格基础上修改/调整</li>
+</ol>
+<hr/>
+<h2 id="六网格尺寸控制参数">六、网格尺寸控制参数<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六网格尺寸控制参数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>参数</th><th>作用</th><th>调整建议</th></tr></thead><tbody><tr><td><strong>最大单元大小</strong></td><td>单元尺寸上限</td><td>调小 → 整体细化</td></tr><tr><td><strong>最小单元大小</strong></td><td>单元尺寸下限（允许生成更小单元）</td><td>有细小几何特征时调小</td></tr><tr><td><strong>最大单元增长率</strong></td><td>细→粗过渡的平滑度</td><td>调小 → 过渡更平滑但单元数更多</td></tr><tr><td><strong>曲率因子</strong></td><td>弯曲边界上的单元大小 = 曲率半径 × 因子</td><td>调小 → 曲面解析更精细</td></tr><tr><td><strong>狭窄区域分辨率</strong></td><td>狭窄区域的网格层数</td><td>调大 → 更多层</td></tr></tbody></table></div>
+<hr/>
+<h2 id="七非结构化网格">七、非结构化网格<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#七非结构化网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="3d">3D<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#3d" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>自由四面体网格</strong>：自动填充任意形状区域</li>
+<li>排列不规则，适应性强</li>
+</ul>
+<h3 id="2d--面">2D / 面<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#2d--面" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>自由三角形</li>
+<li>自由四边形</li>
+</ul>
+<hr/>
+<h2 id="八结构化与半结构化网格">八、结构化与半结构化网格<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#八结构化与半结构化网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>🎯 <strong>优先使用结构化网格</strong>（在可行的区域），以获得更好的质量和更少的单元数。</p>
+</blockquote>
+<h3 id="结构化网格优势">结构化网格优势<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#结构化网格优势" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>单元排列规则，<strong>质量更高</strong></li>
+<li>网格总数<strong>更少</strong>，计算更快</li>
+<li>尺寸控制<strong>更直接</strong>（可按边指定层数）</li>
+</ul>
+<h3 id="映射mapped-mesh-2d-表面结构化网格">映射（Mapped Mesh）— 2D 表面结构化网格<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#映射mapped-mesh-2d-表面结构化网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>条件：</strong> 面形状规则（如矩形、扇形等）</p>
+<p><strong>不规则形状的处理：</strong></p>
+<ol>
+<li>用<strong>分割</strong>添加辅助线</li>
+<li>将不规则面切成多个规则子面</li>
+<li>分别对各子面进行映射</li>
+</ol>
+<blockquote>
+<p>📐 示例：正方形掏圆孔 → 四边中点连线到圆 → 四个扇形区域分别映射</p>
+</blockquote>
+<p><strong>尺寸控制：</strong></p>
+<ul>
+<li><strong>大小</strong>子节点：控制单元尺寸</li>
+<li><strong>分布</strong>子节点：控制某条边上的单元层数</li>
+</ul>
+<h3 id="扫掠swept-mesh-3d-结构化网格">扫掠（Swept Mesh）— 3D 结构化网格<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#扫掠swept-mesh-3d-结构化网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>原理：</strong> 将源面的网格沿扫掠路径投射到目标面，路径上逐层生成。</p>
+<p><strong>三要素：</strong></p>
+<ol>
+<li><strong>源面</strong>：已有网格的面</li>
+<li><strong>目标面</strong>：投射终点</li>
+<li><strong>扫掠路径</strong>：源→目标的几何路径</li>
+</ol>
+<h4 id="源目标面规则">源/目标面规则<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#源目标面规则" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>源面区域数 <strong>≥</strong> 目标面区域数（只能多不能少）</li>
+<li>COMSOL 自动判断最佳源/目标分配</li>
+<li>也可手动指定（但需满足上述规则）</li>
+</ul>
+<h4 id="矩形印记自动处理">矩形印记自动处理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#矩形印记自动处理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>扫掠路径方向的侧面上有矩形印记时：</p>
+<ul>
+<li>印记边 ∥ 或 ⟂ 扫掠方向 → <strong>无需分割，自动处理</strong></li>
+</ul>
+<h4 id="不满足扫掠条件时的处理">不满足扫掠条件时的处理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#不满足扫掠条件时的处理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ol>
+<li><strong>虚拟几何操作</strong>：隐藏阻碍特征</li>
+<li><strong>分割</strong>：将连接体切成多个满足扫掠条件的小区域
+<ul>
+<li>用分割域 + 延伸面在交界处创建分割面</li>
+<li>逐个区域分别扫掠</li>
+</ul>
+</li>
+</ol>
+<h4 id="扫掠路径上的分布控制">扫掠路径上的分布控制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#扫掠路径上的分布控制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>类型</th><th>说明</th></tr></thead><tbody><tr><td>固定单元数</td><td>指定层数</td></tr><tr><td>预定义</td><td>指定层数 + <strong>单元大小比</strong>（渐变）</td></tr><tr><td>增长率</td><td>线性 / 指数增长</td></tr><tr><td>对称分布</td><td>从中部向两端对称渐变</td></tr><tr><td>反向</td><td>逆转变大方向</td></tr></tbody></table></div>
+<h3 id="推荐工作流先手动划分源面网格">推荐工作流：先手动划分源面网格<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#推荐工作流先手动划分源面网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li>手动判断最佳源面</li>
+<li>对源面划分表面网格（自由三角形/自由四边形/映射）</li>
+<li>使用扫掠自动投射</li>
+</ol>
+<blockquote>
+<p>✅ 好处：可对不同源面区域做<strong>精细的差异化尺寸控制</strong>。</p>
+</blockquote>
+<hr/>
+<h2 id="九混合网格与金字塔过渡">九、混合网格与金字塔过渡<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#九混合网格与金字塔过渡" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在一个模型中可<strong>混用</strong>结构化 + 非结构化网格：</p>
+<ul>
+<li>不同区域设不同网格类型</li>
+<li>过渡区域自动插入<strong>金字塔单元</strong>连接</li>
+</ul>
+<blockquote>
+<p>⚠️ 注意：扫掠方向厚度过长 → 金字塔单元被拉长 → 质量变差。需适当细化扫掠路径。</p>
+</blockquote>
+<h3 id="网格可视化技巧">网格可视化技巧<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#网格可视化技巧" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>按<strong>单元类型</strong>着色（六面体/四面体/金字塔）</li>
+<li><strong>收缩单元</strong>显示（间隙观察内部）</li>
+<li>网格数据集 + 三维绘图组 → 自定义网格图</li>
+</ul>
+<hr/>
+<h2 id="十边界层网格">十、边界层网格<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十边界层网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="用途">用途<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#用途" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在边界附近生成<strong>分层加密网格</strong>，用于解析边界层效应（如流体力学）。</p>
+<h3 id="维度">维度<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#维度" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>模型维度</th><th>边界层类型</th></tr></thead><tbody><tr><td>2D</td><td>分层四边形网格</td></tr><tr><td>3D</td><td>分层棱柱/六面体网格</td></tr></tbody></table></div>
+<h3 id="控制参数">控制参数<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#控制参数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>参数</th><th>作用</th></tr></thead><tbody><tr><td><strong>层数</strong></td><td>边界层的层数</td></tr><tr><td><strong>拉伸因子</strong></td><td>每层厚度的递增比例</td></tr><tr><td><strong>厚度调节因子</strong></td><td>整体边界层厚度的缩放</td></tr></tbody></table></div>
+<h3 id="操作要点">操作要点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#操作要点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>选择边界层依附的<strong>边界</strong></li>
+<li>选择边界层施加的<strong>域</strong>（可只在某一侧）</li>
+<li>可对带边界层的面做扫掠 → 生成 3D 边界层</li>
+</ul>
+<hr/>
+<h2 id="十一复制网格与相同网格">十一、复制网格与相同网格<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十一复制网格与相同网格" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="复制网格copy-mesh">复制网格（Copy Mesh）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#复制网格copy-mesh" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>将已有网格复制到另一几何体</li>
+<li>适用于：周期性结构、阵列结构、旋转对称</li>
+</ul>
+<p><strong>可复制层级：</strong> 域 / 面 / 边</p>
+<p><strong>示例：</strong> 线圈阵列 → 先画一个线圈网格 → 复制到其余线圈</p>
+<h3 id="相同网格identical-mesh">相同网格（Identical Mesh）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#相同网格identical-mesh" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>约束关系</strong>：规定两个边界/边的网格始终保持一致</li>
+<li>非直接创建网格，而是约束条件</li>
+<li>用于周期性边界条件（结构力学循环对称、电磁 Floquet 边界等）</li>
+<li>物理场控制网格会<strong>自动考虑</strong>相同网格约束</li>
+</ul>
+<hr/>
+<h2 id="十二网格质量评价">十二、网格质量评价<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十二网格质量评价" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="质量指标-0-sim-1">质量指标 (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#质量指标-0-sim-1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>质量值</th><th>含义</th></tr></thead><tbody><tr><td>1</td><td>理想单元（等边/等角）</td></tr><tr><td>→ 0</td><td>越来越扭曲、细长</td></tr></tbody></table></div>
+<h3 id="推荐阈值">推荐阈值<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#推荐阈值" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>模型</th><th>最低质量</th></tr></thead><tbody><tr><td>2D</td><td>> 0.3</td></tr><tr><td>3D</td><td>> 0.1</td></tr></tbody></table></div>
+<h3 id="评价指标类型">评价指标类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#评价指标类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>偏度（Skewness）、最大角度、体积 vs 外接圆半径、体积与长度、条件数、增长率、弯曲偏度</p>
+<h3 id="网格统计">网格统计<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#网格统计" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>单元质量<strong>直方图</strong>（横轴：质量值；纵轴：单元数量）</li>
+<li>期望：直方图<strong>向右偏</strong> → 多数单元质量好</li>
+<li>可按单元类型分别查看</li>
+</ul>
+<hr/>
+<h2 id="十三网格可视化">十三、网格可视化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十三网格可视化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>功能</th><th>说明</th></tr></thead><tbody><tr><td>按单元类型着色</td><td>区分四面体/六面体/金字塔/棱柱</td></tr><tr><td>按单元质量着色</td><td>直观显示质量差的区域</td></tr><tr><td>逻辑表达式过滤</td><td>仅显示满足条件的单元</td></tr><tr><td>收缩显示</td><td>单元间留间隙，便于观察内部</td></tr><tr><td>弯曲单元显示</td><td>解析曲面的单元显示为弯曲形态</td></tr></tbody></table></div>
+<hr/>
+<h2 id="十四拓展功能">十四、拓展功能<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十四拓展功能" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="自适应网格细化">自适应网格细化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#自适应网格细化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>根据计算结果自动在变化剧烈区域细化网格</li>
+</ul>
+<h3 id="动网格与变形几何">动网格与变形几何<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#动网格与变形几何" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>模拟过程中网格随几何变形而更新</li>
+</ul>
+<hr/>
+<h2 id="十五网格划分最佳实践">十五、网格划分最佳实践<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十五网格划分最佳实践" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ol>
+<li><strong>从粗到细</strong>：先用物理场控制网格生成初始网格，再逐步细化</li>
+<li><strong>优先结构化</strong>：能用映射/扫掠的尽量用，质量好、数量少</li>
+<li><strong>关键区域细化</strong>：结果变化剧烈的区域手动加密</li>
+<li><strong>避免细长单元</strong>：各方向尺寸差异过大会降低质量</li>
+<li><strong>检查网格统计</strong>：确保最差质量高于阈值</li>
+<li><strong>网格无关性验证</strong>：对关键结果做收敛性检查</li>
+</ol>
+<hr/>
+<blockquote>
+<p>🔗 返回：[COMSOL 基础培训_总索引](COMSOL 基础培训_总索引) | 上一部分：[02 几何建模](02 几何建模)</p>
+</blockquote></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-9" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#03-网格划分" data-for="03-网格划分">03 网格划分</a></li><li class="depth-1"><a href="#一网格基础" data-for="一网格基础">一、网格基础</a></li><li class="depth-2"><a href="#为什么需要网格" data-for="为什么需要网格">为什么需要网格？</a></li><li class="depth-2"><a href="#网格精度权衡" data-for="网格精度权衡">网格精度权衡</a></li><li class="depth-2"><a href="#网格无关性验证" data-for="网格无关性验证">网格无关性验证</a></li><li class="depth-1"><a href="#二comsol-网格创建途径" data-for="二comsol-网格创建途径">二、COMSOL 网格创建途径</a></li><li class="depth-1"><a href="#三单元类型" data-for="三单元类型">三、单元类型</a></li><li class="depth-2"><a href="#2d-面单元" data-for="2d-面单元">2D 面单元</a></li><li class="depth-2"><a href="#3d-体单元" data-for="3d-体单元">3D 体单元</a></li><li class="depth-1"><a href="#四物理场控制网格自动" data-for="四物理场控制网格自动">四、物理场控制网格（自动）</a></li><li class="depth-2"><a href="#特点" data-for="特点">特点</a></li><li class="depth-2"><a href="#示例声学仿真" data-for="示例声学仿真">示例：声学仿真</a></li><li class="depth-2"><a href="#9-级预定义尺寸" data-for="9-级预定义尺寸">9 级预定义尺寸</a></li><li class="depth-1"><a href="#五用户控制网格手动" data-for="五用户控制网格手动">五、用户控制网格（手动）</a></li><li class="depth-2"><a href="#网格序列" data-for="网格序列">网格序列</a></li><li class="depth-2"><a href="#典型工作流" data-for="典型工作流">典型工作流</a></li><li class="depth-1"><a href="#六网格尺寸控制参数" data-for="六网格尺寸控制参数">六、网格尺寸控制参数</a></li><li class="depth-1"><a href="#七非结构化网格" data-for="七非结构化网格">七、非结构化网格</a></li><li class="depth-2"><a href="#3d" data-for="3d">3D</a></li><li class="depth-2"><a href="#2d--面" data-for="2d--面">2D / 面</a></li><li class="depth-1"><a href="#八结构化与半结构化网格" data-for="八结构化与半结构化网格">八、结构化与半结构化网格</a></li><li class="depth-2"><a href="#结构化网格优势" data-for="结构化网格优势">结构化网格优势</a></li><li class="depth-2"><a href="#映射mapped-mesh-2d-表面结构化网格" data-for="映射mapped-mesh-2d-表面结构化网格">映射（Mapped Mesh）— 2D 表面结构化网格</a></li><li class="depth-2"><a href="#扫掠swept-mesh-3d-结构化网格" data-for="扫掠swept-mesh-3d-结构化网格">扫掠（Swept Mesh）— 3D 结构化网格</a></li><li class="depth-2"><a href="#推荐工作流先手动划分源面网格" data-for="推荐工作流先手动划分源面网格">推荐工作流：先手动划分源面网格</a></li><li class="depth-1"><a href="#九混合网格与金字塔过渡" data-for="九混合网格与金字塔过渡">九、混合网格与金字塔过渡</a></li><li class="depth-2"><a href="#网格可视化技巧" data-for="网格可视化技巧">网格可视化技巧</a></li><li class="depth-1"><a href="#十边界层网格" data-for="十边界层网格">十、边界层网格</a></li><li class="depth-2"><a href="#用途" data-for="用途">用途</a></li><li class="depth-2"><a href="#维度" data-for="维度">维度</a></li><li class="depth-2"><a href="#控制参数" data-for="控制参数">控制参数</a></li><li class="depth-2"><a href="#操作要点" data-for="操作要点">操作要点</a></li><li class="depth-1"><a href="#十一复制网格与相同网格" data-for="十一复制网格与相同网格">十一、复制网格与相同网格</a></li><li class="depth-2"><a href="#复制网格copy-mesh" data-for="复制网格copy-mesh">复制网格（Copy Mesh）</a></li><li class="depth-2"><a href="#相同网格identical-mesh" data-for="相同网格identical-mesh">相同网格（Identical Mesh）</a></li><li class="depth-1"><a href="#十二网格质量评价" data-for="十二网格质量评价">十二、网格质量评价</a></li><li class="depth-2"><a href="#质量指标-0-sim-1" data-for="质量指标-0-sim-1">质量指标 (0 \sim 1)</a></li><li class="depth-2"><a href="#推荐阈值" data-for="推荐阈值">推荐阈值</a></li><li class="depth-2"><a href="#评价指标类型" data-for="评价指标类型">评价指标类型</a></li><li class="depth-2"><a href="#网格统计" data-for="网格统计">网格统计</a></li><li class="depth-1"><a href="#十三网格可视化" data-for="十三网格可视化">十三、网格可视化</a></li><li class="depth-1"><a href="#十四拓展功能" data-for="十四拓展功能">十四、拓展功能</a></li><li class="depth-2"><a href="#自适应网格细化" data-for="自适应网格细化">自适应网格细化</a></li><li class="depth-2"><a href="#动网格与变形几何" data-for="动网格与变形几何">动网格与变形几何</a></li><li class="depth-1"><a href="#十五网格划分最佳实践" data-for="十五网格划分最佳实践">十五、网格划分最佳实践</a></li><li class="overflow-end"></li></ul></div><div class="backlinks"><h3>反向链接</h3><ul id="list-2" class="overflow"><li><a href="../../📖-课堂笔记/COMSOL-基础培训/COMSOL-基础培训_总索引" class="internal">COMSOL 多物理场仿真基础强化培训</a></li><li class="overflow-end"></li></ul></div><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v4.5.2</a> © 2026</p><ul><li><a href="https://github.com/wld030303/notes">🌐 GitHub</a></li><li><a href="https://quartz.jzhao.xyz">✍️ 由 Quartz 驱动</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>

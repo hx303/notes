@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制</title><meta charset="utf-8"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="📝 夔嵬的笔记"/><meta property="og:title" content="Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制"/><meta name="twitter:description" content="Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制 深度解读与问答整理 标题： Decoupling cation segregation and volatile loss in formamidinium–caesium metal halide perovskite solar cells under high-temperature operating conditions 期刊： Nature Energy (2026) DOI：10.1038/s41560-026-02011-y 通讯作者： Jinsong Huang (UNC Chapel Hill) 解读日..."/><meta property="og:description" content="Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制 深度解读与问答整理 标题： Decoupling cation segregation and volatile loss in formamidinium–caesium metal halide perovskite solar cells under high-temperature operating conditions 期刊： Nature Energy (2026) DOI：10.1038/s41560-026-02011-y 通讯作者： Jinsong Huang (UNC Chapel Hill) 解读日..."/><meta property="og:image:alt" content="Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制 深度解读与问答整理 标题： Decoupling cation segregation and volatile loss in formamidinium–caesium metal halide perovskite solar cells under high-temperature operating conditions 期刊： Nature Energy (2026) DOI：10.1038/s41560-026-02011-y 通讯作者： Jinsong Huang (UNC Chapel Hill) 解读日..."/><meta property="og:image" content="https://wld030303.github.io/notes/static/og-image.png"/><meta property="og:image:url" content="https://wld030303.github.io/notes/static/og-image.png"/><meta name="twitter:image" content="https://wld030303.github.io/notes/static/og-image.png"/><meta property="og:image:type" content="image/png"/><link rel="canonical" href="https://wld030303.github.io/notes/🔬-科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读"/><meta property="twitter:domain" content="wld030303.github.io/notes"/><meta property="og:url" content="https://wld030303.github.io/notes/🔬-科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读"/><meta property="twitter:url" content="https://wld030303.github.io/notes/🔬-科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读"/><link rel="icon" href="../static/icon.png"/><meta name="description" content="Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制 深度解读与问答整理 标题： Decoupling cation segregation and volatile loss in formamidinium–caesium metal halide perovskite solar cells under high-temperature operating conditions 期刊： Nature Energy (2026) DOI：10.1038/s41560-026-02011-y 通讯作者： Jinsong Huang (UNC Chapel Hill) 解读日..."/><meta name="generator" content="Quartz"/><script type="application/ld+json">{&quot;@context&quot;:&quot;https://schema.org&quot;,&quot;@type&quot;:&quot;Article&quot;,&quot;headline&quot;:&quot;Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制&quot;,&quot;url&quot;:&quot;https://wld030303.github.io/notes/🔬-科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读&quot;,&quot;description&quot;:&quot;Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制 深度解读与问答整理 标题： Decoupling cation segregation and volatile loss in formamidinium–caesium metal halide perovskite solar cells under high-temperature operating conditions 期刊： Nature Energy (2026) DOI：10.1038/s41560-026-02011-y 通讯作者： Jinsong Huang (UNC Chapel Hill) 解读日...&quot;,&quot;datePublished&quot;:&quot;1970-01-21T12:52:44.226Z&quot;,&quot;dateModified&quot;:&quot;1970-01-21T12:52:44.226Z&quot;}</script><link href="../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiRzpcXE9wZW5DbGF3LVdvcmtzcGFjZVxcbm90ZXMtd2Vic2l0ZVxccXVhcnR6XFxjb21wb25lbnRzXFxzdHlsZXMiLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://wld030303.github.io/notes/index.xml"/></head><body data-slug="🔬-科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="..">📝 夔嵬的笔记</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>!(node.slugSegment===\&quot;tags\&quot;||node.displayName===\&quot;attachments\&quot;||node.displayName.endsWith(\&quot;_\\u56FE\\u7247\&quot;))&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-270"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-270" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../🔬-科研笔记/">🔬 科研笔记</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>Nature Energy 2026: FA Cs钙钛矿高温稳定性机制</a></div></nav><h1 class="article-title">Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制</h1><p show-comma="true" class="content-meta"><time datetime="1970-01-21T12:52:44.226Z">1970年1月21日</time><span>12分钟阅读</span></p><ul class="tags"><li><a href="../tags/research" class="internal tag-link">research</a></li></ul></div></div><article class="popover-hint"><h1 id="nature-energy-2026-fa-cs钙钛矿高温稳定性机制">Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#nature-energy-2026-fa-cs钙钛矿高温稳定性机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<h2 id="深度解读与问答整理">深度解读与问答整理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#深度解读与问答整理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p><strong>标题：</strong> Decoupling cation segregation and volatile loss in formamidinium–caesium metal halide perovskite solar cells under high-temperature operating conditions</p>
+<p><strong>期刊：</strong> Nature Energy (2026)</p>
+<p><strong>DOI：</strong><a href="https://doi.org/10.1038/s41560-026-02011-y" class="external">10.1038/s41560-026-02011-y<svg aria-hidden="true" class="external-icon" style="max-width:0.8em;max-height:0.8em;" viewBox="0 0 512 512"><path d="M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z"></path></svg></a></p>
+<p><strong>通讯作者：</strong> Jinsong Huang (UNC Chapel Hill)</p>
+<p><strong>解读日期：</strong> 2026-03-24</p>
+<h2 id="一核心发现温度依赖的双降解机制">一、核心发现：温度依赖的双降解机制<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一核心发现温度依赖的双降解机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="11-临界温度106c">1.1 临界温度：106°C<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#11-临界温度106c" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th><strong>这是本研究最重要的发现：</strong> FA-Cs钙钛矿的降解机制在106°C发生转变  温度区间</th><th>主导降解机制</th><th>特征表现</th></tr></thead><tbody><tr><td>&lt; 106°C</td><td><strong>阳离子偏析</strong> (Cation Segregation)</td><td>PL峰红移1-3 nm，Cs⁺富集区形成</td></tr></tbody></table></div>
+<blockquote>
+<p>106°C | <strong>FAI挥发</strong> (Volatile Loss) | PL峰蓝移8 nm，PbI₂析出</p>
+</blockquote>
+<h3 id="12-arrhenius分析揭示的活化能">1.2 Arrhenius分析揭示的活化能<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#12-arrhenius分析揭示的活化能" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>降解速率常数: k = A · exp(-Ea/kT)  机制</th><th>活化能 Ea</th><th>85°C时相对速率</th><th>120°C时相对速率</th></tr></thead><tbody><tr><td>阳离子偏析</td><td>~0.6 eV</td><td>1 (基准)</td><td>~5</td></tr><tr><td>FAI挥发</td><td>~1.1 eV</td><td>0.1</td><td>~3</td></tr></tbody></table></div>
+<p><strong>物理意义：</strong> 温度较低时，活化能低的反应（偏析）速率高→偏析主导；温度较高时，活化能高的反应（挥发）速率增长更快→挥发主导。交叉点约在106°C。</p>
+<h2 id="二降解机制深度剖析">二、降解机制深度剖析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二降解机制深度剖析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="21-阳离子偏析机制-cation-segregation">2.1 阳离子偏析机制 (Cation Segregation)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#21-阳离子偏析机制-cation-segregation" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="微观过程">微观过程：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#微观过程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>初始态: FA₀.₉₅Cs₀.₀₅PbI₃ (均匀混合) ↓ 光/热应力 中间态: 局部Cs⁺富集 + FA⁺贫化区域 ↓ 持续应力 终态: Cs-rich相 + FA-rich相分离</p>
+<h4 id="实验证据">实验证据：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实验证据" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li><strong>PL峰波长mapping</strong> : 显示空间不均匀性增加</li>
+<li><strong>¹H-NMR</strong> : FA⁺/PEAMA⁺比例下降（93°C时93.1%，116°C时87.2%）</li>
+<li><strong>GIXRD</strong> : 出现CsPbI₃特征峰（δ相）</li>
+<li><strong>SEM</strong> : 晶界处PbI₂析出</li>
+</ul>
+<h3 id="22-fai挥发机制-fai-volatile-loss">2.2 FAI挥发机制 (FAI Volatile Loss)<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#22-fai挥发机制-fai-volatile-loss" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="化学反应">化学反应：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#化学反应" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>FAPbI₃ → PbI₂ + FAI↑ (g)</p>
+<h4 id="高温下加剧的原因">高温下加剧的原因：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#高温下加剧的原因" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ol>
+<li><strong>热分解</strong> : FAI的蒸气压在>100°C急剧增加</li>
+<li><strong>晶格膨胀</strong> : 高温使Pb-I键减弱，FA⁺更容易逃逸</li>
+<li><strong>界面缺陷</strong> : 形成FAI挥发的通道</li>
+</ol>
+<h4 id="实验证据-1">实验证据：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#实验证据-1" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>116°C老化后，¹H-NMR出现HI和(HCN)x信号（分解产物）</li>
+<li>I/Pb比例从2.8降至1.5（严重碘缺失）</li>
+<li>PL峰蓝移8 nm（相当于Cs含量从5%增加到~20%）</li>
+</ul>
+<h2 id="三关键技术创新">三、关键技术创新<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三关键技术创新" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="31-ald-sno阻挡层">3.1 ALD SnO₂阻挡层<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#31-ald-sno阻挡层" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="工作原理">工作原理：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#工作原理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>传统BCP空穴阻挡层: [Ag] - [BCP(多孔)] - [钙钛矿] → FAI可以从孔隙逃逸 ALD SnO₂致密层: [Ag] - [SnO₂(致密, ~10nm)] - [钙钛矿] → FAI被物理封堵</p>
+<h4 id="效果验证">效果验证：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#效果验证" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>参数</th><th>BCP器件</th><th>SnO₂器件</th></tr></thead><tbody><tr><td>116°C下PL蓝移</td><td>8 nm</td><td>0.8 nm (↓10倍)</td></tr><tr><td>PbI₂析出</td><td>严重</td><td>不可见</td></tr><tr><td>Ea (高温区)</td><td>~1.0 eV</td><td>~0.7 eV</td></tr></tbody></table></div>
+<h3 id="32-csi添加剂策略">3.2 CsI₃添加剂策略<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#32-csi添加剂策略" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="设计思路">设计思路：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#设计思路" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>传统CsI补偿碘空位，但Cs⁺分布可能不均匀</li>
+<li>CsI₃提供I₃⁻，与Pb²⁺强配位形成[PbIx]⁻复合物</li>
+<li>这些复合物降低α相形成能垒，促进均匀成核</li>
+</ul>
+<h4 id="效果">效果：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#效果" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>初始薄膜PL峰分布半高宽: Control 4.2 nm → Target 2.8 nm (↓33%)</li>
+<li>T90@85°C: ~800h (Control) → ~2700h (Target)</li>
+</ul>
+<h2 id="四pl-mapping诊断方法">四、PL Mapping诊断方法<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四pl-mapping诊断方法" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="41-基本概念">4.1 基本概念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#41-基本概念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>传统PL测量</strong> ：用激光照射样品某一点，收集该点的发射光谱，得到一个峰值波长。只能告诉你”平均”状态。</p>
+<p><strong>PL Mapping</strong> ：用激光逐点扫描整个样品表面（如10×10 μm²），每个像素点都记录一个PL光谱，最后得到一幅”波长分布图”。</p>
+<h3 id="42-为什么红移蓝移对应不同降解机制">4.2 为什么红移/蓝移对应不同降解机制？<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#42-为什么红移蓝移对应不同降解机制" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<h4 id="fa-cs体系的带隙规律">FA-Cs体系的带隙规律：<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#fa-cs体系的带隙规律" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>纯FAPbI₃: Eg ≈ 1.48 eV → λ_PL ≈ 840 nm (红光)<br/>
+纯CsPbI₃: Eg ≈ 1.73 eV → λ_PL ≈ 715 nm (红偏橙)<br/>
+FA₀.₉₅Cs₀.₀₅PbI₃: λ_PL ≈ 799-800 nm (本研究初始态)</p>
+<p><strong>关键关系：</strong> Cs含量越高 → 带隙越大 → PL峰越偏向短波长（蓝移）</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>现象</th><th>机理</th><th>宏观表现</th></tr></thead><tbody><tr><td><strong>红移</strong> (1-3nm)</td><td>阳离子偏析</td><td>Cs⁺迁移走，局部变FA-rich → 带隙减小</td></tr><tr><td><strong>蓝移</strong> (5-8nm)</td><td>FAI挥发</td><td>FA⁺逃逸，相对Cs%增加 → 带隙增大</td></tr></tbody></table></div>
+<h3 id="43-实验参数">4.3 实验参数<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#43-实验参数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>激发波长: 405 nm或532 nm激光</li>
+<li>扫描范围: 10×10 μm² 到 100×100 μm²</li>
+<li>空间分辨率: ~300-500 nm</li>
+<li>分布半高宽σ越小 → 薄膜越均匀</li>
+</ul>
+<h2 id="五fai-甲脒碘化物-的性质">五、FAI (甲脒碘化物) 的性质<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五fai-甲脒碘化物-的性质" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="51-化学信息">5.1 化学信息<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#51-化学信息" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>化学式: HC(NH₂)₂I 或 CH₅N₂I</p>
+<p>H<br/>
+│<br/>
+H─N─C═N─H + I⁻<br/>
+│<br/>
+H</p>
+<h3 id="52-与其他前驱体对比">5.2 与其他前驱体对比<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#52-与其他前驱体对比" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>前驱体</th><th>阳离子</th><th>离子半径(Å)</th><th>热稳定性</th><th>形成钙钛矿带隙</th></tr></thead><tbody><tr><td>FAI</td><td>FA⁺</td><td>2.53</td><td>中等(106°C+挥发)</td><td>1.48 eV</td></tr><tr><td>MAI</td><td>MA⁺</td><td>2.17</td><td>较差(80°C+挥发)</td><td>1.55 eV</td></tr><tr><td>CsI</td><td>Cs⁺</td><td>1.67</td><td>极好(不挥发)</td><td>1.73 eV</td></tr></tbody></table></div>
+<h3 id="53-fai的热不稳定性">5.3 FAI的热不稳定性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#53-fai的热不稳定性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>FAPbI₃ → PbI₂ + FAI↑(g)</p>
+<p>FAI蒸气压随温度变化：</p>
+<ul>
+<li>85°C: ~10⁻⁶ atm (几乎不挥发)</li>
+<li>106°C: ~10⁻⁵ atm (开始明显)</li>
+<li>120°C: ~10⁻⁴ atm (显著挥发)</li>
+</ul>
+<h2 id="六不同材料体系的转折温度">六、不同材料体系的转折温度<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六不同材料体系的转折温度" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="61-影响转折点的因素">6.1 影响转折点的因素<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#61-影响转折点的因素" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>转折点公式: T_trans = (Ea₂ - Ea₁) / (k × ln(A₂/A₁))</p>
+<h3 id="62-不同体系的估算转折点">6.2 不同体系的估算转折点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#62-不同体系的估算转折点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>材料体系</th><th>偏析活化能</th><th>预估转折温度</th><th>备注</th></tr></thead><tbody><tr><td>FA₀.₉₉Cs₀.₀₁PbI₃</td><td>~0.5 eV</td><td>~90°C</td><td>Cs少，偏析快</td></tr><tr><td>FA₀.₉₅Cs₀.₀₅PbI₃</td><td>~0.6 eV</td><td>~106°C</td><td>本研究对象</td></tr><tr><td>FA₀.₉₀Cs₀.₁₀PbI₃</td><td>~0.7 eV</td><td>~120°C</td><td>Cs多，偏析慢</td></tr><tr><td>MAPbI₃</td><td>~0.5 eV</td><td>~70-80°C</td><td>MA更不稳定</td></tr><tr><td>纯CsPbI₃</td><td>N/A</td><td>无转折点</td><td>无有机挥发</td></tr></tbody></table></div>
+<h3 id="63-封装对转折点的影响">6.3 封装对转折点的影响<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#63-封装对转折点的影响" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>封装条件</th><th>FAI挥发Ea</th><th>预估转折点</th></tr></thead><tbody><tr><td>无封装</td><td>~0.8 eV</td><td>~80°C</td></tr><tr><td>BCP层</td><td>~1.0 eV</td><td>~100°C</td></tr><tr><td>ALD SnO₂</td><td>~1.2 eV</td><td>~115°C</td></tr><tr><td>玻璃/玻璃封装</td><td>~1.5 eV</td><td>~130°C+</td></tr></tbody></table></div>
+<h2 id="七宏观诊断方法">七、宏观诊断方法<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#七宏观诊断方法" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="71-两种机制的症状对比">7.1 两种机制的”症状”对比<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#71-两种机制的症状对比" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>诊断指标</th><th>阳离子偏析 (&lt;106°C)</th><th>FAI挥发 (>106°C)</th></tr></thead><tbody><tr><td>效率衰减速度</td><td>慢 (%/千小时)</td><td>快 (%/小时)</td></tr><tr><td>衰减曲线</td><td>线性/对数</td><td>指数</td></tr><tr><td>外观变化</td><td>无/轻微</td><td>黄色斑点(PbI₂)</td></tr><tr><td>J-V变形程度</td><td>轻微</td><td>严重(S型)</td></tr><tr><td>EL图像</td><td>局部暗斑</td><td>大面积失效</td></tr><tr><td>Voc变化</td><td>-20~-40 mV</td><td>-200~-400 mV</td></tr><tr><td>Jsc变化</td><td>-1~-2 mA/cm²</td><td>-8~-12 mA/cm²</td></tr><tr><td>FF变化</td><td>-2%~-5%</td><td>-30%~-50%</td></tr></tbody></table></div>
+<h3 id="72-j-v曲线变化特征">7.2 J-V曲线变化特征<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#72-j-v曲线变化特征" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p><strong>阳离子偏析主导：</strong></p>
+<ul>
+<li>Voc缓慢下降（复合增加）</li>
+<li>Jsc基本稳定</li>
+<li>FF中等下降（Rs增加）</li>
+<li>曲线形状基本保持</li>
+</ul>
+<p><strong>FAI挥发主导：</strong></p>
+<ul>
+<li>Voc快速下降（PbI₂界面复合）</li>
+<li>Jsc显著下降（吸收层变薄）</li>
+<li>FF严重下降（Rsh下降，分流）</li>
+<li>曲线可能出现”膝点”或S型</li>
+</ul>
+<h2 id="八qa-问答整理">八、Q&amp;A; 问答整理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#八qa-问答整理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>Q1: 请问PL mapping中红移→偏析、蓝移→挥发可以展开讲讲吗？</p>
+<p>PL mapping是用激光逐点扫描样品表面，每个点都记录一个PL光谱。核心原理是<strong>带隙-组分关系</strong> ：</p>
+<ul>
+<li>纯FAPbI₃: λ_PL ≈ 840 nm（带隙1.48 eV）</li>
+<li>纯CsPbI₃: λ_PL ≈ 715 nm（带隙1.73 eV）</li>
+</ul>
+<p><strong>关键关系</strong> ：Cs含量越高 → 带隙越大 → PL峰越蓝（短波长）</p>
+<p><strong>为什么偏析导致红移？</strong></p>
+<p>阳离子偏析时，Cs⁺从HTL侧向外迁移，HTL侧变FA-rich，FA-rich区域带隙变小，所以PL红移。</p>
+<p><strong>为什么挥发导致蓝移？</strong></p>
+<p>FAI挥发时，FA⁺逃逸，相对Cs%增加，Cs含量变高后带隙增大，所以PL蓝移。</p>
+<p><strong>Mapping信息量</strong> ：分布半高宽σ越小，薄膜越均匀。σ变大说明发生了偏析。</p>
+<p>Q2: 请问任何电池的转折点都是106°C吗？</p>
+<p><strong>不是的。</strong> 106°C只是FA₀.₉₅Cs₀.₀₅PbI₃这个特定组分的转折点。</p>
+<p>转折温度取决于：</p>
+<p>T_trans = (Ea₂ - Ea₁) / (k × ln(A₂/A₁))</p>
+<p><strong>不同Cs含量的影响</strong> ：</p>
+<ul>
+<li>Cs含量越高 → 偏析活化能越高 → 转折温度越高</li>
+<li>FA₀.₉₉Cs₀.₀₁: ~90°C</li>
+<li>FA₀.₉₀Cs₀.₁₀: ~120°C</li>
+</ul>
+<p><strong>不同阳离子体系</strong> ：</p>
+<ul>
+<li>MAPbI₃: ~70-80°C（MA更不稳定）</li>
+<li>纯CsPbI₃: 无转折点（无机，不挥发）</li>
+</ul>
+<p><strong>封装的影响</strong> ：</p>
+<ul>
+<li>无封装: ~80°C</li>
+<li>ALD SnO₂: ~115°C</li>
+<li>玻璃封装: ~130°C+</li>
+</ul>
+<p>Q3: 文章的结论在宏观层面会如何显现？</p>
+<p><strong>阳离子偏析（慢性病）</strong> ：</p>
+<ul>
+<li>效率缓慢下降（%/千小时）</li>
+<li>外观无明显变化</li>
+<li>J-V曲线形状基本保持</li>
+<li>年衰减率约1%</li>
+</ul>
+<p><strong>FAI挥发（急性病）</strong> ：</p>
+<ul>
+<li>效率剧烈下降（%/小时）</li>
+<li>出现黄色斑点（PbI₂残留）</li>
+<li>J-V曲线严重变形，出现S型</li>
+<li>界面分层</li>
+</ul>
+<p><strong>一句话总结</strong> ：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>机制</th><th>宏观”症状”</th><th>类比</th></tr></thead><tbody><tr><td>阳离子偏析</td><td>慢性病：慢慢变差，外观正常，可预测</td><td>像人慢慢衰老</td></tr><tr><td>FAI挥发</td><td>急性病：突然恶化，可见损伤，难预测</td><td>像突发心梗</td></tr><tr><td>Q4: FAI是什么？</td><td></td><td></td></tr></tbody></table></div>
+<p><strong>FAI = Formamidinium Iodide（甲脒碘化物）</strong></p>
+<p>化学式：HC(NH₂)₂I 或 CH₅N₂I</p>
+<p>H │ H─N─C═N─H + I⁻ │ H</p>
+<p><strong>特点</strong> ：</p>
+<ul>
+<li>FA⁺离子半径2.53Å，比MA⁺(2.17Å)大</li>
+<li>形成FAPbI₃带隙约1.48 eV，更接近理想值</li>
+<li>热不稳定性：>106°C时FAI挥发，留下PbI₂</li>
+</ul>
+<p><strong>这就是为什么这篇论文要研究如何”抑制FAI挥发”</strong> ——它是高温稳定性的关键瓶颈。</p>
+<h2 id="九关键参数速查表">九、关键参数速查表<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#九关键参数速查表" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="91-常用离子半径">9.1 常用离子半径<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#91-常用离子半径" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>离子</th><th>半径 (Å)</th><th>用途</th></tr></thead><tbody><tr><td>FA⁺</td><td>2.53</td><td>A位阳离子</td></tr><tr><td>MA⁺</td><td>2.17</td><td>A位阳离子</td></tr><tr><td>Cs⁺</td><td>1.67</td><td>A位阳离子</td></tr><tr><td>Pb²⁺</td><td>1.19</td><td>B位阳离子</td></tr><tr><td>I⁻</td><td>2.20</td><td>X位阴离子</td></tr><tr><td>Br⁻</td><td>1.96</td><td>X位阴离子</td></tr></tbody></table></div>
+<h3 id="92-活化能参考值">9.2 活化能参考值<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#92-活化能参考值" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>过程</th><th>活化能 (eV)</th></tr></thead><tbody><tr><td>I⁻迁移</td><td>0.1-0.6</td></tr><tr><td>MA⁺迁移</td><td>0.5-1.0</td></tr><tr><td>Cs⁺偏析</td><td>0.5-0.7</td></tr><tr><td>FAI挥发</td><td>1.0-1.2</td></tr></tbody></table></div>
+<h3 id="93-带隙参考值">9.3 带隙参考值<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#93-带隙参考值" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>材料</th><th>带隙 (eV)</th><th>PL峰 (nm)</th></tr></thead><tbody><tr><td>FAPbI₃</td><td>1.48</td><td>~840</td></tr><tr><td>MAPbI₃</td><td>1.55</td><td>~780</td></tr><tr><td>FA₀.₉₅Cs₀.₀₅PbI₃</td><td>~1.50</td><td>~800</td></tr><tr><td>CsPbI₃</td><td>1.73</td><td>~715</td></tr></tbody></table></div>
+<h2 id="十稳定性数据总结">十、稳定性数据总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十稳定性数据总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>条件</th><th>器件类型</th><th>T90 (h)</th></tr></thead><tbody><tr><td>85°C, 1 sun, 1% UV</td><td>BCP Control</td><td>~800</td></tr><tr><td>95°C, OC</td><td>SnO₂ Control</td><td>~1,200</td></tr><tr><td>85°C, MPP, 1% UV</td><td>SnO₂ + CsI₃</td><td><strong>~2,700</strong></td></tr></tbody></table></div>
+<p><strong>外推结果</strong> ：85°C下T90=2700h，外推至45°C工作温度，预计寿命 > 50年</p>
+<h2 id="十一对传统认知的修正">十一、对传统认知的修正<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十一对传统认知的修正" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p><strong>传统认知</strong> ：</p>
+<p>Cs掺杂 → 晶格更稳定 → 不发生α→δ相变 → 完美！</p>
+<p><strong>修正认知</strong> ：</p>
+<p>Cs掺杂 → 引入Cs⁺偏析风险 → 虽然整体是α相，但局部Cs-rich和FA-rich区域分离 → 产生新的降解路径</p>
+<p><strong>正确策略</strong> ：Cs掺杂 + 初始均匀性优化 + 界面阻挡层</p>
+<h2 id="十二实验方法借鉴">十二、实验方法借鉴<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十二实验方法借鉴" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="确定转折点的实验流程">确定转折点的实验流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#确定转折点的实验流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li>选择4-6个温度点（如70, 80, 90, 100, 110, 120°C）</li>
+<li>在每个温度下进行加速老化测试</li>
+<li>测量降解速率常数k（如T90衰减率）</li>
+<li>绘制ln(k) vs 1/T图</li>
+<li>观察是否出现斜率变化（拐点）</li>
+<li>拐点对应的温度 = 转折温度</li>
+<li>用PL mapping验证机制变化（红移vs蓝移）</li>
+</ol>
+<p>解读人：覆水 (Fushui) | 基于 Solar Cell Physics 知识库</p>
+<p>生成时间：2026-03-24 22:52 GMT+8</p>
+<p>知识库位置：G:\OpenClaw-Workspace\solar_cell_knowledge\</p></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-118" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#nature-energy-2026-fa-cs钙钛矿高温稳定性机制" data-for="nature-energy-2026-fa-cs钙钛矿高温稳定性机制">Nature Energy 2026: FA-Cs钙钛矿高温稳定性机制</a></li><li class="depth-1"><a href="#深度解读与问答整理" data-for="深度解读与问答整理">深度解读与问答整理</a></li><li class="depth-1"><a href="#一核心发现温度依赖的双降解机制" data-for="一核心发现温度依赖的双降解机制">一、核心发现：温度依赖的双降解机制</a></li><li class="depth-2"><a href="#11-临界温度106c" data-for="11-临界温度106c">1.1 临界温度：106°C</a></li><li class="depth-2"><a href="#12-arrhenius分析揭示的活化能" data-for="12-arrhenius分析揭示的活化能">1.2 Arrhenius分析揭示的活化能</a></li><li class="depth-1"><a href="#二降解机制深度剖析" data-for="二降解机制深度剖析">二、降解机制深度剖析</a></li><li class="depth-2"><a href="#21-阳离子偏析机制-cation-segregation" data-for="21-阳离子偏析机制-cation-segregation">2.1 阳离子偏析机制 (Cation Segregation)</a></li><li class="depth-2"><a href="#22-fai挥发机制-fai-volatile-loss" data-for="22-fai挥发机制-fai-volatile-loss">2.2 FAI挥发机制 (FAI Volatile Loss)</a></li><li class="depth-1"><a href="#三关键技术创新" data-for="三关键技术创新">三、关键技术创新</a></li><li class="depth-2"><a href="#31-ald-sno阻挡层" data-for="31-ald-sno阻挡层">3.1 ALD SnO₂阻挡层</a></li><li class="depth-2"><a href="#32-csi添加剂策略" data-for="32-csi添加剂策略">3.2 CsI₃添加剂策略</a></li><li class="depth-1"><a href="#四pl-mapping诊断方法" data-for="四pl-mapping诊断方法">四、PL Mapping诊断方法</a></li><li class="depth-2"><a href="#41-基本概念" data-for="41-基本概念">4.1 基本概念</a></li><li class="depth-2"><a href="#42-为什么红移蓝移对应不同降解机制" data-for="42-为什么红移蓝移对应不同降解机制">4.2 为什么红移/蓝移对应不同降解机制？</a></li><li class="depth-2"><a href="#43-实验参数" data-for="43-实验参数">4.3 实验参数</a></li><li class="depth-1"><a href="#五fai-甲脒碘化物-的性质" data-for="五fai-甲脒碘化物-的性质">五、FAI (甲脒碘化物) 的性质</a></li><li class="depth-2"><a href="#51-化学信息" data-for="51-化学信息">5.1 化学信息</a></li><li class="depth-2"><a href="#52-与其他前驱体对比" data-for="52-与其他前驱体对比">5.2 与其他前驱体对比</a></li><li class="depth-2"><a href="#53-fai的热不稳定性" data-for="53-fai的热不稳定性">5.3 FAI的热不稳定性</a></li><li class="depth-1"><a href="#六不同材料体系的转折温度" data-for="六不同材料体系的转折温度">六、不同材料体系的转折温度</a></li><li class="depth-2"><a href="#61-影响转折点的因素" data-for="61-影响转折点的因素">6.1 影响转折点的因素</a></li><li class="depth-2"><a href="#62-不同体系的估算转折点" data-for="62-不同体系的估算转折点">6.2 不同体系的估算转折点</a></li><li class="depth-2"><a href="#63-封装对转折点的影响" data-for="63-封装对转折点的影响">6.3 封装对转折点的影响</a></li><li class="depth-1"><a href="#七宏观诊断方法" data-for="七宏观诊断方法">七、宏观诊断方法</a></li><li class="depth-2"><a href="#71-两种机制的症状对比" data-for="71-两种机制的症状对比">7.1 两种机制的”症状”对比</a></li><li class="depth-2"><a href="#72-j-v曲线变化特征" data-for="72-j-v曲线变化特征">7.2 J-V曲线变化特征</a></li><li class="depth-1"><a href="#八qa-问答整理" data-for="八qa-问答整理">八、Q&amp;A; 问答整理</a></li><li class="depth-1"><a href="#九关键参数速查表" data-for="九关键参数速查表">九、关键参数速查表</a></li><li class="depth-2"><a href="#91-常用离子半径" data-for="91-常用离子半径">9.1 常用离子半径</a></li><li class="depth-2"><a href="#92-活化能参考值" data-for="92-活化能参考值">9.2 活化能参考值</a></li><li class="depth-2"><a href="#93-带隙参考值" data-for="93-带隙参考值">9.3 带隙参考值</a></li><li class="depth-1"><a href="#十稳定性数据总结" data-for="十稳定性数据总结">十、稳定性数据总结</a></li><li class="depth-1"><a href="#十一对传统认知的修正" data-for="十一对传统认知的修正">十一、对传统认知的修正</a></li><li class="depth-1"><a href="#十二实验方法借鉴" data-for="十二实验方法借鉴">十二、实验方法借鉴</a></li><li class="depth-2"><a href="#确定转折点的实验流程" data-for="确定转折点的实验流程">确定转折点的实验流程</a></li><li class="overflow-end"></li></ul></div><div class="backlinks"><h3>反向链接</h3><ul id="list-2" class="overflow"><li><a href="../🔬-科研笔记/" class="internal">🔬 科研笔记</a></li><li class="overflow-end"></li></ul></div><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v4.5.2</a> © 2026</p><ul><li><a href="https://github.com/wld030303/notes">🌐 GitHub</a></li><li><a href="https://quartz.jzhao.xyz">✍️ 由 Quartz 驱动</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../postscript.js" type="module" data-persist="true"></script></html>

@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh" dir="ltr"><head><title>01 基本建模流程与多物理场耦合</title><meta charset="utf-8"/><link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="og:site_name" content="📝 夔嵬的笔记"/><meta property="og:title" content="01 基本建模流程与多物理场耦合"/><meta property="og:type" content="website"/><meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content="01 基本建模流程与多物理场耦合"/><meta name="twitter:description" content="01 基本建模流程与多物理场耦合 📌 COMSOL 多物理场仿真基础强化培训 · 训练营1 · 150 分钟 · 讲师：魏安然（COMSOL 中国应用工程师） 一、COMSOL 公司简介与软件概览 COMSOL 公司 1986 年成立于瑞典斯德哥尔摩，全球设有 17 个分支机构 旗舰产品 COMSOL Multiphysics — 多物理场仿真平台软件 核心理念：在同一软件平台、相同操作界面对不同物理现象进行统一仿真 产品体系 类别内容核心平台COMSOL Multiphysics — 模型开发器 + 多物理场耦合专业模块电磁、流体传热、结构力学、声学、化工等多功能模块优化、不确定性量化等接..."/><meta property="og:description" content="01 基本建模流程与多物理场耦合 📌 COMSOL 多物理场仿真基础强化培训 · 训练营1 · 150 分钟 · 讲师：魏安然（COMSOL 中国应用工程师） 一、COMSOL 公司简介与软件概览 COMSOL 公司 1986 年成立于瑞典斯德哥尔摩，全球设有 17 个分支机构 旗舰产品 COMSOL Multiphysics — 多物理场仿真平台软件 核心理念：在同一软件平台、相同操作界面对不同物理现象进行统一仿真 产品体系 类别内容核心平台COMSOL Multiphysics — 模型开发器 + 多物理场耦合专业模块电磁、流体传热、结构力学、声学、化工等多功能模块优化、不确定性量化等接..."/><meta property="og:image:alt" content="01 基本建模流程与多物理场耦合 📌 COMSOL 多物理场仿真基础强化培训 · 训练营1 · 150 分钟 · 讲师：魏安然（COMSOL 中国应用工程师） 一、COMSOL 公司简介与软件概览 COMSOL 公司 1986 年成立于瑞典斯德哥尔摩，全球设有 17 个分支机构 旗舰产品 COMSOL Multiphysics — 多物理场仿真平台软件 核心理念：在同一软件平台、相同操作界面对不同物理现象进行统一仿真 产品体系 类别内容核心平台COMSOL Multiphysics — 模型开发器 + 多物理场耦合专业模块电磁、流体传热、结构力学、声学、化工等多功能模块优化、不确定性量化等接..."/><meta property="og:image" content="https://wld030303.github.io/notes/static/og-image.png"/><meta property="og:image:url" content="https://wld030303.github.io/notes/static/og-image.png"/><meta name="twitter:image" content="https://wld030303.github.io/notes/static/og-image.png"/><meta property="og:image:type" content="image/png"/><link rel="canonical" href="https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/01-基本建模流程"/><meta property="twitter:domain" content="wld030303.github.io/notes"/><meta property="og:url" content="https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/01-基本建模流程"/><meta property="twitter:url" content="https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/01-基本建模流程"/><link rel="icon" href="../../static/icon.png"/><meta name="description" content="01 基本建模流程与多物理场耦合 📌 COMSOL 多物理场仿真基础强化培训 · 训练营1 · 150 分钟 · 讲师：魏安然（COMSOL 中国应用工程师） 一、COMSOL 公司简介与软件概览 COMSOL 公司 1986 年成立于瑞典斯德哥尔摩，全球设有 17 个分支机构 旗舰产品 COMSOL Multiphysics — 多物理场仿真平台软件 核心理念：在同一软件平台、相同操作界面对不同物理现象进行统一仿真 产品体系 类别内容核心平台COMSOL Multiphysics — 模型开发器 + 多物理场耦合专业模块电磁、流体传热、结构力学、声学、化工等多功能模块优化、不确定性量化等接..."/><meta name="generator" content="Quartz"/><script type="application/ld+json">{&quot;@context&quot;:&quot;https://schema.org&quot;,&quot;@type&quot;:&quot;Article&quot;,&quot;headline&quot;:&quot;01 基本建模流程与多物理场耦合&quot;,&quot;url&quot;:&quot;https://wld030303.github.io/notes/📖-课堂笔记/COMSOL-基础培训/01-基本建模流程&quot;,&quot;description&quot;:&quot;01 基本建模流程与多物理场耦合 📌 COMSOL 多物理场仿真基础强化培训 · 训练营1 · 150 分钟 · 讲师：魏安然（COMSOL 中国应用工程师） 一、COMSOL 公司简介与软件概览 COMSOL 公司 1986 年成立于瑞典斯德哥尔摩，全球设有 17 个分支机构 旗舰产品 COMSOL Multiphysics — 多物理场仿真平台软件 核心理念：在同一软件平台、相同操作界面对不同物理现象进行统一仿真 产品体系 类别内容核心平台COMSOL Multiphysics — 模型开发器 + 多物理场耦合专业模块电磁、流体传热、结构力学、声学、化工等多功能模块优化、不确定性量化等接...&quot;,&quot;datePublished&quot;:&quot;2026-05-23T16:00:00.000Z&quot;,&quot;dateModified&quot;:&quot;2026-05-23T16:00:00.000Z&quot;}</script><link href="../../index.css" rel="stylesheet" type="text/css" data-persist="true"/><style>.expand-button {
+  position: absolute;
+  display: flex;
+  float: right;
+  padding: 0.4rem;
+  margin: 0.3rem;
+  right: 0;
+  color: var(--gray);
+  border-color: var(--dark);
+  background-color: var(--light);
+  border: 1px solid;
+  border-radius: 5px;
+  opacity: 0;
+  transition: 0.2s;
+}
+.expand-button > svg {
+  fill: var(--light);
+  filter: contrast(0.3);
+}
+.expand-button:hover {
+  cursor: pointer;
+  border-color: var(--secondary);
+}
+.expand-button:focus {
+  outline: 0;
+}
+
+pre:hover > .expand-button {
+  opacity: 1;
+  transition: 0.2s;
+}
+
+#mermaid-container {
+  position: fixed;
+  contain: layout;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: none;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5);
+}
+#mermaid-container.active {
+  display: inline-block;
+}
+#mermaid-container > #mermaid-space {
+  border: 1px solid var(--lightgray);
+  background-color: var(--light);
+  border-radius: 5px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 80vh;
+  width: 80vw;
+  overflow: hidden;
+}
+#mermaid-container > #mermaid-space > .mermaid-content {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease;
+  overflow: visible;
+  min-height: 200px;
+  min-width: 200px;
+}
+#mermaid-container > #mermaid-space > .mermaid-content pre {
+  margin: 0;
+  border: none;
+}
+#mermaid-container > #mermaid-space > .mermaid-content svg {
+  max-width: none;
+  height: auto;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--light);
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--lightgray);
+  background: var(--light);
+  color: var(--dark);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: var(--bodyFont);
+  transition: all 0.2s ease;
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:hover {
+  background: var(--lightgray);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:active {
+  transform: translateY(1px);
+}
+#mermaid-container > #mermaid-space > .mermaid-controls .mermaid-control-button:nth-child(2) {
+  width: auto;
+  padding: 0 12px;
+  font-size: 14px;
+}
+/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiRzpcXE9wZW5DbGF3LVdvcmtzcGFjZVxcbm90ZXMtd2Vic2l0ZVxccXVhcnR6XFxjb21wb25lbnRzXFxzdHlsZXMiLCJzb3VyY2VzIjpbIm1lcm1haWQuaW5saW5lLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUdGO0VBQ0U7OztBQUtGO0VBQ0U7RUFDQTs7O0FBSUo7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBOztBQUVBO0VBQ0U7O0FBR0Y7RUFDRTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7O0FBR0Y7RUFDRTtFQUNBOztBQUlKO0VBQ0U7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTs7QUFFQTtFQUNFO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7RUFDQTtFQUNBO0VBQ0E7O0FBRUE7RUFDRTs7QUFHRjtFQUNFOztBQUlGO0VBQ0U7RUFDQTtFQUNBIiwic291cmNlc0NvbnRlbnQiOlsiLmV4cGFuZC1idXR0b24ge1xuICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gIGRpc3BsYXk6IGZsZXg7XG4gIGZsb2F0OiByaWdodDtcbiAgcGFkZGluZzogMC40cmVtO1xuICBtYXJnaW46IDAuM3JlbTtcbiAgcmlnaHQ6IDA7IC8vIE5PVEU6IHJpZ2h0IHdpbGwgYmUgc2V0IGluIG1lcm1haWQuaW5saW5lLnRzXG4gIGNvbG9yOiB2YXIoLS1ncmF5KTtcbiAgYm9yZGVyLWNvbG9yOiB2YXIoLS1kYXJrKTtcbiAgYmFja2dyb3VuZC1jb2xvcjogdmFyKC0tbGlnaHQpO1xuICBib3JkZXI6IDFweCBzb2xpZDtcbiAgYm9yZGVyLXJhZGl1czogNXB4O1xuICBvcGFjaXR5OiAwO1xuICB0cmFuc2l0aW9uOiAwLjJzO1xuXG4gICYgPiBzdmcge1xuICAgIGZpbGw6IHZhcigtLWxpZ2h0KTtcbiAgICBmaWx0ZXI6IGNvbnRyYXN0KDAuMyk7XG4gIH1cblxuICAmOmhvdmVyIHtcbiAgICBjdXJzb3I6IHBvaW50ZXI7XG4gICAgYm9yZGVyLWNvbG9yOiB2YXIoLS1zZWNvbmRhcnkpO1xuICB9XG5cbiAgJjpmb2N1cyB7XG4gICAgb3V0bGluZTogMDtcbiAgfVxufVxuXG5wcmUge1xuICAmOmhvdmVyID4gLmV4cGFuZC1idXR0b24ge1xuICAgIG9wYWNpdHk6IDE7XG4gICAgdHJhbnNpdGlvbjogMC4ycztcbiAgfVxufVxuXG4jbWVybWFpZC1jb250YWluZXIge1xuICBwb3NpdGlvbjogZml4ZWQ7XG4gIGNvbnRhaW46IGxheW91dDtcbiAgei1pbmRleDogOTk5O1xuICBsZWZ0OiAwO1xuICB0b3A6IDA7XG4gIHdpZHRoOiAxMDB2dztcbiAgaGVpZ2h0OiAxMDB2aDtcbiAgb3ZlcmZsb3c6IGhpZGRlbjtcbiAgZGlzcGxheTogbm9uZTtcbiAgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7XG4gIGJhY2tncm91bmQ6IHJnYmEoMCwgMCwgMCwgMC41KTtcblxuICAmLmFjdGl2ZSB7XG4gICAgZGlzcGxheTogaW5saW5lLWJsb2NrO1xuICB9XG5cbiAgJiA+ICNtZXJtYWlkLXNwYWNlIHtcbiAgICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saWdodGdyYXkpO1xuICAgIGJhY2tncm91bmQtY29sb3I6IHZhcigtLWxpZ2h0KTtcbiAgICBib3JkZXItcmFkaXVzOiA1cHg7XG4gICAgcG9zaXRpb246IGZpeGVkO1xuICAgIHRvcDogNTAlO1xuICAgIGxlZnQ6IDUwJTtcbiAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZSgtNTAlLCAtNTAlKTtcbiAgICBoZWlnaHQ6IDgwdmg7XG4gICAgd2lkdGg6IDgwdnc7XG4gICAgb3ZlcmZsb3c6IGhpZGRlbjtcblxuICAgICYgPiAubWVybWFpZC1jb250ZW50IHtcbiAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTtcbiAgICAgIHRyYW5zZm9ybS1vcmlnaW46IDAgMDtcbiAgICAgIHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjFzIGVhc2U7XG4gICAgICBvdmVyZmxvdzogdmlzaWJsZTtcbiAgICAgIG1pbi1oZWlnaHQ6IDIwMHB4O1xuICAgICAgbWluLXdpZHRoOiAyMDBweDtcblxuICAgICAgcHJlIHtcbiAgICAgICAgbWFyZ2luOiAwO1xuICAgICAgICBib3JkZXI6IG5vbmU7XG4gICAgICB9XG5cbiAgICAgIHN2ZyB7XG4gICAgICAgIG1heC13aWR0aDogbm9uZTtcbiAgICAgICAgaGVpZ2h0OiBhdXRvO1xuICAgICAgfVxuICAgIH1cblxuICAgICYgPiAubWVybWFpZC1jb250cm9scyB7XG4gICAgICBwb3NpdGlvbjogYWJzb2x1dGU7XG4gICAgICBib3R0b206IDIwcHg7XG4gICAgICByaWdodDogMjBweDtcbiAgICAgIGRpc3BsYXk6IGZsZXg7XG4gICAgICBnYXA6IDhweDtcbiAgICAgIHBhZGRpbmc6IDhweDtcbiAgICAgIGJhY2tncm91bmQ6IHZhcigtLWxpZ2h0KTtcbiAgICAgIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpZ2h0Z3JheSk7XG4gICAgICBib3JkZXItcmFkaXVzOiA2cHg7XG4gICAgICBib3gtc2hhZG93OiAwIDJweCA0cHggcmdiYSgwLCAwLCAwLCAwLjEpO1xuICAgICAgei1pbmRleDogMjtcblxuICAgICAgLm1lcm1haWQtY29udHJvbC1idXR0b24ge1xuICAgICAgICBkaXNwbGF5OiBmbGV4O1xuICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyO1xuICAgICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjtcbiAgICAgICAgd2lkdGg6IDMycHg7XG4gICAgICAgIGhlaWdodDogMzJweDtcbiAgICAgICAgcGFkZGluZzogMDtcbiAgICAgICAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHQpO1xuICAgICAgICBjb2xvcjogdmFyKC0tZGFyayk7XG4gICAgICAgIGJvcmRlci1yYWRpdXM6IDRweDtcbiAgICAgICAgY3Vyc29yOiBwb2ludGVyO1xuICAgICAgICBmb250LXNpemU6IDE2cHg7XG4gICAgICAgIGZvbnQtZmFtaWx5OiB2YXIoLS1ib2R5Rm9udCk7XG4gICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzIGVhc2U7XG5cbiAgICAgICAgJjpob3ZlciB7XG4gICAgICAgICAgYmFja2dyb3VuZDogdmFyKC0tbGlnaHRncmF5KTtcbiAgICAgICAgfVxuXG4gICAgICAgICY6YWN0aXZlIHtcbiAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoMXB4KTtcbiAgICAgICAgfVxuXG4gICAgICAgIC8vIFN0eWxlIHRoZSByZXNldCBidXR0b24gZGlmZmVyZW50bHlcbiAgICAgICAgJjpudGgtY2hpbGQoMikge1xuICAgICAgICAgIHdpZHRoOiBhdXRvO1xuICAgICAgICAgIHBhZGRpbmc6IDAgMTJweDtcbiAgICAgICAgICBmb250LXNpemU6IDE0cHg7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cbn1cbiJdfQ== */</style><link href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" rel="stylesheet" type="text/css" data-persist="true"/><script src="../../prescript.js" type="application/javascript" data-persist="true"></script><script type="application/javascript" data-persist="true">const fetchData = fetch("../../static/contentIndex.json").then(data => data.json())</script><link rel="alternate" type="application/rss+xml" title="RSS Feed" href="https://wld030303.github.io/notes/index.xml"/></head><body data-slug="📖-课堂笔记/COMSOL-基础培训/01-基本建模流程"><div id="quartz-root" class="page"><div id="quartz-body"><div class="left sidebar"><h2 class="page-title"><a href="../..">📝 夔嵬的笔记</a></h2><div class="spacer mobile-only"></div><div class="flex-component" style="flex-direction: row; flex-wrap: nowrap; gap: 1rem;"><div style="flex-grow: 1; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><div class="search"><button class="search-button"><svg role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19.9 19.7"><title>Search</title><g class="search-path" fill="none"><path stroke-linecap="square" d="M18.5 18.3l-5.4-5.4"></path><circle cx="8" cy="8" r="7"></circle></g></svg><p>搜索</p></button><div class="search-container"><div class="search-space"><input autocomplete="off" class="search-bar" name="search" type="text" aria-label="搜索些什么" placeholder="搜索些什么"/><div class="search-layout" data-preview="true"></div></div></div></div></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="darkmode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="dayIcon" x="0px" y="0px" viewBox="0 0 35 35" style="enable-background:new 0 0 35 35" xml:space="preserve" aria-label="暗色模式"><title>暗色模式</title><path d="M6,17.5C6,16.672,5.328,16,4.5,16h-3C0.672,16,0,16.672,0,17.5    S0.672,19,1.5,19h3C5.328,19,6,18.328,6,17.5z M7.5,26c-0.414,0-0.789,0.168-1.061,0.439l-2,2C4.168,28.711,4,29.086,4,29.5    C4,30.328,4.671,31,5.5,31c0.414,0,0.789-0.168,1.06-0.44l2-2C8.832,28.289,9,27.914,9,27.5C9,26.672,8.329,26,7.5,26z M17.5,6    C18.329,6,19,5.328,19,4.5v-3C19,0.672,18.329,0,17.5,0S16,0.672,16,1.5v3C16,5.328,16.671,6,17.5,6z M27.5,9    c0.414,0,0.789-0.168,1.06-0.439l2-2C30.832,6.289,31,5.914,31,5.5C31,4.672,30.329,4,29.5,4c-0.414,0-0.789,0.168-1.061,0.44    l-2,2C26.168,6.711,26,7.086,26,7.5C26,8.328,26.671,9,27.5,9z M6.439,8.561C6.711,8.832,7.086,9,7.5,9C8.328,9,9,8.328,9,7.5    c0-0.414-0.168-0.789-0.439-1.061l-2-2C6.289,4.168,5.914,4,5.5,4C4.672,4,4,4.672,4,5.5c0,0.414,0.168,0.789,0.439,1.06    L6.439,8.561z M33.5,16h-3c-0.828,0-1.5,0.672-1.5,1.5s0.672,1.5,1.5,1.5h3c0.828,0,1.5-0.672,1.5-1.5S34.328,16,33.5,16z     M28.561,26.439C28.289,26.168,27.914,26,27.5,26c-0.828,0-1.5,0.672-1.5,1.5c0,0.414,0.168,0.789,0.439,1.06l2,2    C28.711,30.832,29.086,31,29.5,31c0.828,0,1.5-0.672,1.5-1.5c0-0.414-0.168-0.789-0.439-1.061L28.561,26.439z M17.5,29    c-0.829,0-1.5,0.672-1.5,1.5v3c0,0.828,0.671,1.5,1.5,1.5s1.5-0.672,1.5-1.5v-3C19,29.672,18.329,29,17.5,29z M17.5,7    C11.71,7,7,11.71,7,17.5S11.71,28,17.5,28S28,23.29,28,17.5S23.29,7,17.5,7z M17.5,25c-4.136,0-7.5-3.364-7.5-7.5    c0-4.136,3.364-7.5,7.5-7.5c4.136,0,7.5,3.364,7.5,7.5C25,21.636,21.636,25,17.5,25z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="nightIcon" x="0px" y="0px" viewBox="0 0 100 100" style="enable-background:new 0 0 100 100" xml:space="preserve" aria-label="亮色模式"><title>亮色模式</title><path d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"></path></svg></button></div><div style="flex-grow: 0; flex-shrink: 1; flex-basis: auto; order: 0; align-self: center; justify-self: center;"><button class="readermode"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="readerIcon" fill="currentColor" stroke="currentColor" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round" width="64px" height="64px" viewBox="0 0 24 24" aria-label="阅读模式"><title>阅读模式</title><g transform="translate(-1.8, -1.8) scale(1.15, 1.2)"><path d="M8.9891247,2.5 C10.1384702,2.5 11.2209868,2.96705384 12.0049645,3.76669482 C12.7883914,2.96705384 13.8709081,2.5 15.0202536,2.5 L18.7549359,2.5 C19.1691495,2.5 19.5049359,2.83578644 19.5049359,3.25 L19.5046891,4.004 L21.2546891,4.00457396 C21.6343849,4.00457396 21.9481801,4.28672784 21.9978425,4.6528034 L22.0046891,4.75457396 L22.0046891,20.25 C22.0046891,20.6296958 21.7225353,20.943491 21.3564597,20.9931534 L21.2546891,21 L2.75468914,21 C2.37499337,21 2.06119817,20.7178461 2.01153575,20.3517706 L2.00468914,20.25 L2.00468914,4.75457396 C2.00468914,4.37487819 2.28684302,4.061083 2.65291858,4.01142057 L2.75468914,4.00457396 L4.50368914,4.004 L4.50444233,3.25 C4.50444233,2.87030423 4.78659621,2.55650904 5.15267177,2.50684662 L5.25444233,2.5 L8.9891247,2.5 Z M4.50368914,5.504 L3.50468914,5.504 L3.50468914,19.5 L10.9478955,19.4998273 C10.4513189,18.9207296 9.73864328,18.5588115 8.96709342,18.5065584 L8.77307039,18.5 L5.25444233,18.5 C4.87474657,18.5 4.56095137,18.2178461 4.51128895,17.8517706 L4.50444233,17.75 L4.50368914,5.504 Z M19.5049359,17.75 C19.5049359,18.1642136 19.1691495,18.5 18.7549359,18.5 L15.2363079,18.5 C14.3910149,18.5 13.5994408,18.8724714 13.0614828,19.4998273 L20.5046891,19.5 L20.5046891,5.504 L19.5046891,5.504 L19.5049359,17.75 Z M18.0059359,3.999 L15.0202536,4 L14.8259077,4.00692283 C13.9889509,4.06666544 13.2254227,4.50975805 12.7549359,5.212 L12.7549359,17.777 L12.7782651,17.7601316 C13.4923805,17.2719483 14.3447024,17 15.2363079,17 L18.0059359,16.999 L18.0056891,4.798 L18.0033792,4.75457396 L18.0056891,4.71 L18.0059359,3.999 Z M8.9891247,4 L6.00368914,3.999 L6.00599909,4.75457396 L6.00599909,4.75457396 L6.00368914,4.783 L6.00368914,16.999 L8.77307039,17 C9.57551536,17 10.3461406,17.2202781 11.0128313,17.6202194 L11.2536891,17.776 L11.2536891,5.211 C10.8200889,4.56369974 10.1361548,4.13636104 9.37521067,4.02745763 L9.18347055,4.00692283 L8.9891247,4 Z"></path></g></svg></button></div></div><div class="explorer" data-behavior="link" data-collapsed="collapsed" data-savestate="true" data-data-fns="{&quot;order&quot;:[&quot;filter&quot;,&quot;map&quot;,&quot;sort&quot;],&quot;sortFn&quot;:&quot;(a,b)=>!a.isFolder&amp;&amp;!b.isFolder||a.isFolder&amp;&amp;b.isFolder?a.displayName.localeCompare(b.displayName,void 0,{numeric:!0,sensitivity:\&quot;base\&quot;}):!a.isFolder&amp;&amp;b.isFolder?1:-1&quot;,&quot;filterFn&quot;:&quot;node=>!(node.slugSegment===\&quot;tags\&quot;||node.displayName===\&quot;attachments\&quot;||node.displayName.endsWith(\&quot;_\\u56FE\\u7247\&quot;))&quot;,&quot;mapFn&quot;:&quot;node=>node&quot;}"><button type="button" class="explorer-toggle mobile-explorer hide-until-loaded" data-mobile="true" aria-controls="explorer-24"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-menu"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg></button><button type="button" class="title-button explorer-toggle desktop-explorer" data-mobile="false" aria-expanded="true"><h2>探索</h2><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><div id="explorer-24" class="explorer-content" aria-expanded="false" role="group"><ul class="explorer-ul overflow" id="list-0"><li class="overflow-end"></li></ul></div><template id="template-file"><li><a href="#"></a></li></template><template id="template-folder"><li><div class="folder-container"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 8 14 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="folder-icon"><polyline points="6 9 12 15 18 9"></polyline></svg><div><button class="folder-button"><span class="folder-title"></span></button></div></div><div class="folder-outer"><ul class="content"></ul></div></li></template></div></div><div class="center"><div class="page-header"><div class="popover-hint"><nav class="breadcrumb-container" aria-label="breadcrumbs"><div class="breadcrumb-element"><a href="../../">Home</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../📖-课堂笔记/">📖 课堂笔记</a><p> ❯ </p></div><div class="breadcrumb-element"><a href="../../📖-课堂笔记/COMSOL-基础培训/">COMSOL 基础培训</a><p> ❯ </p></div><div class="breadcrumb-element"><a href>01 基本建模流程与多物理场耦合</a></div></nav><h1 class="article-title">01 基本建模流程与多物理场耦合</h1><p show-comma="true" class="content-meta"><time datetime="2026-05-23T16:00:00.000Z">2026年5月24日</time><span>23分钟阅读</span></p><ul class="tags"><li><a href="../../tags/COMSOL" class="internal tag-link">COMSOL</a></li><li><a href="../../tags/多物理场仿真" class="internal tag-link">多物理场仿真</a></li><li><a href="../../tags/基础培训" class="internal tag-link">基础培训</a></li></ul></div></div><article class="popover-hint"><h1 id="01-基本建模流程与多物理场耦合">01 基本建模流程与多物理场耦合<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#01-基本建模流程与多物理场耦合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h1>
+<blockquote>
+<p>📌 COMSOL 多物理场仿真基础强化培训 · 训练营1 · 150 分钟 · 讲师：魏安然（COMSOL 中国应用工程师）</p>
+</blockquote>
+<p><video src="../../📖-课堂笔记/COMSOL-基础培训/COMSOL-训练营1_基本建模流程.mp4" controls></video></p>
+<hr/>
+<h2 id="一comsol-公司简介与软件概览">一、COMSOL 公司简介与软件概览<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#一comsol-公司简介与软件概览" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li><strong>COMSOL</strong> 公司 1986 年成立于瑞典斯德哥尔摩，全球设有 17 个分支机构</li>
+<li>旗舰产品 <strong>COMSOL Multiphysics</strong> — 多物理场仿真平台软件</li>
+<li>核心理念：在同一软件平台、相同操作界面对不同物理现象进行统一仿真</li>
+</ul>
+<h3 id="产品体系">产品体系<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#产品体系" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>类别</th><th>内容</th></tr></thead><tbody><tr><td><strong>核心平台</strong></td><td>COMSOL Multiphysics — 模型开发器 + 多物理场耦合</td></tr><tr><td><strong>专业模块</strong></td><td>电磁、流体传热、结构力学、声学、化工等</td></tr><tr><td><strong>多功能模块</strong></td><td>优化、不确定性量化等</td></tr><tr><td><strong>接口模块</strong></td><td>Live Link（与 CAD 软件协同仿真）</td></tr><tr><td><strong>应用工具</strong></td><td><strong>App 开发器</strong>（封装仿真模型）、<strong>模型管理器</strong>（管理模型与 App）</td></tr><tr><td><strong>部署产品</strong></td><td>COMSOL Compiler（编译可执行文件）、COMSOL Server（部署管理）</td></tr></tbody></table></div>
+<blockquote>
+<p>💡 软件最大特色：不同物理场的耦合方式灵活、添加个数不限、耦合方式不限。</p>
+</blockquote>
+<hr/>
+<h2 id="二建模前的思考">二、建模前的思考<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二建模前的思考" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>在正式建模之前，需要先理清以下问题：</p>
+<ul>
+<li><strong>简化与等效</strong>：是否能简化？100% 仿真计算量往往难以承受</li>
+<li><strong>物理过程</strong>：研究对象包含哪些物理过程？发生在哪些区域？</li>
+<li><strong>耦合关系</strong>：不同物理过程之间以什么方式相互影响？（双向/单向耦合）</li>
+<li><strong>初始条件</strong>：仿真对象是否有初始状态？</li>
+<li><strong>边界条件</strong>：存在哪些约束或环境变量？</li>
+<li><strong>分析类型</strong>：稳态、准静态、瞬态？需选择合适的分析类型</li>
+<li><strong>拓展考虑</strong>：是否需要开发 App、版本管理？</li>
+</ul>
+<hr/>
+<h2 id="三演示案例微阻梁电致热变形">三、演示案例：微阻梁电致热变形<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三演示案例微阻梁电致热变形" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="物理背景">物理背景<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#物理背景" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>微阻梁常用于 <strong>MEMS 器件</strong>。施加电压 → 电流通过 → <strong>焦耳热效应</strong> → 温度升高 → 结构<strong>热膨胀</strong> → 热变形 → 调控安装装置的运动和位置。</p>
+<h3 id="三场耦合关系">三场耦合关系<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#三场耦合关系" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>物理场</th><th>控制方程</th><th>因变量</th><th>耦合关系</th></tr></thead><tbody><tr><td><strong>电流场（电场）</strong></td><td>电流守恒方程</td><td>电势 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">V</span></span></span></span></td><td>→ 焦耳热作为热源</td></tr><tr><td><strong>固体传热（温度场）</strong></td><td>热传导方程</td><td>温度 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span></td><td>← 电导率随温度变化 / → 热膨胀驱动</td></tr><tr><td><strong>固体力学（结构场）</strong></td><td>小变形线弹性理论</td><td>位移 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4444em;"></span><span class="mord mathbf">u</span></span></span></span></td><td>← 温度 → 热应变</td></tr></tbody></table></div>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph LR\n    A[电场&lt;br/>电势 V] -->|焦耳热| B[温度场&lt;br/>温度 T]\n    B -->|电导率热敏性| A\n    B -->|热膨胀| C[结构场&lt;br/>位移 u]&quot;">graph LR
+    A[电场&lt;br/>电势 V] -->|焦耳热| B[温度场&lt;br/>温度 T]
+    B -->|电导率热敏性| A
+    B -->|热膨胀| C[结构场&lt;br/>位移 u]
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<ul>
+<li><strong>电 ↔ 热</strong>：双向耦合（电发热 + 温度影响电导率）</li>
+<li><strong>热 → 力</strong>：单向耦合（温度引起热膨胀，热应变正比于温升 × 热膨胀系数 α）</li>
+</ul>
+<h3 id="边界条件">边界条件<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#边界条件" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>物理场</th><th>边界条件</th></tr></thead><tbody><tr><td>电流</td><td>一端接地（0 V），另一端施加电压（0.2 V），其余面电绝缘</td></tr><tr><td>传热</td><td>底部两端面恒温 20°C，其余表面自然对流换热（<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mspace"> </span><span class="mord"><span class="mord mathrm">W/</span><span class="mopen">(</span><span class="mord"><span class="mord mathrm">m</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathrm mtight">2</span></span></span></span></span></span></span></span><span class="mpunct">⋅</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathrm">K</span><span class="mclose">)</span></span></span></span></span>）</td></tr><tr><td>力学</td><td>底部两端面固定约束，其余自由</td></tr></tbody></table></div>
+<blockquote>
+<p>⚠️ <strong>材料热敏性</strong>：材料属性（如电导率）随温度变化，需在模型中考虑以获得准确结果。</p>
+</blockquote>
+<hr/>
+<h2 id="四软件界面与建模工作流">四、软件界面与建模工作流<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#四软件界面与建模工作流" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="界面布局">界面布局<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#界面布局" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>区域</th><th>功能</th></tr></thead><tbody><tr><td><strong>功能区</strong>（顶部）</td><td>选项卡，包含建模所需的条件和功能</td></tr><tr><td><strong>模型开发器</strong>（左侧）</td><td>模型树，节点按建模流程排列</td></tr><tr><td><strong>设置窗口</strong>（中间）</td><td>点击模型树节点时弹出，配置参数和条件</td></tr><tr><td><strong>图形窗口</strong>（右侧）</td><td>几何和结果显示区，配有常用工具栏</td></tr></tbody></table></div>
+<h3 id="模型树流程自上而下">模型树流程（自上而下）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#模型树流程自上而下" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<pre><code>全局定义 → 几何 → 材料 → 物理场 → 多物理场 → 网格 → 研究 → 结果
+</code></pre>
+<h3 id="模型向导">模型向导<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#模型向导" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>选择<strong>空间维度</strong>：三维 / 二维 / 二维轴对称 / 一维轴对称 / 一维 / 零维</li>
+<li>选择<strong>物理场</strong>：可按分类查找，也可使用预配置的多物理场接口（如「焦耳热和热膨胀」）</li>
+<li>选择<strong>研究类型</strong>：稳态、瞬态等</li>
+</ul>
+<hr/>
+<h2 id="五从简单到复杂逐步添加物理场">五、从简单到复杂：逐步添加物理场<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#五从简单到复杂逐步添加物理场" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<blockquote>
+<p>💡 <strong>推荐策略</strong>：物理场由少到多，耦合效应由简单到复杂，逐步调试。</p>
+</blockquote>
+<ul>
+<li>预配置的「焦耳热和热膨胀」接口已包含三场 + 两耦合节点</li>
+<li>教学演示分两步：
+<ol>
+<li><strong>先电磁热</strong>：电流 + 固体传热 + 电磁热耦合</li>
+<li><strong>再加力学</strong>：添加固体力学 + 热膨胀耦合</li>
+</ol>
+</li>
+</ul>
+<h3 id="禁用启用节点">禁用/启用节点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#禁用启用节点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>💡 任何模型树节点均可右键选择「<strong>禁用</strong>」使其失效，适用于手动耦合时屏蔽默认耦合节点。</p>
+</blockquote>
+<hr/>
+<h2 id="六全局参数定义">六、全局参数定义<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#六全局参数定义" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="定义方式">定义方式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#定义方式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>在「全局定义 → 参数」节点中添加参数，格式：<code>名称 = 值 [单位]</code></p>
+<h3 id="演示案例参数">演示案例参数<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#演示案例参数" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>参数名</th><th>含义</th><th>初始值</th></tr></thead><tbody><tr><td><code>R0</code></td><td>孔半径</td><td>0.1 [μm]</td></tr><tr><td><code>X0</code></td><td>孔中心 X 坐标</td><td>0</td></tr><tr><td><code>V0</code></td><td>施加电压</td><td>0.2 [V]</td></tr><tr><td><code>H0</code></td><td>对流换热系数</td><td>5 [W/(m²·K)]</td></tr></tbody></table></div>
+<h3 id="使用参数的好处">使用参数的好处<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#使用参数的好处" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>统一修改</strong>：修改参数值，所有引用处自动更新</li>
+<li><strong>参数化扫描</strong>：在研究计算中逐个扫描参数值</li>
+<li><strong>App 开发</strong>：App 中输入的值即是对参数的赋值</li>
+</ul>
+<blockquote>
+<p>⚠️ 参数属于<strong>全局量</strong>，在模型各节点均可调用。</p>
+</blockquote>
+<hr/>
+<h2 id="七几何建模">七、几何建模<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#七几何建模" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="建模思路">建模思路<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#建模思路" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>微阻梁厚度均匀 → 2D 截面拉伸成体 → 布尔减圆柱体打孔</p>
+<pre><button class="expand-button" aria-label="Expand mermaid diagram" data-view-component="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 1.06L2.56 7h10.88l-2.22-2.22a.75.75 0 011.06-1.06l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.22-2.22H2.56l2.22 2.22a.75.75 0 11-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06l3.5-3.5z"></path></svg></button><code class="mermaid" data-clipboard="&quot;graph TD\n    A[工作平面 XZ] --> B[多边形画梯形]\n    A --> C[矩形画长方形]\n    B --> D[差集: 梯形 - 长方形]\n    D --> E[拉伸 0.5μm Y方向]\n    E --> F[差集: 体 - 圆柱体R0]\n    F --> G[联合体]&quot;">graph TD
+    A[工作平面 XZ] --> B[多边形画梯形]
+    A --> C[矩形画长方形]
+    B --> D[差集: 梯形 - 长方形]
+    D --> E[拉伸 0.5μm Y方向]
+    E --> F[差集: 体 - 圆柱体R0]
+    F --> G[联合体]
+</code><div id="mermaid-container" role="dialog"><div id="mermaid-space"><div class="mermaid-content"></div></div></div></pre>
+<h3 id="操作要点">操作要点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#操作要点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>步骤</th><th>操作</th><th>关键设置</th></tr></thead><tbody><tr><td>1. 修改单位</td><td>几何节点 → 长度单位</td><td>改为 μm</td></tr><tr><td>2. 创建工作平面</td><td>右键几何 → 工作平面</td><td>对齐 XZ 平面</td></tr><tr><td>3. 绘制梯形</td><td>工作平面 → 多边形</td><td>输入各顶点坐标</td></tr><tr><td>4. 绘制矩形</td><td>工作平面 → 矩形</td><td>宽 0.8，高 0.25，左下角 (0.4, 0)</td></tr><tr><td>5. 布尔差集</td><td>工作平面 → 差集</td><td>梯形减去矩形</td></tr><tr><td>6. 拉伸</td><td>工作平面 → 拉伸</td><td>厚度 0.5 μm</td></tr><tr><td>7. 创建圆柱体</td><td>几何 → 圆柱体</td><td>半径 = <code>R0</code>，高度足够贯穿</td></tr><tr><td>8. 打孔</td><td>几何 → 差集</td><td>体减去圆柱体</td></tr><tr><td>9. 生成联合体</td><td>几何 → 构建所有对象</td><td>形成统一对象</td></tr></tbody></table></div>
+<h3 id="图形操作">图形操作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#图形操作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>操作</th><th>快捷键/方式</th></tr></thead><tbody><tr><td>缩放</td><td>按住鼠标中键 + 上下移动</td></tr><tr><td>平移</td><td>按住鼠标右键 + 移动</td></tr><tr><td>旋转（3D）</td><td>按住鼠标左键 + 拖动</td></tr><tr><td>线框渲染</td><td>点击线框按钮</td></tr><tr><td>透明展示</td><td>点击透明按钮</td></tr><tr><td>剪裁平面</td><td>添加剪裁平面工具</td></tr><tr><td>隐藏/显示</td><td>隐藏按钮 → 点击对象 → 重置隐藏</td></tr><tr><td>快速恢复默认视图</td><td>点击坐标轴小工具</td></tr></tbody></table></div>
+<blockquote>
+<p>💡 更多几何建模功能见第二部分培训。</p>
+</blockquote>
+<hr/>
+<h2 id="八材料分配">八、材料分配<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#八材料分配" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="从材料库添加">从材料库添加<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#从材料库添加" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>右键材料 → 从库中添加材料 → 按场景分类（电池/传热/压电/半导体等）查找 → 双击添加</p>
+<ul>
+<li>材料库自动配置该物理场所需的属性（如电导率、导热系数、热容等）</li>
+<li>空缺属性需自行查找或测试补填</li>
+</ul>
+<h3 id="热敏性材料属性">热敏性材料属性<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#热敏性材料属性" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>材料属性可写成温度的函数：</p>
+<pre><code>电导率 = 基准值 - 0.001 * T[1/K]
+</code></pre>
+<blockquote>
+<p>⚠️ <strong>注意量纲一致</strong>：温度 T 单位为 K，表达式中的系数需配合单位。</p>
+</blockquote>
+<hr/>
+<h2 id="九物理场设置">九、物理场设置<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#九物理场设置" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="电流场">电流场<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#电流场" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>条件</th><th>节点</th><th>位置</th></tr></thead><tbody><tr><td>接地</td><td>右键电流 → 接地</td><td>右端面</td></tr><tr><td>施加电压</td><td>右键电流 → 终端 → 电压</td><td>左端面，值为 <code>V0</code></td></tr><tr><td>默认</td><td>电流守恒 + 电绝缘（所有面）</td><td>—</td></tr></tbody></table></div>
+<h3 id="固体传热">固体传热<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#固体传热" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>条件</th><th>节点</th><th>位置</th></tr></thead><tbody><tr><td>对流换热</td><td>右键固体传热 → 热通量 → 对流热通量</td><td>所有表面（Ctrl+A 全选），<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mord">0</span></span></span></span>，<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">e</span><span class="mord mathnormal mtight">x</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">20</span><span class="mspace"> </span><span class="mord"><span class="mord mathrm">°C</span></span></span></span></span></td></tr><tr><td>恒温边界</td><td>右键固体传热 → 温度</td><td>底部两底面，<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">20</span><span class="mspace"> </span><span class="mord"><span class="mord mathrm">°C</span></span></span></span></span></td></tr></tbody></table></div>
+<h3 id="条件替代关系">条件替代关系<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#条件替代关系" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>💡 展开节点的「<strong>替代和共存</strong>」可查看哪些默认条件被新添加的条件覆盖。图形窗口中蓝色区域表示当前条件实际生效的边界。</p>
+</blockquote>
+<h3 id="固体力学第二步添加">固体力学（第二步添加）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#固体力学第二步添加" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>条件</th><th>节点</th><th>位置</th></tr></thead><tbody><tr><td>固定约束</td><td>右键固体力学 → 固定约束</td><td>底部两底面</td></tr><tr><td>默认</td><td>线弹性材料模型 + 自由边界</td><td>—</td></tr></tbody></table></div>
+<hr/>
+<h2 id="十多物理场耦合">十、多物理场耦合<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十多物理场耦合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="内置耦合节点">内置耦合节点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#内置耦合节点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>耦合节点</th><th>连接场</th><th>耦合机制</th></tr></thead><tbody><tr><td><strong>电磁热</strong></td><td>电流 ↔ 固体传热</td><td>焦耳热 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6861em;"></span><span class="mord mathbf">J</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6861em;"></span><span class="mord mathbf">E</span></span></span></span> 作为热源</td></tr><tr><td><strong>热膨胀</strong></td><td>固体传热 → 固体力学</td><td>热应变 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">ε</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight">h</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4445em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span></td></tr></tbody></table></div>
+<h3 id="手动耦合原理">手动耦合原理<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#手动耦合原理" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>🔑 <strong>核心机制</strong>：在不同物理场的控制方程中<strong>互相调用对方物理场求解出的变量</strong>。</p>
+</blockquote>
+<p>手动设置电磁热耦合的步骤：</p>
+<ol>
+<li>禁用内置的「电磁热」耦合节点</li>
+<li>在固体传热下右键添加「热源」（域条件）</li>
+<li>热源表达式选择「<strong>体积损耗密度，电磁</strong>」（即 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6861em;"></span><span class="mord mathbf">J</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6861em;"></span><span class="mord mathbf">E</span></span></span></span>）</li>
+<li>或自定义表达式：<code>ec.Jx*ec.Ex + ec.Jy*ec.Ey + ec.Jz*ec.Ez</code></li>
+</ol>
+<h3 id="查看变量表达式">查看变量表达式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#查看变量表达式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>💡 在模型开发器中勾选「<strong>方程视图</strong>」（通过眼睛按钮 → 显示更多选项），可在每个物理场节点下查看变量的解析表达式，追溯耦合关系的数学形式。</p>
+</blockquote>
+<h3 id="材料中的耦合">材料中的耦合<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#材料中的耦合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>材料属性中调用温度变量 <code>T</code>（如电导率随温度线性变化），本质上也是不同物理场变量之间的互相调用。</p>
+<blockquote>
+<p>⚠️ 推荐优先使用软件内置的耦合节点，减少手动设置可能出现的疏忽或错误。</p>
+</blockquote>
+<hr/>
+<h2 id="十一网格划分基础">十一、网格划分基础<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十一网格划分基础" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<ul>
+<li>右键网格 → 全部构建，自动划分</li>
+<li>预置 <strong>9 个层级</strong>：极细 → 极粗</li>
+<li>圆孔边等曲面区域会自动细化</li>
+<li>可选择「由物理场控制」的网格尺寸</li>
+</ul>
+<blockquote>
+<p>💡 更多网格功能见第三部分培训。</p>
+</blockquote>
+<hr/>
+<h2 id="十二研究计算与结果可视化">十二、研究计算与结果可视化<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十二研究计算与结果可视化" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="稳态计算">稳态计算<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#稳态计算" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>同时求解电流 + 传热及其耦合</li>
+<li>窗口右下角显示计算进度</li>
+<li>勾选「生成默认绘图」可自动生成电势、电场模、温度分布云图</li>
+</ul>
+<h3 id="结果可视化基础">结果可视化基础<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#结果可视化基础" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>绘图组类型</th><th>用途</th></tr></thead><tbody><tr><td><strong>三维绘图组</strong></td><td>在 3D 几何上显示物理量分布（体图、切面图、流线图等）</td></tr><tr><td><strong>二维绘图组</strong></td><td>某个表面上的物理量分布</td></tr><tr><td><strong>一维绘图组</strong></td><td>XY 曲线图</td></tr></tbody></table></div>
+<h4 id="自定义绘图">自定义绘图<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#自定义绘图" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<pre><code>结果 → 右键 → 三维绘图组 → 右键 → 体图
+→ 表达式栏选择物理量（如固体力学 → von Mises 应力）
+→ 单位、颜色表可调
+</code></pre>
+<h4 id="变形显示">变形显示<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#变形显示" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<p>右键体图 → 变形 → 自动显示位移场 UVW，可调整<strong>变形比例因子</strong>。</p>
+<h4 id="快捷操作">快捷操作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#快捷操作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ul>
+<li>勾选图例「显示最大值和最小值」</li>
+<li>切换表达式单位（如 K → °C）</li>
+<li>顶部工具栏切换视角</li>
+</ul>
+<blockquote>
+<p>💡 更多结果处理功能见第四部分培训。</p>
+</blockquote>
+<hr/>
+<h2 id="十三材料热敏性的影响验证">十三、材料热敏性的影响验证<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十三材料热敏性的影响验证" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>设置</th><th>最高温度</th><th>说明</th></tr></thead><tbody><tr><td>电导率为常数</td><td><strong>~514 °C</strong></td><td>忽略温度对材料属性的影响</td></tr><tr><td>电导率随温度线性下降</td><td><strong>~295 °C</strong></td><td>考虑热敏性后温度大幅下降</td></tr></tbody></table></div>
+<blockquote>
+<p>⚠️ <strong>结论</strong>：材料热敏性对计算结果影响显著，必须纳入模型中才能得到准确的结果。</p>
+</blockquote>
+<hr/>
+<h2 id="十四添加固体力学完整三场耦合">十四、添加固体力学完整三场耦合<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十四添加固体力学完整三场耦合" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<p>完整建模流程（电磁热 + 热膨胀）：</p>
+<ol>
+<li>添加固体力学物理场</li>
+<li>设置固定约束（底部两端面）</li>
+<li>在多物理场下添加「热膨胀」耦合节点</li>
+<li>选择全域，连接传热与固体力学</li>
+<li>热膨胀系数自动从材料节点获取</li>
+<li>计算</li>
+</ol>
+<h3 id="计算结果分析">计算结果分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#计算结果分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li><strong>von Mises 应力</strong>：孔边最大（应力集中效应，符合预期）</li>
+<li><strong>变形</strong>：两端固定不动，中间因高温热膨胀向上鼓起，圆孔端面上抬</li>
+</ul>
+<hr/>
+<h2 id="十五参数化扫描">十五、参数化扫描<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十五参数化扫描" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="基本操作">基本操作<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#基本操作" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>研究 → 右键 → 参数化扫描 → 点击 <code>+</code> 选择参数 → 输入扫描值</p>
+<h3 id="参数值输入方式">参数值输入方式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#参数值输入方式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>方式</th><th>语法</th><th>示例</th></tr></thead><tbody><tr><td>直接列举</td><td>逐个输入</td><td><code>0.05[um] 0.1[um] 0.15[um]</code></td></tr><tr><td>Range 函数</td><td><code>range(起点, 步长, 终点)</code></td><td><code>range(0.05, 0.05, 0.2)</code> → 0.05, 0.10, 0.15, 0.20</td></tr></tbody></table></div>
+<h3 id="扫描类型">扫描类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#扫描类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>类型</th><th>行为</th><th>计算量</th></tr></thead><tbody><tr><td><strong>所有组合</strong></td><td>不同参数间所有可能的匹配情况都计算</td><td>乘积关系（如 3×3 = 9 组）</td></tr><tr><td><strong>指定组合</strong></td><td>参数一一对应组合</td><td>线性关系（如 3 组）</td></tr></tbody></table></div>
+<h3 id="结果查看">结果查看<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#结果查看" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>数据集切换为「参数化解」</li>
+<li>下方列表可选择不同参数值对应的结果</li>
+<li>可扫描几何参数、材料参数、边界条件参数等</li>
+</ul>
+<blockquote>
+<p>⚠️ 扫描参数越多，计算量约呈线性/乘积增长。</p>
+</blockquote>
+<hr/>
+<h2 id="十六辅助扫描">十六、辅助扫描<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十六辅助扫描" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="与参数化扫描的区别">与参数化扫描的区别<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#与参数化扫描的区别" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>特征</th><th>参数化扫描</th><th>辅助扫描</th></tr></thead><tbody><tr><td>各取值间关系</td><td><strong>独立</strong>，每个从头计算</td><td><strong>关联</strong>，上一个结果作为下一个初始值</td></tr><tr><td>计算时间</td><td>与取值个数成正比</td><td>因初始值接近，收敛更快</td></tr><tr><td>本质</td><td>独立重复计算</td><td><strong>逐步载荷加载</strong>过程</td></tr><tr><td>适用参数</td><td>几何/材料/条件参数均可</td><td>仅物理场条件参数和材料属性参数</td></tr></tbody></table></div>
+<h3 id="使用场景">使用场景<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#使用场景" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>载荷逐步加载（如从 1N → 100N → 1000N）</li>
+<li>提高收敛性（大变载时平滑过渡）</li>
+<li>确定临界条件（扫描到某值计算出错 → 该值为稳定性临界值）</li>
+</ul>
+<h3 id="添加方式">添加方式<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#添加方式" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>研究步骤设置 → 展开「研究扩展」→ 勾选「辅助扫描」→ 点击 <code>+</code> 添加参数</p>
+<hr/>
+<h2 id="十七研究类型扩展">十七、研究类型扩展<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十七研究类型扩展" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="稳态-vs-瞬态">稳态 vs 瞬态<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#稳态-vs-瞬态" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>研究类型</th><th>适用场景</th><th>内置变量</th></tr></thead><tbody><tr><td><strong>稳态</strong></td><td>直流电、稳定状态下的发热/变形</td><td>—</td></tr><tr><td><strong>瞬态</strong></td><td>交流电、随时间变化的动态问题</td><td>时间变量 <code>t</code></td></tr></tbody></table></div>
+<h3 id="瞬态分析设置">瞬态分析设置<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#瞬态分析设置" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>边界条件可写成含 <code>t</code> 的表达式：<code>V0 * sin(2*pi*t)</code></li>
+<li>需指定计算终止时间和输出时间步长</li>
+<li><strong>求解器时间步长</strong> ≠ <strong>输出时间步长</strong>，求解器根据收敛性自动调整</li>
+<li>可通过收敛图观察：收敛图下降 = 计算步长增大 = 收敛性良好</li>
+</ul>
+<h3 id="频域分析">频域分析<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#频域分析" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>🔑 对<strong>简谐激励</strong>问题，将时域方程转化为频域求解（稳态方程形式），计算量远小于瞬态。</p>
+</blockquote>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>研究类型</th><th>说明</th></tr></thead><tbody><tr><td><strong>频域-稳态</strong></td><td>交流电磁场（频域）+ 固体传热（稳态），<strong>双向耦合</strong></td></tr><tr><td><strong>频域-稳态，单向耦合</strong></td><td>先算电磁 → 再算传热，单向</td></tr><tr><td><strong>频域-瞬态</strong></td><td>交流电磁场（频域）+ 固体传热（瞬态）</td></tr></tbody></table></div>
+<blockquote>
+<p>💡 频域-稳态/瞬态适用于<strong>多时间尺度</strong>问题：电磁周期极短（频域高效求解），传热时间尺度长（稳态/瞬态求解）。</p>
+</blockquote>
+<h3 id="选择指南">选择指南<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#选择指南" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>电压/载荷恒定 → <strong>稳态</strong></li>
+<li>电压/载荷随时间变化（低频） → <strong>瞬态</strong></li>
+<li>电压/载荷高频简谐变化 → <strong>频域-稳态</strong>（或频域-瞬态）</li>
+</ul>
+<hr/>
+<h2 id="十八优化功能">十八、优化功能<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十八优化功能" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="优化类型">优化类型<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#优化类型" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>类型</th><th>说明</th></tr></thead><tbody><tr><td><strong>参数优化</strong></td><td>调整参数值使目标达到设定值</td></tr><tr><td><strong>形状优化</strong></td><td>直接优化几何形貌</td></tr><tr><td><strong>拓扑优化</strong></td><td>在指定区域内寻找最佳材料分布（通常得到镂空结构）</td></tr></tbody></table></div>
+<h3 id="参数优化演示">参数优化演示<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#参数优化演示" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>目标：通过调整孔半径 <code>R0</code> 使微阻梁电阻 = 30 Ω</p>
+<h4 id="设置步骤">设置步骤<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#设置步骤" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+<ol>
+<li>添加稳态研究</li>
+<li>研究 → 右键 → 优化</li>
+<li>设置目标函数：<code>abs(V_terminal / I_terminal - 30[ohm])</code></li>
+<li>设置控制变量：<code>R0</code>，初始值 0.1，比例因子 0.1</li>
+<li>设置上下界：下界 0.1 μm，上界 0.24 μm</li>
+<li>计算</li>
+</ol>
+<h4 id="优化结果">优化结果<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#优化结果" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>优化变量</th><th>最终值</th><th>对应电阻</th></tr></thead><tbody><tr><td><code>R0</code></td><td>~0.068 μm</td><td>30.004 Ω</td></tr></tbody></table></div>
+<blockquote>
+<p>💡 优化过程会在表格中记录每次迭代的参数值和目标差距，便于追踪收敛过程。计算量比正向参数扫描大，但能找到最优设计。</p>
+</blockquote>
+<hr/>
+<h2 id="十九仿真-app-开发器">十九、仿真 App 开发器<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#十九仿真-app-开发器" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="核心理念">核心理念<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心理念" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<blockquote>
+<p>🔑 将复杂物理模型封装为<strong>简单易用的用户界面</strong>（类似手机 App），供不同角色的用户使用。</p>
+</blockquote>
+<ul>
+<li><strong>后端</strong>（研发者/开发者）：在模型开发器中建立、调试物理模型</li>
+<li><strong>前端</strong>（使用者）：通过 App 界面输入参数、点击按钮即可获得结果，无需了解模型细节</li>
+</ul>
+<h3 id="创建流程">创建流程<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#创建流程" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li>功能区 → 主屏幕 → <strong>App 开发器</strong></li>
+<li>新建表单 → 全局表单 → 选择模板（如「单个表单」）</li>
+<li>添加输入元素（参数：<code>R0</code>, <code>V0</code>, <code>X0</code>, <code>H0</code>）</li>
+<li>添加输出元素（图形窗口、派生值、表格）</li>
+<li>添加按钮（绘制几何、绘制网格、计算、显示温度/电势结果）</li>
+<li>拖动排列布局 → 测试 App</li>
+</ol>
+<h3 id="测试-app-功能">测试 App 功能<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#测试-app-功能" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ul>
+<li>修改输入参数 → 点击按钮执行相应操作</li>
+<li>图形窗口支持与模型开发器相同的旋转/平移/缩放操作</li>
+<li>计算结果实时显示在图形窗口中</li>
+</ul>
+<h3 id="部署与分发">部署与分发<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#部署与分发" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="table-container"><table><thead><tr><th>工具</th><th>功能</th></tr></thead><tbody><tr><td><strong>保存文件</strong></td><td>可选择编辑模式或运行模式</td></tr><tr><td><strong>COMSOL Compiler</strong></td><td>将 App 编译为独立可执行文件，无需 COMSOL 环境即可运行</td></tr><tr><td><strong>COMSOL Server</strong></td><td>部署和管理 App</td></tr></tbody></table></div>
+<h3 id="方法调用高级">方法调用（高级）<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#方法调用高级" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<p>通过「方法」功能编写代码自定义按钮行为，实现更复杂的操作逻辑。</p>
+<hr/>
+<h2 id="二十总结">二十、总结<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#二十总结" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h2>
+<h3 id="核心要点">核心要点<a role="anchor" aria-hidden="true" tabindex="-1" data-no-popover="true" href="#核心要点" class="internal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a></h3>
+<ol>
+<li><strong>多物理场耦合原理</strong>：在不同物理场的控制方程中相互调用对方求解的变量</li>
+<li><strong>建模策略</strong>：由简单到复杂，逐步添加物理场和耦合效应</li>
+<li><strong>建模工作流</strong>：全局定义 → 几何 → 材料 → 物理场 → 多物理场 → 网格 → 研究 → 结果</li>
+<li><strong>耦合方式</strong>：优先使用内置耦合节点，也可手动通过变量调用实现任意形式的耦合</li>
+<li><strong>参数化</strong>：全局参数是参数化扫描、优化、App 开发的基础</li>
+<li><strong>研究类型选择</strong>：根据激励特性和关注的时间尺度，选择稳态/瞬态/频域等</li>
+<li><strong>仿真 App</strong>：将模型封装为用户友好的界面，支持编译为独立可执行文件分发</li>
+</ol>
+<blockquote>
+<p>💡 <strong>材料热敏性不可忽视</strong>：演示案例中，忽略电导率温度效应时最高温度 ~514°C，考虑后降至 ~295°C —— 差异达 ~43%。</p>
+</blockquote>
+<hr/>
+<blockquote>
+<p>🔗 返回：[COMSOL 基础培训_总索引](COMSOL 基础培训_总索引) | 下一部分：[02 几何建模](02 几何建模)</p>
+</blockquote></article><hr/><div class="page-footer"></div></div><div class="right sidebar"><div class="toc desktop-only"><button type="button" class="toc-header" aria-controls="toc-7" aria-expanded="true"><h3>目录</h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fold"><polyline points="6 9 12 15 18 9"></polyline></svg></button><ul id="list-1" class="toc-content overflow"><li class="depth-0"><a href="#01-基本建模流程与多物理场耦合" data-for="01-基本建模流程与多物理场耦合">01 基本建模流程与多物理场耦合</a></li><li class="depth-1"><a href="#一comsol-公司简介与软件概览" data-for="一comsol-公司简介与软件概览">一、COMSOL 公司简介与软件概览</a></li><li class="depth-2"><a href="#产品体系" data-for="产品体系">产品体系</a></li><li class="depth-1"><a href="#二建模前的思考" data-for="二建模前的思考">二、建模前的思考</a></li><li class="depth-1"><a href="#三演示案例微阻梁电致热变形" data-for="三演示案例微阻梁电致热变形">三、演示案例：微阻梁电致热变形</a></li><li class="depth-2"><a href="#物理背景" data-for="物理背景">物理背景</a></li><li class="depth-2"><a href="#三场耦合关系" data-for="三场耦合关系">三场耦合关系</a></li><li class="depth-2"><a href="#边界条件" data-for="边界条件">边界条件</a></li><li class="depth-1"><a href="#四软件界面与建模工作流" data-for="四软件界面与建模工作流">四、软件界面与建模工作流</a></li><li class="depth-2"><a href="#界面布局" data-for="界面布局">界面布局</a></li><li class="depth-2"><a href="#模型树流程自上而下" data-for="模型树流程自上而下">模型树流程（自上而下）</a></li><li class="depth-2"><a href="#模型向导" data-for="模型向导">模型向导</a></li><li class="depth-1"><a href="#五从简单到复杂逐步添加物理场" data-for="五从简单到复杂逐步添加物理场">五、从简单到复杂：逐步添加物理场</a></li><li class="depth-2"><a href="#禁用启用节点" data-for="禁用启用节点">禁用/启用节点</a></li><li class="depth-1"><a href="#六全局参数定义" data-for="六全局参数定义">六、全局参数定义</a></li><li class="depth-2"><a href="#定义方式" data-for="定义方式">定义方式</a></li><li class="depth-2"><a href="#演示案例参数" data-for="演示案例参数">演示案例参数</a></li><li class="depth-2"><a href="#使用参数的好处" data-for="使用参数的好处">使用参数的好处</a></li><li class="depth-1"><a href="#七几何建模" data-for="七几何建模">七、几何建模</a></li><li class="depth-2"><a href="#建模思路" data-for="建模思路">建模思路</a></li><li class="depth-2"><a href="#操作要点" data-for="操作要点">操作要点</a></li><li class="depth-2"><a href="#图形操作" data-for="图形操作">图形操作</a></li><li class="depth-1"><a href="#八材料分配" data-for="八材料分配">八、材料分配</a></li><li class="depth-2"><a href="#从材料库添加" data-for="从材料库添加">从材料库添加</a></li><li class="depth-2"><a href="#热敏性材料属性" data-for="热敏性材料属性">热敏性材料属性</a></li><li class="depth-1"><a href="#九物理场设置" data-for="九物理场设置">九、物理场设置</a></li><li class="depth-2"><a href="#电流场" data-for="电流场">电流场</a></li><li class="depth-2"><a href="#固体传热" data-for="固体传热">固体传热</a></li><li class="depth-2"><a href="#条件替代关系" data-for="条件替代关系">条件替代关系</a></li><li class="depth-2"><a href="#固体力学第二步添加" data-for="固体力学第二步添加">固体力学（第二步添加）</a></li><li class="depth-1"><a href="#十多物理场耦合" data-for="十多物理场耦合">十、多物理场耦合</a></li><li class="depth-2"><a href="#内置耦合节点" data-for="内置耦合节点">内置耦合节点</a></li><li class="depth-2"><a href="#手动耦合原理" data-for="手动耦合原理">手动耦合原理</a></li><li class="depth-2"><a href="#查看变量表达式" data-for="查看变量表达式">查看变量表达式</a></li><li class="depth-2"><a href="#材料中的耦合" data-for="材料中的耦合">材料中的耦合</a></li><li class="depth-1"><a href="#十一网格划分基础" data-for="十一网格划分基础">十一、网格划分基础</a></li><li class="depth-1"><a href="#十二研究计算与结果可视化" data-for="十二研究计算与结果可视化">十二、研究计算与结果可视化</a></li><li class="depth-2"><a href="#稳态计算" data-for="稳态计算">稳态计算</a></li><li class="depth-2"><a href="#结果可视化基础" data-for="结果可视化基础">结果可视化基础</a></li><li class="depth-1"><a href="#十三材料热敏性的影响验证" data-for="十三材料热敏性的影响验证">十三、材料热敏性的影响验证</a></li><li class="depth-1"><a href="#十四添加固体力学完整三场耦合" data-for="十四添加固体力学完整三场耦合">十四、添加固体力学完整三场耦合</a></li><li class="depth-2"><a href="#计算结果分析" data-for="计算结果分析">计算结果分析</a></li><li class="depth-1"><a href="#十五参数化扫描" data-for="十五参数化扫描">十五、参数化扫描</a></li><li class="depth-2"><a href="#基本操作" data-for="基本操作">基本操作</a></li><li class="depth-2"><a href="#参数值输入方式" data-for="参数值输入方式">参数值输入方式</a></li><li class="depth-2"><a href="#扫描类型" data-for="扫描类型">扫描类型</a></li><li class="depth-2"><a href="#结果查看" data-for="结果查看">结果查看</a></li><li class="depth-1"><a href="#十六辅助扫描" data-for="十六辅助扫描">十六、辅助扫描</a></li><li class="depth-2"><a href="#与参数化扫描的区别" data-for="与参数化扫描的区别">与参数化扫描的区别</a></li><li class="depth-2"><a href="#使用场景" data-for="使用场景">使用场景</a></li><li class="depth-2"><a href="#添加方式" data-for="添加方式">添加方式</a></li><li class="depth-1"><a href="#十七研究类型扩展" data-for="十七研究类型扩展">十七、研究类型扩展</a></li><li class="depth-2"><a href="#稳态-vs-瞬态" data-for="稳态-vs-瞬态">稳态 vs 瞬态</a></li><li class="depth-2"><a href="#瞬态分析设置" data-for="瞬态分析设置">瞬态分析设置</a></li><li class="depth-2"><a href="#频域分析" data-for="频域分析">频域分析</a></li><li class="depth-2"><a href="#选择指南" data-for="选择指南">选择指南</a></li><li class="depth-1"><a href="#十八优化功能" data-for="十八优化功能">十八、优化功能</a></li><li class="depth-2"><a href="#优化类型" data-for="优化类型">优化类型</a></li><li class="depth-2"><a href="#参数优化演示" data-for="参数优化演示">参数优化演示</a></li><li class="depth-1"><a href="#十九仿真-app-开发器" data-for="十九仿真-app-开发器">十九、仿真 App 开发器</a></li><li class="depth-2"><a href="#核心理念" data-for="核心理念">核心理念</a></li><li class="depth-2"><a href="#创建流程" data-for="创建流程">创建流程</a></li><li class="depth-2"><a href="#测试-app-功能" data-for="测试-app-功能">测试 App 功能</a></li><li class="depth-2"><a href="#部署与分发" data-for="部署与分发">部署与分发</a></li><li class="depth-2"><a href="#方法调用高级" data-for="方法调用高级">方法调用（高级）</a></li><li class="depth-1"><a href="#二十总结" data-for="二十总结">二十、总结</a></li><li class="depth-2"><a href="#核心要点" data-for="核心要点">核心要点</a></li><li class="overflow-end"></li></ul></div><div class="backlinks"><h3>反向链接</h3><ul id="list-2" class="overflow"><li><a href="../../📖-课堂笔记/COMSOL-基础培训/COMSOL-基础培训_总索引" class="internal">COMSOL 多物理场仿真基础强化培训</a></li><li class="overflow-end"></li></ul></div><div class="graph"><h3>关系图谱</h3><div class="graph-outer"><div class="graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:1,&quot;scale&quot;:1.1,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.3,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:false,&quot;enableRadial&quot;:false}"></div><button class="global-graph-icon" aria-label="Global Graph"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 55 55" fill="currentColor" xml:space="preserve"><path d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17
+                s-3.542,0.634-4.898,1.688l-7.669-7.669C16.785,10.424,17,9.74,17,9c0-2.206-1.794-4-4-4S9,6.794,9,9s1.794,4,4,4
+                c0.74,0,1.424-0.215,2.019-0.567l7.669,7.669C21.634,21.458,21,23.154,21,25s0.634,3.542,1.688,4.897L10.024,42.562
+                C8.958,41.595,7.549,41,6,41c-3.309,0-6,2.691-6,6s2.691,6,6,6s6-2.691,6-6c0-1.035-0.263-2.009-0.726-2.86l12.829-12.829
+                c1.106,0.86,2.44,1.436,3.898,1.619v10.16c-2.833,0.478-5,2.942-5,5.91c0,3.309,2.691,6,6,6s6-2.691,6-6c0-2.967-2.167-5.431-5-5.91
+                v-10.16c1.458-0.183,2.792-0.759,3.898-1.619l7.669,7.669C41.215,39.576,41,40.26,41,41c0,2.206,1.794,4,4,4s4-1.794,4-4
+                s-1.794-4-4-4c-0.74,0-1.424,0.215-2.019,0.567l-7.669-7.669C36.366,28.542,37,26.846,37,25s-0.634-3.542-1.688-4.897l9.665-9.665
+                C46.042,11.405,47.451,12,49,12c3.309,0,6-2.691,6-6S52.309,0,49,0z M11,9c0-1.103,0.897-2,2-2s2,0.897,2,2s-0.897,2-2,2
+                S11,10.103,11,9z M6,51c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S8.206,51,6,51z M33,49c0,2.206-1.794,4-4,4s-4-1.794-4-4
+                s1.794-4,4-4S33,46.794,33,49z M29,31c-3.309,0-6-2.691-6-6s2.691-6,6-6s6,2.691,6,6S32.309,31,29,31z M47,41c0,1.103-0.897,2-2,2
+                s-2-0.897-2-2s0.897-2,2-2S47,39.897,47,41z M49,10c-2.206,0-4-1.794-4-4s1.794-4,4-4s4,1.794,4,4S51.206,10,49,10z"></path></svg></button></div><div class="global-graph-outer"><div class="global-graph-container" data-cfg="{&quot;drag&quot;:true,&quot;zoom&quot;:true,&quot;depth&quot;:-1,&quot;scale&quot;:0.9,&quot;repelForce&quot;:0.5,&quot;centerForce&quot;:0.2,&quot;linkDistance&quot;:30,&quot;fontSize&quot;:0.6,&quot;opacityScale&quot;:1,&quot;showTags&quot;:true,&quot;removeTags&quot;:[],&quot;focusOnHover&quot;:true,&quot;enableRadial&quot;:true}"></div></div></div></div><footer class><p>Created with <a href="https://quartz.jzhao.xyz/">Quartz v4.5.2</a> © 2026</p><ul><li><a href="https://github.com/wld030303/notes">🌐 GitHub</a></li><li><a href="https://quartz.jzhao.xyz">✍️ 由 Quartz 驱动</a></li></ul></footer></div></div></body><script type="application/javascript" data-persist="true">function n(){let t=this.parentElement;t.classList.toggle("is-collapsed");let e=t.getElementsByClassName("callout-content")[0];if(!e)return;let l=t.classList.contains("is-collapsed");e.style.gridTemplateRows=l?"0fr":"1fr"}function c(){let t=document.getElementsByClassName("callout is-collapsible");for(let e of t){let l=e.getElementsByClassName("callout-title")[0],s=e.getElementsByClassName("callout-content")[0];if(!l||!s)continue;l.addEventListener("click",n),window.addCleanup(()=>l.removeEventListener("click",n));let o=e.classList.contains("is-collapsed");s.style.gridTemplateRows=o?"0fr":"1fr"}}document.addEventListener("nav",c);
+</script><script type="module" data-persist="true">function E(a,e){if(!a)return;function t(o){o.target===this&&(o.preventDefault(),o.stopPropagation(),e())}function n(o){o.key.startsWith("Esc")&&(o.preventDefault(),e())}a?.addEventListener("click",t),window.addCleanup(()=>a?.removeEventListener("click",t)),document.addEventListener("keydown",n),window.addCleanup(()=>document.removeEventListener("keydown",n))}function f(a){for(;a.firstChild;)a.removeChild(a.firstChild)}var m=class{constructor(e,t){this.container=e;this.content=t;this.setupEventListeners(),this.setupNavigationControls(),this.resetTransform()}isDragging=!1;startPan={x:0,y:0};currentPan={x:0,y:0};scale=1;MIN_SCALE=.5;MAX_SCALE=3;cleanups=[];setupEventListeners(){let e=this.onMouseDown.bind(this),t=this.onMouseMove.bind(this),n=this.onMouseUp.bind(this),o=this.onTouchStart.bind(this),r=this.onTouchMove.bind(this),i=this.onTouchEnd.bind(this),s=this.resetTransform.bind(this);this.container.addEventListener("mousedown",e),document.addEventListener("mousemove",t),document.addEventListener("mouseup",n),this.container.addEventListener("touchstart",o,{passive:!1}),document.addEventListener("touchmove",r,{passive:!1}),document.addEventListener("touchend",i),window.addEventListener("resize",s),this.cleanups.push(()=>this.container.removeEventListener("mousedown",e),()=>document.removeEventListener("mousemove",t),()=>document.removeEventListener("mouseup",n),()=>this.container.removeEventListener("touchstart",o),()=>document.removeEventListener("touchmove",r),()=>document.removeEventListener("touchend",i),()=>window.removeEventListener("resize",s))}cleanup(){for(let e of this.cleanups)e()}setupNavigationControls(){let e=document.createElement("div");e.className="mermaid-controls";let t=this.createButton("+",()=>this.zoom(.1)),n=this.createButton("-",()=>this.zoom(-.1)),o=this.createButton("Reset",()=>this.resetTransform());e.appendChild(n),e.appendChild(o),e.appendChild(t),this.container.appendChild(e)}createButton(e,t){let n=document.createElement("button");return n.textContent=e,n.className="mermaid-control-button",n.addEventListener("click",t),window.addCleanup(()=>n.removeEventListener("click",t)),n}onMouseDown(e){e.button===0&&(this.isDragging=!0,this.startPan={x:e.clientX-this.currentPan.x,y:e.clientY-this.currentPan.y},this.container.style.cursor="grabbing")}onMouseMove(e){this.isDragging&&(e.preventDefault(),this.currentPan={x:e.clientX-this.startPan.x,y:e.clientY-this.startPan.y},this.updateTransform())}onMouseUp(){this.isDragging=!1,this.container.style.cursor="grab"}onTouchStart(e){if(e.touches.length!==1)return;this.isDragging=!0;let t=e.touches[0];this.startPan={x:t.clientX-this.currentPan.x,y:t.clientY-this.currentPan.y}}onTouchMove(e){if(!this.isDragging||e.touches.length!==1)return;e.preventDefault();let t=e.touches[0];this.currentPan={x:t.clientX-this.startPan.x,y:t.clientY-this.startPan.y},this.updateTransform()}onTouchEnd(){this.isDragging=!1}zoom(e){let t=Math.min(Math.max(this.scale+e,this.MIN_SCALE),this.MAX_SCALE),n=this.content.getBoundingClientRect(),o=n.width/2,r=n.height/2,i=t-this.scale;this.currentPan.x-=o*i,this.currentPan.y-=r*i,this.scale=t,this.updateTransform()}updateTransform(){this.content.style.transform=`translate(${this.currentPan.x}px, ${this.currentPan.y}px) scale(${this.scale})`}resetTransform(){let t=this.content.querySelector("svg").getBoundingClientRect(),n=t.width/this.scale,o=t.height/this.scale;this.scale=1,this.currentPan={x:(this.container.clientWidth-n)/2,y:(this.container.clientHeight-o)/2},this.updateTransform()}},T=["--secondary","--tertiary","--gray","--light","--lightgray","--highlight","--dark","--darkgray","--codeFont"],y;document.addEventListener("nav",async()=>{let e=document.querySelector(".center").querySelectorAll("code.mermaid");if(e.length===0)return;y||=await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.4.0/mermaid.esm.min.mjs");let t=y.default,n=new WeakMap;for(let r of e)n.set(r,r.innerText);async function o(){for(let s of e){s.removeAttribute("data-processed");let c=n.get(s);c&&(s.innerHTML=c)}let r=T.reduce((s,c)=>(s[c]=window.getComputedStyle(document.documentElement).getPropertyValue(c),s),{}),i=document.documentElement.getAttribute("saved-theme")==="dark";t.initialize({startOnLoad:!1,securityLevel:"loose",theme:i?"dark":"base",themeVariables:{fontFamily:r["--codeFont"],primaryColor:r["--light"],primaryTextColor:r["--darkgray"],primaryBorderColor:r["--tertiary"],lineColor:r["--darkgray"],secondaryColor:r["--secondary"],tertiaryColor:r["--tertiary"],clusterBkg:r["--light"],edgeLabelBackground:r["--highlight"]}}),await t.run({nodes:e})}await o(),document.addEventListener("themechange",o),window.addCleanup(()=>document.removeEventListener("themechange",o));for(let r=0;r<e.length;r++){let v=function(){let g=l.querySelector("#mermaid-space"),h=l.querySelector(".mermaid-content");if(!h)return;f(h);let w=i.querySelector("svg").cloneNode(!0);h.appendChild(w),l.classList.add("active"),g.style.cursor="grab",u=new m(g,h)},M=function(){l.classList.remove("active"),u?.cleanup(),u=null},i=e[r],s=i.parentElement,c=s.querySelector(".clipboard-button"),d=s.querySelector(".expand-button"),p=window.getComputedStyle(c),L=c.offsetWidth+parseFloat(p.marginLeft||"0")+parseFloat(p.marginRight||"0");d.style.right=`calc(${L}px + 0.3rem)`,s.prepend(d);let l=s.querySelector("#mermaid-container");if(!l)return;let u=null;d.addEventListener("click",v),E(l,M),window.addCleanup(()=>{u?.cleanup(),d.removeEventListener("click",v)})}});
+</script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/copy-tex.min.js" type="application/javascript" data-persist="true"></script><script src="../../postscript.js" type="module" data-persist="true"></script></html>

@@ -1,0 +1,6 @@
+# Cloudflare Worker config for Decap CMS OAuth Proxy
+name = "notes-oauth"
+main = "oauth-worker.js"
+compatibility_date = "2025-01-01"
+
+# Free tier: 100,000 requests/day (more than enough)

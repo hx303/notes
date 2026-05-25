@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+    <channel>
+      <title>📝 夔嵬的笔记</title>
+      <link>https://wld030303.github.io/notes</link>
+      <description>最近的10条笔记 on 📝 夔嵬的笔记</description>
+      <generator>Quartz -- quartz.jzhao.xyz</generator>
+      <item>
+    <title>01 基本建模流程与多物理场耦合</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/COMSOL-%E5%9F%BA%E7%A1%80%E5%9F%B9%E8%AE%AD/01-%E5%9F%BA%E6%9C%AC%E5%BB%BA%E6%A8%A1%E6%B5%81%E7%A8%8B</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/COMSOL-%E5%9F%BA%E7%A1%80%E5%9F%B9%E8%AE%AD/01-%E5%9F%BA%E6%9C%AC%E5%BB%BA%E6%A8%A1%E6%B5%81%E7%A8%8B</guid>
+    <description><![CDATA[ 01 基本建模流程与多物理场耦合 📌 COMSOL 多物理场仿真基础强化培训 · 训练营1 · 150 分钟 · 讲师：魏安然（COMSOL 中国应用工程师） 一、COMSOL 公司简介与软件概览 COMSOL 公司 1986 年成立于瑞典斯德哥尔摩，全球设有 17 个分支机构 旗舰产品 COMSOL Multiphysics — 多物理场仿真平台软件 核心理念：在同一软件平台、相同操作界面对不同物理现象进行统一仿真 产品体系 类别内容核心平台COMSOL Multiphysics — 模型开发器 + 多物理场耦合专业模块电磁、流体传热、结构力学、声学、化工等多功能模块优化、不确定性量化等接... ]]></description>
+    <pubDate>Sat, 23 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>04 结果处理与可视化</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/COMSOL-%E5%9F%BA%E7%A1%80%E5%9F%B9%E8%AE%AD/04-%E7%BB%93%E6%9E%9C%E5%A4%84%E7%90%86%E4%B8%8E%E5%8F%AF%E8%A7%86%E5%8C%96</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/COMSOL-%E5%9F%BA%E7%A1%80%E5%9F%B9%E8%AE%AD/04-%E7%BB%93%E6%9E%9C%E5%A4%84%E7%90%86%E4%B8%8E%E5%8F%AF%E8%A7%86%E5%8C%96</guid>
+    <description><![CDATA[ 04 结果处理与可视化 📌 COMSOL 多物理场仿真基础强化培训 · 训练营4 · 121 分钟 一、结果处理总览 COMSOL 的结果处理与可视化功能依托于 结果节点（Results） 及其子节点体系： 子节点功能数据集（Datasets）储存计算结果的仓库，是后处理和可视化的基础数据来源派生值（Derived Values）对数据集中的结果做进一步计算（平均值、积分、最大/最小值等）表格（Tables）储存派生值计算结果，支持数据导出绘图组（Plot Groups）以可视化方式展现结果，分三维/二维/一维导出（Export）将结果导出为文件（数据、图像、动画等）报告（Report）自动... ]]></description>
+    <pubDate>Sat, 23 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>🎓 讲座笔记</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%8E%93-%E8%AE%B2%E5%BA%A7%E7%AC%94%E8%AE%B0/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%8E%93-%E8%AE%B2%E5%BA%A7%E7%AC%94%E8%AE%B0/</guid>
+    <description><![CDATA[ 🎓 讲座笔记 共 4 篇笔记： 2027各省选调生考试全攻略 学术出版中AIGC使用边界指南 2.0 CNKI AI 科研工具讲座笔记 亲密关系——读书笔记 . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>🎬 视频笔记</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%8E%AC-%E8%A7%86%E9%A2%91%E7%AC%94%E8%AE%B0/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%8E%AC-%E8%A7%86%E9%A2%91%E7%AC%94%E8%AE%B0/</guid>
+    <description><![CDATA[ 🎬 视频笔记 共 2 篇笔记： 游戏应该怎么设计？ 游戏应该怎么设计？ . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>COMSOL 基础培训</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/COMSOL-%E5%9F%BA%E7%A1%80%E5%9F%B9%E8%AE%AD/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/COMSOL-%E5%9F%BA%E7%A1%80%E5%9F%B9%E8%AE%AD/</guid>
+    <description><![CDATA[ COMSOL 基础培训 共 3 篇笔记： [02 几何建模](02 几何建模) [03 网格划分](03 网格划分) [COMSOL 多物理场仿真基础强化培训](COMSOL 基础培训_总索引) . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>📖 课堂笔记</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/</guid>
+    <description><![CDATA[ 📖 课堂笔记 共 11 篇笔记： 📁 [COMSOL 基础培训](COMSOL 基础培训/) 📁 中华民族发展史 📁 中国近代史 📁 军事理论 📁 大学物理 📁 微积分上 📁 微积分下 📁 思政与社会 📁 有机化学 📁 线性代数 📁 计算机科学 . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>中华民族发展史</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E4%B8%AD%E5%8D%8E%E6%B0%91%E6%97%8F%E5%8F%91%E5%B1%95%E5%8F%B2/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E4%B8%AD%E5%8D%8E%E6%B0%91%E6%97%8F%E5%8F%91%E5%B1%95%E5%8F%B2/</guid>
+    <description><![CDATA[ 中华民族发展史 共 9 篇笔记： 🏛️ 考古学视角下的中华文明起源 从”华夷之辨”到”天下一家 元明两代藏地流迁史——藏族人向内地的大规模流动 元朝大一统下的民族汇流和文化融合 多民族迭兴的时代 完整的天下经验 明代西藏关系探析——多元一体中的柔性治理 高原丝绸之路 鸦片战争与中国近代史的开端 . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>中国近代史</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E4%B8%AD%E5%9B%BD%E8%BF%91%E4%BB%A3%E5%8F%B2/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E4%B8%AD%E5%9B%BD%E8%BF%91%E4%BB%A3%E5%8F%B2/</guid>
+    <description><![CDATA[ 中国近代史 共 8 篇笔记： 专题二：中国社会各阶级对国家出路的早期探索 📜 中国近现代史纲要 · 第二节课笔记 五四运动与中国共产党的建立 元朝大一统下的民族汇流和文化融合 孙中山三民主义思想 辛亥革命 清代多语政治——同文之治 鸦片战争与中国近代史的开端 . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>军事理论</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E5%86%9B%E4%BA%8B%E7%90%86%E8%AE%BA/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E5%86%9B%E4%BA%8B%E7%90%86%E8%AE%BA/</guid>
+    <description><![CDATA[ 军事理论 共 4 篇笔记： 📖 军事理论 · 第一节课笔记 国防教育 · 课堂笔记 国防法规课笔记 强军思想解析 . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item><item>
+    <title>大学物理</title>
+    <link>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E5%A4%A7%E5%AD%A6%E7%89%A9%E7%90%86/</link>
+    <guid>https://wld030303.github.io/notes/%F0%9F%93%96-%E8%AF%BE%E5%A0%82%E7%AC%94%E8%AE%B0/%E5%A4%A7%E5%AD%A6%E7%89%A9%E7%90%86/</guid>
+    <description><![CDATA[ 大学物理 共 14 篇笔记： 动量定理解析 导体、电容与电介质——辅导课笔记 第一章 质点的运动 第三章 质点系的运动定理 第二章 质点的运动定理 第五章 真空中的静电场 第四章 刚体的转动 简答题备考笔记（含完整解答） 绪论 补充：惯性系与伽利略变换 角动量守恒与质点系的运动定理 转动力学 转动力学解惑 — 课堂笔记 高斯定理与电势 . ]]></description>
+    <pubDate>Fri, 22 May 2026 16:00:00 GMT</pubDate>
+  </item>
+    </channel>
+  </rss>
