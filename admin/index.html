@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📝 笔记管理后台</title>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/decap-cms@3/dist/decap-cms.js"></script>
+  <script>
+    // Auto-detect Chinese locale
+    CMS.registerLocale('zh-cn', {
+      auth: {
+        login: '登录',
+        loggingIn: '正在登录...',
+        loginWith: '使用 {provider} 登录',
+      },
+      collection: {
+        create: '新建笔记',
+        creating: '正在创建...',
+      },
+      editor: {
+        send: '发布',
+        publish: '发布',
+        publishAndCreateNew: '发布并新建',
+        delete: '删除',
+      },
+      'editor.editorWidgets.markdown.toolbar.bold': '粗体',
+      'editor.editorWidgets.markdown.toolbar.italic': '斜体',
+      'editor.editorWidgets.markdown.toolbar.code': '代码',
+      'editor.editorWidgets.markdown.toolbar.link': '链接',
+      'editor.editorWidgets.markdown.toolbar.headingOne': '标题 1',
+      'editor.editorWidgets.markdown.toolbar.headingTwo': '标题 2',
+      'editor.editorWidgets.markdown.toolbar.headingThree': '标题 3',
+      'editor.editorWidgets.markdown.toolbar.headingFour': '标题 4',
+      'editor.editorWidgets.markdown.toolbar.quote': '引用',
+      'editor.editorWidgets.markdown.toolbar.bulletedList': '无序列表',
+      'editor.editorWidgets.markdown.toolbar.numberedList': '有序列表',
+    });
+    CMS.init({
+      config: {
+        load_config_file: true,
+      },
+    });
+  </script>
+</body>
+</html>

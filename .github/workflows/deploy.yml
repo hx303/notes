@@ -42,6 +42,9 @@ jobs:
       - name: Build Quartz
         run: npx quartz build
 
+      - name: Copy CMS admin panel
+        run: cp -r admin public/admin
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:

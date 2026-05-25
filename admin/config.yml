@@ -1,0 +1,67 @@
+backend:
+  name: github
+  repo: wld030303/notes
+  branch: main
+  # ⚠️ 部署 OAuth Worker 后替换为实际 URL
+  base_url: https://notes-oauth.YOUR-SUBDOMAIN.workers.dev
+  auth_endpoint: auth
+  squash_merges: true
+  commit_messages:
+    create: "Create {{collection}} \"{{slug}}\" via CMS"
+    update: "Update {{collection}} \"{{slug}}\" via CMS"
+    delete: "Delete {{collection}} \"{{slug}}\" via CMS"
+    uploadMedia: "Upload \"{{path}}\" via CMS"
+    deleteMedia: "Delete \"{{path}}\" via CMS"
+
+# Image uploads → copied to public/ by Quartz Assets emitter
+media_folder: "content/attachments"
+public_folder: "/notes/attachments"
+
+site_url: https://wld030303.github.io/notes
+display_url: https://wld030303.github.io/notes
+logo_url: /notes/static/icon.png
+locale: "zh-cn"
+
+show_preview_links: true
+
+collections:
+  - name: "notes"
+    label: "所有笔记"
+    label_singular: "笔记"
+    description: "编辑任意笔记（含首页）"
+    folder: "content"
+    nested:
+      depth: 100
+    summary: "{{dirname}}/{{title}}"
+    create: true
+    delete: true
+    format: yaml-frontmatter
+    extension: md
+    slug: "{{slug}}"
+    editor:
+      preview: false
+    fields:
+      - label: "标题"
+        name: "title"
+        widget: "string"
+        hint: "将显示为页面标题（H1）和浏览器标签页标题"
+      - label: "日期"
+        name: "date"
+        widget: "datetime"
+        default: ""
+        required: false
+        hint: "留空则不显示日期。格式：YYYY-MM-DD"
+      - label: "描述"
+        name: "description"
+        widget: "text"
+        required: false
+        hint: "SEO 描述，出现在搜索结果和社交分享中（建议 50~160 字）"
+      - label: "标签"
+        name: "tags"
+        widget: "list"
+        required: false
+        hint: "用逗号分隔，例如：物理, COMSOL, 仿真"
+      - label: "正文"
+        name: "body"
+        widget: "markdown"
+        hint: "支持 Markdown 语法、LaTeX 公式（$...$）、Obsidian callout（> [!note]）"
