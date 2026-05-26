@@ -9,8 +9,8 @@ const config: QuartzConfig = {
     enablePopovers: true,
     analytics: null,
     locale: "zh-CN",
-    baseUrl: "wld030303.github.io/notes",
-    ignorePatterns: ["private", "templates", ".obsidian", "_backup", "_backups", "attachments", "*_图片"],
+    baseUrl: "wouldkeep.com",
+    ignorePatterns: ["private", "templates", ".obsidian", "_backup", "_backups"],
     defaultDateType: "created",
     theme: {
       fontOrigin: "local",

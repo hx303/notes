@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "buildCommand": "npx quartz build && node build_images.mjs && copy static\\admin public\\admin\\ /Y",
+  "outputDirectory": "public",
+  "installCommand": "npm install",
+  "framework": null
+}
