@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://wouldkeep.com/sitemap.xml
+Sitemap: https://wld030303.github.io/notes/sitemap.xml

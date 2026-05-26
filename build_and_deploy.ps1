@@ -14,7 +14,7 @@ Write-Host "`n=== 2/4 Copying image attachments ===" -ForegroundColor Cyan
 node build_images.mjs
 
 Write-Host "`n=== 3/4 Copying admin editor + vercel.json ===" -ForegroundColor Cyan
-Copy-Item "$root\vercel.json" "$root\public\vercel.json" -Force
+Copy-Item "$root\static\vercel.json" "$root\public\vercel.json" -Force
 Copy-Item "$root\static\admin" "$root\public\admin" -Recurse -Force
 
 Write-Host "`n=== 4/4 Deploying to Vercel ===" -ForegroundColor Cyan
