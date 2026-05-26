@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>📝 笔记管理后台</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -42,9 +42,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .preview code{background:#2d2d4a;padding:2px 6px;border-radius:3px;font-size:13px}
 .preview pre{background:#2d2d4a;padding:12px 16px;border-radius:6px;overflow-x:auto;margin:10px 0}
 .preview blockquote{border-left:3px solid #e94560;padding-left:16px;color:#a0a0b0;margin:10px 0}
-.preview table{border-collapse:collapse;width:100%;margin:10px 0}
-.preview td,.preview th{border:1px solid #0f3460;padding:6px 12px;text-align:left}
-.preview th{background:#16213e}
 .preview a{color:#e94560}
 button{background:#0f3460;color:#e0e0e0;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .2s}
 button:hover{background:#1a4a8a}
@@ -76,13 +73,11 @@ button.primary:hover{background:#ff6b6b}
 <div class="login-overlay" id="loginScreen">
   <div class="login-box">
     <h2>🔑 输入 GitHub Token</h2>
-    <p>需要 <code>repo</code> 权限来保存笔记</p>
-    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"/>
+    <p>需要 repo 权限来保存笔记</p>
+    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
     <button class="primary" onclick="saveToken()">进入编辑器</button>
     <div class="hint">
-      如何获取？<br>
-      <a href="https://github.com/settings/tokens" target="_blank">打开 GitHub Token 页面</a> →
-      Generate new token (classic) → 勾选 <code>repo</code> → 生成后粘贴到这里<br>
+      已生成 token？打开 GitHub Token <a href="https://github.com/settings/tokens" target="_blank">页面 复制粘贴到这里</a><br />
       <small>Token 只存在你的浏览器里，不会上传</small>
     </div>
   </div>
@@ -91,7 +86,7 @@ button.primary:hover{background:#ff6b6b}
 <div class="modal-overlay" id="newFileModal" style="display:none">
   <div class="modal">
     <h3>新建笔记</h3>
-    <input type="text" id="newFileName" placeholder="文件名，如 4.8_线性变换.md"/>
+    <input type="text" id="newFileName" placeholder="文件名，如 4.8_线性变换.md" />
     <div class="btns">
       <button onclick="closeNewFile()">取消</button>
       <button class="primary" onclick="createFile()">创建</button>
@@ -129,7 +124,7 @@ button.primary:hover{background:#ff6b6b}
 
 <script>
 var REPO = "wld030303/notes";
-var BRANCH = "main";
+var BRANCH = "v4";
 var token = localStorage.getItem("gh_token") || "";
 var currentFile = null;
 var currentSha = "";
@@ -162,6 +157,7 @@ function setStatus(s) {
   el.textContent = s.text;
   el.className = "status " + s.cls;
 }
+
 async function githubAPI(path, method, body) {
   var opts = {
     method: method,
@@ -179,6 +175,7 @@ async function githubAPI(path, method, body) {
   }
   return r.status === 204 ? null : r.json();
 }
+
 async function loadFiles() {
   setStatus({text:"加载中...",cls:"saving"});
   try {
@@ -202,27 +199,31 @@ async function loadFiles() {
     if (e.message.indexOf("401")>-1){localStorage.removeItem("gh_token");location.reload();}
   }
 }
+
 function renderSidebar() {
   var sb = document.getElementById("sidebar");
   sb.innerHTML = files.map(function(folder, fi) {
     var displayName = folder.name || "根目录";
     return '<div class="folder'+(folder.open?" open":"")+'" id="folder'+fi+'">'+
       '<div class="folder-header" onclick="toggleFolder('+fi+')">'+
-        '<span class="arrow">▶</span>📁 ' + escapeHtml(displayName) +
+        '<span class="arrow">\u25b6</span>📁 ' + escapeHtml(displayName) +
         ' <small style="color:#666;margin-left:auto">'+folder.files.length+'</small>'+
       '</div>'+
       '<div class="files">'+
         folder.files.map(function(f, i2) {
           return '<div class="file" id="file'+fi+'_'+i2+'" onclick="openFile('+fi+','+i2+')">'+
-            '📄 ' + escapeHtml(f.name)+
+            '\ud83d\udcc4 ' + escapeHtml(f.name)+
           '</div>';
         }).join("")+
       '</div>'+
     '</div>';
   }).join("");
 }
+
 function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+
 function toggleFolder(i){document.getElementById("folder"+i).classList.toggle("open");}
+
 async function openFile(fi, i2) {
   var f = files[fi].files[i2];
   document.querySelectorAll(".file.active").forEach(function(el){el.classList.remove("active")});
@@ -242,26 +243,29 @@ async function openFile(fi, i2) {
     setStatus({text:"加载失败: "+e.message,cls:"error"});
   }
 }
+
 async function saveFile() {
   if (!currentFile) return alert("请先选择一个文件");
   var content = document.getElementById("editor").value;
   setStatus({text:"保存中...",cls:"saving"});
   document.getElementById("saveBtn").disabled = true;
   try {
+    var encoded = btoa(unescape(encodeURIComponent(content)));
     await githubAPI("contents/" + currentFile.path, "PUT", {
       message: "Update " + currentFile.name + " via admin editor",
-      content: btoa(unescape(encodeURIComponent(content))),
+      content: encoded,
       sha: currentSha,
       branch: BRANCH
     });
     currentSha = "";
-    setStatus({text:"✅ 已保存",cls:"saved"});
-    setTimeout(function(){setStatus({text:"就绪",cls:"idle"})},2000);
+    setStatus({text:"✅ 已保存！告诉我「部署」即可上线",cls:"saved"});
+    setTimeout(function(){setStatus({text:"就绪",cls:"idle"})},4000);
   } catch(e) {
     setStatus({text:"保存失败: "+e.message,cls:"error"});
   }
   document.getElementById("saveBtn").disabled = false;
 }
+
 function togglePreview() {
   var p = document.getElementById("preview");
   var textarea = document.getElementById("editor");
@@ -274,12 +278,15 @@ function togglePreview() {
     textarea.style.flex = "0.5";
   }
 }
+
 function newFile() {
   if (!currentFile) { alert("请先选择一个文件夹（点击文件夹内的文件）"); return; }
   document.getElementById("newFileModal").style.display = "flex";
   document.getElementById("newFileName").focus();
 }
+
 function closeNewFile() { document.getElementById("newFileModal").style.display = "none"; }
+
 async function createFile() {
   var name = document.getElementById("newFileName").value.trim();
   if (!name) return;
@@ -288,9 +295,10 @@ async function createFile() {
   var newPath = prefix + "/" + name;
   var fm = "---\ntitle: \"" + name.replace(".md","") + "\"\ndate: " + new Date().toISOString().split("T")[0] + "\n---\n\n";
   try {
+    var encoded = btoa(unescape(encodeURIComponent(fm)));
     await githubAPI("contents/" + newPath, "PUT", {
       message: "Create " + name,
-      content: btoa(unescape(encodeURIComponent(fm))),
+      content: encoded,
       branch: BRANCH
     });
     closeNewFile();
@@ -300,6 +308,7 @@ async function createFile() {
     setStatus({text:"创建失败: "+e.message,cls:"error"});
   }
 }
+
 function saveToken() {
   var t = document.getElementById("tokenInput").value.trim();
   if (!t) return;
@@ -307,6 +316,7 @@ function saveToken() {
   localStorage.setItem("gh_token", t);
   init();
 }
+
 function init() {
   if (!token) {
     document.getElementById("loginScreen").style.display = "flex";
@@ -321,9 +331,11 @@ function init() {
   document.getElementById("emptyState").style.display = "flex";
   loadFiles();
 }
+
 document.addEventListener("keydown", function(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); saveFile(); }
 });
+
 init();
 </script>
 </body>
