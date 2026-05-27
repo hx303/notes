@@ -19,32 +19,39 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
-.header{background:#16213e;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:48px}
-.header h1{font-size:17px;color:#e94560}
-.header .actions{display:flex;gap:8px;align-items:center}
+.header{background:#16213e;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:44px;gap:8px}
+.header h1{font-size:16px;color:#e94560;white-space:nowrap;flex-shrink:0}
+.header .actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 
-.main{display:flex;flex:1;overflow:hidden}
-.sidebar{width:260px;min-width:260px;background:#16213e;overflow-y:auto;border-right:1px solid #0f3460;padding:8px 0;flex-shrink:0}
+/* Hamburger menu button - hidden on desktop */
+.hamburger{display:none;background:transparent!important;border:none!important;font-size:20px;cursor:pointer;padding:4px 6px!important;color:#e0e0e0;flex-shrink:0;line-height:1}
+.hamburger:hover{opacity:0.7}
+
+.main{display:flex;flex:1;overflow:hidden;position:relative}
+.sidebar{width:260px;min-width:260px;max-width:85vw;background:#16213e;overflow-y:auto;border-right:1px solid #0f3460;padding:8px 0;flex-shrink:0;transition:transform .25s cubic-bezier(0.4,0,0.2,1);z-index:50}
 .sidebar .folder{margin:1px 0}
-.sidebar .folder-header{padding:6px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:13px;color:#a0a0b0;user-select:none}
+.sidebar .folder-header{padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:13px;color:#a0a0b0;user-select:none;-webkit-tap-highlight-color:transparent}
 .sidebar .folder-header:hover{background:#0f3460}
 .sidebar .folder-header .arrow{font-size:9px;transition:transform .2s}
 .sidebar .folder.open>.folder-header .arrow{transform:rotate(90deg)}
 .sidebar .folder .files{max-height:0;overflow:hidden;transition:max-height .3s}
 .sidebar .folder.open .files{max-height:4000px}
-.sidebar .file{padding:5px 14px 5px 30px;cursor:pointer;font-size:12.5px;color:#c0c0d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar .file{padding:10px 14px 10px 30px;cursor:pointer;font-size:13px;color:#c0c0d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-tap-highlight-color:transparent;min-height:40px;display:flex;align-items:center}
 .sidebar .file:hover{background:#0f3460}
 .sidebar .file.active{background:#e94560;color:#fff}
 
+/* Sidebar overlay for mobile */
+.sidebar-backdrop{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:40}
+
 .editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.toolbar{background:#16213e;padding:8px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:40px}
-.toolbar .path{flex:1;font-size:12px;color:#a0a0b0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.toolbar .status{font-size:11px;padding:3px 10px;border-radius:3px;white-space:nowrap}
+.toolbar{background:#16213e;padding:6px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:36px;flex-wrap:wrap}
+.toolbar .path{flex:1;font-size:11px;color:#a0a0b0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.toolbar .status{font-size:10px;padding:2px 8px;border-radius:3px;white-space:nowrap;flex-shrink:0}
 .toolbar .status.idle{background:#333;color:#888}
 .toolbar .status.saved{background:#155724;color:#4caf50}
 .toolbar .status.error{background:#721c24;color:#f44336}
 .toolbar .status.saving{background:#1a5c2a;color:#81c784}
-.toolbar .mode-indicator{font-size:11px;padding:3px 8px;border-radius:3px;background:#0f3460;color:#e94560;white-space:nowrap}
+.toolbar .mode-indicator{font-size:10px;padding:2px 6px;border-radius:3px;background:#0f3460;color:#e94560;white-space:nowrap;flex-shrink:0}
 
 .editor-wrap{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
 
@@ -140,6 +147,62 @@ body.light .color-btn-group input[type=color]:hover{border-color:#c0392b}
 body.light .color-btn-group .color-label{color:#888}
 
 .empty-state{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:15px;flex-direction:column;gap:12px;flex:1}
+.empty-state span:first-child{font-size:48px}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .hamburger{display:block}
+
+  .header{padding:6px 10px;min-height:42px}
+  .header h1{font-size:14px}
+  .header .actions{gap:4px}
+  .header .actions button{padding:5px 8px;font-size:11px}
+  .header .toggle-btn{padding:3px 6px;font-size:10px}
+
+  /* Sidebar = overlay from left */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:2px 0 12px rgba(0,0,0,.3)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-backdrop.open{display:block}
+
+  /* Make sidebar items more touch-friendly */
+  .sidebar .folder-header{padding:10px 14px;font-size:14px;min-height:42px;align-items:center}
+  .sidebar .file{padding:11px 14px 11px 30px;font-size:13.5px;min-height:44px}
+
+  /* Toolbar */
+  .toolbar{padding:5px 8px;gap:4px;min-height:32px}
+  .toolbar .path{font-size:10px}
+  .toolbar .status{font-size:9px;padding:2px 6px}
+
+  /* Hide mode indicator on very narrow screens */
+  .mode-indicator{display:none!important}
+
+  /* Editor takes full width */
+  .editor-area{width:100%}
+
+  /* Toast UI editor adjustments */
+  .toastui-editor-defaultUI-toolbar{overflow-x:auto;flex-wrap:nowrap!important;padding:4px 8px!important}
+  .toastui-editor-defaultUI-toolbar button{min-width:28px;height:28px;padding:2px!important;margin:1px!important}
+  .toastui-editor-md-container .toastui-editor{font-size:14px!important}
+  .toastui-editor-ww-container .toastui-editor{font-size:14px!important}
+  .ProseMirror{font-size:14px!important}
+  .toastui-editor-contents{font-size:14px!important}
+
+  /* Modal */
+  .modal{min-width:auto;width:90vw;padding:20px;max-width:360px}
+  .login-box{max-width:90vw;padding:24px 20px}
+  .login-box h2{font-size:16px}
+
+  /* Empty state */
+  .empty-state{font-size:14px}
+  .empty-state span:first-child{font-size:36px}
+
+  /* Color buttons on mobile */
+  .color-btn-group{margin:0 2px}
+  .color-btn-group input[type=color]{width:22px;height:22px}
+
+  /* Make scrollbar thinner on mobile */
+  ::-webkit-scrollbar{width:4px}
+}
 
 .login-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#1a1a2e;display:flex;align-items:center;justify-content:center;z-index:100}
 .login-box{background:#16213e;padding:30px 40px;border-radius:12px;text-align:center;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
@@ -198,6 +261,7 @@ button.toggle-btn:hover{opacity:0.85}
 </div>
 
 <div class="header" id="mainUI" style="display:none">
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" title="文件列表">☰</button>
   <h1>📝 笔记后台</h1>
   <div class="actions">
     <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="切换亮色/暗色主题">🌓</button>
@@ -207,6 +271,7 @@ button.toggle-btn:hover{opacity:0.85}
   </div>
 </div>
 <div class="main" id="mainUI2" style="display:none">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="sidebar"></div>
   <div class="editor-area">
     <div class="toolbar">
@@ -421,6 +486,19 @@ function renderSidebar() {
 function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
 function toggleFolder(i){document.getElementById("folder"+i).classList.toggle("open");}
 
+/* Sidebar toggle for mobile */
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarBackdrop").classList.toggle("open");
+}
+/* Close sidebar when a file is selected on mobile */
+function closeSidebarOnMobile() {
+  if (window.innerWidth <= 768) {
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebarBackdrop").classList.remove("open");
+  }
+}
+
 function decodeContent(b64) {
   try {
     var binary = atob(b64);
@@ -454,6 +532,7 @@ function encodeContent(str) {
 
 async function openFile(fi, i2) {
   var f = files[fi].files[i2];
+  closeSidebarOnMobile();
   document.querySelectorAll(".file.active").forEach(function(el){el.classList.remove("active")});
   document.getElementById("file"+fi+"_"+i2).classList.add("active");
   document.getElementById("emptyState").style.display = "none";
