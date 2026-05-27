@@ -1,4 +1,4 @@
-const CACHE = "wouldkeep-admin-v1";
+const CACHE = "wouldkeep-admin-v2";
 const ASSETS = [
   "/admin/",
   "/admin/index.html",
@@ -35,7 +35,21 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // For static assets, cache-first
+  // For HTML, network-first (always get latest)
+  if (e.request.url.endsWith('.html') || e.request.url.endsWith('/admin/') || e.request.url.endsWith('/admin')) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp.ok) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(cache => cache.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // For other static assets, cache-first
   e.respondWith(
     caches.match(e.request).then(cached =>
       cached || fetch(e.request).then(resp => {

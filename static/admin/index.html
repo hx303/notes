@@ -357,56 +357,38 @@ function initEditor() {
     }
   });
 
-  // Add custom color toolbar buttons
-  addColorButtons();
+  // Add custom color pickers via official insertToolbarItem API
+  setTimeout(function() { addColorButtons(); }, 200);
   updateModeUI();
 }
 
 function addColorButtons() {
-  function injectColors(toolbar) {
-    if (toolbar.querySelector('.color-btn-group')) return;
-    var group = document.createElement('span');
-    group.className = 'color-btn-group';
-    group.innerHTML =
-      '<span class="color-label">A</span>' +
-      '<input type="color" id="foreColorPicker" value="#e0e0e0" title="文字颜色">' +
-      '<input type="color" id="backColorPicker" value="#000000" title="背景高亮">';
-    toolbar.appendChild(group);
+  if (!editor) return;
 
-    document.getElementById('foreColorPicker').onchange = function(e) {
-      applyColor(e.target.value, 'color');
-    };
-    document.getElementById('backColorPicker').onchange = function(e) {
-      applyColor(e.target.value, 'background-color');
-    };
+  try {
+    var forePicker = document.createElement('input');
+    forePicker.type = 'color';
+    forePicker.value = '#e0e0e0';
+    forePicker.title = '文字颜色';
+    forePicker.style.cssText = 'width:24px;height:24px;border:1px solid #0f3460;border-radius:3px;padding:0;cursor:pointer;background:transparent;vertical-align:middle';
+    forePicker.addEventListener('input', function(e) { applyColor(e.target.value, 'color'); });
+
+    var backPicker = document.createElement('input');
+    backPicker.type = 'color';
+    backPicker.value = '#000000';
+    backPicker.title = '背景高亮';
+    backPicker.style.cssText = 'width:24px;height:24px;border:1px solid #0f3460;border-radius:3px;padding:0;cursor:pointer;background:transparent;vertical-align:middle;margin-left:2px';
+    backPicker.addEventListener('input', function(e) { applyColor(e.target.value, 'background-color'); });
+
+    editor.insertToolbarItem({ groupIndex: 0, itemIndex: 0 }, {
+      name: 'foreColor', tooltip: '文字颜色', el: forePicker
+    });
+    editor.insertToolbarItem({ groupIndex: 0, itemIndex: 1 }, {
+      name: 'backColor', tooltip: '背景高亮', el: backPicker
+    });
+  } catch(e) {
+    console.warn('addColorButtons failed:', e);
   }
-
-  // Try immediate first
-  var toolbar = document.querySelector('.toastui-editor-defaultUI-toolbar');
-  if (toolbar) { injectColors(toolbar); return; }
-
-  // Fallback: MutationObserver to catch async rendering
-  var observer = new MutationObserver(function(mutations, obs) {
-    var toolbar = document.querySelector('.toastui-editor-defaultUI-toolbar');
-    if (toolbar) {
-      injectColors(toolbar);
-      obs.disconnect();
-    }
-  });
-  observer.observe(document.getElementById('editorWrap'), { childList: true, subtree: true });
-
-  // Safety: also retry with polling for 5s
-  var attempts = 0;
-  var interval = setInterval(function() {
-    var toolbar = document.querySelector('.toastui-editor-defaultUI-toolbar');
-    if (toolbar) {
-      injectColors(toolbar);
-      clearInterval(interval);
-      try { observer.disconnect(); } catch(e) {}
-    }
-    attempts++;
-    if (attempts > 50) { clearInterval(interval); try { observer.disconnect(); } catch(e) {} }
-  }, 100);
 }
 
 function applyColor(color, prop) {
