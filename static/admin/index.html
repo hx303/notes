@@ -363,31 +363,50 @@ function initEditor() {
 }
 
 function addColorButtons() {
-  // Editor toolbar renders async - retry up to 20 times (2s)
-  var attempts = 0;
-  function tryAdd() {
-    var toolbar = document.querySelector('.toastui-editor-defaultUI-toolbar');
-    if (toolbar && !toolbar.querySelector('.color-btn-group')) {
-      var group = document.createElement('span');
-      group.className = 'color-btn-group';
-      group.innerHTML =
-        '<span class="color-label">A</span>' +
-        '<input type="color" id="foreColorPicker" value="#e0e0e0" title="Text color">' +
-        '<input type="color" id="backColorPicker" value="#000000" title="Highlight color">';
-      toolbar.appendChild(group);
+  function injectColors(toolbar) {
+    if (toolbar.querySelector('.color-btn-group')) return;
+    var group = document.createElement('span');
+    group.className = 'color-btn-group';
+    group.innerHTML =
+      '<span class="color-label">A</span>' +
+      '<input type="color" id="foreColorPicker" value="#e0e0e0" title="文字颜色">' +
+      '<input type="color" id="backColorPicker" value="#000000" title="背景高亮">';
+    toolbar.appendChild(group);
 
-      document.getElementById('foreColorPicker').onchange = function(e) {
-        applyColor(e.target.value, 'color');
-      };
-      document.getElementById('backColorPicker').onchange = function(e) {
-        applyColor(e.target.value, 'background-color');
-      };
-    } else if (attempts < 20) {
-      attempts++;
-      setTimeout(tryAdd, 100);
-    }
+    document.getElementById('foreColorPicker').onchange = function(e) {
+      applyColor(e.target.value, 'color');
+    };
+    document.getElementById('backColorPicker').onchange = function(e) {
+      applyColor(e.target.value, 'background-color');
+    };
   }
-  setTimeout(tryAdd, 100);
+
+  // Try immediate first
+  var toolbar = document.querySelector('.toastui-editor-defaultUI-toolbar');
+  if (toolbar) { injectColors(toolbar); return; }
+
+  // Fallback: MutationObserver to catch async rendering
+  var observer = new MutationObserver(function(mutations, obs) {
+    var toolbar = document.querySelector('.toastui-editor-defaultUI-toolbar');
+    if (toolbar) {
+      injectColors(toolbar);
+      obs.disconnect();
+    }
+  });
+  observer.observe(document.getElementById('editorWrap'), { childList: true, subtree: true });
+
+  // Safety: also retry with polling for 5s
+  var attempts = 0;
+  var interval = setInterval(function() {
+    var toolbar = document.querySelector('.toastui-editor-defaultUI-toolbar');
+    if (toolbar) {
+      injectColors(toolbar);
+      clearInterval(interval);
+      try { observer.disconnect(); } catch(e) {}
+    }
+    attempts++;
+    if (attempts > 50) { clearInterval(interval); try { observer.disconnect(); } catch(e) {} }
+  }, 100);
 }
 
 function applyColor(color, prop) {
