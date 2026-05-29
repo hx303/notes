@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>📝 笔记管理后台</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="wouldkeep" />
+<link rel="apple-touch-icon" href="/admin/icon-192.png" />
+<link rel="manifest" href="/admin/manifest.json" />
+<meta name="theme-color" content="#16213e" />
+
+<!-- Toast UI Editor -->
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<link rel="stylesheet" href="https://uicdn.toast.com/editor-plugin-code-syntax-highlight/latest/toastui-editor-plugin-code-syntax-highlight.min.css" />
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+.header{background:#16213e;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:44px;gap:8px}
+.header h1{font-size:16px;color:#e94560;white-space:nowrap;flex-shrink:0}
+.header .actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+/* Hamburger menu button - hidden on desktop */
+.hamburger{display:none;background:transparent!important;border:none!important;font-size:20px;cursor:pointer;padding:4px 6px!important;color:#e0e0e0;flex-shrink:0;line-height:1}
+.hamburger:hover{opacity:0.7}
+
+.main{display:flex;flex:1;overflow:hidden;position:relative}
+.sidebar{width:260px;min-width:260px;max-width:85vw;background:#16213e;overflow-y:auto;border-right:1px solid #0f3460;padding:8px 0;flex-shrink:0;transition:transform .25s cubic-bezier(0.4,0,0.2,1);z-index:50}
+.sidebar .folder{margin:1px 0}
+.sidebar .folder-header{padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:13px;color:#a0a0b0;user-select:none;-webkit-tap-highlight-color:transparent}
+.sidebar .folder-header:hover{background:#0f3460}
+.sidebar .folder-header .arrow{font-size:9px;transition:transform .2s}
+.sidebar .folder.open>.folder-header .arrow{transform:rotate(90deg)}
+.sidebar .folder .files{max-height:0;overflow:hidden;transition:max-height .3s}
+.sidebar .folder.open .files{max-height:4000px}
+.sidebar .file{padding:10px 14px 10px 30px;cursor:pointer;font-size:13px;color:#c0c0d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-tap-highlight-color:transparent;min-height:40px;display:flex;align-items:center}
+.sidebar .file:hover{background:#0f3460}
+.sidebar .file.active{background:#e94560;color:#fff}
+
+/* Sidebar overlay for mobile */
+.sidebar-backdrop{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:40}
+
+.editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.toolbar{background:#16213e;padding:6px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:36px;flex-wrap:wrap}
+.toolbar .path{flex:1;font-size:11px;color:#a0a0b0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.toolbar .status{font-size:10px;padding:2px 8px;border-radius:3px;white-space:nowrap;flex-shrink:0}
+.toolbar .status.idle{background:#333;color:#888}
+.toolbar .status.saved{background:#155724;color:#4caf50}
+.toolbar .status.error{background:#721c24;color:#f44336}
+.toolbar .status.saving{background:#1a5c2a;color:#81c784}
+.toolbar .mode-indicator{font-size:10px;padding:2px 6px;border-radius:3px;background:#0f3460;color:#e94560;white-space:nowrap;flex-shrink:0}
+
+.editor-wrap{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
+
+/* Toast UI theme override - dark mode */
+.toastui-editor-defaultUI{border:none!important;border-radius:0!important}
+.toastui-editor-defaultUI-toolbar{background:#16213e!important;border-color:#0f3460!important}
+.toastui-editor-defaultUI-toolbar button{color:#c0c0d0!important;border-color:transparent!important}
+.toastui-editor-defaultUI-toolbar button:hover{background:#0f3460!important;color:#fff!important}
+.toastui-editor-defaultUI-toolbar button.active{background:#e94560!important;color:#fff!important}
+.toastui-editor-mode-switch{background:#0f3460!important;border-color:#1a4a8a!important}
+.toastui-editor-mode-switch .tab-item{color:#888!important}
+.toastui-editor-mode-switch .tab-item.active{background:#e94560!important;color:#fff!important}
+.toastui-editor-md-container{background:#1a1a2e!important}
+.toastui-editor-md-container .toastui-editor{background:#1a1a2e!important;color:#e0e0e0!important}
+.toastui-editor-md-preview{background:#1e1e35!important}
+.toastui-editor-ww-container{background:#1a1a2e!important}
+.toastui-editor-ww-container .toastui-editor{background:#1a1a2e!important;color:#e0e0e0!important}
+.ProseMirror{color:#e0e0e0!important;min-height:100%!important}
+.ProseMirror h1{color:#e94560!important}
+.ProseMirror h2{color:#ff6b6b!important}
+.ProseMirror h3{color:#ffa07a!important}
+.ProseMirror code{background:#2d2d4a!important;color:#81c784!important}
+.ProseMirror pre{background:#2d2d4a!important}
+.ProseMirror blockquote{border-left-color:#e94560!important;color:#a0a0b0!important}
+.ProseMirror a{color:#e94560!important}
+.toastui-editor-contents{font-size:15px!important;line-height:1.8!important}
+
+/* ===== Light theme ===== */
+body.light{background:#f5f5f5;color:#333}
+body.light .header{background:#fff;border-color:#e0e0e0}
+body.light .header h1{color:#c0392b}
+body.light .sidebar{background:#fff;border-color:#e0e0e0}
+body.light .sidebar .folder-header{color:#555}
+body.light .sidebar .folder-header:hover{background:#eee}
+body.light .sidebar .file{color:#444}
+body.light .sidebar .file:hover{background:#eee}
+body.light .sidebar .file.active{background:#c0392b;color:#fff}
+body.light .toolbar{background:#fff;border-color:#e0e0e0}
+body.light .toolbar .path{color:#888}
+body.light .toolbar .status.idle{background:#e0e0e0;color:#666}
+body.light .mode-indicator{background:#f0f0f0;color:#c0392b}
+body.light .toastui-editor-defaultUI-toolbar{background:#f5f5f5!important;border-color:#ddd!important}
+body.light .toastui-editor-defaultUI-toolbar button{color:#333!important}
+body.light .toastui-editor-defaultUI-toolbar button:hover{background:#e0e0e0!important;color:#000!important}
+body.light .toastui-editor-defaultUI-toolbar button.active{background:#c0392b!important;color:#fff!important}
+body.light .toastui-editor-mode-switch{background:#f0f0f0!important;border-color:#ddd!important}
+body.light .toastui-editor-mode-switch .tab-item{color:#666!important}
+body.light .toastui-editor-mode-switch .tab-item.active{background:#c0392b!important;color:#fff!important}
+body.light .toastui-editor-md-container{background:#fff!important}
+body.light .toastui-editor-md-container .toastui-editor{background:#fff!important;color:#333!important}
+body.light .toastui-editor-md-preview{background:#fafafa!important}
+body.light .toastui-editor-ww-container{background:#fff!important}
+body.light .toastui-editor-ww-container .toastui-editor{background:#fff!important;color:#333!important}
+body.light .ProseMirror{color:#333!important}
+body.light .ProseMirror h1{color:#c0392b!important}
+body.light .ProseMirror h2{color:#d35400!important}
+body.light .ProseMirror h3{color:#e67e22!important}
+body.light .ProseMirror code{background:#f0f0f0!important;color:#c0392b!important}
+body.light .ProseMirror pre{background:#f0f0f0!important}
+body.light .ProseMirror blockquote{border-left-color:#c0392b!important;color:#666!important}
+body.light .ProseMirror a{color:#c0392b!important}
+body.light .toastui-editor-contents{color:#333!important}
+body.light button{background:#e0e0e0;color:#333}
+body.light button:hover{background:#ccc}
+body.light button.primary{background:#c0392b;color:#fff}
+body.light button.primary:hover{background:#e74c3c}
+body.light button.toggle-btn{background:#f0f0f0;border-color:#ddd;color:#666}
+body.light button.toggle-btn.wysiwyg{background:#e8f5e9;border-color:#4caf50;color:#2e7d32}
+body.light ::-webkit-scrollbar-track{background:#f5f5f5}
+body.light ::-webkit-scrollbar-thumb{background:#ccc}
+body.light ::-webkit-scrollbar-thumb:hover{background:#aaa}
+body.light .login-box{background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+body.light .login-box h2{color:#c0392b}
+body.light .login-box p{color:#666}
+body.light .login-box input{background:#f5f5f5;border-color:#ddd;color:#333}
+body.light .login-box input:focus{border-color:#c0392b}
+body.light .login-box .hint{color:#888}
+body.light .modal{background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+body.light .modal h3{color:#c0392b}
+body.light .modal input{background:#f5f5f5;border-color:#ddd;color:#333}
+body.light .empty-state{color:#999}
+
+.theme-toggle{font-size:18px;background:transparent!important;border:none!important;cursor:pointer;padding:4px 8px!important;line-height:1}
+.theme-toggle:hover{opacity:0.7}
+
+/* Custom color toolbar buttons */
+.color-btn-group{display:inline-flex;align-items:center;gap:2px;margin:0 4px;vertical-align:middle}
+.color-btn-group input[type=color]{width:26px;height:26px;border:1px solid #0f3460;border-radius:3px;padding:1px;background:transparent;cursor:pointer}
+.color-btn-group input[type=color]:hover{border-color:#e94560}
+body.light .color-btn-group input[type=color]{border-color:#ddd}
+body.light .color-btn-group input[type=color]:hover{border-color:#c0392b}
+.color-btn-group .color-label{font-size:10px;color:#a0a0b0;margin-right:4px}
+body.light .color-btn-group .color-label{color:#888}
+
+.empty-state{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:15px;flex-direction:column;gap:12px;flex:1}
+.empty-state span:first-child{font-size:48px}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .hamburger{display:block}
+
+  .header{padding:6px 10px;min-height:42px}
+  .header h1{font-size:14px}
+  .header .actions{gap:4px}
+  .header .actions button{padding:5px 8px;font-size:11px}
+  .header .toggle-btn{padding:3px 6px;font-size:10px}
+
+  /* Sidebar = overlay from left */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:2px 0 12px rgba(0,0,0,.3)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-backdrop.open{display:block}
+
+  /* Make sidebar items more touch-friendly */
+  .sidebar .folder-header{padding:10px 14px;font-size:14px;min-height:42px;align-items:center}
+  .sidebar .file{padding:11px 14px 11px 30px;font-size:13.5px;min-height:44px}
+
+  /* Toolbar */
+  .toolbar{padding:5px 8px;gap:4px;min-height:32px}
+  .toolbar .path{font-size:10px}
+  .toolbar .status{font-size:9px;padding:2px 6px}
+
+  /* Hide mode indicator on very narrow screens */
+  .mode-indicator{display:none!important}
+
+  /* Editor takes full width */
+  .editor-area{width:100%}
+
+  /* Toast UI editor adjustments */
+  .toastui-editor-defaultUI-toolbar{overflow-x:auto;flex-wrap:nowrap!important;padding:4px 8px!important}
+  .toastui-editor-defaultUI-toolbar button{min-width:28px;height:28px;padding:2px!important;margin:1px!important}
+  .toastui-editor-md-container .toastui-editor{font-size:14px!important}
+  .toastui-editor-ww-container .toastui-editor{font-size:14px!important}
+  .ProseMirror{font-size:14px!important}
+  .toastui-editor-contents{font-size:14px!important}
+
+  /* Modal */
+  .modal{min-width:auto;width:90vw;padding:20px;max-width:360px}
+  .login-box{max-width:90vw;padding:24px 20px}
+  .login-box h2{font-size:16px}
+
+  /* Empty state */
+  .empty-state{font-size:14px}
+  .empty-state span:first-child{font-size:36px}
+
+  /* Color buttons on mobile */
+  .color-btn-group{margin:0 2px}
+  .color-btn-group input[type=color]{width:22px;height:22px}
+
+  /* Make scrollbar thinner on mobile */
+  ::-webkit-scrollbar{width:4px}
+}
+
+.login-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#1a1a2e;display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:#16213e;padding:30px 40px;border-radius:12px;text-align:center;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.login-box h2{color:#e94560;margin-bottom:8px}
+.login-box p{color:#a0a0b0;margin-bottom:20px;font-size:14px}
+.login-box input{width:100%;padding:10px;background:#1a1a2e;border:1px solid #0f3460;border-radius:6px;color:#e0e0e0;font-family:monospace;font-size:13px;margin-bottom:16px}
+.login-box input:focus{outline:none;border-color:#e94560}
+.login-box .hint{font-size:12px;color:#888;margin-top:12px;line-height:1.6}
+.login-box .hint a{color:#e94560}
+
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:#16213e;padding:24px 32px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:320px}
+.modal h3{color:#e94560;margin-bottom:12px}
+.modal input{width:100%;padding:10px;background:#1a1a2e;border:1px solid #0f3460;border-radius:6px;color:#e0e0e0;font-size:14px;margin-bottom:16px}
+.modal input:focus{outline:none;border-color:#e94560}
+.modal .btns{display:flex;gap:10px;justify-content:flex-end}
+
+button{background:#0f3460;color:#e0e0e0;border:none;padding:7px 14px;border-radius:5px;cursor:pointer;font-size:12.5px;transition:all .2s}
+button:hover{background:#1a4a8a}
+button.primary{background:#e94560}
+button.primary:hover{background:#ff6b6b}
+button.toggle-btn{background:#0f3460;border:1px solid #1a4a8a;font-size:11px;padding:4px 10px}
+button.toggle-btn.wysiwyg{background:#155724;border-color:#2e7d32;color:#81c784}
+button.toggle-btn:hover{opacity:0.85}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#1a1a2e}
+::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#1a4a8a}
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="loginScreen">
+  <div class="login-box">
+    <h2>🔑 输入 GitHub Token</h2>
+    <p>需要 repo 权限来保存笔记</p>
+    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+    <button class="primary" onclick="saveToken()">进入编辑器</button>
+    <div class="hint">
+      已生成 token？打开 GitHub <a href="https://github.com/settings/tokens" target="_blank">Token 页面</a> 复制粘贴到这里<br />
+      <small>Token 只存在你的浏览器里，不会上传</small>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newFileModal" style="display:none">
+  <div class="modal">
+    <h3>新建笔记</h3>
+    <input type="text" id="newFileName" placeholder="文件名，如 4.8_线性变换.md" />
+    <div class="btns">
+      <button onclick="closeNewFile()">取消</button>
+      <button class="primary" onclick="createFile()">创建</button>
+    </div>
+  </div>
+</div>
+
+<div class="header" id="mainUI" style="display:none">
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" title="文件列表">☰</button>
+  <h1>📝 笔记后台</h1>
+  <div class="actions">
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="切换亮色/暗色主题">🌓</button>
+    <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">📝 Markdown</button>
+    <button onclick="newFile()">＋ 新建</button>
+    <button class="primary" id="saveBtn" onclick="saveFile()">💾 保存</button>
+  </div>
+</div>
+<div class="main" id="mainUI2" style="display:none">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+  <div class="sidebar" id="sidebar"></div>
+  <div class="editor-area">
+    <div class="toolbar">
+      <span class="path" id="filePath">选择左侧文件开始编辑</span>
+      <span class="mode-indicator" id="modeIndicator">📝 Markdown</span>
+      <span class="status idle" id="status">等待中</span>
+    </div>
+    <div class="editor-wrap" id="editorWrap"></div>
+  </div>
+</div>
+<div class="editor-area" id="emptyState">
+  <div class="empty-state">
+    <span style="font-size:48px">📂</span>
+    <span>从左侧文件列表选择一个笔记开始编辑</span>
+  </div>
+</div>
+
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+<script>
+var REPO = "wld030303/notes";
+var BRANCH = "v4";
+var token = localStorage.getItem("gh_token") || "";
+var currentFile = null;
+var currentSha = "";
+var files = [];
+var editor = null;
+var currentMode = localStorage.getItem("editor_mode") || "markdown";
+
+function setStatus(s) {
+  var el = document.getElementById("status");
+  el.textContent = s.text;
+  el.className = "status " + s.cls;
+}
+
+async function githubAPI(path, method, body) {
+  var opts = {
+    method: method,
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  var r = await fetch("https://api.github.com/repos/" + REPO + "/" + path, opts);
+  if (!r.ok) {
+    var err = await r.json().catch(function(){return {}});
+    throw new Error(err.message || r.statusText);
+  }
+  return r.status === 204 ? null : r.json();
+}
+
+function initEditor() {
+  if (editor) return;
+  var el = document.getElementById("editorWrap");
+  editor = new toastui.Editor({
+    el: el,
+    height: "100%",
+    initialEditType: currentMode,
+    previewStyle: currentMode === "wysiwyg" ? "tab" : "vertical",
+    usageStatistics: false,
+    toolbarItems: [
+      ["heading", "bold", "italic", "strike"],
+      ["hr", "quote"],
+      ["ul", "ol", "task", "indent", "outdent"],
+      ["table", "link"],
+      ["code", "codeblock"],
+      ["scrollSync"]
+    ],
+    plugins: [],
+    customHTMLRenderer: {
+      htmlInline: {
+        span: function(node, context) {
+          var attrs = node.attrs || {};
+          var style = attrs.style || '';
+          if (!style) {
+            return { type: 'html', content: context.origin() };
+          }
+          return { type: 'html', content: '<span style="' + style + '">' + (node.literal || '') + '</span>' };
+        }
+      }
+    }
+  });
+
+  // Add custom color pickers via official insertToolbarItem API
+  setTimeout(function() { addColorButtons(); }, 200);
+  updateModeUI();
+}
+
+function addColorButtons() {
+  if (!editor) return;
+
+  try {
+    var forePicker = document.createElement('input');
+    forePicker.type = 'color';
+    forePicker.value = '#e0e0e0';
+    forePicker.title = '文字颜色';
+    forePicker.style.cssText = 'width:24px;height:24px;border:1px solid #0f3460;border-radius:3px;padding:0;cursor:pointer;background:transparent;vertical-align:middle';
+    forePicker.addEventListener('input', function(e) { applyColor(e.target.value, 'color'); });
+
+    var backPicker = document.createElement('input');
+    backPicker.type = 'color';
+    backPicker.value = '#000000';
+    backPicker.title = '背景高亮';
+    backPicker.style.cssText = 'width:24px;height:24px;border:1px solid #0f3460;border-radius:3px;padding:0;cursor:pointer;background:transparent;vertical-align:middle;margin-left:2px';
+    backPicker.addEventListener('input', function(e) { applyColor(e.target.value, 'background-color'); });
+
+    editor.insertToolbarItem({ groupIndex: 0, itemIndex: 0 }, {
+      name: 'foreColor', tooltip: '文字颜色', el: forePicker
+    });
+    editor.insertToolbarItem({ groupIndex: 0, itemIndex: 1 }, {
+      name: 'backColor', tooltip: '背景高亮', el: backPicker
+    });
+  } catch(e) {
+    console.warn('addColorButtons failed:', e);
+  }
+}
+
+function applyColor(color, prop) {
+  if (!editor) return;
+  var md = editor.getMarkdown();
+  var sel = editor.getSelection();
+  if (!sel || !Array.isArray(sel) || sel[0] === sel[1]) return;
+  var before = md.substring(0, sel[0]);
+  var after = md.substring(sel[1]);
+  var selText = md.substring(sel[0], sel[1]);
+  editor.setMarkdown(before + '<span style="' + prop + ':' + color + '">' + selText + '</span>' + after, true);
+}
+
+function toggleEditorMode() {
+  if (!editor) return;
+  if (currentMode === "markdown") {
+    currentMode = "wysiwyg";
+    editor.changeMode("wysiwyg");
+  } else {
+    currentMode = "markdown";
+    editor.changeMode("markdown");
+  }
+  localStorage.setItem("editor_mode", currentMode);
+  updateModeUI();
+  setStatus({text:"已切换到 " + (currentMode==="wysiwyg"?"可视化":"Markdown") + " 模式",cls:"idle"});
+}
+
+function updateModeUI() {
+  var btn = document.getElementById("modeToggle");
+  var ind = document.getElementById("modeIndicator");
+  if (currentMode === "wysiwyg") {
+    btn.textContent = "📝 Markdown";
+    btn.className = "toggle-btn";
+    ind.textContent = "✨ 可视化";
+    ind.style.background = document.body.classList.contains("light") ? "#e8f5e9" : "#155724";
+    ind.style.color = document.body.classList.contains("light") ? "#2e7d32" : "#81c784";
+  } else {
+    btn.textContent = "✨ 可视化";
+    btn.className = "toggle-btn wysiwyg";
+    ind.textContent = "📝 Markdown";
+    ind.style.background = document.body.classList.contains("light") ? "#f0f0f0" : "#0f3460";
+    ind.style.color = document.body.classList.contains("light") ? "#c0392b" : "#e94560";
+  }
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+  updateModeUI();
+}
+
+async function loadFiles() {
+  setStatus({text:"加载中...",cls:"saving"});
+  try {
+    var tree = await githubAPI("git/trees/" + BRANCH + "?recursive=1", "GET");
+    var contentFiles = tree.tree.filter(function(f) {
+      return f.path.startsWith("content/") && f.path.endsWith(".md");
+    });
+    var folders = {};
+    contentFiles.forEach(function(f) {
+      var parts = f.path.replace("content/","").split("/");
+      var folderPath = parts.slice(0,-1).join("/");
+      var fileName = parts[parts.length-1];
+      if (!folders[folderPath]) folders[folderPath] = {name: folderPath, files: [], open: true};
+      folders[folderPath].files.push({name: fileName, path: f.path, sha: f.sha});
+    });
+    files = Object.values(folders).sort(function(a,b){return a.name.localeCompare(b.name,"zh")});
+    renderSidebar();
+    setStatus({text:"就绪",cls:"idle"});
+  } catch(e) {
+    setStatus({text:"加载失败: "+e.message,cls:"error"});
+    if (e.message.indexOf("401")>-1){localStorage.removeItem("gh_token");location.reload();}
+  }
+}
+
+function renderSidebar() {
+  var sb = document.getElementById("sidebar");
+  sb.innerHTML = files.map(function(folder, fi) {
+    var displayName = folder.name || "根目录";
+    return '<div class="folder'+(folder.open?" open":"")+'" id="folder'+fi+'">'+
+      '<div class="folder-header" onclick="toggleFolder('+fi+')">'+
+        '<span class="arrow">\u25b6</span>\ud83d\udcc1 ' + escapeHtml(displayName) +
+        ' <small style="color:#666;margin-left:auto">'+folder.files.length+'</small>'+
+      '</div>'+
+      '<div class="files">'+
+        folder.files.map(function(f, i2) {
+          return '<div class="file" id="file'+fi+'_'+i2+'" onclick="openFile('+fi+','+i2+')">'+
+            '\ud83d\udcc4 ' + escapeHtml(f.name)+
+          '</div>';
+        }).join("")+
+      '</div>'+
+    '</div>';
+  }).join("");
+}
+
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function toggleFolder(i){document.getElementById("folder"+i).classList.toggle("open");}
+
+/* Sidebar toggle for mobile */
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarBackdrop").classList.toggle("open");
+}
+/* Close sidebar when a file is selected on mobile */
+function closeSidebarOnMobile() {
+  if (window.innerWidth <= 768) {
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebarBackdrop").classList.remove("open");
+  }
+}
+
+function decodeContent(b64) {
+  try {
+    var binary = atob(b64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  } catch(e) {
+    return atob(b64);
+  }
+}
+
+function encodeContent(str) {
+  try {
+    var encoded = encodeURIComponent(str);
+    var result = "";
+    for (var i = 0; i < encoded.length; i++) {
+      if (encoded[i] === '%') {
+        result += String.fromCharCode(parseInt(encoded.substr(i+1, 2), 16));
+        i += 2;
+      } else {
+        result += encoded.charCodeAt(i) > 127
+          ? String.fromCharCode(encoded.charCodeAt(i))
+          : encoded[i];
+      }
+    }
+    return btoa(result);
+  } catch(e) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+}
+
+async function openFile(fi, i2) {
+  var f = files[fi].files[i2];
+  closeSidebarOnMobile();
+  document.querySelectorAll(".file.active").forEach(function(el){el.classList.remove("active")});
+  document.getElementById("file"+fi+"_"+i2).classList.add("active");
+  document.getElementById("emptyState").style.display = "none";
+  setStatus({text:"加载中...",cls:"saving"});
+  try {
+    var data = await githubAPI("contents/" + f.path + "?ref=" + BRANCH, "GET");
+    var content = decodeContent(data.content);
+    currentSha = data.sha;
+    currentFile = f;
+    initEditor();
+    editor.setMarkdown(content, false);
+    document.getElementById("filePath").textContent = f.path;
+    setStatus({text:"已加载 — 当前模式: " + (currentMode==="wysiwyg"?"可视化":"Markdown"),cls:"idle"});
+  } catch(e) {
+    setStatus({text:"加载失败: "+e.message,cls:"error"});
+  }
+}
+
+async function saveFile() {
+  if (!editor || !currentFile) return alert("请先选择一个文件");
+  var content = editor.getMarkdown();
+  setStatus({text:"保存中...",cls:"saving"});
+  document.getElementById("saveBtn").disabled = true;
+  var maxRetries = 1;
+  for (var attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      var encoded = encodeContent(content);
+      var result = await githubAPI("contents/" + currentFile.path, "PUT", {
+        message: "Update " + currentFile.name + " via admin editor",
+        content: encoded,
+        sha: currentSha,
+        branch: BRANCH
+      });
+      // Update SHA from server response, never leave it stale
+      currentSha = result && result.content ? result.content.sha : "";
+      setStatus({text:"已保存到 GitHub！告诉我「部署」即可上线",cls:"saved"});
+      setTimeout(function(){setStatus({text:"就绪",cls:"idle"})},5000);
+      break;
+    } catch(e) {
+      if (attempt < maxRetries && (!currentSha || (e.message && e.message.indexOf("does not match") > -1))) {
+        setStatus({text:"自动同步最新版本...",cls:"saving"});
+        try {
+          var fresh = await githubAPI("contents/" + currentFile.path + "?ref=" + BRANCH, "GET");
+          currentSha = fresh.sha;
+          continue;
+        } catch(fetchErr) {
+          break;
+        }
+      }
+      setStatus({text:"保存失败: " + e.message, cls:"error"});
+    }
+  }
+  document.getElementById("saveBtn").disabled = false;
+}
+
+function newFile() {
+  if (!currentFile) { alert("请先选择一个文件夹（点击文件夹内的文件）"); return; }
+  document.getElementById("newFileModal").style.display = "flex";
+  document.getElementById("newFileName").focus();
+}
+
+function closeNewFile() { document.getElementById("newFileModal").style.display = "none"; }
+
+async function createFile() {
+  var name = document.getElementById("newFileName").value.trim();
+  if (!name) return;
+  if (!name.endsWith(".md")) name += ".md";
+  var prefix = currentFile.path.replace(/\/[^\/]+$/,"");
+  var newPath = prefix + "/" + name;
+  var fm = "---\ntitle: \"" + name.replace(".md","") + "\"\ndate: " + new Date().toISOString().split("T")[0] + "\ncreated: " + new Date().toISOString().split("T")[0] + "\n---\n\n";
+  try {
+    var encoded = encodeContent(fm);
+    await githubAPI("contents/" + newPath, "PUT", {
+      message: "Create " + name,
+      content: encoded,
+      branch: BRANCH
+    });
+    closeNewFile();
+    setStatus({text:"已创建: "+name,cls:"saved"});
+    loadFiles();
+  } catch(e) {
+    setStatus({text:"创建失败: "+e.message,cls:"error"});
+  }
+}
+
+function saveToken() {
+  var t = document.getElementById("tokenInput").value.trim();
+  if (!t) return;
+  token = t;
+  localStorage.setItem("gh_token", t);
+  init();
+}
+
+function init() {
+  if (!token) {
+    document.getElementById("loginScreen").style.display = "flex";
+    document.getElementById("mainUI").style.display = "none";
+    document.getElementById("mainUI2").style.display = "none";
+    document.getElementById("emptyState").style.display = "none";
+    return;
+  }
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("mainUI").style.display = "flex";
+  document.getElementById("mainUI2").style.display = "flex";
+  document.getElementById("emptyState").style.display = "flex";
+  loadFiles();
+}
+
+document.addEventListener("keydown", function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); saveFile(); }
+});
+
+init();
+
+// Restore theme
+if (localStorage.getItem("theme") === "light") {
+  document.body.classList.add("light");
+}
+
+// Register PWA service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/admin/sw.js').then(function(reg) {
+      console.log('SW registered:', reg.scope);
+    }).catch(function(err) {
+      console.log('SW failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
