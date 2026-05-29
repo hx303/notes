@@ -19,7 +19,7 @@ Guideline on the Boundaries of AIGC Usage in Academic Publishing 2.0 **中国科
 
 #### 2.1 防范学术不端
 
-以防范AIGC不当使用为切入点，加强科研诚信意识教育，推进学术诚信治理。
+以防范AIGC不当使用为切入点，加强科研诚信意识教育，推进学1术诚信治理。
 
 #### 2.2 引导共识
 
