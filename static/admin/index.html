@@ -311,6 +311,15 @@ body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#
 body.light .word-count{color:#999}
 
 /* Draft toast */
+/* Focus Mode */
+body.focus .header,body.focus .sidebar,body.focus .sidebar-backdrop,body.focus .toolbar,body.focus .preview-col,body.focus .resizer{display:none!important}
+body.focus .editor-area{flex:1}
+body.focus .editor-panes{flex:1}
+body.focus .editor-col{flex:1!important}
+.focus-indicator{position:fixed;top:10px;right:16px;background:rgba(233,69,96,.9);color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+body.focus .focus-indicator{opacity:1}
+body.light .focus-indicator{background:rgba(192,57,43,.9)}
+
 .draft-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#155724;color:#81c784;padding:6px 16px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
 .draft-toast.show{opacity:1}
 body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
@@ -376,6 +385,7 @@ body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
     <div class="toolbar">
       <span class="path" id="filePath">选择左侧文件开始编辑</span>
       <span class="word-count" id="wordCount" title="字数统计">0 字</span>
+      <button class="preview-toggle-btn" id="focusBtn" onclick="toggleFocus()" title="专注模式（全屏写作）">🔲 专注</button>
       <button class="preview-toggle-btn" id="outlineToggle" onclick="toggleOutline()" title="大纲导航">📑 大纲</button>
       <span class="mode-indicator" id="modeIndicator">📝 Markdown</span>
       <span class="status idle" id="status">等待中</span>
@@ -973,6 +983,19 @@ document.addEventListener("mouseup", function() {
     document.body.style.userSelect = "";
   }
 });
+
+/* ====== Focus Mode ====== */
+var focusMode = false;
+function toggleFocus() {
+  focusMode = !focusMode;
+  if (focusMode) { document.body.classList.add("focus"); document.getElementById("focusBtn").classList.add("active"); document.getElementById("focusBtn").textContent = "🔳 退出"; }
+  else { document.body.classList.remove("focus"); document.getElementById("focusBtn").classList.remove("active"); document.getElementById("focusBtn").textContent = "🔲 专注"; }
+}
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape" && focusMode) { e.preventDefault(); toggleFocus(); }
+});
+/* ====== End Focus Mode ====== */
+
 /* ====== End Split Preview ====== */
 
 function newFile() {
@@ -1053,5 +1076,6 @@ if ('serviceWorker' in navigator) {
 // Save draft on page unload
 window.addEventListener("beforeunload", function() { if (editor && currentFile) autoSaveDraft(); });
 </script>
+<div class="focus-indicator" id="focusIndicator">✍️ 专注模式 · Esc 退出</div>
 </body>
 </html>
