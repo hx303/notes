@@ -569,8 +569,8 @@ async function saveFile() {
       });
       // Update SHA from server response, never leave it stale
       currentSha = result && result.content ? result.content.sha : "";
-      setStatus({text:"已保存到 GitHub！告诉我「部署」即可上线",cls:"saved"});
-      setTimeout(function(){setStatus({text:"就绪",cls:"idle"})},5000);
+      setStatus({text:"已保存！正在触发自动部署...",cls:"saving"});
+      triggerDeploy();
       break;
     } catch(e) {
       if (attempt < maxRetries && (!currentSha || (e.message && e.message.indexOf("does not match") > -1))) {
@@ -587,6 +587,28 @@ async function saveFile() {
     }
   }
   document.getElementById("saveBtn").disabled = false;
+}
+
+async function triggerDeploy() {
+  try {
+    var resp = await fetch("https://api.github.com/repos/hx303/notes/actions/workflows/285508720/dispatches", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Accept": "application/vnd.github+json"
+      },
+      body: JSON.stringify({ ref: "v4" })
+    });
+    if (resp.ok) {
+      setStatus({ text: "部署已触发！1-2 分钟后上线 wouldkeep.com", cls: "saved" });
+    } else {
+      var err = await resp.text();
+      setStatus({ text: "已保存，但部署触发失败: " + resp.status, cls: "error" });
+    }
+  } catch (e) {
+    setStatus({ text: "已保存，但部署触发失败: " + e.message, cls: "error" });
+  }
+  setTimeout(function () { setStatus({ text: "就绪", cls: "idle" }); }, 8000);
 }
 
 function newFile() {
