@@ -14,3 +14,7 @@ content_backup/
 _backups/
 attachments/
 *_图片/
+
+.vercel
+
+.vercel/output/
