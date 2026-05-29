@@ -154,7 +154,10 @@ body.light .color-btn-group input[type=color]:hover{border-color:#c0392b}
 .color-btn-group .color-label{font-size:10px;color:#a0a0b0;margin-right:4px}
 body.light .color-btn-group .color-label{color:#888}
 
-.empty-state{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:15px;flex-direction:column;gap:12px;flex:1}
+/* Empty state - absolutely positioned overlay, NOT flex child */
+#emptyState{position:absolute!important;top:49px;left:0;right:0;bottom:0;z-index:5;pointer-events:none;display:none;flex:0 0 auto!important}
+#emptyState.show{display:flex}
+.empty-state{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:15px;flex-direction:column;gap:12px}
 .empty-state span:first-child{font-size:48px}
 
 /* ===== MOBILE RESPONSIVE ===== */
@@ -681,7 +684,7 @@ async function openFile(fi, i2) {
   closeSidebarOnMobile();
   document.querySelectorAll(".file.active").forEach(function(el){el.classList.remove("active")});
   document.getElementById("file"+fi+"_"+i2).classList.add("active");
-  document.getElementById("emptyState").style.display = "none";
+  document.getElementById("emptyState").classList.remove("show");
   setStatus({text:"加载中...",cls:"saving"});
   try {
     var data = await githubAPI("contents/" + f.path + "?ref=" + BRANCH, "GET");
@@ -1110,13 +1113,13 @@ function init() {
     document.getElementById("loginScreen").style.display = "flex";
     document.getElementById("mainUI").style.display = "none";
     document.getElementById("mainUI2").style.display = "none";
-    document.getElementById("emptyState").style.display = "none";
+    document.getElementById("emptyState").classList.remove("show");
     return;
   }
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("mainUI").style.display = "flex";
   document.getElementById("mainUI2").style.display = "flex";
-  document.getElementById("emptyState").style.display = "flex";
+  document.getElementById("emptyState").classList.add("show");
   loadFiles();
 }
 
