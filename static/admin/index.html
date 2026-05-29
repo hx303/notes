@@ -539,7 +539,7 @@ async function openFile(fi, i2) {
   document.getElementById("emptyState").style.display = "none";
   setStatus({text:"加载中...",cls:"saving"});
   try {
-    var data = await githubAPI("contents/" + f.path, "GET");
+    var data = await githubAPI("contents/" + f.path + "?ref=" + BRANCH, "GET");
     var content = decodeContent(data.content);
     currentSha = data.sha;
     currentFile = f;
