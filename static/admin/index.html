@@ -557,29 +557,31 @@ async function saveFile() {
   var content = editor.getMarkdown();
   setStatus({text:"保存中...",cls:"saving"});
   document.getElementById("saveBtn").disabled = true;
-  var maxRetries = 2;
+  var maxRetries = 1;
   for (var attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      if (attempt > 0) {
-        setStatus({text:"SHA 冲突，自动重试 (" + attempt + "/" + maxRetries + ")...",cls:"saving"});
-        var fresh = await githubAPI("contents/" + currentFile.path + "?ref=" + BRANCH, "GET");
-        currentSha = fresh.sha;
-      }
       var encoded = encodeContent(content);
-      await githubAPI("contents/" + currentFile.path, "PUT", {
+      var result = await githubAPI("contents/" + currentFile.path, "PUT", {
         message: "Update " + currentFile.name + " via admin editor",
         content: encoded,
         sha: currentSha,
         branch: BRANCH
       });
-      currentSha = "";
-      var retryNote = attempt > 0 ? " (自动重试成功)" : "";
-      setStatus({text:"已保存到 GitHub！告诉我「部署」即可上线" + retryNote,cls:"saved"});
+      // Update SHA from server response, never leave it stale
+      currentSha = result && result.content ? result.content.sha : "";
+      setStatus({text:"已保存到 GitHub！告诉我「部署」即可上线",cls:"saved"});
       setTimeout(function(){setStatus({text:"就绪",cls:"idle"})},5000);
       break;
     } catch(e) {
-      if (attempt < maxRetries && e.message && e.message.indexOf("does not match") > -1) {
-        continue;
+      if (attempt < maxRetries && (!currentSha || (e.message && e.message.indexOf("does not match") > -1))) {
+        setStatus({text:"自动同步最新版本...",cls:"saving"});
+        try {
+          var fresh = await githubAPI("contents/" + currentFile.path + "?ref=" + BRANCH, "GET");
+          currentSha = fresh.sha;
+          continue;
+        } catch(fetchErr) {
+          break;
+        }
       }
       setStatus({text:"保存失败: " + e.message, cls:"error"});
     }
