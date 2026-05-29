@@ -306,6 +306,29 @@ body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#
   .preview-content{padding:16px 20px;font-size:14px}
 }
 
+/* Word count */
+.word-count{font-size:10px;color:#666;white-space:nowrap;flex-shrink:0;min-width:45px;text-align:center}
+body.light .word-count{color:#999}
+
+/* Draft toast */
+/* Focus Mode */
+body.focus .header,body.focus .sidebar,body.focus .sidebar-backdrop,body.focus .toolbar,body.focus .preview-col,body.focus .resizer{display:none!important}
+body.focus .editor-area{flex:1}
+body.focus .editor-panes{flex:1}
+body.focus .editor-col{flex:1!important}
+.focus-indicator{position:fixed;top:10px;right:16px;background:rgba(233,69,96,.9);color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+body.focus .focus-indicator{opacity:1}
+body.light .focus-indicator{background:rgba(192,57,43,.9)}
+
+/* Image drop zone */
+.drop-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(233,69,96,.15);border:3px dashed #e94560;z-index:500;display:none;align-items:center;justify-content:center;font-size:24px;color:#e94560;pointer-events:none}
+.drop-overlay.show{display:flex}
+body.light .drop-overlay{background:rgba(192,57,43,.1);border-color:#c0392b;color:#c0392b}
+
+.draft-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#155724;color:#81c784;padding:6px 16px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+.draft-toast.show{opacity:1}
+body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
+
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:#1a1a2e}
 ::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
@@ -338,6 +361,18 @@ body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#
   </div>
 </div>
 
+<div class="modal-overlay" id="draftModal" style="display:none">
+  <div class="modal">
+    <h3>📝 发现草稿</h3>
+    <p style="color:#a0a0b0;font-size:13px;margin-bottom:8px" id="draftInfo"></p>
+    <p style="color:#e94560;font-size:12px" id="draftWarning"></p>
+    <div class="btns">
+      <button onclick="discardDraft()">❌ 丢弃草稿</button>
+      <button class="primary" onclick="restoreDraft()">✅ 恢复草稿</button>
+    </div>
+  </div>
+</div>
+
 <div class="header" id="mainUI" style="display:none">
   <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" title="文件列表">☰</button>
   <h1>📝 笔记后台</h1>
@@ -354,6 +389,8 @@ body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#
   <div class="editor-area">
     <div class="toolbar">
       <span class="path" id="filePath">选择左侧文件开始编辑</span>
+      <span class="word-count" id="wordCount" title="字数统计">0 字</span>
+      <button class="preview-toggle-btn" id="focusBtn" onclick="toggleFocus()" title="专注模式（全屏写作）">🔲 专注</button>
       <button class="preview-toggle-btn" id="outlineToggle" onclick="toggleOutline()" title="大纲导航">📑 大纲</button>
       <span class="mode-indicator" id="modeIndicator">📝 Markdown</span>
       <span class="status idle" id="status">等待中</span>
@@ -463,8 +500,8 @@ function initEditor() {
   setTimeout(function() { addColorButtons(); }, 200);
   updateModeUI();
 
-  // Wire up preview on content change
-  editor.on("change", schedulePreview);
+  // Wire up preview + auto-save + word count on content change
+  editor.on("change", function() { schedulePreview(); scheduleAutoSave(); updateWordCount(); });
 }
 
 function addColorButtons() {
@@ -649,10 +686,36 @@ async function openFile(fi, i2) {
     currentSha = data.sha;
     currentFile = f;
     initEditor();
-    editor.setMarkdown(content, false);
+
+    // Check for existing draft
+    var draftKey = getDraftKey(f.path);
+    var draftRaw = localStorage.getItem(draftKey);
+    if (draftRaw) {
+      try {
+        var draft = JSON.parse(draftRaw);
+        var mins = Math.round((Date.now() - draft.time) / 60000);
+        if (mins >= 1 && draft.content !== content) {
+          // Show draft restore modal, defer editor content setting
+          document.getElementById("draftInfo").textContent = "文件: " + f.path + "\n草稿保存于: " + new Date(draft.time).toLocaleString() + " (" + mins + " 分钟前)";
+          document.getElementById("draftWarning").textContent = draft.sha && draft.sha !== currentSha ? "⚠ 草稿版本可能与服务器不一致" : "";
+          document.getElementById("draftModal").style.display = "flex";
+          pendingDraftFile = f.path;
+          // Set GitHub content now, restoreDraft() or discardDraft() will handle the final state
+          editor.setMarkdown(content, false);
+          setStatus({text:"已加载（有未恢复的草稿）",cls:"idle"});
+        } else {
+          editor.setMarkdown(content, false);
+        }
+      } catch(e) {
+        editor.setMarkdown(content, false);
+      }
+    } else {
+      editor.setMarkdown(content, false);
+    }
     document.getElementById("filePath").textContent = f.path;
     setStatus({text:"已加载 — 当前模式: " + (currentMode==="wysiwyg"?"可视化":"Markdown"),cls:"idle"});
     renderPreview();
+    updateWordCount();
   } catch(e) {
     setStatus({text:"加载失败: "+e.message,cls:"error"});
   }
@@ -676,6 +739,7 @@ async function saveFile() {
       // Update SHA from server response, never leave it stale
       currentSha = result && result.content ? result.content.sha : "";
       setStatus({text:"已保存！正在触发自动部署...",cls:"saving"});
+      clearDraft(currentFile.path);
       triggerDeploy();
       break;
     } catch(e) {
@@ -720,6 +784,88 @@ async function triggerDeploy() {
 /* ====== Split Preview + Outline ====== */
 var previewVisible = true;
 var outlineOpen = false;
+
+/* ====== Auto-save Draft ====== */
+var draftKeyPrefix = "draft_";
+var draftTimer = null;
+var draftLastSaved = 0;
+var pendingDraftFile = null;
+
+function getDraftKey(filePath) { return draftKeyPrefix + filePath; }
+
+function autoSaveDraft() {
+  if (!editor || !currentFile) return;
+  var content = editor.getMarkdown();
+  if (!content) return;
+  var key = getDraftKey(currentFile.path);
+  localStorage.setItem(key, JSON.stringify({ content: content, sha: currentSha, time: Date.now() }));
+  draftLastSaved = Date.now();
+  showDraftToast();
+}
+
+function showDraftToast() {
+  var id = "draftToast";
+  var el = document.getElementById(id);
+  if (!el) { el = document.createElement("div"); el.id = id; el.className = "draft-toast"; document.body.appendChild(el); }
+  el.textContent = "已自动保存草稿 " + new Date().toLocaleTimeString();
+  el.classList.add("show");
+  setTimeout(function() { el.classList.remove("show"); }, 1500);
+}
+
+function scheduleAutoSave() {
+  if (draftTimer) clearTimeout(draftTimer);
+  draftTimer = setTimeout(autoSaveDraft, 2000);
+}
+
+
+function restoreDraft() {
+  var key = getDraftKey(pendingDraftFile);
+  var raw = localStorage.getItem(key);
+  if (!raw) return;
+  var draft = JSON.parse(raw);
+  editor.setMarkdown(draft.content, false);
+  currentSha = draft.sha;
+  localStorage.removeItem(key);
+  document.getElementById("draftModal").style.display = "none";
+  setStatus({ text: "草稿已恢复", cls: "saved" });
+  schedulePreview();
+  pendingDraftFile = null;
+}
+
+function discardDraft() {
+  if (pendingDraftFile) localStorage.removeItem(getDraftKey(pendingDraftFile));
+  document.getElementById("draftModal").style.display = "none";
+  pendingDraftFile = null;
+}
+
+function clearDraft(filePath) {
+  if (filePath) localStorage.removeItem(getDraftKey(filePath));
+}
+
+/* ====== Word Count ====== */
+function updateWordCount() {
+  if (!editor) return;
+  var md = editor.getMarkdown();
+  // Strip YAML frontmatter
+  md = md.replace(/^---[\s\S]*?---\n*/, "");
+  // Strip markdown syntax
+  var plain = md.replace(/[#*_~`>\[\]()|{}\-!]/g, "").replace(/\$\$[\s\S]*?\$\$/g, "").replace(/\$[^$]+\$/g, "").replace(/<[^>]+>/g, "").replace(/\n+/g, "\n").trim();
+  // Chinese characters
+  var cn = (plain.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+  // English words
+  var en = (plain.match(/[a-zA-Z]+/g) || []).length;
+  // Digits
+  var digits = (plain.match(/\d+/g) || []).length;
+  var el = document.getElementById("wordCount");
+  var parts = [];
+  if (cn) parts.push(cn + "汉字");
+  if (en) parts.push(en + "词");
+  if (!cn && !en) parts.push("0 字");
+  el.textContent = parts.join(" ") + (digits ? " · " + digits + "数" : "");
+  el.title = "中文字数: " + cn + "\n英文词数: " + en + "\n数字组: " + digits + "\n总字符: " + plain.length;
+}
+
+/* ====== End Word Count ====== */
 
 // Configure marked with KaTeX support
 marked.setOptions({ breaks: true, gfm: true });
@@ -842,6 +988,80 @@ document.addEventListener("mouseup", function() {
     document.body.style.userSelect = "";
   }
 });
+
+/* ====== Focus Mode ====== */
+var focusMode = false;
+function toggleFocus() {
+  focusMode = !focusMode;
+  if (focusMode) { document.body.classList.add("focus"); document.getElementById("focusBtn").classList.add("active"); document.getElementById("focusBtn").textContent = "🔳 退出"; }
+  else { document.body.classList.remove("focus"); document.getElementById("focusBtn").classList.remove("active"); document.getElementById("focusBtn").textContent = "🔲 专注"; }
+}
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape" && focusMode) { e.preventDefault(); toggleFocus(); }
+});
+/* ====== End Focus Mode ====== */
+
+/* ====== Image Drag & Drop Upload ====== */
+var dragCounter = 0;
+var allowedImageTypes = ["image/png","image/jpeg","image/gif","image/webp","image/svg+xml"];
+var maxImageSize = 5 * 1024 * 1024; // 5MB
+
+['dragenter','dragover','dragleave','drop'].forEach(function(evt) {
+  document.addEventListener(evt, function(e) { e.preventDefault(); e.stopPropagation(); });
+});
+
+document.addEventListener("dragenter", function(e) {
+  dragCounter++;
+  if (dragCounter === 1) document.getElementById("dropOverlay").classList.add("show");
+});
+document.addEventListener("dragleave", function(e) {
+  dragCounter--;
+  if (dragCounter <= 0) { dragCounter = 0; document.getElementById("dropOverlay").classList.remove("show"); }
+});
+document.addEventListener("drop", function(e) {
+  dragCounter = 0;
+  document.getElementById("dropOverlay").classList.remove("show");
+  if (!currentFile) { setStatus({text:"请先打开一个文件，再拖入图片",cls:"error"}); return; }
+  var files = e.dataTransfer.files;
+  if (!files || files.length === 0) return;
+  for (var i = 0; i < files.length; i++) {
+    if (allowedImageTypes.indexOf(files[i].type) === -1) { setStatus({text:"不支持的文件类型: " + files[i].type + "（支持 PNG/JPG/GIF/WebP/SVG）",cls:"error"}); continue; }
+    if (files[i].size > maxImageSize) { setStatus({text:"文件过大: " + (files[i].size/1024/1024).toFixed(1) + "MB（限制 5MB）",cls:"error"}); continue; }
+    uploadImage(files[i]);
+  }
+});
+
+function uploadImage(file) {
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var base64 = ev.target.result.split(",")[1];
+    var now = new Date();
+    var timestamp = now.getFullYear() + ("0"+(now.getMonth()+1)).slice(-2) + ("0"+now.getDate()).slice(-2) + "_" + ("0"+now.getHours()).slice(-2) + ("0"+now.getMinutes()).slice(-2) + ("0"+now.getSeconds()).slice(-2);
+    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    var imgPath = "static/images/" + timestamp + "_" + safeName;
+    setStatus({text:"上传中: " + safeName + "...",cls:"saving"});
+    githubAPI("contents/" + imgPath, "PUT", {
+      message: "Upload image " + safeName + " via admin editor",
+      content: base64,
+      branch: BRANCH
+    }).then(function(resp) {
+      var imgUrl = "/" + imgPath;
+      // Insert markdown image at cursor
+      var md = editor.getMarkdown();
+      var sel = editor.getSelection();
+      var pos = (sel && Array.isArray(sel)) ? sel[0] : md.length;
+      var newMd = md.substring(0, pos) + "\n![" + (file.name.replace(/\.[^.]+$/,"")) + "](" + imgUrl + ")\n" + md.substring(pos);
+      editor.setMarkdown(newMd, false);
+      setStatus({text:"已插入: " + safeName,cls:"saved"});
+      setTimeout(function(){setStatus({text:"就绪",cls:"idle"});},3000);
+    }).catch(function(e) {
+      setStatus({text:"上传失败: " + e.message,cls:"error"});
+    });
+  };
+  reader.readAsDataURL(file);
+}
+/* ====== End Image Upload ====== */
+
 /* ====== End Split Preview ====== */
 
 function newFile() {
@@ -918,6 +1138,11 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// Save draft on page unload
+window.addEventListener("beforeunload", function() { if (editor && currentFile) autoSaveDraft(); });
 </script>
+<div class="focus-indicator" id="focusIndicator">✍️ 专注模式 · Esc 退出</div>
+<div class="drop-overlay" id="dropOverlay">🖼️ 松开以上传图片</div>
 </body>
 </html>
