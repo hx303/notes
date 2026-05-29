@@ -457,8 +457,10 @@ async function githubAPI(path, method, body) {
 }
 
 function initEditor() {
-  if (editor) return;
+  if (editor) { editor.destroy(); editor = null; }
   var el = document.getElementById("editorCol");
+  // Remove existing editor wrapper(s) first
+  el.querySelectorAll("#editorWrap,[id=editorWrap]").forEach(function(w){ w.remove(); });
   // Insert editor wrapper
   var wrap = document.createElement("div");
   wrap.id = "editorWrap";
