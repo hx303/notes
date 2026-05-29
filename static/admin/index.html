@@ -46,14 +46,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .sidebar-backdrop{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:40}
 
 .editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.toolbar{background:#16213e;padding:6px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:36px;flex-wrap:wrap}
-.toolbar .path{flex:1;font-size:11px;color:#a0a0b0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.toolbar .status{font-size:10px;padding:2px 8px;border-radius:3px;white-space:nowrap;flex-shrink:0}
+.toolbar{background:#16213e;padding:4px 8px;display:flex;align-items:center;gap:4px;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:30px;overflow:hidden}
+.toolbar .path{flex:1;font-size:10px;color:#a0a0b0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.toolbar .status{font-size:9px;padding:1px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0}
 .toolbar .status.idle{background:#333;color:#888}
 .toolbar .status.saved{background:#155724;color:#4caf50}
 .toolbar .status.error{background:#721c24;color:#f44336}
 .toolbar .status.saving{background:#1a5c2a;color:#81c784}
-.toolbar .mode-indicator{font-size:10px;padding:2px 6px;border-radius:3px;background:#0f3460;color:#e94560;white-space:nowrap;flex-shrink:0}
+.toolbar .mode-indicator{font-size:9px;padding:1px 5px;border-radius:3px;background:#0f3460;color:#e94560;white-space:nowrap;flex-shrink:0}
 
 .editor-wrap{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
 
@@ -94,6 +94,9 @@ body.light .sidebar .file.active{background:#c0392b;color:#fff}
 body.light .toolbar{background:#fff;border-color:#e0e0e0}
 body.light .toolbar .path{color:#888}
 body.light .toolbar .status.idle{background:#e0e0e0;color:#666}
+body.light .toolbar .status.saved{background:#e8f5e9;color:#2e7d32}
+body.light .toolbar .status.error{background:#ffebee;color:#c0392b}
+body.light .toolbar .status.saving{background:#fff3e0;color:#e65100}
 body.light .mode-indicator{background:#f0f0f0;color:#c0392b}
 body.light .toastui-editor-defaultUI-toolbar{background:#f5f5f5!important;border-color:#ddd!important}
 body.light .toastui-editor-defaultUI-toolbar button{color:#333!important}
@@ -295,7 +298,7 @@ body.light .outline-panel .outline-item:hover{background:#f0f0f0;color:#333}
 body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#c0392b}
 
 /* Mobile preview toggle */
-.preview-toggle-btn{font-size:10px;padding:2px 8px;margin-left:4px}
+.preview-toggle-btn{font-size:9px;padding:1px 6px;margin:0;line-height:1.4}
 
 @media (max-width: 768px) {
   .editor-panes{flex-direction:column}
@@ -307,7 +310,7 @@ body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#
 }
 
 /* Word count */
-.word-count{font-size:10px;color:#666;white-space:nowrap;flex-shrink:0;min-width:45px;text-align:center}
+.word-count{font-size:9px;color:#666;white-space:nowrap;flex-shrink:0;min-width:40px;text-align:center}
 body.light .word-count{color:#999}
 
 /* Draft toast */
