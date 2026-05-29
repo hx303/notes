@@ -39,4 +39,4 @@ jobs:
           VERCEL_ORG_ID: team_vSFadBJ2sMBFZzDYrfPY7L58
           VERCEL_PROJECT_ID: prj_IXBqWXga4KNfdlRMSR3MQO6a0hup
         run: |
-          npx vercel --cwd public --prod --token ${{ secrets.VERCEL_TOKEN }} --scope wld-s-projects --yes
+          npx vercel --cwd public --prod --token ${{ secrets.VERCEL_TOKEN }} --scope wld-s-projects --yes --prebuilt
