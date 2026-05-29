@@ -15,6 +15,8 @@
 <!-- Toast UI Editor -->
 <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
 <link rel="stylesheet" href="https://uicdn.toast.com/editor-plugin-code-syntax-highlight/latest/toastui-editor-plugin-code-syntax-highlight.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" />
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
@@ -228,6 +230,82 @@ button.toggle-btn{background:#0f3460;border:1px solid #1a4a8a;font-size:11px;pad
 button.toggle-btn.wysiwyg{background:#155724;border-color:#2e7d32;color:#81c784}
 button.toggle-btn:hover{opacity:0.85}
 
+/* ===== Split Preview Layout ===== */
+.editor-panes{display:flex;flex:1;overflow:hidden;position:relative}
+.editor-panes .editor-col{flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column}
+.editor-panes .preview-col{width:45%;min-width:280px;overflow:hidden;display:flex;flex-direction:column;border-left:1px solid #0f3460;background:#1e1e35}
+body.light .editor-panes .preview-col{background:#fafafa;border-left-color:#e0e0e0}
+
+/* Resizer */
+.editor-panes .resizer{width:5px;cursor:col-resize;background:transparent;flex-shrink:0;position:relative;z-index:10}
+.editor-panes .resizer:hover,.editor-panes .resizer.active{background:#e94560}
+body.light .editor-panes .resizer:hover,body.light .editor-panes .resizer.active{background:#c0392b}
+
+/* Preview Toolbar */
+.preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;background:#16213e;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:30px}
+body.light .preview-toolbar{background:#fff;border-color:#e0e0e0}
+.preview-toolbar span{font-size:11px;color:#a0a0b0}
+.preview-toolbar button{font-size:10px;padding:2px 8px;border-radius:3px}
+.preview-toolbar button.active{background:#e94560;color:#fff}
+body.light .preview-toolbar span{color:#888}
+
+/* Preview Content */
+.preview-content{flex:1;overflow-y:auto;padding:24px 28px;font-size:15px;line-height:1.8;color:#e0e0e0}
+body.light .preview-content{color:#333}
+.preview-content h1{font-size:1.8em;color:#e94560;border-bottom:2px solid #0f3460;padding-bottom:8px;margin:24px 0 16px}
+.preview-content h2{font-size:1.4em;color:#ff6b6b;border-bottom:1px solid #0f3460;padding-bottom:6px;margin:20px 0 12px}
+.preview-content h3{font-size:1.15em;color:#ffa07a;margin:16px 0 10px}
+.preview-content h4{font-size:1.05em;margin:12px 0 8px}
+body.light .preview-content h1{color:#c0392b;border-color:#ddd}
+body.light .preview-content h2{color:#d35400;border-color:#eee}
+body.light .preview-content h3{color:#e67e22}
+.preview-content code{background:#2d2d4a;padding:2px 6px;border-radius:3px;font-size:0.9em;font-family:'Consolas','Monaco',monospace;color:#81c784}
+body.light .preview-content code{background:#f0f0f0;color:#c0392b}
+.preview-content pre{background:#2d2d4a;padding:16px;border-radius:6px;overflow-x:auto;margin:12px 0}
+body.light .preview-content pre{background:#f5f5f5}
+.preview-content pre code{background:transparent;padding:0;font-size:0.85em;line-height:1.6}
+.preview-content blockquote{border-left:3px solid #e94560;padding:8px 16px;margin:12px 0;color:#a0a0b0;background:rgba(233,69,96,.05)}
+body.light .preview-content blockquote{border-left-color:#c0392b;color:#666;background:#f9f9f9}
+.preview-content table{width:100%;border-collapse:collapse;margin:12px 0}
+.preview-content th,.preview-content td{border:1px solid #0f3460;padding:8px 12px;text-align:left}
+body.light .preview-content th,body.light .preview-content td{border-color:#ddd}
+.preview-content th{background:#16213e;font-weight:600}
+body.light .preview-content th{background:#f5f5f5}
+.preview-content img{max-width:100%;border-radius:4px;margin:8px 0}
+.preview-content a{color:#e94560}
+body.light .preview-content a{color:#c0392b}
+.preview-content ul,.preview-content ol{padding-left:24px;margin:8px 0}
+.preview-content li{margin:4px 0}
+.preview-content p{margin:8px 0}
+.preview-content hr{border:none;border-top:1px solid #0f3460;margin:16px 0}
+.preview-content .katex{font-size:1.1em}
+
+/* Outline / TOC */
+.outline-panel{position:absolute;right:8px;top:36px;width:220px;max-height:60vh;background:#16213e;border:1px solid #0f3460;border-radius:8px;overflow-y:auto;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.4);display:none}
+.outline-panel.open{display:block}
+body.light .outline-panel{background:#fff;border-color:#e0e0e0;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.outline-panel .outline-item{display:block;padding:5px 12px;font-size:12px;color:#a0a0b0;cursor:pointer;border-left:2px solid transparent;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.outline-panel .outline-item:hover{background:#0f3460;color:#e0e0e0}
+body.light .outline-panel .outline-item{color:#666}
+body.light .outline-panel .outline-item:hover{background:#f0f0f0;color:#333}
+.outline-panel .outline-item.h1{font-weight:600;padding-left:8px;font-size:12.5px}
+.outline-panel .outline-item.h2{padding-left:18px}
+.outline-panel .outline-item.h3{padding-left:28px}
+.outline-panel .outline-item.active{color:#e94560;border-left-color:#e94560}
+body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#c0392b}
+
+/* Mobile preview toggle */
+.preview-toggle-btn{font-size:10px;padding:2px 8px;margin-left:4px}
+
+@media (max-width: 768px) {
+  .editor-panes{flex-direction:column}
+  .editor-panes .preview-col{width:100%!important;min-width:0;height:35%;border-left:none;border-top:1px solid #0f3460}
+  body.light .editor-panes .preview-col{border-top-color:#e0e0e0}
+  .editor-panes .resizer{display:none}
+  .outline-panel{right:4px;width:200px;max-height:50vh}
+  .preview-content{padding:16px 20px;font-size:14px}
+}
+
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:#1a1a2e}
 ::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
@@ -276,10 +354,26 @@ button.toggle-btn:hover{opacity:0.85}
   <div class="editor-area">
     <div class="toolbar">
       <span class="path" id="filePath">选择左侧文件开始编辑</span>
+      <button class="preview-toggle-btn" id="outlineToggle" onclick="toggleOutline()" title="大纲导航">📑 大纲</button>
       <span class="mode-indicator" id="modeIndicator">📝 Markdown</span>
       <span class="status idle" id="status">等待中</span>
     </div>
-    <div class="editor-wrap" id="editorWrap"></div>
+    <div class="editor-panes" id="editorPanes">
+      <div class="editor-col" id="editorCol">
+        <div class="editor-wrap" id="editorWrap" style="flex:1;overflow:hidden"></div>
+      </div>
+      <div class="resizer" id="resizer"></div>
+      <div class="preview-col" id="previewCol">
+        <div class="preview-toolbar">
+          <span>📄 实时预览</span>
+          <button id="previewCloseBtn" onclick="togglePreview()" style="font-size:18px;line-height:1;padding:0 4px">×</button>
+        </div>
+        <div class="preview-content" id="previewContent">
+          <p style="color:#888;text-align:center;margin-top:40px">选择文件开始预览</p>
+        </div>
+        <div class="outline-panel" id="outlinePanel"></div>
+      </div>
+    </div>
   </div>
 </div>
 <div class="editor-area" id="emptyState">
@@ -290,6 +384,9 @@ button.toggle-btn:hover{opacity:0.85}
 </div>
 
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
 <script>
 var REPO = "hx303/notes";
@@ -327,9 +424,14 @@ async function githubAPI(path, method, body) {
 
 function initEditor() {
   if (editor) return;
-  var el = document.getElementById("editorWrap");
+  var el = document.getElementById("editorCol");
+  // Insert editor wrapper
+  var wrap = document.createElement("div");
+  wrap.id = "editorWrap";
+  wrap.style.cssText = "flex:1;overflow:hidden";
+  el.appendChild(wrap);
   editor = new toastui.Editor({
-    el: el,
+    el: wrap,
     height: "100%",
     initialEditType: currentMode,
     previewStyle: currentMode === "wysiwyg" ? "tab" : "vertical",
@@ -360,6 +462,9 @@ function initEditor() {
   // Add custom color pickers via official insertToolbarItem API
   setTimeout(function() { addColorButtons(); }, 200);
   updateModeUI();
+
+  // Wire up preview on content change
+  editor.on("change", schedulePreview);
 }
 
 function addColorButtons() {
@@ -547,6 +652,7 @@ async function openFile(fi, i2) {
     editor.setMarkdown(content, false);
     document.getElementById("filePath").textContent = f.path;
     setStatus({text:"已加载 — 当前模式: " + (currentMode==="wysiwyg"?"可视化":"Markdown"),cls:"idle"});
+    renderPreview();
   } catch(e) {
     setStatus({text:"加载失败: "+e.message,cls:"error"});
   }
@@ -610,6 +716,133 @@ async function triggerDeploy() {
   }
   setTimeout(function () { setStatus({ text: "就绪", cls: "idle" }); }, 8000);
 }
+
+/* ====== Split Preview + Outline ====== */
+var previewVisible = true;
+var outlineOpen = false;
+
+// Configure marked with KaTeX support
+marked.setOptions({ breaks: true, gfm: true });
+
+// Render markdown to HTML preview
+function renderPreview() {
+  if (!editor) return;
+  var md = editor.getMarkdown();
+  var pc = document.getElementById("previewContent");
+  try {
+    var html = marked.parse(md);
+    // Replace \(...\) and $$...$$ with placeholders, render KaTeX, put back
+    html = renderMath(html);
+    pc.innerHTML = html;
+    // Render any remaining KaTeX
+    if (typeof renderMathInElement !== "undefined") {
+      renderMathInElement(pc, { delimiters: [{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\[",right:"\\]",display:true},{left:"\\(",right:"\\)",display:false}], throwOnError: false });
+    }
+    buildOutline(md);
+  } catch(e) {
+    pc.innerHTML = "<p style='color:#f44336'>Preview error: " + e.message + "</p>";
+  }
+}
+
+// Pre-process math formulas for marked (preserve from markdown escaping)
+function renderMath(html) {
+  // Protect display math
+  html = html.replace(/\$\$([\s\S]*?)\$\$/g, '<span class="math-display">$$\n$1\n$$</span>');
+  // Protect inline math (but not $ inside code blocks)
+  html = html.replace(/(?<!`) \$([^$]+?)\$ /g, ' <span class="math-inline">$$1$</span> ');
+  return html;
+}
+
+// Debounced preview update
+var previewTimer = null;
+function schedulePreview() {
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(renderPreview, 300);
+}
+
+// Build outline from headings
+function buildOutline(md) {
+  var panel = document.getElementById("outlinePanel");
+  var re = /^(#{1,4})\s+(.+)$/gm;
+  var items = [];
+  var match;
+  while ((match = re.exec(md)) !== null) {
+    items.push({ level: match[1].length, text: match[2].trim(), pos: match.index });
+  }
+  if (items.length === 0) {
+    panel.innerHTML = "<div style='padding:8px 12px;color:#888;font-size:12px'>无标题</div>";
+    return;
+  }
+  panel.innerHTML = items.map(function(item) {
+    return "<a class='outline-item h" + item.level + "' onclick='scrollToHeading(\"" + escapeHtmlAttr(item.text) + "\")'>" + escapeHtml(item.text) + "</a>";
+  }).join("");
+}
+
+function escapeHtmlAttr(s) { return s.replace(/"/g, "&quot;").replace(/\\/g, "\\\\"); }
+
+// Scroll preview to heading
+function scrollToHeading(text) {
+  var pc = document.getElementById("previewContent");
+  var headings = pc.querySelectorAll("h1,h2,h3,h4");
+  for (var i = 0; i < headings.length; i++) {
+    if (headings[i].textContent.trim() === text) {
+      headings[i].scrollIntoView({ behavior: "smooth", block: "start" });
+      // Highlight
+      document.querySelectorAll(".outline-item.active").forEach(function(el){el.classList.remove("active")});
+      var items = document.querySelectorAll(".outline-item");
+      for (var j = 0; j < items.length; j++) {
+        if (items[j].textContent.trim() === text) { items[j].classList.add("active"); break; }
+      }
+      return;
+    }
+  }
+}
+
+// Toggle outline panel
+function toggleOutline() {
+  outlineOpen = !outlineOpen;
+  var panel = document.getElementById("outlinePanel");
+  var btn = document.getElementById("outlineToggle");
+  if (outlineOpen) { panel.classList.add("open"); if(editor)renderPreview(); btn.classList.add("active"); }
+  else { panel.classList.remove("open"); btn.classList.remove("active"); }
+}
+
+// Toggle preview visibility
+function togglePreview() {
+  previewVisible = !previewVisible;
+  var col = document.getElementById("previewCol");
+  var resizer = document.getElementById("resizer");
+  if (previewVisible) { col.style.display = ""; resizer.style.display = ""; }
+  else { col.style.display = "none"; resizer.style.display = "none"; }
+}
+
+// Resizer drag
+var resizing = false;
+document.getElementById("resizer").addEventListener("mousedown", function(e) {
+  resizing = true;
+  document.getElementById("resizer").classList.add("active");
+  document.body.style.cursor = "col-resize";
+  document.body.style.userSelect = "none";
+  e.preventDefault();
+});
+document.addEventListener("mousemove", function(e) {
+  if (!resizing) return;
+  var panes = document.getElementById("editorPanes");
+  var rect = panes.getBoundingClientRect();
+  var pct = ((rect.right - e.clientX) / rect.width) * 100;
+  pct = Math.max(20, Math.min(60, pct));
+  document.getElementById("previewCol").style.width = pct + "%";
+  document.getElementById("editorCol").style.flex = "1";
+});
+document.addEventListener("mouseup", function() {
+  if (resizing) {
+    resizing = false;
+    document.getElementById("resizer").classList.remove("active");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }
+});
+/* ====== End Split Preview ====== */
 
 function newFile() {
   if (!currentFile) { alert("请先选择一个文件夹（点击文件夹内的文件）"); return; }
