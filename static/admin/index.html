@@ -320,6 +320,11 @@ body.focus .editor-col{flex:1!important}
 body.focus .focus-indicator{opacity:1}
 body.light .focus-indicator{background:rgba(192,57,43,.9)}
 
+/* Image drop zone */
+.drop-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(233,69,96,.15);border:3px dashed #e94560;z-index:500;display:none;align-items:center;justify-content:center;font-size:24px;color:#e94560;pointer-events:none}
+.drop-overlay.show{display:flex}
+body.light .drop-overlay{background:rgba(192,57,43,.1);border-color:#c0392b;color:#c0392b}
+
 .draft-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#155724;color:#81c784;padding:6px 16px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
 .draft-toast.show{opacity:1}
 body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
@@ -996,6 +1001,67 @@ document.addEventListener("keydown", function(e) {
 });
 /* ====== End Focus Mode ====== */
 
+/* ====== Image Drag & Drop Upload ====== */
+var dragCounter = 0;
+var allowedImageTypes = ["image/png","image/jpeg","image/gif","image/webp","image/svg+xml"];
+var maxImageSize = 5 * 1024 * 1024; // 5MB
+
+['dragenter','dragover','dragleave','drop'].forEach(function(evt) {
+  document.addEventListener(evt, function(e) { e.preventDefault(); e.stopPropagation(); });
+});
+
+document.addEventListener("dragenter", function(e) {
+  dragCounter++;
+  if (dragCounter === 1) document.getElementById("dropOverlay").classList.add("show");
+});
+document.addEventListener("dragleave", function(e) {
+  dragCounter--;
+  if (dragCounter <= 0) { dragCounter = 0; document.getElementById("dropOverlay").classList.remove("show"); }
+});
+document.addEventListener("drop", function(e) {
+  dragCounter = 0;
+  document.getElementById("dropOverlay").classList.remove("show");
+  if (!currentFile) { setStatus({text:"请先打开一个文件，再拖入图片",cls:"error"}); return; }
+  var files = e.dataTransfer.files;
+  if (!files || files.length === 0) return;
+  for (var i = 0; i < files.length; i++) {
+    if (allowedImageTypes.indexOf(files[i].type) === -1) { setStatus({text:"不支持的文件类型: " + files[i].type + "（支持 PNG/JPG/GIF/WebP/SVG）",cls:"error"}); continue; }
+    if (files[i].size > maxImageSize) { setStatus({text:"文件过大: " + (files[i].size/1024/1024).toFixed(1) + "MB（限制 5MB）",cls:"error"}); continue; }
+    uploadImage(files[i]);
+  }
+});
+
+function uploadImage(file) {
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var base64 = ev.target.result.split(",")[1];
+    var now = new Date();
+    var timestamp = now.getFullYear() + ("0"+(now.getMonth()+1)).slice(-2) + ("0"+now.getDate()).slice(-2) + "_" + ("0"+now.getHours()).slice(-2) + ("0"+now.getMinutes()).slice(-2) + ("0"+now.getSeconds()).slice(-2);
+    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    var imgPath = "static/images/" + timestamp + "_" + safeName;
+    setStatus({text:"上传中: " + safeName + "...",cls:"saving"});
+    githubAPI("contents/" + imgPath, "PUT", {
+      message: "Upload image " + safeName + " via admin editor",
+      content: base64,
+      branch: BRANCH
+    }).then(function(resp) {
+      var imgUrl = "/" + imgPath;
+      // Insert markdown image at cursor
+      var md = editor.getMarkdown();
+      var sel = editor.getSelection();
+      var pos = (sel && Array.isArray(sel)) ? sel[0] : md.length;
+      var newMd = md.substring(0, pos) + "\n![" + (file.name.replace(/\.[^.]+$/,"")) + "](" + imgUrl + ")\n" + md.substring(pos);
+      editor.setMarkdown(newMd, false);
+      setStatus({text:"已插入: " + safeName,cls:"saved"});
+      setTimeout(function(){setStatus({text:"就绪",cls:"idle"});},3000);
+    }).catch(function(e) {
+      setStatus({text:"上传失败: " + e.message,cls:"error"});
+    });
+  };
+  reader.readAsDataURL(file);
+}
+/* ====== End Image Upload ====== */
+
 /* ====== End Split Preview ====== */
 
 function newFile() {
@@ -1077,5 +1143,6 @@ if ('serviceWorker' in navigator) {
 window.addEventListener("beforeunload", function() { if (editor && currentFile) autoSaveDraft(); });
 </script>
 <div class="focus-indicator" id="focusIndicator">✍️ 专注模式 · Esc 退出</div>
+<div class="drop-overlay" id="dropOverlay">🖼️ 松开以上传图片</div>
 </body>
 </html>
