@@ -1,6 +1,8 @@
-***
-
-title: "学术出版中AIGC使用边界指南 2.0"tags: [lecture]date: 2026-04-26created: 1774662024.451606
+---
+title: "学术出版中AIGC使用边界指南 2.0"
+tags: [lecture]
+date: 2026-04-26
+created: 1774662024.451606
 ---
 
 # 学术出版中AIGC使用边界指南 2.0

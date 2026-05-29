@@ -1,6 +1,8 @@
-***
-
-title: "CNKI AI 科研工具讲座笔记"tags: [lecture]date: 2026-04-25created: 1774661564.010773
+---
+title: "CNKI AI 科研工具讲座笔记"
+tags: [lecture]
+date: 2026-04-25
+created: 1774661564.010773
 ---
 
 # CNKI AI 科研工具讲座笔记
