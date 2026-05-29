@@ -59,8 +59,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 
 /* Toast UI theme override - dark mode */
 .toastui-editor-defaultUI{border:none!important;border-radius:0!important}
-.toastui-editor-defaultUI-toolbar{background:#16213e!important;border-color:#0f3460!important}
-.toastui-editor-defaultUI-toolbar button{color:#c0c0d0!important;border-color:transparent!important}
+.toastui-editor-defaultUI-toolbar{background:#16213e!important;border-color:#0f3460!important;flex-wrap:nowrap!important;overflow-x:auto;padding:4px 8px!important}
+.toastui-editor-defaultUI-toolbar button{color:#c0c0d0!important;border-color:transparent!important;min-width:28px!important;height:28px!important;margin:1px!important}
 .toastui-editor-defaultUI-toolbar button:hover{background:#0f3460!important;color:#fff!important}
 .toastui-editor-defaultUI-toolbar button.active{background:#e94560!important;color:#fff!important}
 .toastui-editor-mode-switch{background:#0f3460!important;border-color:#1a4a8a!important}
@@ -185,8 +185,7 @@ body.light .color-btn-group .color-label{color:#888}
   .editor-area{width:100%}
 
   /* Toast UI editor adjustments */
-  .toastui-editor-defaultUI-toolbar{overflow-x:auto;flex-wrap:nowrap!important;padding:4px 8px!important}
-  .toastui-editor-defaultUI-toolbar button{min-width:28px;height:28px;padding:2px!important;margin:1px!important}
+  .toastui-editor-defaultUI-toolbar button{min-width:24px!important;height:24px!important;padding:1px!important;margin:0!important}
   .toastui-editor-md-container .toastui-editor{font-size:14px!important}
   .toastui-editor-ww-container .toastui-editor{font-size:14px!important}
   .ProseMirror{font-size:14px!important}
