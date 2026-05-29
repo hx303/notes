@@ -39,4 +39,7 @@ jobs:
           VERCEL_ORG_ID: team_vSFadBJ2sMBFZzDYrfPY7L58
           VERCEL_PROJECT_ID: prj_IXBqWXga4KNfdlRMSR3MQO6a0hup
         run: |
-          npx vercel --cwd public --prod --token ${{ secrets.VERCEL_TOKEN }} --scope wld-s-projects --yes
+          mkdir -p .vercel/output/static
+          cp -r public/* .vercel/output/static/
+          echo '{"version":3}' > .vercel/output/config.json
+          npx vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope wld-s-projects --yes
