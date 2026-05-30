@@ -42,4 +42,4 @@ jobs:
           mkdir -p .vercel/output/static
           cp -r public/* .vercel/output/static/
           echo '{"version":3}' > .vercel/output/config.json
-          npx vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }} --scope wld-s-projects --yes
+          npx vercel deploy --prebuilt --prod --archive=tgz --token ${{ secrets.VERCEL_TOKEN }} --scope wld-s-projects --yes
