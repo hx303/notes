@@ -19,11 +19,17 @@ var authReady = false;
 // ============================================================
 function initSupabase() {
   if (typeof supabase === "undefined") {
-    setTimeout(initSupabase, 500);
+    console.warn("Supabase SDK not loaded, retrying...");
+    setTimeout(initSupabase, 800);
     return;
   }
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  restoreSession();
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("Supabase client initialized");
+    restoreSession();
+  } catch (e) {
+    console.error("Supabase init error:", e);
+  }
 }
 
 async function restoreSession() {
@@ -130,6 +136,11 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 async function handleAuthSubmit() {
+  if (!sb) {
+    document.getElementById("authError").textContent = "系统初始化中，请稍等...";
+    setTimeout(function() { handleAuthSubmit(); }, 1500);
+    return;
+  }
   var modal = document.getElementById("authModal");
   var mode = modal ? modal.dataset.mode : "login";
   var email = document.getElementById("authEmail").value.trim();
