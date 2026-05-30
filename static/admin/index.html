@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>📝 笔记管理后台</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -30,7 +33,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .hamburger:hover{opacity:0.7}
 
 .main{display:flex;flex:1;overflow:hidden;position:relative}
-.sidebar{width:260px;min-width:260px;max-width:85vw;background:#16213e;overflow-y:auto;border-right:1px solid #0f3460;padding:8px 0;flex-shrink:0;transition:transform .25s cubic-bezier(0.4,0,0.2,1);z-index:50}
+.sidebar{width:260px;min-width:260px;max-width:85vw;background:#16213e;border-right:1px solid #0f3460;display:flex;flex-direction:column;flex-shrink:0;transition:transform .25s cubic-bezier(0.4,0,0.2,1);z-index:50}
+.sidebar-search{display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #0f3460;position:sticky;top:0;background:#16213e;z-index:2;gap:4px}
+body.light .sidebar-search{background:#fff;border-color:#e0e0e0}
+.sidebar-search input{flex:1;padding:6px 10px;background:#1a1a2e;border:1px solid #0f3460;border-radius:6px;color:#e0e0e0;font-size:12px;outline:none;min-width:0}
+.sidebar-search input:focus{border-color:#e94560}
+.sidebar-search input::placeholder{color:#666}
+body.light .sidebar-search input{background:#f5f5f5;border-color:#ddd;color:#333}
+body.light .sidebar-search input:focus{border-color:#c0392b}
+
+/* Sidebar action buttons */
+.sidebar-actions{display:flex;gap:4px;padding:5px 10px;border-bottom:1px solid #0f3460;background:#16213e}
+body.light .sidebar-actions{background:#fff;border-color:#e0e0e0}
+.sidebar-actions button{flex:1;padding:5px 6px;font-size:11px;background:#1a1a2e;color:#aaa;border:1px solid #0f3460;border-radius:5px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.sidebar-actions button:hover{background:#0f3460;color:#e94560;border-color:#e94560}
+body.light .sidebar-actions button{background:#f5f5f5;color:#666;border-color:#ddd}
+body.light .sidebar-actions button:hover{background:#e8e8e8;color:#c0392b;border-color:#c0392b}
+.sidebar-files{overflow-y:auto;flex:1}
+.sidebar-search .no-results{font-size:12px;color:#888;padding:16px 14px;text-align:center}
+body.light .sidebar-search .no-results{color:#999}
+/* Recent files */
+.recent-section{border-bottom:1px solid #1a4a8a;padding:4px 0}
+body.light .recent-section{border-color:#e0e0e0}
+.recent-section .recent-header{font-size:10px;color:#666;padding:4px 14px 2px;text-transform:uppercase;letter-spacing:0.5px}
+.recent-section .recent-file{padding:6px 14px 6px 20px;cursor:pointer;font-size:12px;color:#c0c0d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.recent-section .recent-file:hover{background:#0f3460}
+body.light .recent-section .recent-file{color:#666}
+body.light .recent-section .recent-file:hover{background:#eee}
+.recent-section .recent-file .recent-path{font-size:9px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}
+body.light .recent-section .recent-file .recent-path{color:#999}
 .sidebar .folder{margin:1px 0}
 .sidebar .folder-header{padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:13px;color:#a0a0b0;user-select:none;-webkit-tap-highlight-color:transparent}
 .sidebar .folder-header:hover{background:#0f3460}
@@ -38,35 +69,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .sidebar .folder.open>.folder-header .arrow{transform:rotate(90deg)}
 .sidebar .folder .files{max-height:0;overflow:hidden;transition:max-height .3s}
 .sidebar .folder.open .files{max-height:4000px}
-.sidebar .file{padding:10px 14px 10px 30px;cursor:pointer;font-size:13px;color:#c0c0d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-tap-highlight-color:transparent;min-height:40px;display:flex;align-items:center}
+.sidebar .file{padding:6px 10px 6px 14px;cursor:pointer;font-size:13px;color:#c0c0d0;display:flex;align-items:center;gap:4px;-webkit-tap-highlight-color:transparent;min-height:36px}
+.sidebar .file .file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.sidebar .file .file-actions{display:none;gap:1px;flex-shrink:0}
+.sidebar .file:hover .file-actions{display:flex}
+@media (hover:none){.sidebar .file .file-actions{display:flex}}
+.sidebar .file .file-actions button{background:transparent;border:none;cursor:pointer;font-size:14px;padding:2px 5px;border-radius:3px;line-height:1;opacity:0.5;transition:opacity .15s,background .15s}
+.sidebar .file .file-actions button:hover{opacity:1;background:#0f3460}
 .sidebar .file:hover{background:#0f3460}
 .sidebar .file.active{background:#e94560;color:#fff}
+.sidebar .file.active .file-actions button{color:#fff}
+.sidebar .file.active .file-actions button:hover{background:rgba(255,255,255,0.2)}
 
 /* Sidebar overlay for mobile */
 .sidebar-backdrop{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:40}
 
 .editor-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.toolbar{background:#16213e;padding:6px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:36px;flex-wrap:wrap}
-.toolbar .path{flex:1;font-size:11px;color:#a0a0b0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.toolbar .status{font-size:10px;padding:2px 8px;border-radius:3px;white-space:nowrap;flex-shrink:0}
+.toolbar{background:#16213e;padding:4px 8px;display:flex;align-items:center;gap:4px;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:30px;overflow:hidden}
+.toolbar .path{flex:1;font-size:10px;color:#a0a0b0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.toolbar .status{font-size:9px;padding:1px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0}
 .toolbar .status.idle{background:#333;color:#888}
 .toolbar .status.saved{background:#155724;color:#4caf50}
 .toolbar .status.error{background:#721c24;color:#f44336}
 .toolbar .status.saving{background:#1a5c2a;color:#81c784}
-.toolbar .mode-indicator{font-size:10px;padding:2px 6px;border-radius:3px;background:#0f3460;color:#e94560;white-space:nowrap;flex-shrink:0}
+.toolbar .mode-indicator{font-size:9px;padding:1px 5px;border-radius:3px;background:#0f3460;color:#e94560;white-space:nowrap;flex-shrink:0}
 
 .editor-wrap{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
 
-/* Toast UI theme override - dark mode */
-.toastui-editor-defaultUI{border:none!important;border-radius:0!important}
-.toastui-editor-defaultUI-toolbar{background:#16213e!important;border-color:#0f3460!important}
-.toastui-editor-defaultUI-toolbar button{color:#c0c0d0!important;border-color:transparent!important}
+/* Toast UI theme override - compact dark mode */
+.toastui-editor-defaultUI{border:none!important;border-radius:0!important;flex:1 1 0%!important}
+.toastui-editor-defaultUI-toolbar{background:#16213e!important;border-color:#0f3460!important;flex-wrap:nowrap!important;overflow-x:auto;padding:2px 6px!important;min-height:0!important;line-height:1!important}
+.toastui-editor-defaultUI-toolbar button{color:#c0c0d0!important;border-color:transparent!important;min-width:26px!important;height:26px!important;margin:0 1px!important;padding:2px!important}
 .toastui-editor-defaultUI-toolbar button:hover{background:#0f3460!important;color:#fff!important}
 .toastui-editor-defaultUI-toolbar button.active{background:#e94560!important;color:#fff!important}
-.toastui-editor-mode-switch{background:#0f3460!important;border-color:#1a4a8a!important}
-.toastui-editor-mode-switch .tab-item{color:#888!important}
+.toastui-editor-mode-switch{background:#0f3460!important;border-color:#1a4a8a!important;min-height:0!important;padding:0!important}
+.toastui-editor-mode-switch .tab-item{color:#888!important;font-size:11px!important;padding:2px 10px!important;line-height:1.4!important}
 .toastui-editor-mode-switch .tab-item.active{background:#e94560!important;color:#fff!important}
-.toastui-editor-md-container{background:#1a1a2e!important}
+.toastui-editor-main{min-height:0!important;flex:1 1 0%!important}
+.toastui-editor-md-container{background:#1a1a2e!important;flex:1 1 0%!important}
 .toastui-editor-md-container .toastui-editor{background:#1a1a2e!important;color:#e0e0e0!important}
 .toastui-editor-md-preview{background:#1e1e35!important}
 .toastui-editor-ww-container{background:#1a1a2e!important}
@@ -80,6 +120,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .ProseMirror blockquote{border-left-color:#e94560!important;color:#a0a0b0!important}
 .ProseMirror a{color:#e94560!important}
 .toastui-editor-contents{font-size:15px!important;line-height:1.8!important}
+/* Hide mode switch (we have our own toggle) */
+.toastui-editor-mode-switch{display:none!important}
 
 /* ===== Light theme ===== */
 body.light{background:#f5f5f5;color:#333}
@@ -89,14 +131,20 @@ body.light .sidebar{background:#fff;border-color:#e0e0e0}
 body.light .sidebar .folder-header{color:#555}
 body.light .sidebar .folder-header:hover{background:#eee}
 body.light .sidebar .file{color:#444}
+body.light .sidebar .file .file-actions button:hover{background:#e8e8e8}
 body.light .sidebar .file:hover{background:#eee}
 body.light .sidebar .file.active{background:#c0392b;color:#fff}
+body.light .sidebar .file.active .file-actions button{color:#fff}
+body.light .sidebar .file.active .file-actions button:hover{background:rgba(255,255,255,0.2)}
 body.light .toolbar{background:#fff;border-color:#e0e0e0}
 body.light .toolbar .path{color:#888}
 body.light .toolbar .status.idle{background:#e0e0e0;color:#666}
+body.light .toolbar .status.saved{background:#e8f5e9;color:#2e7d32}
+body.light .toolbar .status.error{background:#ffebee;color:#c0392b}
+body.light .toolbar .status.saving{background:#fff3e0;color:#e65100}
 body.light .mode-indicator{background:#f0f0f0;color:#c0392b}
-body.light .toastui-editor-defaultUI-toolbar{background:#f5f5f5!important;border-color:#ddd!important}
-body.light .toastui-editor-defaultUI-toolbar button{color:#333!important}
+body.light .toastui-editor-defaultUI-toolbar{background:#f5f5f5!important;border-color:#ddd!important;padding:2px 6px!important}
+body.light .toastui-editor-defaultUI-toolbar button{color:#333!important;min-width:26px!important;height:26px!important;margin:0 1px!important;padding:2px!important}
 body.light .toastui-editor-defaultUI-toolbar button:hover{background:#e0e0e0!important;color:#000!important}
 body.light .toastui-editor-defaultUI-toolbar button.active{background:#c0392b!important;color:#fff!important}
 body.light .toastui-editor-mode-switch{background:#f0f0f0!important;border-color:#ddd!important}
@@ -134,7 +182,6 @@ body.light .login-box .hint{color:#888}
 body.light .modal{background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15)}
 body.light .modal h3{color:#c0392b}
 body.light .modal input{background:#f5f5f5;border-color:#ddd;color:#333}
-body.light .empty-state{color:#999}
 
 .theme-toggle{font-size:18px;background:transparent!important;border:none!important;cursor:pointer;padding:4px 8px!important;line-height:1}
 .theme-toggle:hover{opacity:0.7}
@@ -148,8 +195,7 @@ body.light .color-btn-group input[type=color]:hover{border-color:#c0392b}
 .color-btn-group .color-label{font-size:10px;color:#a0a0b0;margin-right:4px}
 body.light .color-btn-group .color-label{color:#888}
 
-.empty-state{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:15px;flex-direction:column;gap:12px;flex:1}
-.empty-state span:first-child{font-size:48px}
+/* Empty state - absolutely positioned overlay, NOT flex child */
 
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
@@ -167,8 +213,10 @@ body.light .color-btn-group .color-label{color:#888}
   .sidebar-backdrop.open{display:block}
 
   /* Make sidebar items more touch-friendly */
+  .sidebar-search{padding:8px 10px}
+  .sidebar-search input{font-size:13px;padding:8px 10px}
   .sidebar .folder-header{padding:10px 14px;font-size:14px;min-height:42px;align-items:center}
-  .sidebar .file{padding:11px 14px 11px 30px;font-size:13.5px;min-height:44px}
+  .sidebar .file{padding:8px 10px 8px 14px;font-size:13.5px;min-height:44px}
 
   /* Toolbar */
   .toolbar{padding:5px 8px;gap:4px;min-height:32px}
@@ -182,8 +230,7 @@ body.light .color-btn-group .color-label{color:#888}
   .editor-area{width:100%}
 
   /* Toast UI editor adjustments */
-  .toastui-editor-defaultUI-toolbar{overflow-x:auto;flex-wrap:nowrap!important;padding:4px 8px!important}
-  .toastui-editor-defaultUI-toolbar button{min-width:28px;height:28px;padding:2px!important;margin:1px!important}
+  .toastui-editor-defaultUI-toolbar button{min-width:24px!important;height:24px!important;padding:1px!important;margin:0!important}
   .toastui-editor-md-container .toastui-editor{font-size:14px!important}
   .toastui-editor-ww-container .toastui-editor{font-size:14px!important}
   .ProseMirror{font-size:14px!important}
@@ -195,8 +242,6 @@ body.light .color-btn-group .color-label{color:#888}
   .login-box h2{font-size:16px}
 
   /* Empty state */
-  .empty-state{font-size:14px}
-  .empty-state span:first-child{font-size:36px}
 
   /* Color buttons on mobile */
   .color-btn-group{margin:0 2px}
@@ -295,7 +340,7 @@ body.light .outline-panel .outline-item:hover{background:#f0f0f0;color:#333}
 body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#c0392b}
 
 /* Mobile preview toggle */
-.preview-toggle-btn{font-size:10px;padding:2px 8px;margin-left:4px}
+.preview-toggle-btn{font-size:9px;padding:1px 6px;margin:0;line-height:1.4}
 
 @media (max-width: 768px) {
   .editor-panes{flex-direction:column}
@@ -307,7 +352,7 @@ body.light .outline-panel .outline-item.active{color:#c0392b;border-left-color:#
 }
 
 /* Word count */
-.word-count{font-size:10px;color:#666;white-space:nowrap;flex-shrink:0;min-width:45px;text-align:center}
+.word-count{font-size:9px;color:#666;white-space:nowrap;flex-shrink:0;min-width:40px;text-align:center}
 body.light .word-count{color:#999}
 
 /* Draft toast */
@@ -352,8 +397,15 @@ body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
 
 <div class="modal-overlay" id="newFileModal" style="display:none">
   <div class="modal">
-    <h3>新建笔记</h3>
-    <input type="text" id="newFileName" placeholder="文件名，如 4.8_线性变换.md" />
+    <h3>➕ 新建笔记</h3>
+    <p style="font-size:11px;color:#888;margin:0 0 8px">文件名（自动加 .md）</p>
+    <input type="text" id="newFileName" placeholder="例如：4.8_线性变换" />
+    <p style="font-size:11px;color:#888;margin:8px 0 4px">目标文件夹（可选）</p>
+    <select id="newFileFolder" style="width:100%;padding:8px 10px;background:#1a1a2e;color:#e0e0e0;border:1px solid #0f3460;border-radius:6px;font-size:13px;margin-bottom:8px">
+      <option value="">content/（根目录）</option>
+    </select>
+    <p style="font-size:11px;color:#888;margin:0 0 8px">或输入新文件夹名</p>
+    <input type="text" id="newFileNewFolder" placeholder="直接输入新文件夹名（选填）" style="margin-bottom:12px;width:100%;box-sizing:border-box" />
     <div class="btns">
       <button onclick="closeNewFile()">取消</button>
       <button class="primary" onclick="createFile()">创建</button>
@@ -385,7 +437,11 @@ body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
 </div>
 <div class="main" id="mainUI2" style="display:none">
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
-  <div class="sidebar" id="sidebar"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-search"><input type="text" id="sidebarSearch" placeholder="🔍 搜索文件..." oninput="filterFiles()" /><button onclick="document.getElementById('sidebarSearch').value='';filterFiles();document.getElementById('sidebarSearch').focus();" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px" id="sidebarSearchClear">✕</button></div>
+    <div class="sidebar-actions"><button onclick="newFile()" title="新建文件">📄＋ 新建文件</button><button onclick="newFolder()" title="新建文件夹">📁＋ 新建文件夹</button></div>
+    <div class="sidebar-files" id="sidebarFiles"></div>
+  </div>
   <div class="editor-area">
     <div class="toolbar">
       <span class="path" id="filePath">选择左侧文件开始编辑</span>
@@ -412,13 +468,6 @@ body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
       </div>
     </div>
   </div>
-</div>
-<div class="editor-area" id="emptyState">
-  <div class="empty-state">
-    <span style="font-size:48px">📂</span>
-    <span>从左侧文件列表选择一个笔记开始编辑</span>
-  </div>
-</div>
 
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
@@ -434,6 +483,37 @@ var currentSha = "";
 var files = [];
 var editor = null;
 var currentMode = localStorage.getItem("editor_mode") || "markdown";
+var RECENT_KEY = "recent_files_v1";
+var MAX_RECENT = 8;
+
+function getRecent() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
+  catch(e) { return []; }
+}
+function addRecent(path, name, fi, i2) {
+  var recents = getRecent();
+  // Remove duplicate if exists
+  recents = recents.filter(function(r) { return r.path !== path; });
+  recents.unshift({path: path, name: name, fi: fi, i2: i2, time: Date.now()});
+  if (recents.length > MAX_RECENT) recents = recents.slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(recents));
+}
+
+function renderRecent() {
+  var recents = getRecent();
+  if (recents.length === 0) return "";
+  var now = Date.now();
+  var html = '<div class="recent-section"><div class="recent-header">🕐 最近打开</div>';
+  recents.forEach(function(r) {
+    var folderName = r.path.replace("content/","").split("/").slice(0,-1).join("/") || "";
+    html += '<div class="recent-file" onclick="openFile('+r.fi+','+r.i2+')">'
+      + '📄 <span style="flex-shrink:0">' + escapeHtml(r.name) + '</span>'
+      + '<span class="recent-path">' + escapeHtml(folderName) + '</span>'
+      + '</div>';
+  });
+  html += '</div>';
+  return html;
+}
 
 function setStatus(s) {
   var el = document.getElementById("status");
@@ -460,8 +540,10 @@ async function githubAPI(path, method, body) {
 }
 
 function initEditor() {
-  if (editor) return;
+  if (editor) { editor.destroy(); editor = null; }
   var el = document.getElementById("editorCol");
+  // Remove existing editor wrapper(s) first
+  el.querySelectorAll("#editorWrap,[id=editorWrap]").forEach(function(w){ w.remove(); });
   // Insert editor wrapper
   var wrap = document.createElement("div");
   wrap.id = "editorWrap";
@@ -475,10 +557,8 @@ function initEditor() {
     usageStatistics: false,
     toolbarItems: [
       ["heading", "bold", "italic", "strike"],
-      ["hr", "quote"],
-      ["ul", "ol", "task", "indent", "outdent"],
-      ["table", "link"],
-      ["code", "codeblock"],
+      ["ul", "ol", "quote"],
+      ["table", "link", "code", "codeblock"],
       ["scrollSync"]
     ],
     plugins: [],
@@ -606,9 +686,39 @@ async function loadFiles() {
   }
 }
 
-function renderSidebar() {
-  var sb = document.getElementById("sidebar");
-  sb.innerHTML = files.map(function(folder, fi) {
+function renderSidebar(filter) {
+  var filesToRender = files;
+  var origIdx = null;
+  if (filter) {
+    var q = filter.toLowerCase();
+    var mapping = [];
+    filesToRender = [];
+    files.forEach(function(folder, fi) {
+      var folderMatch = folder.name.toLowerCase().indexOf(q) > -1;
+      var matchedFiles = folder.files.filter(function(f) {
+        return f.name.toLowerCase().indexOf(q) > -1 || folderMatch;
+      });
+      if (folderMatch || matchedFiles.length > 0) {
+        mapping.push(fi);
+        filesToRender.push({name: folder.name, files: folderMatch ? folder.files : matchedFiles, open: true});
+      }
+    });
+    origIdx = mapping;
+  }
+  var sb = document.getElementById("sidebarFiles");
+  if (!filter) {
+    var recentHtml = renderRecent();
+  }
+  if (!filter && filesToRender.length === 0) {
+    sb.innerHTML = '<div class="no-results">📂 无笔记文件</div>';
+    return;
+  }
+  if (filter && filesToRender.length === 0) {
+    sb.innerHTML = '<div class="no-results">未找到匹配 "' + escapeHtml(filter) + '" 的文件</div>';
+    return;
+  }
+  sb.innerHTML = (recentHtml || "") + filesToRender.map(function(folder, fi) {
+    var realFi = origIdx ? origIdx[fi] : fi;
     var displayName = folder.name || "根目录";
     return '<div class="folder'+(folder.open?" open":"")+'" id="folder'+fi+'">'+
       '<div class="folder-header" onclick="toggleFolder('+fi+')">'+
@@ -617,13 +727,33 @@ function renderSidebar() {
       '</div>'+
       '<div class="files">'+
         folder.files.map(function(f, i2) {
-          return '<div class="file" id="file'+fi+'_'+i2+'" onclick="openFile('+fi+','+i2+')">'+
-            '\ud83d\udcc4 ' + escapeHtml(f.name)+
+          var realFi2 = i2;
+          if (filter) {
+            var origFolder = files[realFi];
+            if (origFolder) {
+              for (var k = 0; k < origFolder.files.length; k++) {
+                if (origFolder.files[k].path === f.path) { realFi2 = k; break; }
+              }
+            }
+          }
+          return '<div class="file" id="file'+fi+'_'+i2+'">'+
+            '<span class="file-name" onclick="openFile('+realFi+','+realFi2+')">\ud83d\udcc4 ' + escapeHtml(f.name)+'</span>'+
+            '<span class="file-actions">'+
+              '<button onclick="event.stopPropagation();renameFile('+realFi+','+realFi2+')" title="重命名">✏️</button>'+
+              '<button onclick="event.stopPropagation();deleteFile('+realFi+','+realFi2+')" title="删除">🗑️</button>'+
+            '</span>'+
           '</div>';
         }).join("")+
       '</div>'+
     '</div>';
   }).join("");
+}
+
+function filterFiles() {
+  var q = document.getElementById("sidebarSearch").value.trim();
+  var clearBtn = document.getElementById("sidebarSearchClear");
+  clearBtn.style.display = q ? "block" : "none";
+  renderSidebar(q);
 }
 
 function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
@@ -678,7 +808,6 @@ async function openFile(fi, i2) {
   closeSidebarOnMobile();
   document.querySelectorAll(".file.active").forEach(function(el){el.classList.remove("active")});
   document.getElementById("file"+fi+"_"+i2).classList.add("active");
-  document.getElementById("emptyState").style.display = "none";
   setStatus({text:"加载中...",cls:"saving"});
   try {
     var data = await githubAPI("contents/" + f.path + "?ref=" + BRANCH, "GET");
@@ -713,6 +842,7 @@ async function openFile(fi, i2) {
       editor.setMarkdown(content, false);
     }
     document.getElementById("filePath").textContent = f.path;
+    addRecent(f.path, f.name, fi, i2);
     setStatus({text:"已加载 — 当前模式: " + (currentMode==="wysiwyg"?"可视化":"Markdown"),cls:"idle"});
     renderPreview();
     updateWordCount();
@@ -894,8 +1024,11 @@ function renderPreview() {
 function renderMath(html) {
   // Protect display math
   html = html.replace(/\$\$([\s\S]*?)\$\$/g, '<span class="math-display">$$\n$1\n$$</span>');
-  // Protect inline math (but not $ inside code blocks)
-  html = html.replace(/(?<!`) \$([^$]+?)\$ /g, ' <span class="math-inline">$$1$</span> ');
+  // Protect inline math $...$, Safari-compatible (no lookbehind)
+  // Capture group before $ avoids matching backtick-preceded $ in code spans
+  html = html.replace(/(^|[^`])\$([^\$\n][^\$\n]*?)\$/g, function(m, before, math) {
+    return before + '<span class="math-inline">$' + math + '$</span>';
+  });
   return html;
 }
 
@@ -1065,7 +1198,16 @@ function uploadImage(file) {
 /* ====== End Split Preview ====== */
 
 function newFile() {
-  if (!currentFile) { alert("请先选择一个文件夹（点击文件夹内的文件）"); return; }
+  // Populate folder picker from loaded files
+  var sel = document.getElementById("newFileFolder");
+  var currentFolder = currentFile ? currentFile.path.replace("content/","").replace(/\/[^\/]+$/,"") : "";
+  sel.innerHTML = '<option value="">content/（根目录）</option>' +
+    files.map(function(f) {
+      var selected = f.name === currentFolder ? " selected" : "";
+      return '<option value="' + escapeHtml(f.name) + '/"' + selected + '>' + escapeHtml(f.name) + '/</option>';
+    }).join("");
+  document.getElementById("newFileName").value = "";
+  document.getElementById("newFileNewFolder").value = "";
   document.getElementById("newFileModal").style.display = "flex";
   document.getElementById("newFileName").focus();
 }
@@ -1076,8 +1218,16 @@ async function createFile() {
   var name = document.getElementById("newFileName").value.trim();
   if (!name) return;
   if (!name.endsWith(".md")) name += ".md";
-  var prefix = currentFile.path.replace(/\/[^\/]+$/,"");
-  var newPath = prefix + "/" + name;
+  // Determine folder path
+  var sel = document.getElementById("newFileFolder");
+  var newFolder = document.getElementById("newFileNewFolder").value.trim();
+  var prefix = "content/";
+  if (newFolder) {
+    prefix += newFolder + "/";
+  } else if (sel.value) {
+    prefix += sel.value; // already ends with /
+  }
+  var newPath = prefix + name;
   var fm = "---\ntitle: \"" + name.replace(".md","") + "\"\ndate: " + new Date().toISOString().split("T")[0] + "\ncreated: " + new Date().toISOString().split("T")[0] + "\n---\n\n";
   try {
     var encoded = encodeContent(fm);
@@ -1094,6 +1244,86 @@ async function createFile() {
   }
 }
 
+async function newFolder() {
+  var name = prompt("输入文件夹名称（例如：物理学）：");
+  if (!name || !name.trim()) return;
+  name = name.trim().replace(/[\/\\:*?"<>|]/g, "-");
+  var path = "content/" + name + "/.gitkeep";
+  setStatus({text:"创建文件夹...",cls:"saving"});
+  try {
+    await githubAPI("contents/" + path, "PUT", {
+      message: "创建文件夹 " + name,
+      content: "",
+      branch: BRANCH
+    });
+    setStatus({text:"文件夹已创建: " + name,cls:"saved"});
+    loadFiles();
+  } catch(e) {
+    setStatus({text:"创建文件夹失败: "+e.message,cls:"error"});
+  }
+}
+
+async function deleteFile(fi, i2) {
+  var f = files[fi].files[i2];
+  if (!confirm("确定删除 " + f.name + "？\n\n路径: " + f.path + "\n\n此操作不可撤销！")) return;
+  setStatus({text:"删除中...",cls:"saving"});
+  try {
+    await githubAPI("contents/" + f.path, "DELETE", {
+      message: "删除 " + f.name,
+      sha: f.sha,
+      branch: BRANCH
+    });
+    if (currentFile && currentFile.path === f.path) {
+      currentFile = null;
+      currentSha = "";
+      document.getElementById("filePath").textContent = "选择左侧文件开始编辑";
+      document.getElementById("previewContent").innerHTML = '<p style="color:#888;text-align:center;margin-top:40px">选择文件开始预览</p>';
+      if (editor) { try { editor.setMarkdown(""); } catch(e) {} }
+    }
+    setStatus({text:"已删除: " + f.name,cls:"saved"});
+    loadFiles();
+  } catch(e) {
+    setStatus({text:"删除失败: "+e.message,cls:"error"});
+  }
+}
+
+async function renameFile(fi, i2) {
+  var f = files[fi].files[i2];
+  var newName = prompt("重命名为：", f.name);
+  if (!newName || !newName.trim() || newName.trim() === f.name) return;
+  newName = newName.trim();
+  if (!newName.endsWith(".md")) newName += ".md";
+  var oldPath = f.path;
+  var newPath = oldPath.replace(/\/[^\/]+$/, "/") + newName;
+  setStatus({text:"重命名中...",cls:"saving"});
+  try {
+    // Get current content
+    var fileData = await githubAPI("contents/" + oldPath + "?ref=" + BRANCH, "GET");
+    var content = atob(fileData.content);
+    // Create at new path
+    await githubAPI("contents/" + newPath, "PUT", {
+      message: "重命名 " + f.name + " → " + newName,
+      content: fileData.content, // reuse base64
+      branch: BRANCH
+    });
+    // Delete old
+    await githubAPI("contents/" + oldPath, "DELETE", {
+      message: "删除旧文件 " + f.name + "（已重命名）",
+      sha: fileData.sha,
+      branch: BRANCH
+    });
+    if (currentFile && currentFile.path === oldPath) {
+      currentFile = null;
+      currentSha = "";
+      document.getElementById("filePath").textContent = "选择左侧文件开始编辑";
+    }
+    setStatus({text:"已重命名: " + f.name + " → " + newName,cls:"saved"});
+    loadFiles();
+  } catch(e) {
+    setStatus({text:"重命名失败: "+e.message,cls:"error"});
+  }
+}
+
 function saveToken() {
   var t = document.getElementById("tokenInput").value.trim();
   if (!t) return;
@@ -1107,13 +1337,11 @@ function init() {
     document.getElementById("loginScreen").style.display = "flex";
     document.getElementById("mainUI").style.display = "none";
     document.getElementById("mainUI2").style.display = "none";
-    document.getElementById("emptyState").style.display = "none";
     return;
   }
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("mainUI").style.display = "flex";
   document.getElementById("mainUI2").style.display = "flex";
-  document.getElementById("emptyState").style.display = "flex";
   loadFiles();
 }
 

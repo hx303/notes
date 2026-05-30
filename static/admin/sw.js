@@ -1,7 +1,5 @@
-const CACHE = "wouldkeep-admin-v2";
+const CACHE = "wouldkeep-admin-v3";
 const ASSETS = [
-  "/admin/",
-  "/admin/index.html",
   "/admin/manifest.json",
   "/admin/icon-192.png",
   "/admin/icon-512.png"
@@ -35,17 +33,9 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // For HTML, network-first (always get latest)
+  // For HTML, always network (never cache — always get latest deploy)
   if (e.request.url.endsWith('.html') || e.request.url.endsWith('/admin/') || e.request.url.endsWith('/admin')) {
-    e.respondWith(
-      fetch(e.request).then(resp => {
-        if (resp.ok) {
-          const clone = resp.clone();
-          caches.open(CACHE).then(cache => cache.put(e.request, clone));
-        }
-        return resp;
-      }).catch(() => caches.match(e.request))
-    );
+    e.respondWith(fetch(e.request));
     return;
   }
 
