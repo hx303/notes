@@ -4,10 +4,15 @@ import * as Component from "./quartz/components"
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
-  afterBody: [],
+  afterBody: [
+    Component.SupabaseComments({
+      supabaseUrl: "https://agocyybolrisqujvjqdj.supabase.co",
+      supabaseAnonKey: "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc",
+    }),
+  ],
   footer: Component.Footer({
     links: {
-      "🌐 GitHub": "https://github.com/wld030303/notes",
+      "🌐 GitHub": "https://github.com/hx303/notes",
       "✍️ 由 Quartz 驱动": "https://quartz.jzhao.xyz",
     },
   }),

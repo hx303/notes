@@ -403,6 +403,89 @@ body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
 ::-webkit-scrollbar-track{background:#1a1a2e}
 ::-webkit-scrollbar-thumb{background:#0f3460;border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:#1a4a8a}
+
+/* ===== Auth + Comments ===== */
+/* Auth button in header */
+.auth-btn{font-size:12px;padding:6px 14px;border-radius:20px;cursor:pointer;font-weight:500;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(233,69,96,.3);background:rgba(233,69,96,.1);color:#e94560}
+.auth-btn:hover{background:rgba(233,69,96,.2);border-color:#e94560}
+body.light .auth-btn{background:rgba(192,57,43,.06);border-color:rgba(192,57,43,.2);color:#c0392b}
+body.light .auth-btn:hover{background:rgba(192,57,43,.12);border-color:#c0392b}
+/* User menu */
+.user-menu{display:none;align-items:center;gap:6px;position:relative}
+.user-menu-btn{font-size:12px;padding:4px 10px;border-radius:20px;cursor:pointer;background:rgba(15,52,96,.4);border:1px solid rgba(26,74,138,.3);color:#a0a0b0;display:inline-flex;align-items:center;gap:4px;transition:all .2s}
+.user-menu-btn:hover{background:rgba(15,52,96,.6);color:#ccc}
+body.light .user-menu-btn{background:rgba(0,0,0,.04);border-color:#ddd;color:#666}
+.user-menu-dropdown{position:absolute;top:100%;right:0;margin-top:4px;background:#16213e;border:1px solid #0f3460;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.4);z-index:100;min-width:160px;display:none;overflow:hidden}
+body.light .user-menu-dropdown{background:#fff;border-color:#e0e0e0;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.user-menu-dropdown.open{display:block}
+.user-menu-dropdown .menu-item{display:block;width:100%;padding:8px 14px;font-size:12px;color:#c0c0d0;background:transparent;border:none;text-align:left;cursor:pointer;transition:background .15s}
+.user-menu-dropdown .menu-item:hover{background:#0f3460}
+body.light .user-menu-dropdown .menu-item{color:#555}
+body.light .user-menu-dropdown .menu-item:hover{background:#f0f0f0}
+.user-menu-dropdown .menu-divider{border-top:1px solid #0f3460;margin:4px 0}
+body.light .user-menu-dropdown .menu-divider{border-color:#e0e0e0}
+/* Auth modal */
+.auth-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:300}
+.auth-modal{background:#16213e;padding:28px 32px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);min-width:340px;max-width:90vw}
+body.light .auth-modal{background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.auth-modal h3{color:#e94560;margin:0 0 16px;font-size:18px}
+body.light .auth-modal h3{color:#c0392b}
+.auth-modal .field{margin-bottom:14px}
+.auth-modal .field label{display:block;font-size:12px;color:#888;margin-bottom:4px}
+.auth-modal .field input{width:100%;padding:10px 12px;background:#1a1a2e;border:1px solid #0f3460;border-radius:6px;color:#e0e0e0;font-size:13px;box-sizing:border-box}
+.auth-modal .field input:focus{outline:none;border-color:#e94560}
+body.light .auth-modal .field input{background:#f5f5f5;border-color:#ddd;color:#333}
+body.light .auth-modal .field input:focus{border-color:#c0392b}
+.auth-modal .auth-error{color:#f44336;font-size:12px;margin:8px 0;min-height:16px}
+.auth-modal .auth-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.auth-modal .auth-toggle{text-align:center;margin-top:16px;font-size:12px;color:#888}
+.auth-modal .auth-toggle a{color:#e94560;text-decoration:none}
+.auth-modal .auth-toggle a:hover{text-decoration:underline}
+body.light .auth-modal .auth-toggle a{color:#c0392b}
+/* Comments panel */
+.comment-panel{border-top:1px solid #0f3460;background:#111827;display:flex;flex-direction:column;flex-shrink:0;max-height:40%}
+body.light .comment-panel{background:#f8f8f8;border-top-color:#e0e0e0}
+.comment-panel-header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#16213e;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:30px}
+body.light .comment-panel-header{background:#fff;border-bottom-color:#e0e0e0}
+.comment-panel-header span{font-size:11px;color:#a0a0b0;font-weight:500}
+body.light .comment-panel-header span{color:#888}
+.comment-panel-header select{font-size:11px;padding:2px 6px;background:#1a1a2e;border:1px solid #0f3460;border-radius:4px;color:#e0e0e0;max-width:180px}
+body.light .comment-panel-header select{background:#f5f5f5;border-color:#ddd;color:#333}
+.comment-list{flex:1;overflow-y:auto;padding:8px 12px}
+.comment-input-row{display:flex;gap:6px;padding:8px 12px;border-top:1px solid #0f3460;flex-shrink:0;background:#0d1117}
+body.light .comment-input-row{background:#f0f0f0;border-top-color:#e0e0e0}
+.comment-input-row input{flex:1;padding:7px 10px;background:#1a1a2e;border:1px solid #0f3460;border-radius:6px;color:#e0e0e0;font-size:12px}
+.comment-input-row input:focus{outline:none;border-color:#e94560}
+body.light .comment-input-row input{background:#fff;border-color:#ddd;color:#333}
+body.light .comment-input-row input:focus{border-color:#c0392b}
+.comment-input-row button{padding:5px 14px;font-size:11px;border-radius:16px;flex-shrink:0}
+/* Comment items */
+.comment-section-group{margin-bottom:10px}
+.comment-section-title{font-size:10px;color:#666;padding:4px 0 2px;border-bottom:1px solid rgba(15,52,96,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+body.light .comment-section-title{color:#999;border-color:#e0e0e0}
+.comment-item{padding:6px 8px;margin:3px 0;background:rgba(15,52,96,.15);border-radius:6px;border-left:2px solid #e94560}
+body.light .comment-item{background:#fff;border-left-color:#c0392b;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.comment-header{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.comment-author{font-size:12px;font-weight:600;color:#e94560}
+body.light .comment-author{color:#c0392b}
+.comment-time{font-size:10px;color:#666}
+.comment-section-badge{font-size:9px;color:#888;background:rgba(15,52,96,.3);padding:1px 6px;border-radius:8px}
+body.light .comment-section-badge{background:#f0f0f0;color:#999}
+.comment-delete-btn{background:transparent;border:none;color:#666;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;margin-left:auto;opacity:0;transition:opacity .15s}
+.comment-item:hover .comment-delete-btn{opacity:0.6}
+.comment-delete-btn:hover{opacity:1!important;color:#f44336}
+.comment-body{font-size:12px;color:#c0c0d0;line-height:1.5;word-break:break-word}
+body.light .comment-body{color:#555}
+/* Login prompt in comment area */
+.comment-login-prompt{text-align:center;padding:12px;font-size:12px;color:#888}
+.comment-login-prompt a{color:#e94560;cursor:pointer;text-decoration:none}
+.comment-login-prompt a:hover{text-decoration:underline}
+/* Mobile comment panel */
+@media(max-width:768px){
+  .comment-panel{max-height:35%}
+  .comment-section-badge{display:none}
+  .auth-modal{min-width:auto;width:90vw;padding:20px}
+}
 </style>
 </head>
 <body>
@@ -458,6 +541,16 @@ body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
     <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">📝 Markdown</button>
     <button onclick="newFile()">＋ 新建</button>
     <button class="primary" id="saveBtn" onclick="saveFile()">💾 保存</button>
+    <button class="auth-btn" id="authLoginBtn" onclick="showAuthModal('login')" title="登录后可发表评论">🔑 登录</button>
+    <div class="user-menu" id="authUserMenu">
+      <button class="user-menu-btn" id="authUserMenuBtn" onclick="document.getElementById('authUserDropdown').classList.toggle('open')" title="用户菜单">👤 <span id="authUsername">用户</span> ▾</button>
+      <div class="user-menu-dropdown" id="authUserDropdown">
+        <div class="menu-item" style="font-weight:600;cursor:default" id="authUserEmail">加载中...</div>
+        <div class="menu-divider"></div>
+        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');showAuthModal('manageRoles')" id="authAdminItem" style="display:none">⚙️ 管理权限</button>
+        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');handleSignOut()">🚪 退出登录</button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="main" id="mainUI2" style="display:none">
@@ -492,12 +585,30 @@ body.light .draft-toast{background:#e8f5e9;color:#2e7d32}
         <div class="outline-panel" id="outlinePanel"></div>
       </div>
     </div>
+    <div class="comment-panel" id="commentPanel" style="display:none">
+      <div class="comment-panel-header">
+        <span>💬 评论与讨论</span>
+        <select id="commentSection" onchange="loadComments()">
+          <option value="">📄 整篇笔记</option>
+        </select>
+      </div>
+      <div class="comment-list" id="commentList">
+        <div class="comment-login-prompt">打开文件后加载评论</div>
+      </div>
+      <div class="comment-input-row" id="commentInputRow">
+        <input type="text" id="commentInput" placeholder="发表评论..." onkeydown="if(event.key==='Enter')submitComment()" />
+        <button class="primary" onclick="submitComment()">发送</button>
+      </div>
+    </div>
   </div>
+</div>
 
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/umd/supabase.min.js"></script>
+<script src="/admin/auth.js"></script>
 
 <script>
 var REPO = "hx303/notes";
@@ -1441,5 +1552,53 @@ window.addEventListener("beforeunload", function() { if (editor && currentFile) 
 </script>
 <div class="focus-indicator" id="focusIndicator">✍️ 专注模式 · Esc 退出</div>
 <div class="drop-overlay" id="dropOverlay">🖼️ 松开以上传图片</div>
+
+<!-- Auth Modal -->
+<div class="auth-modal-overlay" id="authModal">
+  <div class="auth-modal" onclick="event.stopPropagation()">
+    <h3 id="authModalTitle">🔑 登录</h3>
+    <div class="auth-error" id="authError"></div>
+    <div class="field" id="authNameGroup">
+      <label>显示名称</label>
+      <input type="text" id="authName" placeholder="你的名字" />
+    </div>
+    <div class="field">
+      <label>邮箱</label>
+      <input type="email" id="authEmail" placeholder="you@example.com" />
+    </div>
+    <div class="field">
+      <label>密码</label>
+      <input type="password" id="authPassword" placeholder="最少 6 位" />
+    </div>
+    <div class="auth-btns">
+      <button onclick="hideAuthModal()">取消</button>
+      <button class="primary" id="authSubmitBtn" onclick="handleAuthSubmit()">登录</button>
+    </div>
+    <div class="auth-toggle" id="authToggleLink">
+      没有账号？<a href="#" onclick="showAuthModal('register')">注册</a>
+    </div>
+  </div>
+</div>
+
+<!-- Admin role management modal -->
+<div class="auth-modal-overlay" id="roleModal" onclick="hideRoleModal()">
+  <div class="auth-modal" onclick="event.stopPropagation()" style="max-width:480px">
+    <h3>⚙️ 用户权限管理</h3>
+    <p style="color:#888;font-size:12px;margin-bottom:12px">输入用户邮箱，赋予或撤销管理员权限</p>
+    <div class="field">
+      <label>用户邮箱</label>
+      <input type="email" id="roleEmail" placeholder="user@example.com" />
+    </div>
+    <div class="auth-error" id="roleError"></div>
+    <div class="auth-btns">
+      <button onclick="hideRoleModal()">取消</button>
+      <button class="primary" onclick="grantAdmin()" style="background:linear-gradient(135deg,#e94560,#d63851);border:none;color:#fff">设为管理员</button>
+      <button onclick="revokeAdmin()" style="background:rgba(255,87,34,.2);color:#ff7043;border-color:rgba(255,87,34,.3)">撤销权限</button>
+    </div>
+    <div style="margin-top:12px;max-height:200px;overflow-y:auto;font-size:11px" id="roleList">
+      <span style="color:#666">加载管理员列表...</span>
+    </div>
+  </div>
+</div>
 </body>
 </html>
