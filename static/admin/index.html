@@ -62,6 +62,11 @@ body.light .recent-section .recent-file{color:#666}
 body.light .recent-section .recent-file:hover{background:#eee}
 .recent-section .recent-file .recent-path{font-size:9px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}
 body.light .recent-section .recent-file .recent-path{color:#999}
+.sidebar .folder-header .folder-delete-btn{background:transparent;border:none;cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px;opacity:0;transition:opacity .15s,background .15s;line-height:1;flex-shrink:0}
+.sidebar .folder-header:hover .folder-delete-btn{opacity:0.5}
+.sidebar .folder-header .folder-delete-btn:hover{opacity:1!important;background:#e94560}
+body.light .sidebar .folder-header .folder-delete-btn:hover{background:#c0392b}
+@media(hover:none){.sidebar .folder-header .folder-delete-btn{opacity:0.4}}
 .sidebar .folder{margin:1px 0}
 .sidebar .folder-header{padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:13px;color:#a0a0b0;user-select:none;-webkit-tap-highlight-color:transparent}
 .sidebar .folder-header:hover{background:#0f3460}
@@ -724,6 +729,7 @@ function renderSidebar(filter) {
       '<div class="folder-header" onclick="toggleFolder('+fi+')">'+
         '<span class="arrow">\u25b6</span>\ud83d\udcc1 ' + escapeHtml(displayName) +
         ' <small style="color:#666;margin-left:auto">'+folder.files.length+'</small>'+
+        (displayName ? '<button class="folder-delete-btn" onclick="event.stopPropagation();deleteFolder('+realFi+')" title="删除文件夹">🗑️</button>' : '') +
       '</div>'+
       '<div class="files">'+
         folder.files.map(function(f, i2) {
@@ -1285,6 +1291,49 @@ async function deleteFile(fi, i2) {
   } catch(e) {
     setStatus({text:"删除失败: "+e.message,cls:"error"});
   }
+}
+
+async function deleteFolder(fi) {
+  var folder = files[fi];
+  if (!folder) return;
+  var count = folder.files.length;
+  if (!confirm("确定删除文件夹 \"" + folder.name + "\" 及其 " + count + " 个文件？\n\n此操作不可撤销！")) return;
+  setStatus({text:"删除文件夹 (" + count + " 个文件)...",cls:"saving"});
+  var errors = [];
+  for (var i = 0; i < folder.files.length; i++) {
+    var f = folder.files[i];
+    try {
+      await githubAPI("contents/" + f.path, "DELETE", {
+        message: "删除文件夹 " + folder.name + " (" + (i+1) + "/" + count + ")",
+        sha: f.sha,
+        branch: BRANCH
+      });
+    } catch(e) { errors.push(f.name + ": " + e.message); }
+  }
+  // Also try to delete .gitkeep if it exists
+  try {
+    var gkResp = await githubAPI("contents/content/" + folder.name + "/.gitkeep?ref=" + BRANCH, "GET");
+    if (gkResp && gkResp.sha) {
+      await githubAPI("contents/content/" + folder.name + "/.gitkeep", "DELETE", {
+        message: "删除 .gitkeep",
+        sha: gkResp.sha,
+        branch: BRANCH
+      });
+    }
+  } catch(e) { /* .gitkeep may not exist, ignore */ }
+  if (currentFile && currentFile.path.startsWith("content/" + folder.name + "/")) {
+    currentFile = null;
+    currentSha = "";
+    document.getElementById("filePath").textContent = "选择左侧文件开始编辑";
+    document.getElementById("previewContent").innerHTML = '<p style="color:#888;text-align:center;margin-top:40px">选择文件开始预览</p>';
+    if (editor) { try { editor.setMarkdown(""); } catch(e) {} }
+  }
+  if (errors.length > 0) {
+    setStatus({text:"部分删除失败: "+errors.join("; "),cls:"error"});
+  } else {
+    setStatus({text:"文件夹已删除: " + folder.name,cls:"saved"});
+  }
+  loadFiles();
 }
 
 async function renameFile(fi, i2) {
