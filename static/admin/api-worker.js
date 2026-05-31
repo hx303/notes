@@ -148,8 +148,15 @@ async function proxyGitHubAPI(config, path, method, body, userInfo) {
 
   const fetchOpts = { method, headers };
 
-  // 写操作：注入 author 和 committer 信息
-  if ((method === 'PUT' || method === 'POST' || method === 'PATCH') && body) {
+  // Only inject author/committer/branch for content write operations
+  const isContentWrite = (
+    (method === 'PUT' || method === 'POST' || method === 'PATCH' || method === 'DELETE')
+    && path.startsWith('contents/')
+    && body
+    && userInfo && userInfo.email
+  );
+
+  if (isContentWrite) {
     const enrichedBody = { ...body };
 
     // 如果 body 中没有 branch，自动注入
@@ -158,30 +165,15 @@ async function proxyGitHubAPI(config, path, method, body, userInfo) {
     }
 
     // 注入 committer 和 author（用户身份追踪）
-    if (userInfo && userInfo.email) {
-      const identity = {
-        name: userInfo.display_name || userInfo.email.split('@')[0],
-        email: userInfo.email,
-      };
-      enrichedBody.committer = identity;
-      enrichedBody.author = identity;
-    }
+    const identity = {
+      name: userInfo.display_name || userInfo.email.split('@')[0],
+      email: userInfo.email,
+    };
+    enrichedBody.committer = identity;
+    enrichedBody.author = identity;
 
     fetchOpts.body = JSON.stringify(enrichedBody);
     headers['Content-Type'] = 'application/json';
-  } else if (method === 'DELETE' && userInfo && userInfo.email) {
-    // DELETE 操作也可能有 body（比如删除文件时需要 message + sha）
-    if (body) {
-      const enrichedBody = { ...body };
-      const identity = {
-        name: userInfo.display_name || userInfo.email.split('@')[0],
-        email: userInfo.email,
-      };
-      enrichedBody.committer = identity;
-      enrichedBody.author = identity;
-      fetchOpts.body = JSON.stringify(enrichedBody);
-      headers['Content-Type'] = 'application/json';
-    }
   } else if (body) {
     fetchOpts.body = JSON.stringify(body);
     headers['Content-Type'] = 'application/json';
