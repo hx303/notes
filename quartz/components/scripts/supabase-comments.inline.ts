@@ -112,7 +112,7 @@ async function loadSupabaseSDK(supabaseUrl: string, supabaseAnonKey: string): Pr
 
   return new Promise((resolve) => {
     const script = document.createElement("script")
-    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/umd/supabase.min.js"
+    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"
     script.async = true
     script.onload = () => {
       const sb = (window as any).supabase.createClient(supabaseUrl, supabaseAnonKey)
