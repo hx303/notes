@@ -186,10 +186,19 @@ async function proxyGitHubAPI(config, path, method, body, userInfo) {
     let errJson;
     try { errJson = JSON.parse(errText); } catch { errJson = { message: errText }; }
     console.error(`GitHub API ${method} ${path} failed:`, response.status, errJson.message);
+
+    // Friendly error for existing file without sha
+    const rawMsg = errJson.message || "";
+    let friendly = rawMsg;
+    if (method === "PUT" && path.startsWith("contents/") && rawMsg.includes("sha") && rawMsg.includes("wasn't supplied")) {
+      const filePath = path.replace(/^contents\//, "");
+      friendly = `已存在同名文件: ${filePath}`;
+    }
+
     return {
       error: true,
       status: response.status,
-      body: { error: errJson.message || `GitHub API error: ${response.status}` },
+      body: { error: `GitHub API error: ${friendly}` },
     };
   }
 
