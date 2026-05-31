@@ -5,7 +5,7 @@
 // 架构: admin/index.html → Worker → GitHub API / Supabase
 // ============================================================
 
-import * as jose from 'jose';
+// 依赖: 仅使用 Web API (fetch), 无需外部包
 
 // ============================================================
 // Config (从 Cloudflare Secrets / env 读取)
@@ -68,17 +68,34 @@ async function verifyJWT(request, env) {
 
   const token = authHeader.slice(7);
   try {
-    // 使用 Supabase JWKS 公钥端点验证 JWT（支持 ECC/HS256 自动切换）
-    const JWKS = jose.createRemoteJWKSet(
-      new URL(`${config.SUPABASE_URL}/auth/v1/jwks`)
-    );
-    const { payload } = await jose.jwtVerify(token, JWKS, {
-      clockTolerance: 30, // 30秒时钟偏差容忍
+    // 通过 Supabase auth/v1/user 端点验证 JWT（兼容所有密钥类型）
+    const resp = await fetch(`${config.SUPABASE_URL}/auth/v1/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': config.SUPABASE_SERVICE_ROLE_KEY,
+        'X-Supabase-Api-Version': '2024-01-01',
+      },
     });
-    return { payload };
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('Token validation failed:', resp.status, errText);
+      return { error: 'Invalid or expired token', status: 401 };
+    }
+
+    const user = await resp.json();
+    // 将 user 对象映射为 JWT claims 兼容格式（下游代码使用 sub/email/user_metadata）
+    return { payload: {
+      sub: user.id,
+      email: user.email || user.phone || '',
+      user_metadata: user.user_metadata || {},
+      role: user.role || '',
+      app_metadata: user.app_metadata || {},
+    }};
   } catch (err) {
     console.error('JWT verification failed:', err.message);
-    return { error: `JWT verification failed: ${err.message}`, status: 401 };
+    return { error: `Token validation failed: ${err.message}`, status: 401 };
   }
 }
 
