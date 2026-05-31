@@ -295,7 +295,7 @@ function extractSections(md) {
   var re = /^#{2,3}\s+(.+)$/gm;
   var match;
   while ((match = re.exec(md)) !== null) {
-    sections.push({ level: match[1].length, title: match[2].trim() });
+    sections.push({ level: (match[0].match(/^#+/)[0]||'##').length, title: match[1].trim() });
   }
   sections.unshift({ level: 0, title: "📄 整篇笔记" });
   return sections;
