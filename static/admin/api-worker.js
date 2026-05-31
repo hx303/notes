@@ -16,8 +16,8 @@ function getConfig(env) {
     SUPABASE_URL:       env.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
     GITHUB_TOKEN:       env.GITHUB_TOKEN,
-    GITHUB_REPO:        env.GITHUB_REPO || 'hx303/notes',
-    GITHUB_BRANCH:      env.GITHUB_BRANCH || 'v4',
+    GITHUB_REPO:        (env.GITHUB_REPO || 'hx303/notes').trim(),
+    GITHUB_BRANCH:      (env.GITHUB_BRANCH || 'v4').trim(),
   };
 }
 
