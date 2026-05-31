@@ -33,6 +33,11 @@ function initSupabase() {
 }
 
 async function restoreSession() {
+  if (!sb || !sb.auth) {
+    console.warn("Supabase client not ready, skipping session restore");
+    updateAuthUI();
+    return;
+  }
   try {
     var res = await sb.auth.getSession();
     if (res.data && res.data.session) {
@@ -136,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 async function handleAuthSubmit() {
-  if (!sb) {
+  if (!sb || !sb.auth) {
     document.getElementById("authError").textContent = "系统初始化中，请稍等...";
     setTimeout(function() { handleAuthSubmit(); }, 1500);
     return;
@@ -182,7 +187,7 @@ async function handleAuthSubmit() {
 }
 
 async function handleSignOut() {
-  await sb.auth.signOut();
+  if (sb && sb.auth) await sb.auth.signOut();
   sbUser = null;
   sbProfile = null;
   sbIsAdmin = false;
