@@ -608,7 +608,6 @@ body.light .comment-body{color:#555}
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="/admin/auth.js"></script>
 
 <script>
 var REPO = "hx303/notes";
@@ -1550,6 +1549,7 @@ if ('serviceWorker' in navigator) {
 // Save draft on page unload
 window.addEventListener("beforeunload", function() { if (editor && currentFile) autoSaveDraft(); });
 </script>
+<script src="/admin/auth.js"></script>
 <div class="focus-indicator" id="focusIndicator">✍️ 专注模式 · Esc 退出</div>
 <div class="drop-overlay" id="dropOverlay">🖼️ 松开以上传图片</div>
 
