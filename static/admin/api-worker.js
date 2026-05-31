@@ -472,9 +472,10 @@ export default {
         });
       }
 
-      // /api/github/* — GitHub API 代理
+      // /api/github/* — GitHub API 代理（保留 query string）
       if (path.startsWith('/api/github/')) {
-        const pathSuffix = path.slice('/api/github/'.length);
+        var pathSuffix = path.slice('/api/github/'.length);
+        if (url.search) pathSuffix += url.search;
         return await handleGitHubProxy(request, env, jwtPayload, pathSuffix);
       }
 
