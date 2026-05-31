@@ -1,133 +1,170 @@
-// Supabase Comments - Inline script for Quartz main site
-// Reads comments from Supabase and renders them
+// Supabase Comments (inline section injection)
+// Fetches comments and injects them below matching h2/h3 headings.
+// Unmatched (global) comments go in a footer section.
 
 document.addEventListener("nav", () => {
   const container = document.querySelector(".supabase-comments") as HTMLElement | null
   if (!container) return
 
-  const filePath = container.dataset.filePath || ""
+  const fp = container.dataset.filePath || ""
   const supabaseUrl = container.dataset.supabaseUrl || ""
-  const supabaseAnonKey = container.dataset.supabaseAnonKey || ""
+  const anonKey = container.dataset.supabaseAnonKey || ""
+  if (!supabaseUrl || !anonKey) return
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    const list = container.querySelector(".supabase-comments-list")
-    if (list) list.innerHTML = '<p style="color:#888;font-size:.9em">评论系统未配置</p>'
-    return
-  }
-
-  loadSupabaseComments(container, filePath, supabaseUrl, supabaseAnonKey)
+  injectComments(container, fp, supabaseUrl, anonKey)
 })
 
-async function loadSupabaseComments(
-  container: HTMLElement,
-  filePath: string,
-  supabaseUrl: string,
-  supabaseAnonKey: string,
-) {
-  const list = container.querySelector(".supabase-comments-list") as HTMLElement | null
-  if (!list) return
+// ---- styles (injected once) ----
+function ensureStyles() {
+  if (document.getElementById("sc-style")) return
+  const s = document.createElement("style")
+  s.id = "sc-style"
+  s.textContent = `
+.section-comments{ margin:0.6rem 0 1.2rem; padding:0 1rem; border-left:2px solid var(--tertiary,#e94560); }
+.section-comments-header{ font-size:.78em; color:var(--tertiary,#e94560); margin-bottom:4px; font-weight:600; opacity:.85 }
+.section-comment-item{ padding:4px 0; font-size:.82em; border-bottom:1px solid rgba(128,128,128,.1); }
+.section-comment-item:last-child{ border-bottom:none }
+.section-comment-item strong{ color:var(--tertiary,#e94560); margin-right:6px; font-size:.9em }
+.section-comment-item .sc-time{ color:var(--gray); font-size:.72em; margin-left:6px }
+.section-comment-item .sc-body{ color:var(--darkgray); line-height:1.5; margin-top:2px }
+.sc-global{ margin-top:2rem; padding-top:1rem; border-top:1px solid var(--lightgray) }
+`
+  document.head.appendChild(s)
+}
 
-  // Dynamically load Supabase SDK
-  const sb = await loadSupabaseSDK(supabaseUrl, supabaseAnonKey)
-  if (!sb) {
-    list.innerHTML = '<p style="color:#888;font-size:.9em">评论加载失败</p>'
-    return
-  }
+// ---- helpers ----
+function esc(s: string): string {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+}
 
+function fmtTime(iso: string): string {
+  try { return new Date(iso).toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) }
+  catch { return "" }
+}
+
+// ---- main ----
+async function injectComments(container: HTMLElement, filePath: string, supabaseUrl: string, anonKey: string) {
+  ensureStyles()
+
+  // load SDK
+  const sb = await loadSDK(supabaseUrl, anonKey)
+  if (!sb) return
+
+  let data: any[]
   try {
-    const { data, error } = await sb
-      .from("comments")
+    const res = await sb.from("comments")
       .select("*, profiles(display_name)")
       .eq("file_path", filePath)
       .eq("is_deleted", false)
       .order("created_at", { ascending: true })
-
-    if (error) throw error
-
-    renderCommentList(list, data || [])
-  } catch (e: any) {
-    list.innerHTML = '<p style="color:#888;font-size:.9em">评论加载失败: ' + escapeHtml(e.message) + '</p>'
-  }
-}
-
-function renderCommentList(list: HTMLElement, comments: any[]) {
-  if (comments.length === 0) {
-    list.innerHTML =
-      '<p style="color:#888;font-size:.9em;text-align:center;padding:1rem">暂无评论。在 <a href="/admin" style="color:var(--tertiary)">管理后台</a> 登录后可发表评论。</p>'
+    if (res.error) throw res.error
+    data = res.data || []
+  } catch {
     return
   }
+  if (data.length === 0) return
 
-  // Group by section
-  const grouped: Record<string, any[]> = {}
-  comments.forEach((c) => {
-    const key = c.section_title || "全局"
-    if (!grouped[key]) grouped[key] = []
-    grouped[key].push(c)
-  })
+  // group by section_title
+  const bySection: Record<string, any[]> = {}
+  for (const c of data) {
+    const key = c.section_title || "global"
+    if (!bySection[key]) bySection[key] = []
+    bySection[key].push(c)
+  }
 
-  let html = ""
-  Object.keys(grouped).forEach((section) => {
-    html += '<div style="margin-bottom:1rem">'
-    html +=
-      '<div style="font-size:.75em;color:#888;border-bottom:1px solid #333;padding-bottom:2px;margin-bottom:6px">' +
-      escapeHtml(section) +
-      " (" +
-      grouped[section].length +
-      ")</div>"
+  // find article headings (h2, h3)
+  const article = document.querySelector("article")
+  const headings = article ? Array.from(article.querySelectorAll("h2, h3")) : []
 
-    grouped[section].forEach((c) => {
-      const profileName = c.profiles?.display_name || "用户"
-      const time = new Date(c.created_at).toLocaleString("zh-CN", {
-        month: "numeric",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+  // build a map: heading text → heading element
+  const headingMap = new Map<string, Element>()
+  for (const h of headings) {
+    const t = (h.textContent || "").trim()
+    if (t) headingMap.set(t, h)
+  }
 
-      html += '<div style="padding:6px 10px;margin:4px 0;background:rgba(255,255,255,.03);border-radius:6px;border-left:2px solid var(--tertiary,#e94560)">'
-      html +=
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-      html +=
-        '<strong style="font-size:.85em;color:var(--tertiary,#e94560)">' +
-        escapeHtml(profileName) +
-        "</strong>"
-      html += '<span style="font-size:.7em;color:#888">' + time + "</span>"
-      html += "</div>"
-      html +=
-        '<div style="font-size:.85em;line-height:1.5;color:#ccc">' +
-        escapeHtml(c.content) +
-        "</div>"
-      html += "</div>"
-    })
+  // inject below matching headings
+  const usedKeys = new Set<string>()
+  for (const [sectionTitle, comments] of Object.entries(bySection)) {
+    const h = headingMap.get(sectionTitle)
+    if (!h) continue
+    usedKeys.add(sectionTitle)
 
-    html += "</div>"
-  })
+    const el = buildSectionEl(sectionTitle, comments)
+    // find insertion point: after this section's content, before next heading
+    insertAfterSection(h, el)
+  }
 
-  list.innerHTML = html
+  // global (unmatched) comments at the bottom
+  const globalComments: any[] = []
+  for (const [key, comments] of Object.entries(bySection)) {
+    if (!usedKeys.has(key)) globalComments.push(...comments)
+  }
+  if (globalComments.length > 0) {
+    const el = buildGlobalEl(globalComments)
+    container.appendChild(el)
+  }
 }
 
-async function loadSupabaseSDK(supabaseUrl: string, supabaseAnonKey: string): Promise<any> {
-  // Check if already loaded
-  if ((window as any).__supabaseClient) return (window as any).__supabaseClient
+function insertAfterSection(heading: Element, el: Element) {
+  const headingLevel = parseInt(heading.tagName[1])
+  let insertAfter: Element = heading
+  let next = heading.nextElementSibling
+  while (next) {
+    const tag = next.tagName
+    if (tag && /^H[1-6]$/.test(tag)) {
+      const nl = parseInt(tag[1])
+      if (nl <= headingLevel) break
+    }
+    insertAfter = next
+    next = next.nextElementSibling
+  }
+  insertAfter.insertAdjacentElement("afterend", el)
+}
 
-  return new Promise((resolve) => {
-    const script = document.createElement("script")
-    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"
-    script.async = true
-    script.onload = () => {
-      const sb = (window as any).supabase.createClient(supabaseUrl, supabaseAnonKey)
+function buildSectionEl(title: string, comments: any[]): HTMLElement {
+  const div = document.createElement("div")
+  div.className = "section-comments"
+  div.innerHTML =
+    '<div class="section-comments-header">💬 ' + esc(title) + ' (' + comments.length + ')</div>' +
+    comments.map(c =>
+      '<div class="section-comment-item">' +
+      '<strong>' + esc(c.profiles?.display_name || "用户") + '</strong>' +
+      '<span class="sc-time">' + fmtTime(c.created_at) + '</span>' +
+      '<div class="sc-body">' + esc(c.content) + '</div>' +
+      '</div>'
+    ).join("")
+  return div
+}
+
+function buildGlobalEl(comments: any[]): HTMLElement {
+  const div = document.createElement("div")
+  div.className = "sc-global"
+  div.innerHTML =
+    '<h3 style="margin-bottom:.5rem;font-size:.95em">💬 全局评论 (' + comments.length + ')</h3>' +
+    comments.map(c =>
+      '<div class="section-comment-item">' +
+      '<strong>' + esc(c.profiles?.display_name || "用户") + '</strong>' +
+      '<span class="sc-time">' + fmtTime(c.created_at) + '</span>' +
+      '<div class="sc-body">' + esc(c.content) + '</div>' +
+      '</div>'
+    ).join("")
+  return div
+}
+
+// ---- Supabase SDK loader ----
+async function loadSDK(supabaseUrl: string, anonKey: string): Promise<any> {
+  if ((window as any).__supabaseClient) return (window as any).__supabaseClient
+  return new Promise(resolve => {
+    const s = document.createElement("script")
+    s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"
+    s.async = true
+    s.onload = () => {
+      const sb = (window as any).supabase.createClient(supabaseUrl, anonKey)
       ;(window as any).__supabaseClient = sb
       resolve(sb)
     }
-    script.onerror = () => resolve(null)
-    document.head.appendChild(script)
+    s.onerror = () => resolve(null)
+    document.head.appendChild(s)
   })
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
 }
