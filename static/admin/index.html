@@ -160,7 +160,7 @@ body.light .toolbar .status.saved{background:rgba(46,125,50,.12);color:#2e7d32}
 body.light .toolbar .status.error{background:rgba(244,67,54,.1);color:#c62828}
 body.light .toastui-editor-defaultUI-toolbar{background:linear-gradient(180deg,#fff,#f8f8f8)!important;border-color:#e0e0e0!important;padding:3px 8px!important}
 body.light .toastui-editor-defaultUI-toolbar button{color:inherit!important;min-width:28px!important;height:28px!important;margin:0 1px!important;padding:3px!important}
-/* Light mode: native icons are dark — no filter, no override */
+/* Light mode: native icons are dark �?no filter, no override */
 body.light .toastui-editor-defaultUI-toolbar button:hover{background-color:rgba(192,57,43,.1)!important}
 body.light .toastui-editor-defaultUI-toolbar button.active{background-color:rgba(192,57,43,.6)!important}
 body.light .toastui-editor-mode-switch{background:#f0f0f0!important;border-color:#ddd!important}
@@ -293,7 +293,7 @@ button.toggle-btn{background:rgba(15,52,96,.5);border:1px solid rgba(26,74,138,.
 button.toggle-btn.wysiwyg{background:rgba(21,87,36,.4);border-color:rgba(46,125,50,.5);color:#81c784}
 button.toggle-btn:hover{opacity:0.9;transform:translateY(-1px)}
 
-/* Theme toggle — compact circle */
+/* Theme toggle �?compact circle */
 .header .theme-toggle{padding:5px;border-radius:50%;width:30px;height:30px;justify-content:center;background:rgba(15,52,96,.5);border:1px solid rgba(26,74,138,.3)}
 .header .theme-toggle:hover{transform:rotate(20deg);box-shadow:0 2px 10px rgba(233,69,96,.2)}
 
@@ -492,28 +492,32 @@ body.light .comment-body{color:#555}
 
 <div class="login-overlay" id="loginScreen">
   <div class="login-box">
-    <h2>🔑 输入 GitHub Token</h2>
-    <p>需要 repo 权限来保存笔记</p>
-    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
-    <button class="primary" onclick="saveToken()">进入编辑器</button>
-    <div class="hint">
-      已生成 token？打开 GitHub <a href="https://github.com/settings/tokens" target="_blank">Token 页面</a> 复制粘贴到这里<br />
-      <small>Token 只存在你的浏览器里，不会上传</small>
+    <h2 id="adminLoginTitle">🔑 管理员登�?/h2>
+    <p style="color:#a0a0b0;margin-bottom:16px;font-size:13px" id="adminLoginSubtitle">使用 wouldkeep.com 账号登录</p>
+    <div id="adminLoginError" style="color:#f44336;font-size:12px;margin-bottom:10px;min-height:16px"></div>
+    <div id="adminNameGroup" style="display:none">
+      <input type="text" id="adminNameInput" placeholder="显示名称" style="margin-bottom:10px" />
+    </div>
+    <input type="email" id="adminEmailInput" placeholder="you@example.com" />
+    <input type="password" id="adminPasswordInput" placeholder="密码（最�?6 位）" />
+    <button class="primary" onclick="handleAdminAuth()" id="adminAuthBtn">登录</button>
+    <div class="hint" id="adminToggleHint">
+      <span id="adminToggleLink">没有账号�?a href="#" onclick="toggleAdminMode('register')">注册</a></span>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="newFileModal" style="display:none">
   <div class="modal">
-    <h3>➕ 新建笔记</h3>
-    <p style="font-size:11px;color:#888;margin:0 0 8px">文件名（自动加 .md）</p>
-    <input type="text" id="newFileName" placeholder="例如：4.8_线性变换" />
+    <h3>�?新建笔记</h3>
+    <p style="font-size:11px;color:#888;margin:0 0 8px">文件名（自动�?.md�?/p>
+    <input type="text" id="newFileName" placeholder="例如�?.8_线性变�? />
     <p style="font-size:11px;color:#888;margin:8px 0 4px">目标文件夹（可选）</p>
     <select id="newFileFolder" style="width:100%;padding:8px 10px;background:#1a1a2e;color:#e0e0e0;border:1px solid #0f3460;border-radius:6px;font-size:13px;margin-bottom:8px">
-      <option value="">content/（根目录）</option>
+      <option value="">content/（根目录�?/option>
     </select>
     <p style="font-size:11px;color:#888;margin:0 0 8px">或输入新文件夹名</p>
-    <input type="text" id="newFileNewFolder" placeholder="直接输入新文件夹名（选填）" style="margin-bottom:12px;width:100%;box-sizing:border-box" />
+    <input type="text" id="newFileNewFolder" placeholder="直接输入新文件夹名（选填�? style="margin-bottom:12px;width:100%;box-sizing:border-box" />
     <div class="btns">
       <button onclick="closeNewFile()">取消</button>
       <button class="primary" onclick="createFile()">创建</button>
@@ -527,28 +531,28 @@ body.light .comment-body{color:#555}
     <p style="color:#a0a0b0;font-size:13px;margin-bottom:8px" id="draftInfo"></p>
     <p style="color:#e94560;font-size:12px" id="draftWarning"></p>
     <div class="btns">
-      <button onclick="discardDraft()">❌ 丢弃草稿</button>
-      <button class="primary" onclick="restoreDraft()">✅ 恢复草稿</button>
+      <button onclick="discardDraft()">�?丢弃草稿</button>
+      <button class="primary" onclick="restoreDraft()">�?恢复草稿</button>
     </div>
   </div>
 </div>
 
 <div class="header" id="mainUI" style="display:none">
-  <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" title="文件列表">☰</button>
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" title="文件列表">�?/button>
   <h1>📝 笔记后台</h1>
   <div class="actions">
     <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="切换亮色/暗色主题">🌓</button>
-    <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">📝 Markdown</button>
-    <button onclick="newFile()">＋ 新建</button>
+    <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编�?>📝 Markdown</button>
+    <button onclick="newFile()">�?新建</button>
     <button class="primary" id="saveBtn" onclick="saveFile()">💾 保存</button>
     <button class="auth-btn" id="authLoginBtn" onclick="showAuthModal('login')" title="登录后可发表评论">🔑 登录</button>
     <div class="user-menu" id="authUserMenu">
-      <button class="user-menu-btn" id="authUserMenuBtn" onclick="document.getElementById('authUserDropdown').classList.toggle('open')" title="用户菜单">👤 <span id="authUsername">用户</span> ▾</button>
+      <button class="user-menu-btn" id="authUserMenuBtn" onclick="document.getElementById('authUserDropdown').classList.toggle('open')" title="用户菜单">👤 <span id="authUsername">用户</span> �?/button>
       <div class="user-menu-dropdown" id="authUserDropdown">
-        <div class="menu-item" style="font-weight:600;cursor:default" id="authUserEmail">加载中...</div>
+        <div class="menu-item" style="font-weight:600;cursor:default" id="authUserEmail">加载�?..</div>
         <div class="menu-divider"></div>
         <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');showAuthModal('manageRoles')" id="authAdminItem" style="display:none">⚙️ 管理权限</button>
-        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');handleSignOut()">🚪 退出登录</button>
+        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');handleSignOut()">🚪 退出登�?/button>
       </div>
     </div>
   </div>
@@ -556,18 +560,18 @@ body.light .comment-body{color:#555}
 <div class="main" id="mainUI2" style="display:none">
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-search"><input type="text" id="sidebarSearch" placeholder="🔍 搜索文件..." oninput="filterFiles()" /><button onclick="document.getElementById('sidebarSearch').value='';filterFiles();document.getElementById('sidebarSearch').focus();" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px" id="sidebarSearchClear">✕</button></div>
-    <div class="sidebar-actions"><button onclick="newFile()" title="新建文件">📄＋ 新建文件</button><button onclick="newFolder()" title="新建文件夹">📁＋ 新建文件夹</button></div>
+    <div class="sidebar-search"><input type="text" id="sidebarSearch" placeholder="🔍 搜索文件..." oninput="filterFiles()" /><button onclick="document.getElementById('sidebarSearch').value='';filterFiles();document.getElementById('sidebarSearch').focus();" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px" id="sidebarSearchClear">�?/button></div>
+    <div class="sidebar-actions"><button onclick="newFile()" title="新建文件">📄�?新建文件</button><button onclick="newFolder()" title="新建文件�?>📁�?新建文件�?/button></div>
     <div class="sidebar-files" id="sidebarFiles"></div>
   </div>
   <div class="editor-area">
     <div class="toolbar">
-      <span class="path" id="filePath">选择左侧文件开始编辑</span>
-      <span class="word-count" id="wordCount" title="字数统计">0 字</span>
+      <span class="path" id="filePath">选择左侧文件开始编�?/span>
+      <span class="word-count" id="wordCount" title="字数统计">0 �?/span>
       <button class="preview-toggle-btn" id="focusBtn" onclick="toggleFocus()" title="专注模式（全屏写作）">🔲 专注</button>
       <button class="preview-toggle-btn" id="outlineToggle" onclick="toggleOutline()" title="大纲导航">📑 大纲</button>
       <span class="mode-indicator" id="modeIndicator">📝 Markdown</span>
-      <span class="status idle" id="status">等待中</span>
+      <span class="status idle" id="status">等待�?/span>
     </div>
     <div class="editor-panes" id="editorPanes">
       <div class="editor-col" id="editorCol">
@@ -580,24 +584,24 @@ body.light .comment-body{color:#555}
           <button id="previewCloseBtn" onclick="togglePreview()" style="font-size:18px;line-height:1;padding:0 4px">×</button>
         </div>
         <div class="preview-content" id="previewContent">
-          <p style="color:#888;text-align:center;margin-top:40px">选择文件开始预览</p>
+          <p style="color:#888;text-align:center;margin-top:40px">选择文件开始预�?/p>
         </div>
         <div class="outline-panel" id="outlinePanel"></div>
       </div>
     </div>
     <div class="comment-panel" id="commentPanel" style="display:none">
       <div class="comment-panel-header">
-        <span>💬 评论与讨论</span>
+        <span>💬 评论与讨�?/span>
         <select id="commentSection" onchange="loadComments()">
           <option value="">📄 整篇笔记</option>
         </select>
       </div>
       <div class="comment-list" id="commentList">
-        <div class="comment-login-prompt">打开文件后加载评论</div>
+        <div class="comment-login-prompt">打开文件后加载评�?/div>
       </div>
       <div class="comment-input-row" id="commentInputRow">
         <input type="text" id="commentInput" placeholder="发表评论..." onkeydown="if(event.key==='Enter')submitComment()" />
-        <button class="primary" onclick="submitComment()">发送</button>
+        <button class="primary" onclick="submitComment()">发�?/button>
       </div>
     </div>
   </div>
@@ -610,9 +614,7 @@ body.light .comment-body{color:#555}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 
 <script>
-var REPO = "hx303/notes";
 var BRANCH = "v4";
-var token = localStorage.getItem("gh_token") || "";
 var currentFile = null;
 var currentSha = "";
 var files = [];
@@ -656,20 +658,31 @@ function setStatus(s) {
   el.className = "status " + s.cls;
 }
 
-async function githubAPI(path, method, body) {
+async function workerAPI(path, method, body) {
+  if (typeof sb === "undefined" || !sb || !sb.auth) {
+    throw new Error("认证系统未就�?);
+  }
+  var res = await sb.auth.getSession();
+  if (!res.data || !res.data.session) {
+    location.reload();
+    return;
+  }
+  var accessToken = res.data.session.access_token;
   var opts = {
     method: method,
     headers: {
-      "Authorization": "Bearer " + token,
-      "Accept": "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28"
+      "Authorization": "Bearer " + accessToken,
+      "Content-Type": "application/json"
     }
   };
   if (body) opts.body = JSON.stringify(body);
-  var r = await fetch("https://api.github.com/repos/" + REPO + "/" + path, opts);
+  var r = await fetch("https://api.wouldkeep.com/api/github/" + path, opts);
   if (!r.ok) {
     var err = await r.json().catch(function(){return {}});
-    throw new Error(err.message || r.statusText);
+    if (r.status === 403) {
+      alert(err.error || "需要编辑权限，请联系管理员审批");
+    }
+    throw new Error(err.error || err.message || r.statusText);
   }
   return r.status === 204 ? null : r.json();
 }
@@ -770,7 +783,7 @@ function toggleEditorMode() {
   }
   localStorage.setItem("editor_mode", currentMode);
   updateModeUI();
-  setStatus({text:"已切换到 " + (currentMode==="wysiwyg"?"可视化":"Markdown") + " 模式",cls:"idle"});
+  setStatus({text:"已切换到 " + (currentMode==="wysiwyg"?"可视�?:"Markdown") + " 模式",cls:"idle"});
 }
 
 function updateModeUI() {
@@ -779,11 +792,11 @@ function updateModeUI() {
   if (currentMode === "wysiwyg") {
     btn.textContent = "📝 Markdown";
     btn.className = "toggle-btn";
-    ind.textContent = "✨ 可视化";
+    ind.textContent = "�?可视�?;
     ind.style.background = document.body.classList.contains("light") ? "#e8f5e9" : "#155724";
     ind.style.color = document.body.classList.contains("light") ? "#2e7d32" : "#81c784";
   } else {
-    btn.textContent = "✨ 可视化";
+    btn.textContent = "�?可视�?;
     btn.className = "toggle-btn wysiwyg";
     ind.textContent = "📝 Markdown";
     ind.style.background = document.body.classList.contains("light") ? "#f0f0f0" : "#0f3460";
@@ -798,9 +811,9 @@ function toggleTheme() {
 }
 
 async function loadFiles() {
-  setStatus({text:"加载中...",cls:"saving"});
+  setStatus({text:"加载�?..",cls:"saving"});
   try {
-    var tree = await githubAPI("git/trees/" + BRANCH + "?recursive=1", "GET");
+    var tree = await workerAPI("git/trees/" + BRANCH + "?recursive=1", "GET");
     var contentFiles = tree.tree.filter(function(f) {
       return f.path.startsWith("content/") && f.path.endsWith(".md");
     });
@@ -817,7 +830,7 @@ async function loadFiles() {
     setStatus({text:"就绪",cls:"idle"});
   } catch(e) {
     setStatus({text:"加载失败: "+e.message,cls:"error"});
-    if (e.message.indexOf("401")>-1){localStorage.removeItem("gh_token");location.reload();}
+    if (e.message.indexOf("401")>-1){sb.auth.signOut();location.reload();}
   }
 }
 
@@ -845,21 +858,21 @@ function renderSidebar(filter) {
     var recentHtml = renderRecent();
   }
   if (!filter && filesToRender.length === 0) {
-    sb.innerHTML = '<div class="no-results">📂 无笔记文件</div>';
+    sb.innerHTML = '<div class="no-results">📂 无笔记文�?/div>';
     return;
   }
   if (filter && filesToRender.length === 0) {
-    sb.innerHTML = '<div class="no-results">未找到匹配 "' + escapeHtml(filter) + '" 的文件</div>';
+    sb.innerHTML = '<div class="no-results">未找到匹�?"' + escapeHtml(filter) + '" 的文�?/div>';
     return;
   }
   sb.innerHTML = (recentHtml || "") + filesToRender.map(function(folder, fi) {
     var realFi = origIdx ? origIdx[fi] : fi;
-    var displayName = folder.name || "根目录";
+    var displayName = folder.name || "根目�?;
     return '<div class="folder'+(folder.open?" open":"")+'" id="folder'+fi+'">'+
       '<div class="folder-header" onclick="toggleFolder('+fi+')">'+
         '<span class="arrow">\u25b6</span>\ud83d\udcc1 ' + escapeHtml(displayName) +
         ' <small style="color:#666;margin-left:auto">'+folder.files.length+'</small>'+
-        (displayName ? '<button class="folder-delete-btn" onclick="event.stopPropagation();deleteFolder('+realFi+')" title="删除文件夹">🗑️</button>' : '') +
+        (displayName ? '<button class="folder-delete-btn" onclick="event.stopPropagation();deleteFolder('+realFi+')" title="删除文件�?>🗑�?/button>' : '') +
       '</div>'+
       '<div class="files">'+
         folder.files.map(function(f, i2) {
@@ -875,8 +888,8 @@ function renderSidebar(filter) {
           return '<div class="file" id="file'+fi+'_'+i2+'">'+
             '<span class="file-name" onclick="openFile('+realFi+','+realFi2+')">\ud83d\udcc4 ' + escapeHtml(f.name)+'</span>'+
             '<span class="file-actions">'+
-              '<button onclick="event.stopPropagation();renameFile('+realFi+','+realFi2+')" title="重命名">✏️</button>'+
-              '<button onclick="event.stopPropagation();deleteFile('+realFi+','+realFi2+')" title="删除">🗑️</button>'+
+              '<button onclick="event.stopPropagation();renameFile('+realFi+','+realFi2+')" title="重命�?>✏️</button>'+
+              '<button onclick="event.stopPropagation();deleteFile('+realFi+','+realFi2+')" title="删除">🗑�?/button>'+
             '</span>'+
           '</div>';
         }).join("")+
@@ -944,9 +957,9 @@ async function openFile(fi, i2) {
   closeSidebarOnMobile();
   document.querySelectorAll(".file.active").forEach(function(el){el.classList.remove("active")});
   document.getElementById("file"+fi+"_"+i2).classList.add("active");
-  setStatus({text:"加载中...",cls:"saving"});
+  setStatus({text:"加载�?..",cls:"saving"});
   try {
-    var data = await githubAPI("contents/" + f.path + "?ref=" + BRANCH, "GET");
+    var data = await workerAPI("contents/" + f.path + "?ref=" + BRANCH, "GET");
     var content = decodeContent(data.content);
     currentSha = data.sha;
     currentFile = f;
@@ -961,8 +974,8 @@ async function openFile(fi, i2) {
         var mins = Math.round((Date.now() - draft.time) / 60000);
         if (mins >= 1 && draft.content !== content) {
           // Show draft restore modal, defer editor content setting
-          document.getElementById("draftInfo").textContent = "文件: " + f.path + "\n草稿保存于: " + new Date(draft.time).toLocaleString() + " (" + mins + " 分钟前)";
-          document.getElementById("draftWarning").textContent = draft.sha && draft.sha !== currentSha ? "⚠ 草稿版本可能与服务器不一致" : "";
+          document.getElementById("draftInfo").textContent = "文件: " + f.path + "\n草稿保存�? " + new Date(draft.time).toLocaleString() + " (" + mins + " 分钟�?";
+          document.getElementById("draftWarning").textContent = draft.sha && draft.sha !== currentSha ? "�?草稿版本可能与服务器不一�? : "";
           document.getElementById("draftModal").style.display = "flex";
           pendingDraftFile = f.path;
           // Set GitHub content now, restoreDraft() or discardDraft() will handle the final state
@@ -979,7 +992,7 @@ async function openFile(fi, i2) {
     }
     document.getElementById("filePath").textContent = f.path;
     addRecent(f.path, f.name, fi, i2);
-    setStatus({text:"已加载 — 当前模式: " + (currentMode==="wysiwyg"?"可视化":"Markdown"),cls:"idle"});
+    setStatus({text:"已加�?�?当前模式: " + (currentMode==="wysiwyg"?"可视�?:"Markdown"),cls:"idle"});
     renderPreview();
     updateWordCount();
   } catch(e) {
@@ -988,15 +1001,15 @@ async function openFile(fi, i2) {
 }
 
 async function saveFile() {
-  if (!editor || !currentFile) return alert("请先选择一个文件");
+  if (!editor || !currentFile) return alert("请先选择一个文�?);
   var content = editor.getMarkdown();
-  setStatus({text:"保存中...",cls:"saving"});
+  setStatus({text:"保存�?..",cls:"saving"});
   document.getElementById("saveBtn").disabled = true;
   var maxRetries = 1;
   for (var attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       var encoded = encodeContent(content);
-      var result = await githubAPI("contents/" + currentFile.path, "PUT", {
+      var result = await workerAPI("contents/" + currentFile.path, "PUT", {
         message: "Update " + currentFile.name + " via admin editor",
         content: encoded,
         sha: currentSha,
@@ -1010,9 +1023,9 @@ async function saveFile() {
       break;
     } catch(e) {
       if (attempt < maxRetries && (!currentSha || (e.message && e.message.indexOf("does not match") > -1))) {
-        setStatus({text:"自动同步最新版本...",cls:"saving"});
+        setStatus({text:"自动同步最新版�?..",cls:"saving"});
         try {
-          var fresh = await githubAPI("contents/" + currentFile.path + "?ref=" + BRANCH, "GET");
+          var fresh = await workerAPI("contents/" + currentFile.path + "?ref=" + BRANCH, "GET");
           currentSha = fresh.sha;
           continue;
         } catch(fetchErr) {
@@ -1027,22 +1040,22 @@ async function saveFile() {
 
 async function triggerDeploy() {
   try {
-    var resp = await fetch("https://api.github.com/repos/hx303/notes/actions/workflows/285508720/dispatches", {
+    var resp = await fetch("https://api.wouldkeep.com/api/github/actions/workflows/285508720/dispatches", {
       method: "POST",
       headers: {
-        "Authorization": "Bearer " + token,
-        "Accept": "application/vnd.github+json"
+        "Authorization": "Bearer " + (await sb.auth.getSession()).data.session.access_token,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ ref: "v4" })
     });
     if (resp.ok) {
-      setStatus({ text: "部署已触发！1-2 分钟后上线 wouldkeep.com", cls: "saved" });
+      setStatus({ text: "部署已触发！1-2 分钟后上�?wouldkeep.com", cls: "saved" });
     } else {
       var err = await resp.text();
-      setStatus({ text: "已保存，但部署触发失败: " + resp.status, cls: "error" });
+      setStatus({ text: "已保存，但部署触发失�? " + resp.status, cls: "error" });
     }
   } catch (e) {
-    setStatus({ text: "已保存，但部署触发失败: " + e.message, cls: "error" });
+    setStatus({ text: "已保存，但部署触发失�? " + e.message, cls: "error" });
   }
   setTimeout(function () { setStatus({ text: "就绪", cls: "idle" }); }, 8000);
 }
@@ -1073,7 +1086,7 @@ function showDraftToast() {
   var id = "draftToast";
   var el = document.getElementById(id);
   if (!el) { el = document.createElement("div"); el.id = id; el.className = "draft-toast"; document.body.appendChild(el); }
-  el.textContent = "已自动保存草稿 " + new Date().toLocaleTimeString();
+  el.textContent = "已自动保存草�?" + new Date().toLocaleTimeString();
   el.classList.add("show");
   setTimeout(function() { el.classList.remove("show"); }, 1500);
 }
@@ -1093,7 +1106,7 @@ function restoreDraft() {
   currentSha = draft.sha;
   localStorage.removeItem(key);
   document.getElementById("draftModal").style.display = "none";
-  setStatus({ text: "草稿已恢复", cls: "saved" });
+  setStatus({ text: "草稿已恢�?, cls: "saved" });
   schedulePreview();
   pendingDraftFile = null;
 }
@@ -1125,10 +1138,10 @@ function updateWordCount() {
   var el = document.getElementById("wordCount");
   var parts = [];
   if (cn) parts.push(cn + "汉字");
-  if (en) parts.push(en + "词");
-  if (!cn && !en) parts.push("0 字");
-  el.textContent = parts.join(" ") + (digits ? " · " + digits + "数" : "");
-  el.title = "中文字数: " + cn + "\n英文词数: " + en + "\n数字组: " + digits + "\n总字符: " + plain.length;
+  if (en) parts.push(en + "�?);
+  if (!cn && !en) parts.push("0 �?);
+  el.textContent = parts.join(" ") + (digits ? " · " + digits + "�? : "");
+  el.title = "中文字数: " + cn + "\n英文词数: " + en + "\n数字�? " + digits + "\n总字�? " + plain.length;
 }
 
 /* ====== End Word Count ====== */
@@ -1185,7 +1198,7 @@ function buildOutline(md) {
     items.push({ level: match[1].length, text: match[2].trim(), pos: match.index });
   }
   if (items.length === 0) {
-    panel.innerHTML = "<div style='padding:8px 12px;color:#888;font-size:12px'>无标题</div>";
+    panel.innerHTML = "<div style='padding:8px 12px;color:#888;font-size:12px'>无标�?/div>";
     return;
   }
   panel.innerHTML = items.map(function(item) {
@@ -1262,7 +1275,7 @@ document.addEventListener("mouseup", function() {
 var focusMode = false;
 function toggleFocus() {
   focusMode = !focusMode;
-  if (focusMode) { document.body.classList.add("focus"); document.getElementById("focusBtn").classList.add("active"); document.getElementById("focusBtn").textContent = "🔳 退出"; }
+  if (focusMode) { document.body.classList.add("focus"); document.getElementById("focusBtn").classList.add("active"); document.getElementById("focusBtn").textContent = "🔳 退�?; }
   else { document.body.classList.remove("focus"); document.getElementById("focusBtn").classList.remove("active"); document.getElementById("focusBtn").textContent = "🔲 专注"; }
 }
 document.addEventListener("keydown", function(e) {
@@ -1290,12 +1303,12 @@ document.addEventListener("dragleave", function(e) {
 document.addEventListener("drop", function(e) {
   dragCounter = 0;
   document.getElementById("dropOverlay").classList.remove("show");
-  if (!currentFile) { setStatus({text:"请先打开一个文件，再拖入图片",cls:"error"}); return; }
+  if (!currentFile) { setStatus({text:"请先打开一个文件，再拖入图�?,cls:"error"}); return; }
   var files = e.dataTransfer.files;
   if (!files || files.length === 0) return;
   for (var i = 0; i < files.length; i++) {
-    if (allowedImageTypes.indexOf(files[i].type) === -1) { setStatus({text:"不支持的文件类型: " + files[i].type + "（支持 PNG/JPG/GIF/WebP/SVG）",cls:"error"}); continue; }
-    if (files[i].size > maxImageSize) { setStatus({text:"文件过大: " + (files[i].size/1024/1024).toFixed(1) + "MB（限制 5MB）",cls:"error"}); continue; }
+    if (allowedImageTypes.indexOf(files[i].type) === -1) { setStatus({text:"不支持的文件类型: " + files[i].type + "（支�?PNG/JPG/GIF/WebP/SVG�?,cls:"error"}); continue; }
+    if (files[i].size > maxImageSize) { setStatus({text:"文件过大: " + (files[i].size/1024/1024).toFixed(1) + "MB（限�?5MB�?,cls:"error"}); continue; }
     uploadImage(files[i]);
   }
 });
@@ -1308,8 +1321,8 @@ function uploadImage(file) {
     var timestamp = now.getFullYear() + ("0"+(now.getMonth()+1)).slice(-2) + ("0"+now.getDate()).slice(-2) + "_" + ("0"+now.getHours()).slice(-2) + ("0"+now.getMinutes()).slice(-2) + ("0"+now.getSeconds()).slice(-2);
     var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     var imgPath = "static/images/" + timestamp + "_" + safeName;
-    setStatus({text:"上传中: " + safeName + "...",cls:"saving"});
-    githubAPI("contents/" + imgPath, "PUT", {
+    setStatus({text:"上传�? " + safeName + "...",cls:"saving"});
+    workerAPI("contents/" + imgPath, "PUT", {
       message: "Upload image " + safeName + " via admin editor",
       content: base64,
       branch: BRANCH
@@ -1321,7 +1334,7 @@ function uploadImage(file) {
       var pos = (sel && Array.isArray(sel)) ? sel[0] : md.length;
       var newMd = md.substring(0, pos) + "\n![" + (file.name.replace(/\.[^.]+$/,"")) + "](" + imgUrl + ")\n" + md.substring(pos);
       editor.setMarkdown(newMd, false);
-      setStatus({text:"已插入: " + safeName,cls:"saved"});
+      setStatus({text:"已插�? " + safeName,cls:"saved"});
       setTimeout(function(){setStatus({text:"就绪",cls:"idle"});},3000);
     }).catch(function(e) {
       setStatus({text:"上传失败: " + e.message,cls:"error"});
@@ -1337,7 +1350,7 @@ function newFile() {
   // Populate folder picker from loaded files
   var sel = document.getElementById("newFileFolder");
   var currentFolder = currentFile ? currentFile.path.replace("content/","").replace(/\/[^\/]+$/,"") : "";
-  sel.innerHTML = '<option value="">content/（根目录）</option>' +
+  sel.innerHTML = '<option value="">content/（根目录�?/option>' +
     files.map(function(f) {
       var selected = f.name === currentFolder ? " selected" : "";
       return '<option value="' + escapeHtml(f.name) + '/"' + selected + '>' + escapeHtml(f.name) + '/</option>';
@@ -1367,13 +1380,13 @@ async function createFile() {
   var fm = "---\ntitle: \"" + name.replace(".md","") + "\"\ndate: " + new Date().toISOString().split("T")[0] + "\ncreated: " + new Date().toISOString().split("T")[0] + "\n---\n\n";
   try {
     var encoded = encodeContent(fm);
-    await githubAPI("contents/" + newPath, "PUT", {
+    await workerAPI("contents/" + newPath, "PUT", {
       message: "Create " + name,
       content: encoded,
       branch: BRANCH
     });
     closeNewFile();
-    setStatus({text:"已创建: "+name,cls:"saved"});
+    setStatus({text:"已创�? "+name,cls:"saved"});
     loadFiles();
   } catch(e) {
     setStatus({text:"创建失败: "+e.message,cls:"error"});
@@ -1385,26 +1398,26 @@ async function newFolder() {
   if (!name || !name.trim()) return;
   name = name.trim().replace(/[\/\\:*?"<>|]/g, "-");
   var path = "content/" + name + "/.gitkeep";
-  setStatus({text:"创建文件夹...",cls:"saving"});
+  setStatus({text:"创建文件�?..",cls:"saving"});
   try {
-    await githubAPI("contents/" + path, "PUT", {
-      message: "创建文件夹 " + name,
+    await workerAPI("contents/" + path, "PUT", {
+      message: "创建文件�?" + name,
       content: "",
       branch: BRANCH
     });
     setStatus({text:"文件夹已创建: " + name,cls:"saved"});
     loadFiles();
   } catch(e) {
-    setStatus({text:"创建文件夹失败: "+e.message,cls:"error"});
+    setStatus({text:"创建文件夹失�? "+e.message,cls:"error"});
   }
 }
 
 async function deleteFile(fi, i2) {
   var f = files[fi].files[i2];
-  if (!confirm("确定删除 " + f.name + "？\n\n路径: " + f.path + "\n\n此操作不可撤销！")) return;
-  setStatus({text:"删除中...",cls:"saving"});
+  if (!confirm("确定删除 " + f.name + "？\n\n路径: " + f.path + "\n\n此操作不可撤销�?)) return;
+  setStatus({text:"删除�?..",cls:"saving"});
   try {
-    await githubAPI("contents/" + f.path, "DELETE", {
+    await workerAPI("contents/" + f.path, "DELETE", {
       message: "删除 " + f.name,
       sha: f.sha,
       branch: BRANCH
@@ -1412,11 +1425,11 @@ async function deleteFile(fi, i2) {
     if (currentFile && currentFile.path === f.path) {
       currentFile = null;
       currentSha = "";
-      document.getElementById("filePath").textContent = "选择左侧文件开始编辑";
-      document.getElementById("previewContent").innerHTML = '<p style="color:#888;text-align:center;margin-top:40px">选择文件开始预览</p>';
+      document.getElementById("filePath").textContent = "选择左侧文件开始编�?;
+      document.getElementById("previewContent").innerHTML = '<p style="color:#888;text-align:center;margin-top:40px">选择文件开始预�?/p>';
       if (editor) { try { editor.setMarkdown(""); } catch(e) {} }
     }
-    setStatus({text:"已删除: " + f.name,cls:"saved"});
+    setStatus({text:"已删�? " + f.name,cls:"saved"});
     loadFiles();
   } catch(e) {
     setStatus({text:"删除失败: "+e.message,cls:"error"});
@@ -1427,14 +1440,14 @@ async function deleteFolder(fi) {
   var folder = files[fi];
   if (!folder) return;
   var count = folder.files.length;
-  if (!confirm("确定删除文件夹 \"" + folder.name + "\" 及其 " + count + " 个文件？\n\n此操作不可撤销！")) return;
-  setStatus({text:"删除文件夹 (" + count + " 个文件)...",cls:"saving"});
+  if (!confirm("确定删除文件�?\"" + folder.name + "\" 及其 " + count + " 个文件？\n\n此操作不可撤销�?)) return;
+  setStatus({text:"删除文件�?(" + count + " 个文�?...",cls:"saving"});
   var errors = [];
   for (var i = 0; i < folder.files.length; i++) {
     var f = folder.files[i];
     try {
-      await githubAPI("contents/" + f.path, "DELETE", {
-        message: "删除文件夹 " + folder.name + " (" + (i+1) + "/" + count + ")",
+      await workerAPI("contents/" + f.path, "DELETE", {
+        message: "删除文件�?" + folder.name + " (" + (i+1) + "/" + count + ")",
         sha: f.sha,
         branch: BRANCH
       });
@@ -1442,9 +1455,9 @@ async function deleteFolder(fi) {
   }
   // Also try to delete .gitkeep if it exists
   try {
-    var gkResp = await githubAPI("contents/content/" + folder.name + "/.gitkeep?ref=" + BRANCH, "GET");
+    var gkResp = await workerAPI("contents/content/" + folder.name + "/.gitkeep?ref=" + BRANCH, "GET");
     if (gkResp && gkResp.sha) {
-      await githubAPI("contents/content/" + folder.name + "/.gitkeep", "DELETE", {
+      await workerAPI("contents/content/" + folder.name + "/.gitkeep", "DELETE", {
         message: "删除 .gitkeep",
         sha: gkResp.sha,
         branch: BRANCH
@@ -1454,8 +1467,8 @@ async function deleteFolder(fi) {
   if (currentFile && currentFile.path.startsWith("content/" + folder.name + "/")) {
     currentFile = null;
     currentSha = "";
-    document.getElementById("filePath").textContent = "选择左侧文件开始编辑";
-    document.getElementById("previewContent").innerHTML = '<p style="color:#888;text-align:center;margin-top:40px">选择文件开始预览</p>';
+    document.getElementById("filePath").textContent = "选择左侧文件开始编�?;
+    document.getElementById("previewContent").innerHTML = '<p style="color:#888;text-align:center;margin-top:40px">选择文件开始预�?/p>';
     if (editor) { try { editor.setMarkdown(""); } catch(e) {} }
   }
   if (errors.length > 0) {
@@ -1468,7 +1481,7 @@ async function deleteFolder(fi) {
 
 async function renameFile(fi, i2) {
   var f = files[fi].files[i2];
-  var newName = prompt("重命名为：", f.name);
+  var newName = prompt("重命名为�?, f.name);
   if (!newName || !newName.trim() || newName.trim() === f.name) return;
   newName = newName.trim();
   if (!newName.endsWith(".md")) newName += ".md";
@@ -1477,51 +1490,142 @@ async function renameFile(fi, i2) {
   setStatus({text:"重命名中...",cls:"saving"});
   try {
     // Get current content
-    var fileData = await githubAPI("contents/" + oldPath + "?ref=" + BRANCH, "GET");
+    var fileData = await workerAPI("contents/" + oldPath + "?ref=" + BRANCH, "GET");
     var content = atob(fileData.content);
     // Create at new path
-    await githubAPI("contents/" + newPath, "PUT", {
-      message: "重命名 " + f.name + " → " + newName,
+    await workerAPI("contents/" + newPath, "PUT", {
+      message: "重命�?" + f.name + " �?" + newName,
       content: fileData.content, // reuse base64
       branch: BRANCH
     });
     // Delete old
-    await githubAPI("contents/" + oldPath, "DELETE", {
-      message: "删除旧文件 " + f.name + "（已重命名）",
+    await workerAPI("contents/" + oldPath, "DELETE", {
+      message: "删除旧文�?" + f.name + "（已重命名）",
       sha: fileData.sha,
       branch: BRANCH
     });
     if (currentFile && currentFile.path === oldPath) {
       currentFile = null;
       currentSha = "";
-      document.getElementById("filePath").textContent = "选择左侧文件开始编辑";
+      document.getElementById("filePath").textContent = "选择左侧文件开始编�?;
     }
-    setStatus({text:"已重命名: " + f.name + " → " + newName,cls:"saved"});
+    setStatus({text:"已重命名: " + f.name + " �?" + newName,cls:"saved"});
     loadFiles();
   } catch(e) {
-    setStatus({text:"重命名失败: "+e.message,cls:"error"});
+    setStatus({text:"重命名失�? "+e.message,cls:"error"});
   }
 }
 
-function saveToken() {
-  var t = document.getElementById("tokenInput").value.trim();
-  if (!t) return;
-  token = t;
-  localStorage.setItem("gh_token", t);
-  init();
+// ===== Supabase Auth for Admin =====
+var adminMode = "login";
+
+function toggleAdminMode(mode) {
+  adminMode = mode;
+  var titleEl = document.getElementById("adminLoginTitle");
+  var subtitleEl = document.getElementById("adminLoginSubtitle");
+  var nameGroup = document.getElementById("adminNameGroup");
+  var authBtn = document.getElementById("adminAuthBtn");
+  var toggleLink = document.getElementById("adminToggleLink");
+  var errorEl = document.getElementById("adminLoginError");
+
+  errorEl.textContent = "";
+  if (mode === "register") {
+    titleEl.textContent = "�?注册管理员账�?;
+    subtitleEl.textContent = "注册后需联系管理员审批编辑权�?;
+    nameGroup.style.display = "block";
+    authBtn.textContent = "注册";
+    toggleLink.innerHTML = '已有账号�?a href="#" onclick="toggleAdminMode(\'login\')">登录</a>';
+  } else {
+    titleEl.textContent = "🔑 管理员登�?;
+    subtitleEl.textContent = "使用 wouldkeep.com 账号登录";
+    nameGroup.style.display = "none";
+    authBtn.textContent = "登录";
+    toggleLink.innerHTML = '没有账号�?a href="#" onclick="toggleAdminMode(\'register\')">注册</a>';
+  }
 }
 
-function init() {
-  if (!token) {
-    document.getElementById("loginScreen").style.display = "flex";
-    document.getElementById("mainUI").style.display = "none";
-    document.getElementById("mainUI2").style.display = "none";
+function showAdminError(msg) {
+  document.getElementById("adminLoginError").textContent = msg;
+}
+
+async function handleAdminAuth() {
+  var errorEl = document.getElementById("adminLoginError");
+  errorEl.textContent = "";
+  var email = document.getElementById("adminEmailInput").value.trim();
+  var password = document.getElementById("adminPasswordInput").value.trim();
+  var name = document.getElementById("adminNameInput").value.trim();
+
+  if (!email || !password) { errorEl.textContent = "请输入邮箱和密码"; return; }
+  if (adminMode === "register" && !name) { errorEl.textContent = "请输入显示名�?; return; }
+
+  if (typeof sb === "undefined" || !sb || !sb.auth) {
+    errorEl.textContent = "认证系统初始化中，请稍等...";
+    setTimeout(function() { handleAdminAuth(); }, 500);
     return;
   }
+
+  errorEl.textContent = "处理�?..";
+  try {
+    if (adminMode === "login") {
+      var { data, error } = await sb.auth.signInWithPassword({ email: email, password: password });
+      if (error) throw error;
+      sbUser = data.user;
+    } else {
+      var { data: signUpData, error: signUpErr } = await sb.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { display_name: name } }
+      });
+      if (signUpErr) throw signUpErr;
+      if (signUpData.user && signUpData.session) {
+        sbUser = signUpData.user;
+      } else {
+        errorEl.textContent = "注册成功！请查收邮箱验证链接后登录�?;
+        toggleAdminMode("login");
+        return;
+      }
+    }
+    await loadProfile();
+    authReady = true;
+    updateAuthUI();
+    showMainUI();
+  } catch (e) {
+    errorEl.textContent = "错误: " + e.message;
+  }
+}
+
+function showMainUI() {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("mainUI").style.display = "flex";
   document.getElementById("mainUI2").style.display = "flex";
   loadFiles();
+}
+
+function init() {
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("mainUI").style.display = "none";
+  document.getElementById("mainUI2").style.display = "none";
+  // Wait for Supabase to initialize, then check for existing session
+  checkSessionAndLoad();
+}
+
+async function checkSessionAndLoad() {
+  if (typeof sb === "undefined" || !sb || !sb.auth) {
+    setTimeout(checkSessionAndLoad, 200);
+    return;
+  }
+  try {
+    var res = await sb.auth.getSession();
+    if (res.data && res.data.session) {
+      sbUser = res.data.session.user;
+      await loadProfile();
+      authReady = true;
+      updateAuthUI();
+      showMainUI();
+    }
+  } catch(e) {
+    // No session, stay on login screen
+  }
 }
 
 document.addEventListener("keydown", function(e) {
@@ -1550,8 +1654,8 @@ if ('serviceWorker' in navigator) {
 window.addEventListener("beforeunload", function() { if (editor && currentFile) autoSaveDraft(); });
 </script>
 <script src="/admin/auth.js"></script>
-<div class="focus-indicator" id="focusIndicator">✍️ 专注模式 · Esc 退出</div>
-<div class="drop-overlay" id="dropOverlay">🖼️ 松开以上传图片</div>
+<div class="focus-indicator" id="focusIndicator">✍️ 专注模式 · Esc 退�?/div>
+<div class="drop-overlay" id="dropOverlay">🖼�?松开以上传图�?/div>
 
 <!-- Auth Modal -->
 <div class="auth-modal-overlay" id="authModal">
@@ -1568,14 +1672,14 @@ window.addEventListener("beforeunload", function() { if (editor && currentFile) 
     </div>
     <div class="field">
       <label>密码</label>
-      <input type="password" id="authPassword" placeholder="最少 6 位" />
+      <input type="password" id="authPassword" placeholder="最�?6 �? />
     </div>
     <div class="auth-btns">
       <button onclick="hideAuthModal()">取消</button>
       <button class="primary" id="authSubmitBtn" onclick="handleAuthSubmit()">登录</button>
     </div>
     <div class="auth-toggle" id="authToggleLink">
-      没有账号？<a href="#" onclick="showAuthModal('register')">注册</a>
+      没有账号�?a href="#" onclick="showAuthModal('register')">注册</a>
     </div>
   </div>
 </div>
@@ -1584,7 +1688,7 @@ window.addEventListener("beforeunload", function() { if (editor && currentFile) 
 <div class="auth-modal-overlay" id="roleModal" onclick="hideRoleModal()">
   <div class="auth-modal" onclick="event.stopPropagation()" style="max-width:480px">
     <h3>⚙️ 用户权限管理</h3>
-    <p style="color:#888;font-size:12px;margin-bottom:12px">输入用户邮箱，赋予或撤销管理员权限</p>
+    <p style="color:#888;font-size:12px;margin-bottom:12px">输入用户邮箱，赋予或撤销管理员权�?/p>
     <div class="field">
       <label>用户邮箱</label>
       <input type="email" id="roleEmail" placeholder="user@example.com" />
@@ -1592,11 +1696,11 @@ window.addEventListener("beforeunload", function() { if (editor && currentFile) 
     <div class="auth-error" id="roleError"></div>
     <div class="auth-btns">
       <button onclick="hideRoleModal()">取消</button>
-      <button class="primary" onclick="grantAdmin()" style="background:linear-gradient(135deg,#e94560,#d63851);border:none;color:#fff">设为管理员</button>
+      <button class="primary" onclick="grantAdmin()" style="background:linear-gradient(135deg,#e94560,#d63851);border:none;color:#fff">设为管理�?/button>
       <button onclick="revokeAdmin()" style="background:rgba(255,87,34,.2);color:#ff7043;border-color:rgba(255,87,34,.3)">撤销权限</button>
     </div>
     <div style="margin-top:12px;max-height:200px;overflow-y:auto;font-size:11px" id="roleList">
-      <span style="color:#666">加载管理员列表...</span>
+      <span style="color:#666">加载管理员列�?..</span>
     </div>
   </div>
 </div>
