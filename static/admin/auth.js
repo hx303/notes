@@ -318,13 +318,15 @@ async function loadComments() {
     if (error) throw error;
     renderComments(data || []);
 
-    // Populate section selector
+    // Populate section selector (preserve selection)
     if (editor) {
       var sections = extractSections(editor.getMarkdown());
       var sel = document.getElementById("commentSection");
       if (sel) {
+        var prevVal = sel.value;
         sel.innerHTML = sections.map(function (s) {
-          return '<option value="' + escapeHtmlAttr(s.title) + '">' + escapeHtml(s.title) + '</option>';
+          var selected = s.title === prevVal ? " selected" : "";
+          return '<option value="' + escapeHtmlAttr(s.title) + '"' + selected + '>' + escapeHtml(s.title) + '</option>';
         }).join("");
       }
     }
