@@ -186,7 +186,7 @@ Guideline on the Boundaries of AIGC Usage in Academic Publishing 2.0 **中国科
 * 完善**同行评审流程** 中的AIGC使用指导
 * 紧密贴合科技与学术领域最新发展
 
-## 9 速查：AIGC使用边界一览1
+## 9 速查：AIGC使用边界一览
 
 | 环节 | 可以 | 不可以 |
 | --- | --- | --- |
