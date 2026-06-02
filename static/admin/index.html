@@ -1029,6 +1029,7 @@ async function openFile(fi, i2) {
 
 function uploadImage() {
   if (!editor) return alert("请先打开一个文件");
+  var savedSel = editor.getSelection();  // capture cursor before focus loss
   var input = document.createElement("input");
   input.type = "file";
   input.accept = "image/*";
@@ -1051,8 +1052,7 @@ function uploadImage() {
       // Insert markdown image at cursor or append
       var alt = file.name.replace(/\.[^.]+$/, "");
       var md = editor.getMarkdown();
-      var sel = editor.getSelection();
-      var pos = sel ? sel[0] : md.length;
+      var pos = savedSel ? savedSel[0] : md.length;
       var before = md.substring(0, pos);
       var after = md.substring(pos);
       editor.setMarkdown(before + "\n![" + alt + "](" + url + ")\n" + after, true);
