@@ -640,9 +640,10 @@ var RECENT_KEY = "recent_files_v1";
 var MAX_RECENT = 8;
 
 // ===== Supabase Storage for image uploads =====
-var supabaseUrl = "https://agocyybolrisqujvjqdj.supabase.co";
-var supabaseKey = "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc";
-var supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+var _supabaseClient = window.supabase.createClient(
+  "https://agocyybolrisqujvjqdj.supabase.co",
+  "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc"
+);
 
 function getRecent() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
@@ -1036,7 +1037,7 @@ function uploadImage() {
         upsert: false
       });
       if (error) throw error;
-      var { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+      var { data: urlData } = _supabaseClient.storage.from("images").getPublicUrl(fileName);
       var url = urlData.publicUrl;
       // Insert markdown image at cursor or append
       var alt = file.name.replace(/\.[^.]+$/, "");
