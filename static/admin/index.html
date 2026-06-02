@@ -640,10 +640,18 @@ var RECENT_KEY = "recent_files_v1";
 var MAX_RECENT = 8;
 
 // ===== Supabase Storage for image uploads =====
-var _supabaseClient = window.supabase.createClient(
-  "https://agocyybolrisqujvjqdj.supabase.co",
-  "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc"
-);
+var _supabaseClient = null;
+function _getSupabaseClient() {
+  if (_supabaseClient) return _supabaseClient;
+  if (typeof window.supabase === "undefined" || !window.supabase.createClient) {
+    throw new Error("SDK loading, please refresh");
+  }
+  _supabaseClient = window.supabase.createClient(
+    "https://agocyybolrisqujvjqdj.supabase.co",
+    "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc"
+  );
+  return _supabaseClient;
+}
 
 function getRecent() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
@@ -1032,12 +1040,13 @@ function uploadImage() {
     document.getElementById("imageBtn").disabled = true;
     try {
       var fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      var { data, error } = await supabase.storage.from("images").upload(fileName, file, {
+      var sc = _getSupabaseClient();
+      var { data, error } = await sc.storage.from("images").upload(fileName, file, {
         cacheControl: "3600",
         upsert: false
       });
       if (error) throw error;
-      var { data: urlData } = _supabaseClient.storage.from("images").getPublicUrl(fileName);
+      var { data: urlData } = sc.storage.from("images").getPublicUrl(fileName);
       var url = urlData.publicUrl;
       // Insert markdown image at cursor or append
       var alt = file.name.replace(/\.[^.]+$/, "");
