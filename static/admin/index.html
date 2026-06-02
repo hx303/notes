@@ -556,7 +556,7 @@ body.light #roleMgmtModal input[type=email], body.light #roleMgmtModal select {
     <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="切换亮色/暗色主题">🌓</button>
     <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">📝 Markdown</button>
     <button onclick="newFile()">＋ 新建</button>
-    <button onclick="uploadImage()" id="imageBtn" title="上传图片到 Supabase Storage">📷 插入图片</button>
+    <button onmousedown="handleImageBtn(event)" id="imageBtn" title="上传图片到 Supabase Storage">📷 插入图片</button>
     <button class="primary" id="saveBtn" onclick="saveFile()">💾 保存</button>
     <button id="roleMgmtBtn" onclick="showRoleMgmt()" title="用户权限管理" style="display:none">👥 用户管理</button>
     <button class="auth-btn" id="authLoginBtn" onclick="showAuthModal('login')" title="登录后可发表评论">🔑 登录</button>
@@ -1038,6 +1038,11 @@ async function openFile(fi, i2) {
   }
 }
 
+function handleImageBtn(e) {
+  e.preventDefault(); // keep focus in editor
+  if (editor) _imgCursor = editor.getSelection();
+  uploadImage();
+}
 function uploadImage() {
   if (!editor) return alert("请先打开一个文件");
   var input = document.createElement("input");
