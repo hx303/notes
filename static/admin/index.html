@@ -1367,37 +1367,6 @@ document.addEventListener("drop", function(e) {
   }
 });
 
-function uploadImage(file) {
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    var base64 = ev.target.result.split(",")[1];
-    var now = new Date();
-    var timestamp = now.getFullYear() + ("0"+(now.getMonth()+1)).slice(-2) + ("0"+now.getDate()).slice(-2) + "_" + ("0"+now.getHours()).slice(-2) + ("0"+now.getMinutes()).slice(-2) + ("0"+now.getSeconds()).slice(-2);
-    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    var imgPath = "static/images/" + timestamp + "_" + safeName;
-    setStatus({text:"上传中: " + safeName + "...",cls:"saving"});
-    workerAPI("contents/" + imgPath, "PUT", {
-      message: "Upload image " + safeName + " via admin editor",
-      content: base64,
-      branch: BRANCH
-    }).then(function(resp) {
-      var imgUrl = "/" + imgPath;
-      // Insert markdown image at cursor
-      var md = editor.getMarkdown();
-      var sel = editor.getSelection();
-      var pos = (sel && Array.isArray(sel)) ? sel[0] : md.length;
-      var newMd = md.substring(0, pos) + "\n![" + (file.name.replace(/\.[^.]+$/,"")) + "](" + imgUrl + ")\n" + md.substring(pos);
-      editor.setMarkdown(newMd, false);
-      setStatus({text:"已插入: " + safeName,cls:"saved"});
-      setTimeout(function(){setStatus({text:"就绪",cls:"idle"});},3000);
-    }).catch(function(e) {
-      setStatus({text:"上传失败: " + e.message,cls:"error"});
-    });
-  };
-  reader.readAsDataURL(file);
-}
-/* ====== End Image Upload ====== */
-
 /* ====== End Split Preview ====== */
 
 function newFile() {
