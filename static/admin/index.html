@@ -641,17 +641,7 @@ var MAX_RECENT = 8;
 
 // ===== Supabase Storage for image uploads =====
 var _supabaseClient = null;
-var _imgCursor = null;  // continuously tracked cursor position
-
-// Track cursor position whenever user interacts with the editor
-document.addEventListener("selectionchange", function() {
-  if (!editor) return;
-  var el = document.querySelector(".toastui-editor");
-  if (el && el.contains(document.activeElement)) {
-    var s = editor.getSelection();
-    if (s) _imgCursor = s;
-  }
-});
+var _imgCursor = null;  // cursor position to insert image at
 function _getSupabaseClient() {
   if (_supabaseClient) return _supabaseClient;
   if (typeof window.supabase === "undefined" || !window.supabase.createClient) {
@@ -1039,8 +1029,12 @@ async function openFile(fi, i2) {
 }
 
 function handleImageBtn(e) {
-  e.preventDefault(); // keep focus in editor
-  if (editor) _imgCursor = editor.getSelection();
+  e.preventDefault();
+  if (editor) {
+    try { editor.focus(); } catch(e) {}
+    _imgCursor = editor.getSelection();
+    console.log("[uploadImage] captured cursor:", _imgCursor);
+  }
   uploadImage();
 }
 function uploadImage() {
