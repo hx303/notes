@@ -654,6 +654,24 @@ function _getSupabaseClient() {
   return _supabaseClient;
 }
 
+// Convert Toast UI Editor v3 selection [[line,col],[line,col]] → character offset
+function _cursorToOffset(cursor, md) {
+  if (!cursor) return null;
+  // v3 format: [[fromLine, fromCh], [toLine, toCh]]
+  if (Array.isArray(cursor[0]) && typeof cursor[0][0] === "number") {
+    var lines = md.split("\n");
+    var offset = 0;
+    for (var i = 0; i < cursor[0][0]; i++) {
+      offset += (lines[i] || "").length + 1; // +1 for \n
+    }
+    offset += cursor[0][1];
+    return offset;
+  }
+  // Legacy format: [offset, offset]
+  if (typeof cursor[0] === "number") return cursor[0];
+  return null;
+}
+
 function getRecent() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
   catch(e) { return []; }
@@ -1073,7 +1091,8 @@ function uploadImage() {
       // Insert markdown image at cursor or append
       var alt = file.name.replace(/\.[^.]+$/, "");
       var md = editor.getMarkdown();
-      var pos = _imgCursor && _imgCursor[0] !== undefined ? _imgCursor[0] : md.length;
+      var pos = _cursorToOffset(_imgCursor, md);
+      if (pos === null) pos = md.length;
       console.log("[img] cursor:", _imgCursor, "→ insert at", pos, "/", md.length);
       var before = md.substring(0, pos);
       var after = md.substring(pos);
