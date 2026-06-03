@@ -498,6 +498,14 @@ body.light #roleMgmtModal input[type=email], body.light #roleMgmtModal select {
 #roleMgmtModal table th { padding:4px; color:#888; font-weight:400 }
 #roleMgmtModal table td { padding:6px 4px }
 #roleMgmtModal table tbody tr:hover { background:rgba(233,69,96,.05) }
+/* Drag-and-drop move styles */
+.sidebar .file{cursor:grab}
+.sidebar .file.dragging{opacity:0.3;cursor:grabbing}
+.sidebar .folder-header.drag-over{background:rgba(233,69,96,.25)!important;outline:2px dashed #e94560;outline-offset:-2px;border-radius:6px}
+body.light .sidebar .folder-header.drag-over{background:rgba(192,57,43,.15)!important;outline-color:#c0392b}
+.sidebar .root-drop-zone{min-height:30px;margin:2px 6px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#555;transition:background .15s,outline .15s}
+.sidebar .root-drop-zone.drag-over{background:rgba(233,69,96,.15);outline:2px dashed #e94560;outline-offset:-2px;color:#e94560}
+body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outline-color:#c0392b;color:#c0392b}
 </style>
 </head>
 <body>
@@ -533,6 +541,20 @@ body.light #roleMgmtModal input[type=email], body.light #roleMgmtModal select {
     <div class="btns">
       <button onclick="closeNewFile()">取消</button>
       <button class="primary" onclick="createFile()">创建</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="moveFileModal" style="display:none">
+  <div class="modal">
+    <h3>↗️ 移动到...</h3>
+    <p style="font-size:12px;color:#888;margin:0 0 8px" id="moveFileName"></p>
+    <select id="moveFileTarget" style="width:100%;padding:8px 10px;background:#1a1a2e;color:#e0e0e0;border:1px solid #0f3460;border-radius:6px;font-size:13px;margin-bottom:12px">
+      <option value="">content/（根目录）</option>
+    </select>
+    <div class="btns">
+      <button onclick="closeMoveFile()">取消</button>
+      <button class="primary" onclick="doMoveFile()">移动</button>
     </div>
   </div>
 </div>
@@ -974,11 +996,13 @@ function renderSidebar(filter) {
     sb.innerHTML = '<div class="no-results">未找到匹配 "' + escapeHtml(filter) + '" 的文件</div>';
     return;
   }
-  sb.innerHTML = (recentHtml || "") + filesToRender.map(function(folder, fi) {
+  sb.innerHTML = (recentHtml || "") +
+      '<div class="root-drop-zone" ondragover="dragFolderOver(event,this,-1)" ondragleave="dragFolderLeave(event,this)" ondrop="dragFolderDrop(event,-1)">📁 拖到此处移至根目录</div>' +
+      filesToRender.map(function(folder, fi) {
     var realFi = origIdx ? origIdx[fi] : fi;
     var displayName = folder.name || "根目录";
     return '<div class="folder'+(folder.open?" open":"")+'" id="folder'+fi+'">'+
-      '<div class="folder-header" onclick="toggleFolder('+fi+')">'+
+      '<div class="folder-header" ondragover="dragFolderOver(event,this,'+realFi+')" ondragleave="dragFolderLeave(event,this)" ondrop="dragFolderDrop(event,'+realFi+')" onclick="toggleFolder('+fi+')">'+
         '<span class="arrow">\u25b6</span>\ud83d\udcc1 ' + escapeHtml(displayName) +
         ' <small style="color:#666;margin-left:auto">'+folder.files.length+'</small>'+
         (displayName ? '<button class="folder-delete-btn" onclick="event.stopPropagation();deleteFolder('+realFi+')" title="删除文件夹">🗑️</button>' : '') +
@@ -994,11 +1018,12 @@ function renderSidebar(filter) {
               }
             }
           }
-          return '<div class="file" id="file'+fi+'_'+i2+'">'+
+          return '<div class="file" id="file'+fi+'_'+i2+'" draggable="true" ondragstart="startDrag(event,'+realFi+','+realFi2+')" ondragend="endDrag(event)">'+
             '<span class="file-name" onclick="openFile('+realFi+','+realFi2+')">\ud83d\udcc4 ' + escapeHtml(f.name)+'</span>'+
             '<span class="file-actions">'+
               '<button onclick="event.stopPropagation();renameFile('+realFi+','+realFi2+')" title="重命名">✏️</button>'+
               '<button onclick="event.stopPropagation();deleteFile('+realFi+','+realFi2+')" title="删除">🗑️</button>'+
+              '<button onclick="event.stopPropagation();openMoveFile('+realFi+','+realFi2+')" title="移动到..." class="move-btn">↗️</button>'+
             '</span>'+
           '</div>';
         }).join("")+
@@ -1581,6 +1606,128 @@ async function deleteFolder(fi) {
     setStatus({text:"文件夹已删除: " + folder.name,cls:"saved"});
   }
   loadFiles();
+}
+
+
+/* ====== Drag-and-Drop File Move ====== */
+var _dragSourceFi = null, _dragSourceI2 = null;
+
+function startDrag(e, fi, i2) {
+  if (!e.dataTransfer) return;
+  _dragSourceFi = fi; _dragSourceI2 = i2;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", files[fi].files[i2].name);
+  e.currentTarget.classList.add("dragging");
+  // Small delay so browser snapshots the styled element
+  setTimeout(function() { e.currentTarget.classList.add("dragging"); }, 0);
+}
+
+function endDrag(e) {
+  e.currentTarget.classList.remove("dragging");
+  document.querySelectorAll(".drag-over").forEach(function(el){el.classList.remove("drag-over")});
+}
+
+function dragFolderOver(e, el, fi) {
+  e.preventDefault();
+  if (fi === _dragSourceFi) { e.dataTransfer.dropEffect = "none"; return; }
+  e.dataTransfer.dropEffect = "move";
+  el.classList.add("drag-over");
+}
+
+function dragFolderLeave(e, el) {
+  el.classList.remove("drag-over");
+}
+
+async function dragFolderDrop(e, targetFi) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  if (_dragSourceFi === null || _dragSourceI2 === null) return;
+  if (targetFi === _dragSourceFi) return; // same folder
+  await moveFile(_dragSourceFi, _dragSourceI2, targetFi);
+  _dragSourceFi = null; _dragSourceI2 = null;
+}
+
+/* ====== Move-File Modal ====== */
+var _moveFileFi = null, _moveFileI2 = null;
+
+function openMoveFile(fi, i2) {
+  _moveFileFi = fi; _moveFileI2 = i2;
+  var f = files[fi].files[i2];
+  document.getElementById("moveFileName").textContent = "📄 " + f.name;
+  var sel = document.getElementById("moveFileTarget");
+  sel.innerHTML = '<option value="">content/（根目录）</option>' +
+    files.map(function(folder, idx) {
+      if (idx === fi) return ""; // skip current folder
+      return '<option value="' + idx + '">' + escapeHtml(folder.name || "根目录") + '/</option>';
+    }).join("");
+  document.getElementById("moveFileModal").style.display = "flex";
+}
+
+function closeMoveFile() { document.getElementById("moveFileModal").style.display = "none"; }
+
+async function doMoveFile() {
+  var sel = document.getElementById("moveFileTarget");
+  var targetFi = sel.value;
+  closeMoveFile();
+  if (targetFi === "" || targetFi === null) targetFi = -1; // root
+  else targetFi = parseInt(targetFi, 10);
+  if (_moveFileFi === null || _moveFileI2 === null) return;
+  await moveFile(_moveFileFi, _moveFileI2, targetFi);
+  _moveFileFi = null; _moveFileI2 = null;
+}
+
+/* ====== Core Move Operation ====== */
+async function moveFile(sourceFi, sourceI2, targetFi) {
+  var srcFile = files[sourceFi].files[sourceI2];
+  var srcFolder = files[sourceFi].name || "根目录";
+  var targetFolder = (targetFi === -1 || !files[targetFi]) ? "" : (files[targetFi].name || "");
+
+  // Build target path
+  var targetPath = "content/" + (targetFolder ? targetFolder + "/" : "") + srcFile.name;
+  var srcPath = srcFile.path;
+
+  // Check name conflict (skip if same folder)
+  if (targetFi !== -1) {
+    var conflict = files[targetFi].files.find(function(f) { return f.name === srcFile.name; });
+    if (conflict) {
+      if (!confirm("目标文件夹已存在同名文件 \"" + srcFile.name + "\"，是否覆盖？")) return;
+      try {
+        await workerAPI("contents/" + targetPath, "DELETE", {
+          message: "覆盖 " + srcFile.name + "（移动自 " + srcFolder + "）",
+          sha: conflict.sha, branch: BRANCH
+        });
+      } catch(e) {
+        setStatus({text:"无法覆盖同名文件: "+e.message,cls:"error"});
+        return;
+      }
+    }
+  }
+
+  setStatus({text:"移动中...",cls:"saving"});
+  try {
+    var fileData = await workerAPI("contents/" + srcPath + "?ref=" + BRANCH, "GET");
+    var content = fileData.content; // base64
+
+    await workerAPI("contents/" + targetPath, "PUT", {
+      message: "移动 " + srcFile.name + ": " + srcFolder + " \u2192 " + (targetFolder || "根目录"),
+      content: content, branch: BRANCH
+    });
+
+    await workerAPI("contents/" + srcPath, "DELETE", {
+      message: "删除旧位置 " + srcFile.name + "（已移动）",
+      sha: fileData.sha, branch: BRANCH
+    });
+
+    if (currentFile && currentFile.path === srcPath) {
+      currentFile.path = targetPath;
+      document.getElementById("filePath").textContent = targetPath;
+    }
+
+    setStatus({text:"已移动: " + srcFile.name + " → " + (targetFolder || "根目录"),cls:"saved"});
+    setTimeout(function() { loadFiles(); }, 400);
+  } catch(e) {
+    setStatus({text:"移动失败: "+e.message,cls:"error"});
+  }
 }
 
 async function renameFile(fi, i2) {
