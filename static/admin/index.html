@@ -639,19 +639,65 @@ var currentMode = localStorage.getItem("editor_mode") || "markdown";
 var RECENT_KEY = "recent_files_v1";
 var MAX_RECENT = 8;
 
-// ===== Supabase Storage for image uploads =====
-var _supabaseClient = null;
+// ===== Cloudflare R2 Storage for image uploads =====
 var _imgCursor = null;  // cursor position to insert image at
-function _getSupabaseClient() {
-  if (_supabaseClient) return _supabaseClient;
-  if (typeof window.supabase === "undefined" || !window.supabase.createClient) {
-    throw new Error("SDK loading, please refresh");
-  }
-  _supabaseClient = window.supabase.createClient(
-    "https://agocyybolrisqujvjqdj.supabase.co",
-    "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc"
-  );
-  return _supabaseClient;
+var _r2Cfg = {
+  accountId: "04f9762de46c60b080358dad00a5c9ad",
+  bucket: "wouldkeep-images",
+  accessKey: "91279602f7ac450533ed8eeb20253c0b",
+  secretKey: "7bd7e90323908568073d3bf1b2206b809dc8e510ba5fc43c05b87c603cda23b1"
+  // publicUrl: set after enabling r2.dev public access on the bucket
+};
+var _enc = new TextEncoder();
+
+// AWS SigV4 helpers (Web Crypto API)
+async function _sha256(d) { var b = await crypto.subtle.digest("SHA-256", d); return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join(""); }
+async function _hmacSign(k, d) { var c = await crypto.subtle.importKey("raw", k, {name:"HMAC", hash:"SHA-256"}, false, ["sign"]); return new Uint8Array(await crypto.subtle.sign("HMAC", c, d)); }
+async function _hmacHex(k, d) { var s = await _hmacSign(k, d); return Array.from(s).map(function(x){return x.toString(16).padStart(2,"0")}).join(""); }
+
+// Upload file to Cloudflare R2 via S3-compatible API
+async function _r2Upload(fileName, file) {
+  var c = _r2Cfg, ct = file.type || "application/octet-stream";
+  var host = c.accountId + ".r2.cloudflarestorage.com";
+  var region = "auto", svc = "s3";
+  var now = new Date();
+  var amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, ""); // YYYYMMDDTHHMMSSZ
+  var dateStamp = amzDate.substring(0, 8);
+
+  // Task 1: Canonical Request
+  var uri = "/" + c.bucket + "/" + encodeURIComponent(fileName);
+  var ch = "content-type:" + ct + "\nhost:" + host + "\nx-amz-content-sha256:UNSIGNED-PAYLOAD\nx-amz-date:" + amzDate + "\n";
+  var sh = "content-type;host;x-amz-content-sha256;x-amz-date";
+  var cr = "PUT\n" + uri + "\n\n" + ch + "\n" + sh + "\nUNSIGNED-PAYLOAD";
+
+  // Task 2: String to Sign
+  var algo = "AWS4-HMAC-SHA256";
+  var scope = dateStamp + "/" + region + "/" + svc + "/aws4_request";
+  var sts = algo + "\n" + amzDate + "\n" + scope + "\n" + await _sha256(_enc.encode(cr));
+
+  // Task 3: Signing Key
+  var kd = await _hmacSign(_enc.encode("AWS4" + c.secretKey), _enc.encode(dateStamp));
+  var kr = await _hmacSign(kd, _enc.encode(region));
+  var ks = await _hmacSign(kr, _enc.encode(svc));
+  var ksign = await _hmacSign(ks, _enc.encode("aws4_request"));
+
+  // Task 4: Signature + Authorization
+  var sig = await _hmacHex(ksign, _enc.encode(sts));
+  var auth = algo + " Credential=" + c.accessKey + "/" + scope + ",SignedHeaders=" + sh + ",Signature=" + sig;
+
+  var url = "https://" + host + "/" + c.bucket + "/" + encodeURIComponent(fileName);
+  var resp = await fetch(url, {
+    method: "PUT",
+    headers: { "Authorization": auth, "Content-Type": ct, "x-amz-content-sha256": "UNSIGNED-PAYLOAD", "x-amz-date": amzDate },
+    body: file
+  });
+
+  if (!resp.ok) { var t = await resp.text(); throw new Error("R2 upload: " + resp.status + " " + t.substring(0, 200)); }
+
+  // Public URL — needs r2.dev access enabled on bucket, or custom domain
+  // After enabling r2.dev in Cloudflare Dashboard, update _r2Cfg.publicUrl
+  var pubBase = _r2Cfg.publicUrl || ("https://" + host + "/" + c.bucket);
+  return pubBase + "/" + encodeURIComponent(fileName);
 }
 
 // Convert Toast UI Editor v3 selection [[line,col],[line,col]] → character offset
@@ -1080,14 +1126,8 @@ function uploadImage() {
     document.getElementById("imageBtn").disabled = true;
     try {
       var fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      var sc = _getSupabaseClient();
-      var { data, error } = await sc.storage.from("images").upload(fileName, file, {
-        cacheControl: "3600",
-        upsert: false
-      });
-      if (error) throw error;
-      var { data: urlData } = sc.storage.from("images").getPublicUrl(fileName);
-      var url = urlData.publicUrl;
+      // Upload to Cloudflare R2
+      var url = await _r2Upload(fileName, file);
       // Insert markdown image at cursor or append
       var alt = file.name.replace(/\.[^.]+$/, "");
       var md = editor.getMarkdown();
