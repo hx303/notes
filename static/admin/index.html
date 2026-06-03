@@ -759,9 +759,7 @@ function initEditor() {
   // Wire up preview + auto-save + word count on content change
   editor.on("change", function() { schedulePreview(); scheduleAutoSave(); updateWordCount(); });
 
-  // Track cursor position for image insertion
-  editor.on("keyup", function() { try { var s = editor.getSelection(); if (s) _imgCursor = s; } catch(e) {} });
-  editor.on("mouseup", function() { try { var s = editor.getSelection(); if (s) _imgCursor = s; } catch(e) {} });
+  // Track cursor position for image insertion (blur is the only supported editor event for this)
   editor.on("blur", function() { try { var s = editor.getSelection(); if (s) _imgCursor = s; } catch(e) {} });
 }
 
