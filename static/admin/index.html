@@ -759,8 +759,22 @@ function initEditor() {
   // Wire up preview + auto-save + word count on content change
   editor.on("change", function() { schedulePreview(); scheduleAutoSave(); updateWordCount(); });
 
-  // Track cursor position for image insertion (blur is the only supported editor event for this)
-  editor.on("blur", function() { try { var s = editor.getSelection(); if (s) _imgCursor = s; } catch(e) {} });
+  // Track cursor via DOM selectionchange (native event, no crash risk like editor.on("mouseup"))
+  // This captures position WHILE user is editing, before focus is lost on button click
+  var _selTimer = null;
+  document.addEventListener("selectionchange", function() {
+    if (!editor) return;
+    clearTimeout(_selTimer);
+    _selTimer = setTimeout(function() {
+      try {
+        var container = document.querySelector(".toastui-editor");
+        if (container && (container.contains(document.activeElement) || document.activeElement === container)) {
+          var s = editor.getSelection();
+          if (s && s[0] !== undefined) _imgCursor = s;
+        }
+      } catch(e) {}
+    }, 80);
+  });
 }
 
 function addColorButtons() {
