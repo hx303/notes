@@ -1,9 +1,9 @@
 # 多波长-变温 PL 钙钛矿膜厚测量方案：可行性分析
 
-> 时间：2026-06-09 初稿 — 2026-06-10 文献验证更新
+> 时间：2026-06-09 初稿 — 2026-06-11 文献验证更新 (BR19/BR21/Wong24/DG26)
 > 目标：金字塔绒面硅基底上钙钛矿膜厚的非破坏性光学测量
 > 方案层级：可行性验证 → 理论建模 → 实验设计
-> 文献支撑：12篇WOS搜索+精读论文（详见附录B）
+> 文献支撑：12篇WOS搜索+精读论文 + 6篇新精读论文（详见附录B及本文引用）
 
 ---
 
@@ -106,9 +106,9 @@ R₂ = f(d, G, α_PL(T₂))    ← α_PL 变了（因为 Eg 红移）
 | PL重吸收是绒面PL光谱变化主因 | ✅ **已由实验证实** | Callies 2025 (*Solar RRL*): −47 meV/μm峰位偏移，排除应力假说 | 🔴🔴🔴 极高 |
 | 钙钛矿n,k数据可从文献获取 | ✅ **已有可靠数据** | van Eerden 2017 (*Adv. Opt. Mater.*): 椭偏+PDS交叉验证MAPI的n,k(300-900nm) | 🔴🔴🔴 极高 |
 | 共聚焦PL可在绒面样品上做3D扫描 | ✅ **已有先例** | Callies 2025: 405nm共聚焦(NA=0.9, 100×), z步进500nm | 🔴🔴🔴 极高 |
-| PL强度 vs 膜厚呈单调关系 | ✅ **物理可预期** | Beer-Lambert自吸收，Callies Fig.4c&4d PL强度与金字塔高度相关 | 🔴🔴 高 |
+| PL强度 vs 膜厚呈单调关系 | ✅ **物理可预期** | Beer-Lambert自吸收，Callies Fig.4c&4d PL强度与金字塔高度相关。BR19验证d≥200nm时相干/非相干误差<2%，支持该假设 | 🔴🔴 高 |
 | 变温下PL可稳定测量 | ✅ **已有先例** | Fiorentino 2022 (*ACS AMI*): 85°C in situ PL实时监测2D/3D界面 | 🔴🔴 高 |
-| 粗糙表面可用射线追踪建模 | ✅ **已有方法** | Bonnin-Ripoll 2019 (*Sol. Energy Mater.*): MC+TMM混合; Kumar 2021 (*MRS Adv.*): pencil beam sPSF | 🔴🔴 高 |
+| 粗糙表面可用射线追踪建模 | ✅ **已有方法+工具** | BR19 (MC+TMM框架) → RayFlare (Pearce 2021, LGPL v3) → Wong24 (金字塔绒面工业验证) | 🔴🔴🔴 极高 |
 | 工业在线PL检测 | ❌ **未见报道** | He 2023 (*Nanomaterials*): in situ综述确认仅实验室研究，产线inline空白 | 🔴 低（opportunity） |
 
 ### 2A.2 最直接的文献对标：Callies 2025 精读
@@ -136,22 +136,42 @@ Callies et al., *Solar RRL* 2025, DOI: 10.1002/solr.202500048
 
 | 来源 | 材料 | 方法 | 波长范围 | 可靠性 |
 |------|------|------|---------|:---:|
-| **van Eerden 2017** | CH₃NH₃PbI₃ | 椭偏仪 + 分光光度法 + PDS验证 | 300-900 nm | ⭐⭐⭐⭐⭐ |
-| **van Eerden 2017** | TiO₂, Spiro-OMeTAD, ITO | 椭偏仪 | 300-900 nm | ⭐⭐⭐⭐ |
-| **Callies 2025 Supp. Fig.S8** | CsFAPb(IBr)₃ (MA-free) | 椭偏 + PL反推Urbach尾 | full range | ⭐⭐⭐⭐ |
-| Manzoor 2018 (*Opt. Express*) | 宽禁带钙钛矿 | 波长平移法 | arbitrary Eg | 未下载，需获取 |
+| **Dasgupta/Stranks/Snaith 2026** ⭐ | FA₁₋ₓCsₓPb(I₁₋ᵧBrᵧ)₃ 全系列 (Br 0-100%, 5档) | 椭偏仪 + 插值 | **210-2500 nm** | ⭐⭐⭐⭐⭐ **首选** |
+| van Eerden 2017 | CH₃NH₃PbI₃ | 椭偏仪 + 分光光度法 + PDS验证 | 300-900 nm | ⭐⭐⭐⭐⭐ |
+| Callies 2025 Supp. Fig.S8 | CsFAPb(IBr)₃ (MA-free) | 椭偏 + PL反推Urbach尾 | full range | ⭐⭐⭐⭐ |
 
-> 建议：优先使用van Eerden 2017的MAPI数据（已经过PDS验证），然后根据你的具体钙钛矿组成用Manzoor的波长平移法修正。Callies 2025图S8的Urbach尾k值可直接引用。
+> **推荐使用 Dasgupta 2026 nk_repo**（已克隆至 `C:\Users\23012\Desktop\产业项目\nk_repo\`）。该数据库覆盖 FA₁₋ₓCsₓPb(I₁₋ᵧBrᵧ)₃ 全系列（Br 0%, 25%, 50%, 75%, 100%），数据格式为 CSV（`Stitched_Not_Interpolated/` 原始测量 + `Interpolated/` 插值后），直接可用。van Eerden 2017 的 MAPI 数据（经 PDS 验证）可作为交叉校验。
 
-### 2A.4 粗糙表面光学建模方法（三级方案）
+### 2A.4 粗糙表面光学建模方法（三级方案，经文献更新）
 
-| 层级 | 方法 | 精度 | 计算成本 | 来源 |
-|------|------|:---:|:---:|------|
-| **Level 1** | 解析Beer-Lambert + 有效光程因子 G | 中 | 低 | 本方案核心公式 |
-| **Level 2** | Pencil beam ray tracing + sPSF | 较高 | 中 | Kumar 2021 (*MRS Adv.*) |
-| **Level 3** | Monte-Carlo ray tracing + TMM验证 | 高 | 高 | Bonnin-Ripoll 2019 (*Sol. Energy Mater.*) |
+| 层级 | 方法 | 精度 | 计算成本 | 来源 | 适用场景 |
+|------|------|:---:|:---:|------|------|
+| **Level 1** | 解析 Beer-Lambert + 有效光程因子 G | 中 | 低 | 本方案核心公式 | 快速初筛、d≥200nm 验证有效 [BR19] |
+| **Level 2** | RayFlare RT_TMM（解析 RT + Lambertian 近似） | 较高 | 中 | Pearce 2021 (*JOSS*) + Wong 2024 (*IEEE PVSC*) | 金字塔 G 因子计算、LUT 生成 |
+| **Level 3** | RayFlare 全 MC 光迹追踪 + TMM 验证 | 高 | 高 | Bonnin-Ripoll 2019 (*Sol. Energy Mater.*) → RayFlare 实现 | 关键点精细化校准 |
 
-Kumar 2021的sPSF方法特别适配：它逐像素生成"采样点扩散函数"来编码探测体积与形貌的卷积关系，正好对应金字塔绒面上每像素PL信号包含的卷积效应。
+**Level 1 — Beer-Lambert 的物理有效性（来自 BR19 验证）**：
+Bonnin-Ripoll et al. (2019) [BR19] 通过 MC+TMM 对比实验验证了：当钙钛矿膜厚 **d ≥ 200 nm** 时，TMM（相干薄膜光学，等价于 Beer-Lambert + 干涉修正）与全 MC（非相干射线追踪）的误差 **< 2%**。这意味着本方案的 Level 1 解析公式在绝大多数实际膜厚（300-1000 nm）范围内是物理有效的。只有在 d < 200 nm 的极薄膜区才需要升级到 MC 方法。
+
+BR19 的完整 G(z) 公式为 [BR19, Eq.(6)]：
+```
+G(z) = α(λ) · ∫ N₀(0,θ) · exp(−αz / cosθ) dθ
+```
+其中 N₀(0,θ) 是 MC 光线的表面角分布。当膜厚较薄且金字塔光俘获显著时，G(z) 偏离简单指数衰减（光俘获均质化效应）——这会在方案的多波长比值法中引入额外的深度加权偏倚。
+
+**Level 2 — RayFlare 作为实操工具（替代 Kumar 2021 sPSF）**：
+- **RayFlare** (Pearce et al. 2021, JOSS, LGPL v3) 已开源并克隆至 `C:\Users\23012\Desktop\产业项目\rayflare_repo\`
+- 提供 `RT_TMM` 混合方法：专门处理绒面基底 + 薄膜层的光学耦合
+- 内置 `regular_pyramids()` 函数 → 原生金字塔绒面支持
+- 已有 `perovskite_Si_pyramids_tandem.py` 示例脚本 → 可作为模板修改
+- **Wong et al. (2024) [Wong24]** 已用 RayFlare 成功拟合 1000 片金字塔 TOPCon 电池的 EQE（27 LED 波长, 350-1200 nm），验证了其在该几何上的可靠性
+- 用解析 RT + Lambertian 近似可**大幅加速**（Wong 2024 报道 "substantial speed increase"）→ 适用于快速 G 因子 LUT 生成
+
+**Level 3 — 全 MC 精化**：
+当 Level 2 的 G 因子与 FIB-SEM 交叉验证偏差 > 20% 时，升级到 RayFlare 全 MC 模式（n_rays=20000），精化角分布 N₀(θ)。
+
+**HTM 层光学效应的处理**（来自 BR21）：
+Bonnin-Ripoll et al. (2021) [BR21] 通过对比 4 种 HTM（Spiro-OMeTAD, P3HT, CuSCN, CuPc）证实：宽禁带 HTM（CuSCN, E_g=3.8eV; Spiro-OMeTAD, E_g≈3.0eV）在 500-850 nm PL 波段**近似透明**（IQE ≈ 1）[BR21, Fig.3 & Fig.5]。因此，若你的器件使用 CuSCN 或 Spiro-OMeTAD 作为 HTM，在光学建模中可忽略 HTM 层的吸收。若使用窄禁带 HTM（如 P3HT 或 CuPc），则需在 G(z) 计算中加入 HTM 的吸收修正。
 
 ---
 
