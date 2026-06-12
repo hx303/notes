@@ -26,12 +26,12 @@ body {
 // 📖 论文阅读增强 — 宽版排版 + 进度条
 // ========================
 
-// A. 论文级排版增强（标记为 paper 的页面使用更宽布局）
-body.paper article {
+// A. 论文级排版增强（cssclasses: paper → 渲染为 article.paper）
+article.paper {
   max-width: var(--paper-width);
 }
 
-body.paper article > p {
+article.paper > p {
   font-size: 1.05em;
   line-height: 1.95;
   margin-bottom: 1.1em;
