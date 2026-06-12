@@ -17,33 +17,14 @@ const apply = () => {
 }
 
 // ============================================================
-// Drag-to-pan: hold Spacebar + drag to scroll the page freely
-// (like Photoshop / Figma / PDF readers)
+// Drag-to-pan: middle mouse button → pan freely
 // ============================================================
-let spaceDown = false
 let panning = false
 let panX = 0, panY = 0, scrollX = 0, scrollY = 0
 
-const spaceDownHandler = (e: KeyboardEvent) => {
-  // Ignore when typing
-  const el = e.target as HTMLElement
-  if (el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.tagName === "SELECT" || el?.isContentEditable) return
-  if (e.key === " " && !e.repeat) {
-    e.preventDefault()
-    spaceDown = true
-    document.body.style.cursor = "grab"
-  }
-}
-
-const spaceUpHandler = (e: KeyboardEvent) => {
-  if (e.key === " ") {
-    spaceDown = false
-    if (!panning) document.body.style.cursor = ""
-  }
-}
-
 const startPan = (e: PointerEvent) => {
-  if (!spaceDown) return
+  if (e.button !== 1) return // middle button only
+  e.preventDefault()
   panning = true
   panX = e.clientX
   panY = e.clientY
@@ -59,10 +40,9 @@ const movePan = (e: PointerEvent) => {
 }
 
 const endPan = () => {
-  if (!panning) return
   panning = false
+  document.body.style.cursor = ""
   document.body.style.userSelect = ""
-  document.body.style.cursor = spaceDown ? "grab" : ""
 }
 
 document.addEventListener("nav", () => {
@@ -85,18 +65,17 @@ document.addEventListener("nav", () => {
     apply()
   })
 
-  // Space-to-pan listeners
-  document.addEventListener("keydown", spaceDownHandler)
-  document.addEventListener("keyup", spaceUpHandler)
+  // Middle-mouse pan
   document.addEventListener("pointerdown", startPan)
   document.addEventListener("pointermove", movePan)
   document.addEventListener("pointerup", endPan)
   document.addEventListener("pointercancel", endPan)
-  window.addEventListener("blur", () => { spaceDown = false; endPan(); document.body.style.cursor = "" })
+  // Prevent autoscroll icon on middle click
+  document.addEventListener("mousedown", (e: MouseEvent) => {
+    if (e.button === 1) e.preventDefault()
+  })
 
   window.addCleanup(() => {
-    document.removeEventListener("keydown", spaceDownHandler)
-    document.removeEventListener("keyup", spaceUpHandler)
     document.removeEventListener("pointerdown", startPan)
     document.removeEventListener("pointermove", movePan)
     document.removeEventListener("pointerup", endPan)
