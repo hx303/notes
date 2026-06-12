@@ -1,0 +1,34 @@
+.fontsize {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fontsize-btn {
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  border: none;
+  width: 20px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--darkgray);
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: var(--tertiary);
+    background: rgba(233, 69, 96, 0.08);
+  }
+}
+
+// Font size CSS variable — applied to article content
+:root {
+  --content-scale: 1;
+}
+
+article {
+  font-size: calc(var(--content-scale) * 1em);
+}
