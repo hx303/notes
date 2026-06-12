@@ -21,14 +21,93 @@
   }
 }
 
-:root[reader-mode="on"] {
-  & .sidebar.left,
-  & .sidebar.right {
-    opacity: 0;
-    transition: opacity 0.2s ease;
+/* ============================================================ */
+/* Focus Mode (reader-mode="on"): hide both sidebars completely  */
+/* ============================================================ */
 
-    &:hover {
-      opacity: 1;
+:root[reader-mode="on"] {
+  --sidebar-transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Hide left sidebar */
+  & .sidebar.left {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    transition: width var(--sidebar-transition),
+                opacity var(--sidebar-transition),
+                padding var(--sidebar-transition);
+    pointer-events: none;
+
+    & * {
+      display: none;
     }
   }
+
+  /* Hide right sidebar */
+  & .sidebar.right {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    transition: width var(--sidebar-transition),
+                opacity var(--sidebar-transition),
+                padding var(--sidebar-transition);
+    pointer-events: none;
+
+    & * {
+      display: none;
+    }
+  }
+
+  /* Center content gets full width */
+  & .center {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: 840px !important;
+    flex: 1;
+    transition: max-width var(--sidebar-transition),
+                margin var(--sidebar-transition);
+  }
+
+  /* Paper notes get extra width in focus mode */
+  & article.paper {
+    max-width: 960px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Reader mode indicator — subtle bar at bottom */
+  & .page-header {
+    &::after {
+      content: "专注模式 · 按 F 退出";
+      display: block;
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--gray);
+      opacity: 0;
+      margin-top: 4px;
+      animation: focusHint 3s ease-in-out;
+    }
+  }
+
+  /* Back-to-top button when in focus */
+  & .back-to-top {
+    right: 16px;
+    bottom: 24px;
+  }
+}
+
+@keyframes focusHint {
+  0% { opacity: 0.5; }
+  50% { opacity: 0.2; }
+  100% { opacity: 0; }
 }
