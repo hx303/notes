@@ -24,14 +24,42 @@
   }
 }
 
-// Zoom via transform — creates actual overflow for panning
+// Zoom via CSS zoom — creates real layout overflow with native scrollbars
 :root {
   --content-scale: 1;
 }
 
 article {
-  transform: scale(var(--content-scale));
-  transform-origin: top left;
-  // Reserve space for scaled content so it doesn't overlap footer
-  margin-bottom: calc((var(--content-scale) - 1) * 100%);
+  zoom: var(--content-scale);
+}
+
+// Styled horizontal scrollbar for zoomed content
+body {
+  overflow-x: auto;
+}
+
+::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--darkgray);
+}
+
+// Firefox thin scrollbar
+@-moz-document url-prefix() {
+  body {
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray) transparent;
+  }
 }
