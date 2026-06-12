@@ -97,9 +97,7 @@ body::before {
 
 // --- 顶部导航栏 ---
 .page-header {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(253, 246, 238, 0.85);
+  background: var(--light);
   border-bottom: 1px solid var(--lightgray);
   padding: 0.5rem 1.5rem;
   position: sticky;
@@ -537,7 +535,7 @@ footer {
 // --- 暗色模式特殊处理 ---
 :root[saved-theme="dark"] {
   .page-header {
-    background: rgba(26, 24, 20, 0.85);
+    background: var(--dark);
   }
 
   .callout:hover {
