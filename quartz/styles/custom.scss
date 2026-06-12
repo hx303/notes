@@ -680,6 +680,234 @@ footer {
   }
 }
 
+// ========================
+// 🃏 概念闪卡 — Phase 4 学科能力增强
+// ========================
+
+details.flashcard {
+  border: 1.5px solid var(--lightgray);
+  border-radius: 12px;
+  margin: 0.8em 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--light);
+
+  &[open] {
+    border-color: var(--tertiary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, var(--light), rgba(90, 125, 99, 0.03));
+  }
+
+  &:hover {
+    border-color: var(--gray);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  & > summary {
+    padding: 0.9em 1.2em;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.02em;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    user-select: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::marker {
+      display: none;
+    }
+
+    &::before {
+      content: "▸";
+      display: inline-block;
+      font-size: 0.85em;
+      color: var(--tertiary);
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+  }
+
+  &[open] > summary::before {
+    transform: rotate(90deg);
+    color: var(--secondary);
+  }
+
+  &[open] > summary {
+    border-bottom: 1px solid var(--lightgray);
+    background: rgba(90, 125, 99, 0.06);
+  }
+
+  & > .flashcard-answer,
+  & > :not(summary) {
+    padding: 0.9em 1.2em 1.1em;
+    line-height: 1.75;
+  }
+}
+
+// Flashcard difficulty badges
+.flashcard-tag {
+  display: inline-block;
+  padding: 0.12em 0.5em;
+  border-radius: 10px;
+  font-size: 0.72em;
+  font-weight: 700;
+  margin-left: auto;
+  letter-spacing: 0.03em;
+
+  &.easy { background: rgba(5, 150, 105, 0.12); color: #059669; }
+  &.medium { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+  &.hard { background: rgba(225, 29, 72, 0.12); color: #e11d48; }
+}
+
+// --- 暗色模式闪卡 ---
+:root[saved-theme="dark"] {
+  details.flashcard {
+    background: rgba(255, 255, 255, 0.03);
+
+    &[open] {
+      border-color: var(--tertiary);
+      background: rgba(90, 125, 99, 0.08);
+    }
+
+    &:hover {
+      border-color: var(--gray);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &[open] > summary {
+      background: rgba(90, 125, 99, 0.1);
+    }
+  }
+}
+
+// ========================
+// 📝 自测题 — Phase 4 学科能力增强
+// ========================
+
+.quiz-container {
+  border: 1.5px solid var(--lightgray);
+  border-radius: 12px;
+  padding: 1.3em;
+  margin: 1.2em 0;
+  background: var(--light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+
+  .quiz-question {
+    font-weight: 650;
+    font-size: 1.05em;
+    margin-bottom: 0.8em;
+    color: var(--darkgray);
+  }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    margin-bottom: 1em;
+  }
+
+  .quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.5em 0.8em;
+    border-radius: 8px;
+    border: 1.5px solid var(--lightgray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95em;
+
+    &:hover {
+      background: var(--highlight);
+      border-color: var(--gray);
+    }
+
+    input[type="radio"] {
+      accent-color: var(--tertiary);
+      cursor: pointer;
+    }
+  }
+
+  // Label-based reveal (no JS needed)
+  .quiz-reveal {
+    display: none;
+    margin-top: 0.8em;
+    padding: 0.8em 1em;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.92em;
+
+    &.correct {
+      background: rgba(5, 150, 105, 0.1);
+      color: #059669;
+      border: 1px solid rgba(5, 150, 105, 0.3);
+    }
+
+    &.incorrect {
+      background: rgba(225, 29, 72, 0.1);
+      color: #e11d48;
+      border: 1px solid rgba(225, 29, 72, 0.3);
+    }
+  }
+}
+
+// Simple reveal quiz (details-based, always works)
+details.quiz-check {
+  margin-top: 0.6em;
+  border-top: 1px dashed var(--lightgray);
+  padding-top: 0.6em;
+
+  & > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--secondary);
+    font-size: 0.92em;
+    list-style: none;
+
+    &::-webkit-details-marker { display: none; }
+    &::marker { display: none; }
+
+    &::before {
+      content: "🔍 ";
+    }
+  }
+
+  &[open] > summary::before {
+    content: "✅ ";
+  }
+
+  & > .quiz-answer {
+    margin-top: 0.5em;
+    padding: 0.7em 1em;
+    border-radius: 8px;
+    background: rgba(90, 125, 99, 0.08);
+    border-left: 4px solid var(--tertiary);
+    font-size: 0.95em;
+    line-height: 1.7;
+  }
+}
+
+// --- 暗色模式自测 ---
+:root[saved-theme="dark"] {
+  .quiz-container {
+    background: rgba(255, 255, 255, 0.03);
+
+    .quiz-option:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .quiz-reveal {
+      &.correct { background: rgba(5, 150, 105, 0.15); }
+      &.incorrect { background: rgba(225, 29, 72, 0.15); }
+    }
+  }
+}
+
 // --- 移动端 ---
 @media (max-width: 600px) {
   h1 { font-size: 1.6rem; }
