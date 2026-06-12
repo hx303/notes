@@ -1,5 +1,5 @@
 # ============================================================
-# wouldkeep.com — Cloudflare Worker API Proxy 配置
+# wouldkeep.com �?Cloudflare Worker API Proxy 配置
 # ============================================================
 # 部署命令:
 #   wrangler deploy --config wrangler.toml
@@ -9,56 +9,51 @@
 #   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 #   wrangler secret put GITHUB_TOKEN
 #
-# 非敏感变量（可选 secret 或直接写 wranlger.toml vars）:
+# 非敏感变量（可�?secret 或直接写 wranlger.toml vars�?
 #   wrangler secret put SUPABASE_URL
 # ============================================================
 
 name = "wouldkeep-api"
 main = "api-worker.js"
 
-# 兼容性日期 — 使用 jose 库需要的 Web Crypto API
+# 兼容性日�?�?使用 jose 库需要的 Web Crypto API
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 # 使用 ESM 模块格式
-workers_dev = false
+workers_dev = true
 
 # ============================================================
-# 路由 / 自定义域名
-# 方式 A: 绑定自定义域名（推荐）
-#   在 Cloudflare Dashboard → Workers → wouldkeep-api → Triggers → Custom Domains
+# 路由 / 自定义域�?# 方式 A: 绑定自定义域名（推荐�?#   �?Cloudflare Dashboard �?Workers �?wouldkeep-api �?Triggers �?Custom Domains
 #   绑定 api.wouldkeep.com
 #
-# 方式 B: 使用 workers.dev 子域名
-#   workers_dev = true
+# 方式 B: 使用 workers.dev 子域�?#   workers_dev = true
 # ============================================================
 
 # ============================================================
 # 环境变量
-# 敏感值请用 wrangler secret put 设置，不要写在这里明文
-# ============================================================
+# 敏感值请�?wrangler secret put 设置，不要写在这里明�?# ============================================================
 
 [vars]
-# 非敏感变量可以写在这里
-# SUPABASE_URL = "https://agocyybolrisqujvjqdj.supabase.co"
+# 非敏感变量可以写在这�?# SUPABASE_URL = "https://agocyybolrisqujvjqdj.supabase.co"
 # GITHUB_REPO = "hx303/notes"
 # GITHUB_BRANCH = "v4"
 
 # ============================================================
 # 敏感 Secret (通过 CLI 设置，不写在此文件中):
-#   wrangler secret put SUPABASE_URL         # 值: https://agocyybolrisqujvjqdj.supabase.co
-#   (JWT_SECRET 不再需要, Worker 已改用 JWKS 公钥端点自动验证)
-#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY  # 值: <从 Supabase Dashboard → Settings → API → service_role key 获取>
-#   wrangler secret put GITHUB_TOKEN         # 值: <GitHub Personal Access Token, repo 权限>
-#   wrangler secret put GITHUB_REPO          # 值: hx303/notes
-#   wrangler secret put GITHUB_BRANCH        # 值: v4
+#   wrangler secret put SUPABASE_URL         # �? https://agocyybolrisqujvjqdj.supabase.co
+#   (JWT_SECRET 不再需�? Worker 已改�?JWKS 公钥端点自动验证)
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY  # �? <�?Supabase Dashboard �?Settings �?API �?service_role key 获取>
+#   wrangler secret put GITHUB_TOKEN         # �? <GitHub Personal Access Token, repo 权限>
+#   wrangler secret put GITHUB_REPO          # �? hx303/notes
+#   wrangler secret put GITHUB_BRANCH        # �? v4
 # ============================================================
 
 # ============================================================
 # 部署流程:
 # 1. 登录: npx wrangler login
-# 2. 设置 secrets (见上方列表)
+# 2. 设置 secrets (见上方列�?
 # 3. 部署: npx wrangler deploy
-# 4. 绑定域名: Cloudflare Dashboard → Workers → wouldkeep-api → Custom Domains
+# 4. 绑定域名: Cloudflare Dashboard �?Workers �?wouldkeep-api �?Custom Domains
 #    添加: api.wouldkeep.com
 # ============================================================
