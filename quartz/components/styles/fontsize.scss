@@ -24,11 +24,14 @@
   }
 }
 
-// Font size CSS variable — applied to article content
+// Zoom via transform — creates actual overflow for panning
 :root {
   --content-scale: 1;
 }
 
 article {
-  font-size: calc(var(--content-scale) * 1em);
+  transform: scale(var(--content-scale));
+  transform-origin: top left;
+  // Reserve space for scaled content so it doesn't overlap footer
+  margin-bottom: calc((var(--content-scale) - 1) * 100%);
 }
