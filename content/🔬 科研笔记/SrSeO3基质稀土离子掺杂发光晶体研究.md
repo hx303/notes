@@ -3,6 +3,8 @@ title: SrSeO₃基质稀土离子掺杂发光晶体研究
 author: 黄鼎铭
 student_id: "2025141420110"
 date: 2026
+cssclasses:
+  - paper
 tags:
   - 发光材料
   - SrSeO3
@@ -14,11 +16,24 @@ tags:
 
 # SrSeO₃基质稀土离子掺杂发光晶体研究
 
-## 摘要
+<div class="paper-meta">
+  <span class="paper-title">SrSeO₃基质稀土离子掺杂发光晶体研究</span>
+  <span class="paper-authors">✍ 黄鼎铭 · 2025141420110</span>
+  <span class="paper-journal">📄 大创项目研究报告 · 2026</span>
+  <span class="paper-doi">📎 ICSD-419386 (SrSeO₃ 标准卡片)</span>
+  <div class="paper-tags">
+    <span class="paper-tag">发光材料</span>
+    <span class="paper-tag">SrSeO₃</span>
+    <span class="paper-tag">稀土掺杂</span>
+    <span class="paper-tag">高温固相法</span>
+    <span class="paper-tag">XRD</span>
+  </div>
+</div>
 
-本研究通过高温固相法成功制备了纯相SrSeO₃及SrSeO₃:0.5~6.0mol% R³⁺（R=Eu, Sm）掺杂体系，采用XRD分析证实所有样品为正交晶系（空间群Pnma），掺杂离子未引发杂相或晶相转变。通过文献查找可知SrSeO₃单质研究较少，但其作为基质材料在复合改性中展现潜力。该材料独特的[SrO₉]多面体可调控性及正交结构，使其成为新型发光、铁电及非线性光学器件的重要候选体系，未来可深入探索其功能特性与应用边界。
-
-**关键词：** SrSeO₃；Eu³⁺；Sm³⁺；XRD图谱
+> [!abstract] 摘要
+> 本研究通过高温固相法成功制备了纯相SrSeO₃及SrSeO₃:0.5~6.0mol% R³⁺（R=Eu, Sm）掺杂体系，采用XRD分析证实所有样品为正交晶系（空间群Pnma），掺杂离子未引发杂相或晶相转变。通过文献查找可知SrSeO₃单质研究较少，但其作为基质材料在复合改性中展现潜力。该材料独特的[SrO₉]多面体可调控性及正交结构，使其成为新型发光、铁电及非线性光学器件的重要候选体系。
+>
+> **关键词：** SrSeO₃；Eu³⁺；Sm³⁺；XRD图谱
 
 ## 选题原因
 
@@ -72,6 +87,9 @@ tags:
 
 - ✅ 所合成样品为纯相
 - ✅ 0.5~6.0mol%的Sm³⁺和Eu³⁺离子掺杂量未引起杂相或晶相转变
+
+> [!key-finding] 核心发现
+> 高温固相法在950℃下成功合成了纯相正交SrSeO₃。即使掺杂浓度高达6.0mol%，Sm³⁺和Eu³⁺离子均能完全替代Sr²⁺格位而不引发杂相或晶相转变，证明SrSeO₃基质具有极好的结构容忍性和离子容纳能力。
 
 ![不同浓度Eu³⁺掺杂SrSeO₃的XRD图谱](./attachments/SrSeO3_图2.png)
 
