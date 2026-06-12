@@ -12,8 +12,8 @@ replit.nix
 # Don't track the old content backup or Obsidian-specific dirs
 content_backup/
 _backups/
-attachments/
-*_图片/
+# attachments are needed for site rendering — must NOT be gitignored (Quartz glob respects gitignore)
+# *_图片/
 
 .vercel
 
