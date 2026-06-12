@@ -578,6 +578,7 @@ body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outl
     <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="切换亮色/暗色主题">🌓</button>
     <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">📝 Markdown</button>
     <button onclick="newFile()">＋ 新建</button>
+    <button onclick="showPdfImport()" title="导入论文 PDF（渲染页面 + 生成笔记）">📄 导入PDF</button>
     <button onmousedown="handleImageBtn(event)" id="imageBtn" title="上传图片到 Supabase Storage">📷 插入图片</button>
     <button class="primary" id="saveBtn" onclick="saveFile()">💾 保存</button>
     <button id="roleMgmtBtn" onclick="showRoleMgmt()" title="用户权限管理" style="display:none">👥 用户管理</button>
@@ -648,6 +649,7 @@ body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outl
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
 var REPO = "hx303/notes";
@@ -2043,5 +2045,254 @@ async function revokeRoleByEmail(email) {
     </div>
   </div>
 </div>
+
+<!-- PDF Import Modal -->
+<div class="modal-overlay" id="pdfImportModal" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <h3>📄 导入论文 PDF</h3>
+    <p style="color:#888;font-size:12px;margin-bottom:12px">PDF 将渲染为页面图片并生成笔记（摘要需手动补充）</p>
+
+    <div class="dropzone" id="pdfDropzone" style="border:2px dashed rgba(233,69,96,.25);border-radius:10px;padding:24px 12px;text-align:center;margin-bottom:12px;cursor:pointer;transition:all .2s">
+      <div style="font-size:2rem;margin-bottom:6px">📤</div>
+      <div id="pdfDropLabel" style="font-size:13px;color:#a0a0b0">拖入 PDF 文件，或点击选择</div>
+      <div id="pdfDropHint" style="font-size:11px;color:#666;margin-top:4px">支持 .pdf 格式 · 页面将渲染为 200 DPI</div>
+      <input type="file" id="pdfFileInput" accept=".pdf" style="display:none">
+    </div>
+
+    <div id="pdfFileInfo" style="display:none;padding:8px 12px;background:rgba(233,69,96,.08);border-radius:8px;margin-bottom:12px">
+      <div style="font-weight:600;font-size:13px" id="pdfFileName"></div>
+      <div style="font-size:11px;color:#888" id="pdfFileMeta"></div>
+    </div>
+
+    <label style="display:block;font-size:11px;color:#888;margin-bottom:4px">渲染分辨率</label>
+    <select id="pdfDpiSelect" style="width:100%;padding:8px 10px;background:#1a1a2e;color:#e0e0e0;border:1px solid #0f3460;border-radius:6px;font-size:13px;margin-bottom:10px">
+      <option value="1.5">150 DPI（较快，文件小）</option>
+      <option value="2" selected>200 DPI（推荐）</option>
+      <option value="3">300 DPI（高清，文件大）</option>
+    </select>
+
+    <label style="display:block;font-size:11px;color:#888;margin-bottom:4px">目标文件夹（可选）</label>
+    <select id="pdfTargetFolder" style="width:100%;padding:8px 10px;background:#1a1a2e;color:#e0e0e0;border:1px solid #0f3460;border-radius:6px;font-size:13px;margin-bottom:6px">
+      <option value="">content/🔬 科研笔记/</option>
+    </select>
+
+    <div id="pdfProgress" style="display:none;margin:12px 0">
+      <div style="font-size:11px;color:#888;margin-bottom:4px" id="pdfProgressLabel">渲染中...</div>
+      <div style="background:#0f3460;border-radius:4px;height:6px;overflow:hidden">
+        <div id="pdfProgressBar" style="background:linear-gradient(90deg,#e94560,#ff6b6b);height:100%;width:0%;transition:width .3s"></div>
+      </div>
+    </div>
+
+    <div id="pdfImportError" style="color:#f44336;font-size:12px;min-height:16px;margin-bottom:6px"></div>
+
+    <div class="btns">
+      <button onclick="closePdfImport()">取消</button>
+      <button class="primary" id="pdfImportBtn" onclick="doPdfImport()" disabled>导入论文</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PDF Import — client-side PDF.js rendering + R2 upload + GitHub note creation
+// ============================================================
+
+var _pdfFile = null;
+
+// Initialize pdf.js worker
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+function showPdfImport() {
+  var sel = document.getElementById('pdfTargetFolder');
+  sel.innerHTML = '<option value="">content/🔬 科研笔记/</option>' +
+    files.map(function(f) {
+      return '<option value="' + f.name + '/">content/' + f.name + '/</option>';
+    }).join('');
+  document.getElementById('pdfImportModal').style.display = 'flex';
+  _resetPdfImport();
+}
+
+function closePdfImport() {
+  document.getElementById('pdfImportModal').style.display = 'none';
+  _resetPdfImport();
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var modal = document.getElementById('pdfImportModal');
+  if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) closePdfImport(); });
+});
+
+function _resetPdfImport() {
+  _pdfFile = null;
+  document.getElementById('pdfFileInfo').style.display = 'none';
+  document.getElementById('pdfProgress').style.display = 'none';
+  document.getElementById('pdfImportError').textContent = '';
+  document.getElementById('pdfImportBtn').disabled = true;
+  document.getElementById('pdfDropLabel').style.display = '';
+  document.getElementById('pdfDropHint').style.display = '';
+}
+
+(function() {
+  var dz = document.getElementById('pdfDropzone');
+  var input = document.getElementById('pdfFileInput');
+  if (!dz || !input) return;
+  dz.addEventListener('click', function() { input.click(); });
+  dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.style.borderColor = '#e94560'; dz.style.background = 'rgba(233,69,96,.08)'; });
+  dz.addEventListener('dragleave', function() { dz.style.borderColor = 'rgba(233,69,96,.25)'; dz.style.background = ''; });
+  dz.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dz.style.borderColor = 'rgba(233,69,96,.25)';
+    dz.style.background = '';
+    if (e.dataTransfer.files.length) _handlePdfFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', function(e) {
+    if (e.target.files.length) _handlePdfFile(e.target.files[0]);
+  });
+})();
+
+function _handlePdfFile(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    document.getElementById('pdfImportError').textContent = '⚠️ 请选择一个 PDF 文件';
+    return;
+  }
+  _pdfFile = file;
+  document.getElementById('pdfFileName').textContent = file.name;
+  document.getElementById('pdfFileMeta').textContent = (file.size / 1024).toFixed(0) + ' KB';
+  document.getElementById('pdfFileInfo').style.display = 'block';
+  document.getElementById('pdfImportError').textContent = '';
+  document.getElementById('pdfImportBtn').disabled = false;
+  document.getElementById('pdfDropLabel').style.display = 'none';
+  document.getElementById('pdfDropHint').style.display = 'none';
+}
+
+async function doPdfImport() {
+  if (!_pdfFile) return;
+  var btn = document.getElementById('pdfImportBtn');
+  var errEl = document.getElementById('pdfImportError');
+  btn.disabled = true;
+  btn.textContent = '处理中...';
+  errEl.textContent = '';
+
+  try {
+    if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js 未加载，请刷新页面重试');
+
+    var arrayBuf = await _pdfFile.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+    var numPages = pdf.numPages;
+
+    var md = await pdf.getMetadata();
+    var info = md.info || {};
+    var pdfTitle = (info.Title || '').trim();
+    var pdfAuthors = (info.Author || '').trim();
+    var pdfName = _pdfFile.name.replace(/\.pdf$/i, '').replace(/[\/\\:*?"<>|]/g, '_');
+
+    var doi = '', year = '';
+    for (var p = 1; p <= Math.min(3, numPages); p++) {
+      var page = await pdf.getPage(p);
+      var text = await page.getTextContent();
+      var textStr = text.items.map(function(t) { return t.str; }).join('\n');
+      if (!doi) { var m = textStr.match(/10\.\d{4,}\/[^\s]+/); if (m) doi = m[0].replace(/[.,;]+$/, ''); }
+      if (!year) { var y = textStr.match(/\b(20[01]\d)\b/); if (y) year = y[1]; }
+      if (doi && year) break;
+    }
+
+    var dpiScale = parseFloat(document.getElementById('pdfDpiSelect').value);
+    var foldersel = document.getElementById('pdfTargetFolder');
+    var targetDir = foldersel.value ? 'content/' + foldersel.value : 'content/🔬 科研笔记/';
+    if (!targetDir.endsWith('/')) targetDir += '/';
+
+    document.getElementById('pdfProgress').style.display = 'block';
+    var progBar = document.getElementById('pdfProgressBar');
+    var progLabel = document.getElementById('pdfProgressLabel');
+
+    var pageUrls = [];
+    var r2Prefix = 'paper_' + Date.now() + '_';
+    for (var p = 1; p <= numPages; p++) {
+      progLabel.textContent = '渲染第 ' + p + '/' + numPages + ' 页...';
+      progBar.style.width = Math.round((p / numPages) * 50) + '%';
+
+      var page = await pdf.getPage(p);
+      var viewport = page.getViewport({ scale: dpiScale });
+      var canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      var ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+      var blob = await new Promise(function(resolve) {
+        canvas.toBlob(resolve, 'image/png');
+      });
+
+      progLabel.textContent = '上传第 ' + p + '/' + numPages + ' 页...';
+      var r2Name = r2Prefix + 'p' + String(p).padStart(2, '0') + '.png';
+      var url = await _r2Upload(r2Name, blob);
+      pageUrls.push(url);
+    }
+
+    var title = pdfTitle || pdfName;
+    var authors = pdfAuthors || 'Unknown';
+    var displayDoi = doi ? '<a href="https://doi.org/' + doi + '" target="_blank">' + doi + '</a>' : '待补充';
+    var journalLine = '📄 期刊信息待补充';
+    if (year) journalLine += ' · ' + year;
+    var tags = ['钙钛矿', '太阳能电池'];
+
+    var fm = [
+      '---',
+      'title: "' + title.replace(/"/g, '\\"') + '"',
+      'author: ' + authors.split(',')[0].trim(),
+      'date: ' + (year || new Date().getFullYear()),
+      'cssclasses:',
+      '  - paper',
+      'tags:'
+    ];
+    tags.forEach(function(t) { fm.push('  - ' + t); });
+    if (doi) fm.push('doi: "' + doi + '"');
+    fm.push('---');
+
+    var tagSpans = tags.map(function(t) { return '    <span class="paper-tag">' + t + '</span>'; }).join('\n');
+    var pageImgs = pageUrls.map(function(url, i) {
+      return '![Page ' + (i + 1) + '](' + url + ')';
+    }).join('\n\n');
+
+    var noteContent = fm.join('\n') + '\n\n' +
+      '<div class="paper-meta">\n  <span class="paper-title">' + title + '</span>\n  <span class="paper-authors">✍ ' + authors + '</span>\n  <span class="paper-journal">' + journalLine + '</span>\n  <span class="paper-doi">📎 DOI: ' + displayDoi + '</span>\n  <div class="paper-tags">\n' + tagSpans + '\n  </div>\n</div>\n\n' +
+      '> [!abstract] 摘要\n> *（待补充 — 阅读论文后在此处填写中文摘要）*\n>\n> **关键词：** 待补充\n\n---\n\n' +
+      '> [!key-finding] 核心发现\n>\n> *（待补充 — 列出 3–5 条核心发现）*\n\n---\n\n' +
+      '## 📖 论文全文（渲染页）\n\n> **注：** 以下为 ' + Math.round(dpiScale * 72) + ' DPI 渲染的原始页面，可直接阅读。\n\n' +
+      pageImgs + '\n';
+
+    progLabel.textContent = '创建笔记...';
+    progBar.style.width = '90%';
+
+    var notePath = targetDir + pdfName + '.md';
+    await workerAPI('contents/' + notePath, 'PUT', {
+      message: 'Import PDF: ' + pdfName + ' (via admin)',
+      content: encodeContent(noteContent),
+      branch: BRANCH
+    });
+
+    progBar.style.width = '100%';
+    progLabel.textContent = '✅ 导入完成！';
+
+    triggerDeploy();
+
+    setTimeout(function() {
+      closePdfImport();
+      loadFiles();
+      setStatus({ text: '✅ 论文已导入: ' + pdfName + ' · ' + numPages + ' 页 · ' + Math.round(dpiScale * 72) + ' DPI', cls: 'saved' });
+    }, 2500);
+
+  } catch (e) {
+    document.getElementById('pdfImportError').textContent = '❌ ' + e.message;
+    btn.disabled = false;
+    btn.textContent = '导入论文';
+    document.getElementById('pdfProgress').style.display = 'none';
+  }
+}
+
+
+</script>
+
 </body>
 </html>
