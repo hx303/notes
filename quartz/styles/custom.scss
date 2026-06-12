@@ -498,6 +498,188 @@ footer {
   }
 }
 
+// ========================
+// 🎓 学术 Callout 样式 — 学科能力增强
+// ========================
+
+// --- 定理 (Theorem) — 蓝紫色边框，学术权威感 ---
+.callout[data-callout="theorem"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%237c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>');
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(124, 58, 237, 0.02));
+  border-left: 4px solid #7c3aed;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #6d28d9;
+  }
+}
+
+// --- 定义 (Definition) — 绿色边框，清晰明确 ---
+.callout[data-callout="definition"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>');
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.06), rgba(5, 150, 105, 0.02));
+  border-left: 4px solid #059669;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #047857;
+  }
+}
+
+// --- 证明 (Proof) — 灰色边框，低调严谨 ---
+.callout[data-callout="proof"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%236b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.05), rgba(107, 114, 128, 0.01));
+  border-left: 4px solid #6b7280;
+  border-radius: 8px;
+  font-style: italic;
+
+  .callout-title {
+    color: #4b5563;
+  }
+
+  // Proof end marker (∎)
+  & > .callout-content > :last-child::after {
+    content: " ∎";
+    font-style: normal;
+    float: right;
+    color: #6b7280;
+    font-size: 1.2em;
+  }
+}
+
+// --- 引理 (Lemma) — 青色边框，辅助定理 ---
+.callout[data-callout="lemma"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%230895b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>');
+  background: linear-gradient(135deg, rgba(8, 149, 178, 0.05), rgba(8, 149, 178, 0.02));
+  border-left: 4px solid #0895b2;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #0e7490;
+  }
+}
+
+// --- 推论 (Corollary) — 靛蓝色边框，从定理推导 ---
+.callout[data-callout="corollary"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%234f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>');
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(79, 70, 229, 0.02));
+  border-left: 4px solid #4f46e5;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #4338ca;
+  }
+}
+
+// --- 公理 (Axiom) — 金色边框，基础假设 ---
+.callout[data-callout="axiom"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>');
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.06), rgba(217, 119, 6, 0.02));
+  border-left: 4px solid #d97706;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #b45309;
+  }
+}
+
+// --- 命题 (Proposition) — 玫瑰色边框，待证明陈述 ---
+.callout[data-callout="proposition"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>');
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.05), rgba(225, 29, 72, 0.02));
+  border-left: 4px solid #e11d48;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #be123c;
+  }
+}
+
+// --- 注记 (Remark) — 琥珀色边框，补充说明 ---
+.callout[data-callout="remark"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>');
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.04), rgba(217, 119, 6, 0.01));
+  border-left: 3px solid #d97706;
+  border-radius: 8px;
+  font-size: 0.95em;
+
+  .callout-title {
+    color: #b45309;
+  }
+}
+
+// --- 例题 (Example) — 已有 example 类型，增强样式 ---
+.callout[data-callout="example"] {
+  background: linear-gradient(135deg, rgba(122, 67, 181, 0.05), rgba(122, 67, 181, 0.02));
+  border-left: 4px solid #7a43b5;
+  border-radius: 8px;
+}
+
+// --- 暗色模式适配 ---
+:root[saved-theme="dark"] {
+  .callout[data-callout="theorem"] {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0.04));
+    border-left-color: #8b5cf6;
+
+    .callout-title { color: #a78bfa; }
+  }
+
+  .callout[data-callout="definition"] {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(5, 150, 105, 0.04));
+    border-left-color: #10b981;
+
+    .callout-title { color: #34d399; }
+  }
+
+  .callout[data-callout="proof"] {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.12), rgba(107, 114, 128, 0.04));
+    border-left-color: #9ca3af;
+
+    .callout-title { color: #d1d5db; }
+  }
+
+  .callout[data-callout="lemma"] {
+    background: linear-gradient(135deg, rgba(8, 149, 178, 0.12), rgba(8, 149, 178, 0.04));
+    border-left-color: #06b6d4;
+
+    .callout-title { color: #22d3ee; }
+  }
+
+  .callout[data-callout="corollary"] {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(79, 70, 229, 0.04));
+    border-left-color: #6366f1;
+
+    .callout-title { color: #818cf8; }
+  }
+
+  .callout[data-callout="axiom"] {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.12), rgba(217, 119, 6, 0.04));
+    border-left-color: #f59e0b;
+
+    .callout-title { color: #fbbf24; }
+  }
+
+  .callout[data-callout="proposition"] {
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.12), rgba(225, 29, 72, 0.04));
+    border-left-color: #f43f5e;
+
+    .callout-title { color: #fb7185; }
+  }
+
+  .callout[data-callout="remark"] {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1), rgba(217, 119, 6, 0.03));
+    border-left-color: #f59e0b;
+
+    .callout-title { color: #fbbf24; }
+  }
+
+  .callout[data-callout="example"] {
+    background: linear-gradient(135deg, rgba(122, 67, 181, 0.12), rgba(122, 67, 181, 0.04));
+    border-left-color: #a78bfa;
+  }
+}
+
 // --- 移动端 ---
 @media (max-width: 600px) {
   h1 { font-size: 1.6rem; }

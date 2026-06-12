@@ -1,7 +1,12 @@
 ---
 title: "obsidian-chem 多端部署指南"
 date: 2026-05-14
+subject: "有机化学"
+topic: "工具与化学结构式"
+difficulty: "入门"
+semester: "大二上"
 ---
+
 
 # obsidian-chem 多端部署指南
 
