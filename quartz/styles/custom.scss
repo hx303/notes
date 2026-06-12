@@ -100,9 +100,6 @@ body::before {
   background: var(--light);
   border-bottom: 1px solid var(--lightgray);
   padding: 0.5rem 1.5rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
 
   .left, .right {
     display: flex;
