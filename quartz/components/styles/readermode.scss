@@ -22,7 +22,7 @@
 }
 
 /* ============================================================ */
-/* Focus Mode (reader-mode="on"): hide both sidebars completely  */
+/* Focus Mode (reader-mode="on"): hide sidebars + floating exit  */
 /* ============================================================ */
 
 :root[reader-mode="on"] {
@@ -85,17 +85,15 @@
     margin-right: auto !important;
   }
 
-  /* Reader mode indicator — subtle bar at bottom */
-  & .page-header {
-    &::after {
-      content: "专注模式 · 按 F 退出";
-      display: block;
-      text-align: center;
-      font-size: 0.7rem;
-      color: var(--gray);
-      opacity: 0;
-      margin-top: 4px;
-      animation: focusHint 3s ease-in-out;
+  /* Floating exit button — always visible, not inside sidebar */
+  & .focus-exit-btn {
+    display: flex !important;
+    opacity: 0.85;
+    animation: focusExitIn 0.4s ease-out;
+
+    &:hover {
+      opacity: 1;
+      background: var(--tertiary);
     }
   }
 
@@ -106,8 +104,29 @@
   }
 }
 
-@keyframes focusHint {
-  0% { opacity: 0.5; }
-  50% { opacity: 0.2; }
-  100% { opacity: 0; }
+/* Floating exit button — hidden by default, shown in reader mode via JS injection */
+.focus-exit-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--highlight);
+  border: 1px solid var(--tertiary);
+  color: var(--dark);
+  font-size: 1.2rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+}
+
+@keyframes focusExitIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1); opacity: 0.85; }
 }
