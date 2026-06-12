@@ -10,6 +10,25 @@ try {
 } catch (e) { /* ignore */ }
 
 const apply = () => {
+  const center = document.querySelector(".center") as HTMLElement | null
+  const article = document.querySelector(".center > article") as HTMLElement | null
+
+  if (center && article) {
+    if (currentScale > 1.01) {
+      // Lock center width so zoomed article overflows → scrollbar
+      if (!center.style.maxWidth) {
+        center.style.maxWidth = center.offsetWidth + "px"
+      }
+      center.style.overflowX = "auto"
+      ;(article as any).style.zoom = String(currentScale)
+    } else {
+      // Reset: no zoom, no lock
+      center.style.maxWidth = ""
+      center.style.overflowX = ""
+      ;(article as any).style.zoom = ""
+    }
+  }
+
   document.documentElement.style.setProperty("--content-scale", String(currentScale))
   try { localStorage.setItem(KEY, String(currentScale)) } catch (e) { /* ignore */ }
 

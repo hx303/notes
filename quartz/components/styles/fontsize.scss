@@ -24,20 +24,9 @@
   }
 }
 
-// Font-size based zoom — clean text scaling, no blur
-:root {
-  --content-scale: 1;
-}
+// Zoom applied via JS (zoom property on article, width locked on center)
 
-.center > article {
-  font-size: calc(1em * var(--content-scale));
-}
-
-// Styled horizontal scrollbar for zoomed content
-body {
-  overflow-x: auto;
-}
-
+// Styled horizontal scrollbar — shows on center column and page
 ::-webkit-scrollbar {
   height: 6px;
   width: 6px;
@@ -58,7 +47,7 @@ body {
 
 // Firefox thin scrollbar
 @-moz-document url-prefix() {
-  body {
+  html {
     scrollbar-width: thin;
     scrollbar-color: var(--gray) transparent;
   }
