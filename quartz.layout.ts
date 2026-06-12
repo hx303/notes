@@ -5,6 +5,7 @@ export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
   afterBody: [
+    Component.BackToTop(),
     Component.SupabaseComments({
       supabaseUrl: "https://agocyybolrisqujvjqdj.supabase.co",
       supabaseAnonKey: "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc",

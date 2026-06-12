@@ -24,6 +24,7 @@ import Comments from "./Comments"
 import SupabaseComments from "./SupabaseComments"
 import Flex from "./Flex"
 import ConditionalRender from "./ConditionalRender"
+import BackToTop from "./BackToTop"
 
 export {
   ArticleTitle,
@@ -52,4 +53,5 @@ export {
   SupabaseComments,
   Flex,
   ConditionalRender,
+  BackToTop,
 }
