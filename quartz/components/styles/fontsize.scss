@@ -24,13 +24,13 @@
   }
 }
 
-// Zoom via CSS zoom — creates real layout overflow with native scrollbars
+// Font-size based zoom — clean text scaling, no blur
 :root {
   --content-scale: 1;
 }
 
-article {
-  zoom: var(--content-scale);
+.center > article {
+  font-size: calc(1em * var(--content-scale));
 }
 
 // Styled horizontal scrollbar for zoomed content

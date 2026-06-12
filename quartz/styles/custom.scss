@@ -15,11 +15,18 @@
 html {
   scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
+  overflow-x: auto;
+  width: 100%;
 }
 
 body {
   line-height: 1.85;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Force horizontal scrollbar when content overflows (e.g. zoomed)
+.center {
+  overflow-x: auto;
 }
 
 // ========================
