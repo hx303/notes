@@ -444,6 +444,12 @@ body.light .auth-modal .field input:focus{border-color:#c0392b}
 body.light .auth-modal .auth-toggle a{color:#c0392b}
 /* Comments panel */
 .comment-panel{border-top:1px solid #0f3460;background:#111827;display:flex;flex-direction:column;flex-shrink:0;max-height:40%}
+.comment-panel.collapsed{max-height:32px!important}
+.comment-panel.collapsed .comment-list,
+.comment-panel.collapsed .comment-input-row{display:none}
+#commentCollapseBtn{transition:transform .25s;font-size:12px;padding:2px 8px;border-radius:4px;color:#888;cursor:pointer;flex-shrink:0}
+#commentCollapseBtn:hover{color:#e0e0e0;background:rgba(233,69,96,.1)}
+#commentCollapseBtn.collapsed{transform:rotate(-90deg)}
 body.light .comment-panel{background:#f8f8f8;border-top-color:#e0e0e0}
 .comment-panel-header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#16213e;border-bottom:1px solid #0f3460;flex-shrink:0;min-height:30px}
 body.light .comment-panel-header{background:#fff;border-bottom-color:#e0e0e0}
@@ -630,7 +636,8 @@ body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outl
     <div class="comment-panel" id="commentPanel" style="display:none">
       <div class="comment-panel-header">
         <span>💬 评论与讨论</span>
-        <select id="commentSection">
+        <button id="commentCollapseBtn" onclick="toggleComments()" title="折叠/展开评论区" style="background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1">▾</button>
+        <select id="commentSection" style="margin-left:auto">
           <option value="📄 整篇笔记">📄 整篇笔记</option>
         </select>
       </div>
@@ -2482,6 +2489,32 @@ document.addEventListener('DOMContentLoaded', function() {
   var m = document.getElementById('chemModal');
   if (m) m.addEventListener('click', function(e) { if (e.target === m) closeChemModal(); });
 });
+
+// ============================================================
+// Comment panel collapse toggle
+// ============================================================
+function toggleComments() {
+  var panel = document.getElementById('commentPanel');
+  var btn = document.getElementById('commentCollapseBtn');
+  if (!panel || !btn) return;
+  var collapsed = panel.classList.toggle('collapsed');
+  btn.classList.toggle('collapsed', collapsed);
+  btn.textContent = collapsed ? '▸' : '▾';
+  btn.title = collapsed ? '展开评论区' : '折叠评论区';
+  localStorage.setItem('comment_collapsed', collapsed ? '1' : '0');
+}
+(function() {
+  if (localStorage.getItem('comment_collapsed') === '1') {
+    var panel = document.getElementById('commentPanel');
+    var btn = document.getElementById('commentCollapseBtn');
+    if (panel && btn) {
+      panel.classList.add('collapsed');
+      btn.classList.add('collapsed');
+      btn.textContent = '▸';
+      btn.title = '展开评论区';
+    }
+  }
+})();
 </script>
 
 </body>
