@@ -2582,13 +2582,14 @@ function _doPreviewChemSmiles() {
       bondSpacing: 0.18, compactDrawing: false
     });
     drawer.draw(tree, canvas, 'light');
+    var tempSvg = document.createElement('svg');
     var svgDrawer = new SmilesDrawer.SvgDrawer({
       bondThickness: 2.0, shortBondLength: 0.82,
       bondSpacing: 0.18, fontSize: 12,
       lineHeight: 1.2, padding: 8
     });
-    var svgEl = svgDrawer.draw(tree, false, 'light');
-    _chemSvg = svgEl.outerHTML;
+    svgDrawer.draw(tree, tempSvg, 'light');
+    _chemSvg = tempSvg.outerHTML;
     _chemSmiles = smiles;
     document.getElementById('chemInsertBtn').disabled = false;
   }, function(err) {
@@ -2637,12 +2638,13 @@ async function insertChemStructure() {
     var parseResult = await new Promise(function(resolve) {
       SmilesDrawer.parse(smiles, function(tree) {
         try {
+          var tempSvg = document.createElement('svg');
           var svgDrawer = new SmilesDrawer.SvgDrawer({
             bondThickness: 2.0, shortBondLength: 0.82,
             bondSpacing: 0.18, fontSize: 12, padding: 8
           });
-          var svgEl = svgDrawer.draw(tree, false, 'light');
-          var svg = svgEl.outerHTML;
+          svgDrawer.draw(tree, tempSvg, 'light');
+          var svg = tempSvg.outerHTML;
           resolve({ok: true, svg: svg});
         } catch(e) {
           resolve({ok: false, error: 'SVG 渲染失败: ' + e.message});
