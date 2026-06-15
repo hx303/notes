@@ -2398,6 +2398,8 @@ function handleChemBtn(e) {
   var canvas = document.getElementById('chemPreviewCanvas');
   var ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  _chemSmiles = '';
+  _chemSvg = '';
   switchChemTab('smiles');
   setTimeout(function() { document.getElementById('chemSmilesInput').focus(); }, 100);
 }
@@ -2582,14 +2584,6 @@ function _doPreviewChemSmiles() {
       bondSpacing: 0.18, compactDrawing: false
     });
     drawer.draw(tree, canvas, 'light');
-    var tempSvg = document.createElement('svg');
-    var svgDrawer = new SmilesDrawer.SvgDrawer({
-      bondThickness: 2.0, shortBondLength: 0.82,
-      bondSpacing: 0.18, fontSize: 12,
-      lineHeight: 1.2, padding: 8
-    });
-    svgDrawer.draw(tree, tempSvg, 'light');
-    _chemSvg = tempSvg.outerHTML;
     _chemSmiles = smiles;
     document.getElementById('chemInsertBtn').disabled = false;
   }, function(err) {
@@ -2632,60 +2626,40 @@ async function insertChemStructure() {
       return;
     }
 
-    // Step 2: parse SMILES → SVG (use Promise for reliable flow)
+    // Step 2: parse SMILES → render on high-res canvas → export PNG
     if (typeof SmilesDrawer === 'undefined') return alert("SmilesDrawer 未加载，请刷新页面");
 
-    var parseResult = await new Promise(function(resolve) {
+    var pngBlob = await new Promise(function(resolve, reject) {
       SmilesDrawer.parse(smiles, function(tree) {
         try {
-          var tempSvg = document.createElement('svg');
-          var svgDrawer = new SmilesDrawer.SvgDrawer({
-            bondThickness: 2.0, shortBondLength: 0.82,
-            bondSpacing: 0.18, fontSize: 12, padding: 8
+          var c = document.createElement('canvas');
+          c.width = 800;
+          c.height = 600;
+          var d = new SmilesDrawer.Drawer({
+            width: 800, height: 600,
+            bondThickness: 3.0, shortBondLength: 0.85,
+            bondSpacing: 0.18, compactDrawing: false
           });
-          svgDrawer.draw(tree, tempSvg, 'light');
-          var svg = tempSvg.outerHTML;
-          resolve({ok: true, svg: svg});
-        } catch(e) {
-          resolve({ok: false, error: 'SVG 渲染失败: ' + e.message});
-        }
+          d.draw(tree, c, 'light');
+          c.toBlob(function(blob) {
+            if (blob) { _chemSmiles = smiles; resolve(blob); }
+            else { reject(new Error("Canvas export failed")); }
+          }, 'image/png');
+        } catch(e) { reject(e); }
       }, function(err) {
-        resolve({ok: false, error: (typeof err === 'string' ? err : 'SMILES 无法识别，请检查拼写')});
+        reject(new Error(typeof err === 'string' ? err : 'SMILES 无法识别'));
       });
     });
 
-    if (!parseResult.ok) {
-      document.getElementById('chemError').textContent = '⚠️ ' + parseResult.error;
-      btn.disabled = false;
-      btn.textContent = origText;
-      return;
-    }
-
-    // Store for reuse, update preview
-    _chemSmiles = smiles;
-    _chemSvg = parseResult.svg;
-    // Refresh canvas preview
-    SmilesDrawer.parse(smiles, function(tree) {
-      var canvas = document.getElementById('chemPreviewCanvas');
-      var ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      var drawer = new SmilesDrawer.Drawer({width: canvas.width, height: canvas.height,
-        bondThickness: 1.8, shortBondLength: 0.85,
-        bondSpacing: 0.18, compactDrawing: false});
-      drawer.draw(tree, canvas, 'light');
-      document.getElementById('chemPreviewHint').style.display = 'none';
-    }, function() {});
-
-    // Step 3: upload SVG to R2
+    // Step 3: upload PNG to R2
     btn.textContent = '上传中...';
     setStatus({text:"上传化学结构...",cls:"saving"});
 
     var name = document.getElementById('chemNameInput').value.trim() || ('结构_' + smiles.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20));
     var safeName = name.replace(/[<>:"/\\|?*\s]+/g, '_').substring(0, 60);
-    var fileName = 'chem_' + Date.now() + '_' + safeName + '.svg';
+    var fileName = 'chem_' + Date.now() + '_' + safeName + '.png';
 
-    var blob = new Blob([_chemSvg], {type: 'image/svg+xml'});
-    var file = new File([blob], fileName, {type: 'image/svg+xml'});
+    var file = new File([pngBlob], fileName, {type: 'image/png'});
     var url = await _r2Upload(fileName, file);
 
     // Step 4: insert at cursor
