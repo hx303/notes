@@ -579,7 +579,8 @@ body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outl
     <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">📝 Markdown</button>
     <button onclick="newFile()">＋ 新建</button>
     <button onclick="showPdfImport()" title="导入论文 PDF（渲染页面 + 生成笔记）">📄 导入PDF</button>
-    <button onmousedown="handleImageBtn(event)" id="imageBtn" title="上传图片到 Supabase Storage">📷 插入图片</button>
+    <button onmousedown="handleImageBtn(event)" id="imageBtn" title="上传图片到 Cloudflare R2">📷 插入图片</button>
+    <button onmousedown="handleChemBtn(event)" id="chemBtn" title="插入化学结构式（SMILES → SVG）">🧪 化学结构</button>
     <button class="primary" id="saveBtn" onclick="saveFile()">💾 保存</button>
     <button id="roleMgmtBtn" onclick="showRoleMgmt()" title="用户权限管理" style="display:none">👥 用户管理</button>
     <button class="auth-btn" id="authLoginBtn" onclick="showAuthModal('login')" title="登录后可发表评论">🔑 登录</button>
@@ -650,6 +651,7 @@ body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outl
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/smiles-drawer@2.0.3/dist/smiles-drawer.min.js"></script>
 
 <script>
 var REPO = "hx303/notes";
@@ -2092,6 +2094,49 @@ async function revokeRoleByEmail(email) {
   </div>
 </div>
 
+<!-- Chemical Structure Modal -->
+<div class="modal-overlay" id="chemModal" style="display:none">
+  <div class="modal" style="max-width:600px">
+    <h3>🧪 插入化学结构式</h3>
+    <p style="color:#888;font-size:12px;margin-bottom:12px">输入 SMILES 表达式，自动渲染为可缩放矢量图。SMILES 保存在图片描述中便于检索。</p>
+
+    <label style="display:block;font-size:11px;color:#888;margin-bottom:4px">SMILES 表达式</label>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input type="text" id="chemSmilesInput" placeholder="如: c1ccccc1 (苯), CC(=O)O (乙酸), CCO (乙醇), CC1=CC(=O)C=CC1=O (醌)"
+        style="flex:1;padding:10px;background:#1a1a2e;border:1px solid #0f3460;border-radius:6px;color:#e0e0e0;font-size:14px;font-family:monospace"
+        oninput="previewChemSmiles()">
+      <button onclick="previewChemSmiles()" title="刷新预览" style="flex-shrink:0">👁️</button>
+    </div>
+
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:10px;color:#666;line-height:24px">常用:</span>
+      <button onclick="insertQuickSmiles('c1ccccc1')" style="font-size:10px;padding:3px 8px;border-radius:14px">苯环</button>
+      <button onclick="insertQuickSmiles('C1CCCCC1')" style="font-size:10px;padding:3px 8px;border-radius:14px">环己烷</button>
+      <button onclick="insertQuickSmiles('CC(=O)O')" style="font-size:10px;padding:3px 8px;border-radius:14px">乙酸</button>
+      <button onclick="insertQuickSmiles('CCO')" style="font-size:10px;padding:3px 8px;border-radius:14px">乙醇</button>
+      <button onclick="insertQuickSmiles('CC1=CC(=O)C=CC1=O')" style="font-size:10px;padding:3px 8px;border-radius:14px">醌</button>
+      <button onclick="insertQuickSmiles('CC(C)C(=O)O')" style="font-size:10px;padding:3px 8px;border-radius:14px">异丁酸</button>
+    </div>
+
+    <label style="display:block;font-size:11px;color:#888;margin-bottom:4px">结构名称（用作图片描述）</label>
+    <input type="text" id="chemNameInput" placeholder="如: 钙钛矿ABX₃结构, 苯环, PCBM分子"
+      style="width:100%;padding:10px;background:#1a1a2e;border:1px solid #0f3460;border-radius:6px;color:#e0e0e0;font-size:13px;margin-bottom:12px">
+
+    <!-- Preview area -->
+    <div id="chemPreviewArea" style="background:#fff;border-radius:8px;padding:16px;text-align:center;min-height:180px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;position:relative">
+      <canvas id="chemPreviewCanvas" width="400" height="280" style="max-width:100%;height:auto"></canvas>
+      <span id="chemPreviewHint" style="color:#aaa;font-size:13px;position:absolute">输入 SMILES 后自动预览</span>
+    </div>
+
+    <div id="chemError" style="color:#f44336;font-size:12px;min-height:16px;margin-bottom:6px"></div>
+
+    <div class="btns">
+      <button onclick="closeChemModal()">取消</button>
+      <button class="primary" id="chemInsertBtn" onclick="insertChemStructure()" disabled>插入结构</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // PDF Import — client-side PDF.js rendering + R2 upload + GitHub note creation
@@ -2292,6 +2337,151 @@ async function doPdfImport() {
 }
 
 
+</script>
+
+<!-- Chemical Structure JS -->
+<script>
+// ============================================================
+// Chemical Structure Insert — SmilesDrawer SMILES → SVG → R2
+// ============================================================
+
+var _chemSmiles = '';
+var _chemSvg = '';
+var _chemTimer = null;
+
+function handleChemBtn(e) {
+  e.preventDefault();
+  if (!editor) return alert("请先打开一个文件");
+  document.getElementById('chemModal').style.display = 'flex';
+  document.getElementById('chemSmilesInput').value = '';
+  document.getElementById('chemNameInput').value = '';
+  document.getElementById('chemError').textContent = '';
+  document.getElementById('chemInsertBtn').disabled = true;
+  document.getElementById('chemPreviewHint').style.display = '';
+  var canvas = document.getElementById('chemPreviewCanvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  setTimeout(function() { document.getElementById('chemSmilesInput').focus(); }, 100);
+}
+
+function closeChemModal() {
+  document.getElementById('chemModal').style.display = 'none';
+}
+
+function insertQuickSmiles(smiles) {
+  document.getElementById('chemSmilesInput').value = smiles;
+  clearTimeout(_chemTimer);
+  _doPreviewChemSmiles();
+}
+
+function previewChemSmiles() {
+  clearTimeout(_chemTimer);
+  _chemTimer = setTimeout(function() { _doPreviewChemSmiles(); }, 300);
+}
+
+function _doPreviewChemSmiles() {
+  var smiles = document.getElementById('chemSmilesInput').value.trim();
+  var canvas = document.getElementById('chemPreviewCanvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!smiles) {
+    document.getElementById('chemInsertBtn').disabled = true;
+    document.getElementById('chemPreviewHint').style.display = '';
+    document.getElementById('chemError').textContent = '';
+    _chemSmiles = '';
+    _chemSvg = '';
+    return;
+  }
+
+  if (typeof SmilesDrawer === 'undefined') {
+    document.getElementById('chemError').textContent = 'SmilesDrawer 未加载，请刷新页面重试';
+    return;
+  }
+
+  document.getElementById('chemError').textContent = '';
+
+  // Debounced async parse + render
+  SmilesDrawer.parse(smiles, function(tree) {
+    document.getElementById('chemPreviewHint').style.display = 'none';
+
+    // Canvas preview
+    var drawer = new SmilesDrawer.Drawer({
+      width: canvas.width,
+      height: canvas.height,
+      bondThickness: 1.8,
+      shortBondLength: 0.85,
+      bondSpacing: 0.18,
+      compactDrawing: false
+    });
+    drawer.draw(tree, canvas, 'light');
+
+    // Generate SVG for R2 upload (academic quality)
+    _chemSvg = SmilesDrawer.SvgDrawer.draw(tree, '', {
+      bondThickness: 2.0,
+      shortBondLength: 0.82,
+      bondSpacing: 0.18,
+      fontSize: 12,
+      lineHeight: 1.2,
+      padding: 8
+    });
+
+    _chemSmiles = smiles;
+    document.getElementById('chemInsertBtn').disabled = false;
+  }, function(err) {
+    document.getElementById('chemError').textContent = '⚠️ SMILES 解析失败: ' + (typeof err === 'string' ? err : '无法识别的表达式，请检查拼写');
+    document.getElementById('chemInsertBtn').disabled = true;
+    _chemSvg = '';
+    _chemSmiles = '';
+    document.getElementById('chemPreviewHint').style.display = '';
+  });
+}
+
+async function insertChemStructure() {
+  if (!editor || !currentFile) return alert("请先打开一个文件");
+  if (!_chemSvg || !_chemSmiles) return alert("请先输入有效的 SMILES");
+
+  var btn = document.getElementById('chemInsertBtn');
+  var origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '上传中...';
+  setStatus({text:"上传化学结构...",cls:"saving"});
+
+  try {
+    var name = document.getElementById('chemNameInput').value.trim() || ('结构_' + _chemSmiles.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20));
+    // Sanitize filename
+    var safeName = name.replace(/[<>:"/\\|?*\s]+/g, '_').substring(0, 60);
+    var fileName = 'chem_' + Date.now() + '_' + safeName + '.svg';
+
+    // Blob → File → R2 upload
+    var blob = new Blob([_chemSvg], {type: 'image/svg+xml'});
+    var file = new File([blob], fileName, {type: 'image/svg+xml'});
+    var url = await _r2Upload(fileName, file);
+
+    // Insert at cursor into markdown
+    var alt = name + ' (' + _chemSmiles + ')';
+    var md = editor.getMarkdown();
+    var pos = _cursorToOffset(_imgCursor, md);
+    if (pos === null) pos = md.length;
+    var before = md.substring(0, pos);
+    var after = md.substring(pos);
+    editor.setMarkdown(before + '\n![' + alt + '](' + url + ')\n' + after, true);
+
+    setStatus({text:"结构已插入: " + name,cls:"saved"});
+    setTimeout(function(){setStatus({text:"就绪",cls:"idle"})},4000);
+    closeChemModal();
+  } catch(e) {
+    setStatus({text:"插入失败: " + (e.message || e), cls:"error"});
+  }
+  btn.disabled = false;
+  btn.textContent = origText;
+}
+
+// Click backdrop to close
+document.addEventListener('DOMContentLoaded', function() {
+  var m = document.getElementById('chemModal');
+  if (m) m.addEventListener('click', function(e) { if (e.target === m) closeChemModal(); });
+});
 </script>
 
 </body>
