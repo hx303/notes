@@ -2635,16 +2635,21 @@ async function insertChemStructure() {
           var c = document.createElement('canvas');
           c.width = 800;
           c.height = 600;
+          var ctx = c.getContext('2d');
+          // Fill white background explicitly
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, 800, 600);
           var d = new SmilesDrawer.Drawer({
             width: 800, height: 600,
             bondThickness: 3.0, shortBondLength: 0.85,
             bondSpacing: 0.18, compactDrawing: false
           });
           d.draw(tree, c, 'light');
-          c.toBlob(function(blob) {
-            if (blob) { _chemSmiles = smiles; resolve(blob); }
-            else { reject(new Error("Canvas export failed")); }
-          }, 'image/png');
+          // data URL → fetch → blob (more reliable than toBlob across browsers)
+          fetch(c.toDataURL('image/png')).then(function(r) { return r.blob(); }).then(function(blob) {
+            _chemSmiles = smiles;
+            resolve(blob);
+          }).catch(reject);
         } catch(e) { reject(e); }
       }, function(err) {
         reject(new Error(typeof err === 'string' ? err : 'SMILES 无法识别'));
