@@ -39,7 +39,9 @@ pages: "80+"
 
 ## 概念
 
-$$\boxed{\int_L f(x,y)ds = \lim_{\lambda\to 0}\sum_{k=1}^n f(\xi_k,\eta_k)\Delta s_k}$$
+$$
+\boxed{\int_L f(x,y)ds = \lim_{\lambda\to 0}\sum_{k=1}^n f(\xi_k,\eta_k)\Delta s_k}
+$$
 
 - **物理原型**：曲线型构件质量 $m=\int_L \mu(x,y)ds$
 - **被积函数实质一元**：$(x,y)$ 被曲线方程约束 → $f(x,y)$ 在 $L$ 上是一元函数
@@ -80,7 +82,9 @@ $$\boxed{\int_L f(x,y)ds = \lim_{\lambda\to 0}\sum_{k=1}^n f(\xi_k,\eta_k)\Delta
 
 ## 概念
 
-$$\boxed{\int_L Pdx + Qdy = \lim_{\lambda\to 0}\sum [P(\xi_k,\eta_k)\Delta x_k + Q(\xi_k,\eta_k)\Delta y_k]}$$
+$$
+\boxed{\int_L Pdx + Qdy = \lim_{\lambda\to 0}\sum [P(\xi_k,\eta_k)\Delta x_k + Q(\xi_k,\eta_k)\Delta y_k]}
+$$
 
 - **物理原型**：变力 $\vec{F}=(P,Q)$ 沿曲线 $\widehat{AB}$ 做功
 - **扩展**：空间曲线 $\int_\Gamma Pdx+Qdy+Rdz$
@@ -97,13 +101,17 @@ $$\boxed{\int_L Pdx + Qdy = \lim_{\lambda\to 0}\sum [P(\xi_k,\eta_k)\Delta x_k +
 ## 计算（有方向！）
 
 参数方程 $x=\varphi(t),y=\psi(t),t:\alpha\to\beta$：
-$$\boxed{\int_{\widehat{AB}} Pdx+Qdy = \int_\alpha^\beta [P\varphi'(t) + Q\psi'(t)]dt}$$
+$$
+\boxed{\int_{\widehat{AB}} Pdx+Qdy = \int_\alpha^\beta [P\varphi'(t) + Q\psi'(t)]dt}
+$$
 
 > ⚠️ $\alpha$=起点参数，$\beta$=终点参数（$\alpha>\beta$ 也行）
 
 ## 两类联系
 
-$$\boxed{\int_L Pdx+Qdy = \int_L (P\cos\alpha+Q\cos\beta)ds}$$
+$$
+\boxed{\int_L Pdx+Qdy = \int_L (P\cos\alpha+Q\cos\beta)ds}
+$$
 
 其中 $(\cos\alpha,\cos\beta)$ 为**切向量**方向余弦。向量形式：$\int_\Gamma \vec{F}\cdot d\vec{r} = \int_\Gamma \vec{F}\cdot\vec{\tau}\,ds$
 
@@ -187,14 +195,18 @@ $P=x^2-y$, $Q=-(x+\sin^2y)$。$Q_x = -1$, $P_y = -1$ → $Q_x-P_y = 0$（在区�
 
 ## 概念
 
-$$\boxed{\iint_\Sigma f(x,y,z)dS}$$
+$$
+\boxed{\iint_\Sigma f(x,y,z)dS}
+$$
 
 - **物理原型**：曲面型构件质量 $M = \iint_\Sigma \mu(x,y,z)dS$
 - **实质**：被积函数含三个变量，但在曲面上被约束为**二元函数**，最终化为**二重积分**
 
 ## 计算口诀：一投二代三换
 
-$$\boxed{\iint_\Sigma f(x,y,z)dS = \iint_{D_{xy}} f(x,y,z(x,y)) \sqrt{1 + z_x'^2 + z_y'^2}\; dxdy}$$
+$$
+\boxed{\iint_\Sigma f(x,y,z)dS = \iint_{D_{xy}} f(x,y,z(x,y)) \sqrt{1 + z_x'^2 + z_y'^2}\; dxdy}
+$$
 
 | 曲面 | $dS$ 公式（投影到 $Oxy$） |
 |:--|:--|
@@ -231,14 +243,18 @@ $$\boxed{\iint_\Sigma f(x,y,z)dS = \iint_{D_{xy}} f(x,y,z(x,y)) \sqrt{1 + z_x'^2
 
 ## 概念
 
-$$\boxed{\iint_\Sigma P\,dydz + Q\,dzdx + R\,dxdy}$$
+$$
+\boxed{\iint_\Sigma P\,dydz + Q\,dzdx + R\,dxdy}
+$$
 
 - **物理原型**：流体穿过有向曲面的**流量** $\Phi = \iint_\Sigma \vec{v} \cdot \vec{n}^0 dS$
 - **核心特性**：换侧变号 $\iint_{-\Sigma} = -\iint_\Sigma$（与第一类最大区别）
 
 ## 计算口诀：一投二代**三定号**
 
-$$\boxed{\iint_\Sigma R(x,y,z)dxdy = \pm \iint_{D_{xy}} R(x,y,z(x,y))dxdy}$$
+$$
+\boxed{\iint_\Sigma R(x,y,z)dxdy = \pm \iint_{D_{xy}} R(x,y,z(x,y))dxdy}
+$$
 
 | 侧 | 符号 |
 |:--|:--|
@@ -257,13 +273,17 @@ $$\boxed{\iint_\Sigma R(x,y,z)dxdy = \pm \iint_{D_{xy}} R(x,y,z(x,y))dxdy}$$
 
 ## 两类联系
 
-$$\boxed{\iint_\Sigma P\,dydz+Q\,dzdx+R\,dxdy = \iint_\Sigma (P\cos\alpha+Q\cos\beta+R\cos\gamma)dS}$$
+$$
+\boxed{\iint_\Sigma P\,dydz+Q\,dzdx+R\,dxdy = \iint_\Sigma (P\cos\alpha+Q\cos\beta+R\cos\gamma)dS}
+$$
 
 ## 合一投影法
 
 $\Sigma: z=z(x,y)$ 投影到 $Oxy$，三个分项合并：
 
-$$\boxed{\iint_\Sigma = \pm \iint_{D_{xy}} \big[P\cdot(-z_x') + Q\cdot(-z_y') + R\big]dxdy}$$
+$$
+\boxed{\iint_\Sigma = \pm \iint_{D_{xy}} \big[P\cdot(-z_x') + Q\cdot(-z_y') + R\big]dxdy}
+$$
 
 上侧取正，下侧取负。**含抽象函数 $f$ 时特别有效！**
 
@@ -292,7 +312,9 @@ $$\boxed{\iint_\Sigma = \pm \iint_{D_{xy}} \big[P\cdot(-z_x') + Q\cdot(-z_y') + 
 
 ## 定理
 
-$$\boxed{\oiint_\Sigma P\,dydz + Q\,dzdx + R\,dxdy = \iiint_\Omega \left(\frac{\partial P}{\partial x} + \frac{\partial Q}{\partial y} + \frac{\partial R}{\partial z}\right) dxdydz}$$
+$$
+\boxed{\oiint_\Sigma P\,dydz + Q\,dzdx + R\,dxdy = \iiint_\Omega \left(\frac{\partial P}{\partial x} + \frac{\partial Q}{\partial y} + \frac{\partial R}{\partial z}\right) dxdydz}
+$$
 
 - **条件**：$\Sigma$ 闭 + $P,Q,R$ 一阶连续偏导 + $\Sigma$ 取**外侧**
 - 内侧加负号
@@ -306,7 +328,9 @@ $$\boxed{\oiint_\Sigma P\,dydz + Q\,dzdx + R\,dxdy = \iiint_\Omega \left(\frac{\
 
 ## 散度与通量
 
-$$\boxed{\operatorname{div} \vec{A} = \frac{\partial P}{\partial x} + \frac{\partial Q}{\partial y} + \frac{\partial R}{\partial z}}$$
+$$
+\boxed{\operatorname{div} \vec{A} = \frac{\partial P}{\partial x} + \frac{\partial Q}{\partial y} + \frac{\partial R}{\partial z}}
+$$
 
 向量形式：$\boxed{\oiint_\Sigma \vec{A} \cdot \vec{n}^0\,dS = \iiint_\Omega \operatorname{div} \vec{A}\; dV}$
 
@@ -334,11 +358,13 @@ $$\boxed{\operatorname{div} \vec{A} = \frac{\partial P}{\partial x} + \frac{\par
 
 ## 定理
 
-$$\boxed{\oint_{\Gamma} Pdx+Qdy+Rdz = \iint_{\Sigma} \begin{vmatrix}
+$$
+\boxed{\oint_{\Gamma} Pdx+Qdy+Rdz = \iint_{\Sigma} \begin{vmatrix}
 dydz & dzdx & dxdy \\[2pt]
 \frac{\partial}{\partial x} & \frac{\partial}{\partial y} & \frac{\partial}{\partial z} \\[4pt]
 P & Q & R
-\end{vmatrix} + \left(\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y}\right)dxdy$$
+\end{vmatrix}
+$$
 > 第三行就是依次去掉第一行对应列、取 $2\times 2$ 余子式，注意符号交替。
 
 - $\Gamma$ 为空间闭曲线，$\Sigma$ 是以 $\Gamma$ 为边界的有向曲面
@@ -347,13 +373,17 @@ P & Q & R
 
 ## 旋度与环流量
 
-$$\boxed{\mathbf{rot}\,\vec{A} = \nabla \times \vec{A} = \begin{vmatrix}
+$$
+\boxed{\mathbf{rot}\,\vec{A} = \nabla \times \vec{A} = \begin{vmatrix}
 \vec{i} & \vec{j} & \vec{k} \\[4pt]
 \frac{\partial}{\partial x} & \frac{\partial}{\partial y} & \frac{\partial}{\partial z} \\[4pt]
 P & Q & R
-\end{vmatrix}}$$
+\end{vmatrix}}
+$$
 
-$$\boxed{\oint_{\Gamma} \vec{A} \cdot d\vec{r} = \iint_{\Sigma} \mathbf{rot}\,\vec{A} \cdot \vec{n}\, dS}$$
+$$
+\boxed{\oint_{\Gamma} \vec{A} \cdot d\vec{r} = \iint_{\Sigma} \mathbf{rot}\,\vec{A} \cdot \vec{n}\, dS}
+$$
 
 ## 场论三剑客
 
