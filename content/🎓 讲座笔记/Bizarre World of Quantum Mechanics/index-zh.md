@@ -4,13 +4,13 @@ date: 2026-07-07
 tags: [quantum-mechanics, lecture-notes, course-overview]
 ---
 
-# Bizarre World of Quantum Mechanics
+# 奇异的量子力学世界
 
-> 📝 [中文版 (Chinese Version)](index-zh.md) | [术语表 (Glossary)](Glossary.md)
+> 📝 [English Version (英文版)](index.md) | [术语表 (Glossary)](Glossary-zh.md)
 
-> **Instructor:** Muhammed DENIZ, Professor at Department of Physics, Dokuz Eylül University, Izmir/TURKEY
-> **TA:** 李倩沄
-> **Course Type:** One-week intensive introduction to quantum mechanics (conceptual, minimal math)
+> **授课教师：** Muhammed DENIZ，多库兹埃吕尔大学物理系教授（土耳其伊兹密尔）
+> **助教：** 李倩沄
+> **课程类型：** 为期一周的量子力学速成入门（概念性教学，数学要求极低）
 
 ## 课程简介
 
@@ -37,21 +37,21 @@ tags: [quantum-mechanics, lecture-notes, course-overview]
 
 ## 📖 阅读提示
 
-笔记中的 **下划线术语**（如 <span class="qtip" data-cn="量子粒子：遵循量子力学的微观粒子">quantum particle</span>）可在网页上**鼠标悬停/手机长按**查看中文翻译。完整术语对照见 → [术语表 (Glossary)](Glossary.md)
+笔记中的 **下划线术语**（如 <span class="qtip" data-cn="量子粒子：遵循量子力学的微观粒子">quantum particle</span>）可在网页上**鼠标悬停/手机长按**查看中文翻译。完整术语对照见 → [术语表 (Glossary)](Glossary-zh.md)
 
 ## Lecture 目录
 
 | # | 标题 | 页数 | 核心主题 |
 |---|------|:---:|------|
-| 2 | [The Classical Stern-Gerlach Experiment](Lecture-2-Stern-Gerlach.md) | 57 | 自旋、磁矩、非均匀磁场、量子化投影 |
-| 3 | [Quantum Particles](Lecture-3-Quantum-Particles.md) | 26 | 量子粒子的定义、概率幅、量子态 |
-| 4 | [Two-Slit Experiment](Lecture-4-Two-Slit.md) | 33 | 双缝实验、干涉、which-way 信息 |
-| 5 | [Complementarity](Lecture-5-Complementarity.md) | 33 | 互补性原理、波粒二象性 |
-| 6 | [Wave or Particle? Duality](Lecture-6-Wave-Particle-Duality.md) | 41 | 波粒二象性的深入探讨 |
-| 7 | [Exploring the Quantum Nature of Light](Lecture-7-Quantum-Nature-of-Light.md) | 26 | 光的量子本质、光子概念 |
-| 8 | [The Single Slit](Lecture-8-Single-Slit.md) | 15 | 单缝衍射、费曼路径积分、光色与波长 |
-| 9 | [The Double Slit Experiment](Lecture-9-Double-Slit.md) | 41 | 双缝实验深入分析、量子之谜 |
-| 10 | [Applications of the Quantum Theory of Light](Lecture-10-Applications.md) | 20 | 量子光学应用、干涉仪、无相互作用测量 |
+| 2 | [经典 Stern-Gerlach 实验](Lecture-2-Stern-Gerlach-zh.md) | 57 | 自旋、磁矩、非均匀磁场、量子化投影 |
+| 3 | [量子粒子](Lecture-3-Quantum-Particles-zh.md) | 26 | 量子粒子的定义、概率幅、量子态 |
+| 4 | [双缝实验](Lecture-4-Two-Slit-zh.md) | 33 | 双缝实验、干涉、which-way 信息 |
+| 5 | [互补性](Lecture-5-Complementarity-zh.md) | 33 | 互补性原理、波粒二象性 |
+| 6 | [波还是粒子？二象性](Lecture-6-Wave-Particle-Duality-zh.md) | 41 | 波粒二象性的深入探讨 |
+| 7 | [探索光的量子本质](Lecture-7-Quantum-Nature-of-Light-zh.md) | 26 | 光的量子本质、光子概念 |
+| 8 | [单缝实验](Lecture-8-Single-Slit-zh.md) | 15 | 单缝衍射、费曼路径积分、光色与波长 |
+| 9 | [双缝实验深入分析](Lecture-9-Double-Slit-zh.md) | 41 | 双缝实验深入分析、量子之谜 |
+| 10 | [光量子理论的应用](Lecture-10-Applications-zh.md) | 20 | 量子光学应用、干涉仪、无相互作用测量 |
 
 ## 参考教材
 
@@ -76,7 +76,7 @@ tags: [quantum-mechanics, lecture-notes, course-overview]
 
 ## 相关资源
 
-- [术语表 (Glossary)](Glossary.md) — 中英对照，悬停查词
+- [术语表 (Glossary)](Glossary-zh.md) — 中英对照，悬停查词
 
 ---
 
