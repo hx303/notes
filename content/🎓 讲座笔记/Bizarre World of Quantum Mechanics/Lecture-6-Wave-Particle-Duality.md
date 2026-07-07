@@ -18,8 +18,8 @@ tags:
 
 - Describe the dual particle and wave nature of light and other quantum particles
 - Forget all preconceived notions of what you have learned about light — most are wrong
-- Describe what a <abbr title="量子粒子：遵循量子力学的微观粒子">quantum particle</abbr> is
-- Argue how a quantum particle can create <abbr title="干涉：多个波的叠加效应">interference</abbr> patterns
+- Describe what a <span class="qtip" data-cn="量子粒子：遵循量子力学的微观粒子">quantum particle</span> is
+- Argue how a quantum particle can create <span class="qtip" data-cn="干涉：多个波的叠加效应">interference</span> patterns
 
 ---
 
@@ -37,11 +37,11 @@ tags:
 
 ## Light Is a Quantum Particle
 
-### The Single-<abbr title="光子：光的量子，电磁辐射的基本粒子">photon</abbr> Experiment
+### The Single-<span class="qtip" data-cn="光子：光的量子，电磁辐射的基本粒子">photon</span> Experiment
 
 (Video demonstration from Anton Zeilinger's research group, University of Vienna)
 
-When light is made dimmer and dimmer and shone onto a **single-photon <abbr title="探测器：检测粒子到达状态的装置">detector</abbr>** (CCD):
+When light is made dimmer and dimmer and shone onto a **single-photon <span class="qtip" data-cn="探测器：检测粒子到达状态的装置">detector</span>** (CCD):
 
 - You do **not** see a uniformly dim illumination (what a wave would produce)
 - You see **bright dots** hitting only one detector at a time, randomly distributed — like raindrops falling
@@ -57,7 +57,7 @@ When photons pass through a single wide slit:
 
 1. At first (~200 photons), the pattern appears completely random
 2. As more photons accumulate (~2000+), a structure emerges — a **particle pattern** (classical pattern) with no wave-like interference
-3. Some photons appear very far from the center — a spread characteristic of <abbr title="衍射：波绕过障碍物时弯曲扩展">diffraction</abbr>, even with a <abbr title="单缝：一条狭缝的衍射实验">single slit</abbr>
+3. Some photons appear very far from the center — a spread characteristic of <span class="qtip" data-cn="衍射：波绕过障碍物时弯曲扩展">diffraction</span>, even with a <span class="qtip" data-cn="单缝：一条狭缝的衍射实验">single slit</span>
 
 > **Fundamental tenet of quantum mechanics**: We can predict the **probability** for a given event to occur, but we can **never predict precisely** what the result of a single experiment will be. Randomness is built into the fabric of nature.
 
@@ -78,7 +78,7 @@ Developing the ability to distinguish these two concepts is critical for success
 
 ### The Arrow Rules
 
-Feynman's method uses **arrows** (<abbr title="振幅：波偏离平衡位置的最大值">amplitude</abbr> vectors) with rules for how they change:
+Feynman's method uses **arrows** (<span class="qtip" data-cn="振幅：波偏离平衡位置的最大值">amplitude</span> vectors) with rules for how they change:
 
 | Action | Effect on Arrow |
 |--------|----------------|
@@ -94,7 +94,7 @@ Feynman's method uses **arrows** (<abbr title="振幅：波偏离平衡位置的
 - In **glass**, the photon moves more slowly, so it takes more time → the arrow rotates more
 - Typical rotation rate: approximately **15,000 revolutions per cm** in air
 
-### Example: <abbr title="部分反射：光在界面按概率部分反射">partial reflection</abbr> from a Single Surface
+### Example: <span class="qtip" data-cn="部分反射：光在界面按概率部分反射">partial reflection</span> from a Single Surface
 
 Consider red photons reflecting off glass:
 
@@ -127,7 +127,7 @@ One problem with Newton's particle theory: **how does a particle "know" whether 
 
 ### Practical Questions from the Lecture
 
-1. **What is a source of red photons?** Laser pointers — an excellent source of <abbr title="单色的：单一波长的光">monochromatic</abbr> (single-color) light. Attenuated to one photon at a time.
+1. **What is a source of red photons?** Laser pointers — an excellent source of <span class="qtip" data-cn="单色的：单一波长的光">monochromatic</span> (single-color) light. Attenuated to one photon at a time.
 
 2. **What is a photon detector?** CCD devices (in digital cameras and smartphones) — triggered by single photons. Before CCDs: photomultiplier tubes that amplify a single photon into billions of electrons.
 
@@ -139,8 +139,8 @@ One problem with Newton's particle theory: **how does a particle "know" whether 
 
 ## Summary & Deep Questions
 
-- Light always arrives in **<abbr title="分立的、离散的">discrete</abbr> bundles of the same size** — called photons
-- These photons are **quantum particles**, not classical particles — they follow <abbr title="奇异的、怪诞的">bizarre</abbr> quantum rules
+- Light always arrives in **<span class="qtip" data-cn="分立的、离散的">discrete</span> bundles of the same size** — called photons
+- These photons are **quantum particles**, not classical particles — they follow <span class="qtip" data-cn="奇异的、怪诞的">bizarre</span> quantum rules
 - The arrow method provides a computational framework for predicting quantum behavior, even without advanced mathematics
 
 ### Questions to Ponder
@@ -148,7 +148,7 @@ One problem with Newton's particle theory: **how does a particle "know" whether 
 1. How do particles interfere with each other to act like waves? Can interference disappear if light is dimmed to one photon at a time?
 2. Can a single photon "interfere with itself"? What does that even mean?
 3. If light acts like raindrops hitting a surface, why don't we feel them on our skin?
-4. If light is a particle, what does it mean to say it has a <abbr title="波长：相邻波峰间的距离">wavelength</abbr>?
+4. If light is a particle, what does it mean to say it has a <span class="qtip" data-cn="波长：相邻波峰间的距离">wavelength</span>?
 
 ### Historical Note
 
@@ -160,12 +160,12 @@ The modern theory of light started with Planck (blackbody radiation), but the tr
 
 ## Key Takeaways
 
-1. **Light is fundamentally a quantum particle (photon)**: Dim light experiments show discrete detection events, not <abbr title="连续的">continuous</abbr> dimming. Photons arrive one at a time, like raindrops — but they are not classical particles.
+1. **Light is fundamentally a quantum particle (photon)**: Dim light experiments show discrete detection events, not <span class="qtip" data-cn="连续的">continuous</span> dimming. Photons arrive one at a time, like raindrops — but they are not classical particles.
 
-2. **<abbr title="波粒二象性：量子物体兼具波和粒子性质">wave-particle duality</abbr> is real but subtle**: Newton (particles), Young (waves), and modern quantum theory all captured partial truths. The photon is neither a classical particle nor a classical wave — it is a quantum object that exhibits both behaviors depending on the experiment.
+2. **<span class="qtip" data-cn="波粒二象性：量子物体兼具波和粒子性质">wave-particle duality</span> is real but subtle**: Newton (particles), Young (waves), and modern quantum theory all captured partial truths. The photon is neither a classical particle nor a classical wave — it is a quantum object that exhibits both behaviors depending on the experiment.
 
 3. **Feynman's arrow method provides an accessible framework**: Photon events are described by "arrows" (probability amplitudes) that rotate, shrink on reflection/transmission, and add vectorially. The probability is the squared length of the final arrow.
 
-4. **Color is rotation rate**: A photon's color is determined by how fast its <abbr title="概率幅：复数，模方等于概率">probability amplitude</abbr> arrow rotates as it travels — a deeper, more physical definition than wavelength alone.
+4. **Color is rotation rate**: A photon's color is determined by how fast its <span class="qtip" data-cn="概率幅：复数，模方等于概率">probability amplitude</span> arrow rotates as it travels — a deeper, more physical definition than wavelength alone.
 
 5. **Randomness is fundamental, not a limitation of measurement**: We can calculate probabilities precisely, but never the outcome of a single quantum event. This is a profound departure from classical determinism.

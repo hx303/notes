@@ -15,15 +15,15 @@ tags:
 
 ## Learning Goals
 
-- Work confidently with Stern-Gerlach analyzers and **<abbr title="分析器：Stern-Gerlach 型自旋测量装置">analyzer</abbr> loops**, understanding the critical differences between them
-- Experience **quantum weirdness** first-hand — quantum <abbr title="干涉：多个波的叠加效应">interference</abbr> in action
-- Identify situations where **quantum interference** occurs and where it is destroyed (the principle of **<abbr title="互补性：波粒二象性的本质">complementarity</abbr>**)
+- Work confidently with Stern-Gerlach analyzers and **<span class="qtip" data-cn="分析器：Stern-Gerlach 型自旋测量装置">analyzer</span> loops**, understanding the critical differences between them
+- Experience **quantum weirdness** first-hand — quantum <span class="qtip" data-cn="干涉：多个波的叠加效应">interference</span> in action
+- Identify situations where **quantum interference** occurs and where it is destroyed (the principle of **<span class="qtip" data-cn="互补性：波粒二象性的本质">complementarity</span>**)
 
-> **<abbr title="先决条件、必备知识">prerequisite</abbr>:** Be clear on the difference between Stern-Gerlach analyzers (which measure) and analyzer loops (which erase measurements).
+> **<span class="qtip" data-cn="先决条件、必备知识">prerequisite</span>:** Be clear on the difference between Stern-Gerlach analyzers (which measure) and analyzer loops (which erase measurements).
 
 ---
 
-## The Two-Slit Analog: <abbr title="分析器回路：多次 SG 分析组成的闭合路径">analyzer loop</abbr> with Both Branches Open
+## The Two-Slit Analog: <span class="qtip" data-cn="分析器回路：多次 SG 分析组成的闭合路径">analyzer loop</span> with Both Branches Open
 
 ### The Setup
 
@@ -108,7 +108,7 @@ And crucially, **the final result changes:** now D1 and D2 each get **~50%** of 
 
 ### Part 2: Watching a Single Branch
 
-What if we watch only **one branch** (replace the other <abbr title="探测器：检测粒子到达状态的装置">detector</abbr> with a straight pipe)?
+What if we watch only **one branch** (replace the other <span class="qtip" data-cn="探测器：检测粒子到达状态的装置">detector</span> with a straight pipe)?
 
 **Result:** Exactly the same as watching both branches — 50/50. Why?
 
@@ -140,7 +140,7 @@ What if we watch only **one branch** (replace the other <abbr title="探测器�
 
 ### The Formal Name: Quantum Interference
 
-This <abbr title="现象">phenomenon</abbr> is called **quantum interference**. It is:
+This <span class="qtip" data-cn="现象">phenomenon</span> is called **quantum interference**. It is:
 
 - **Incredibly strange**, but **100% true**
 - We can **describe** how nature acts, but not **why**
@@ -169,7 +169,7 @@ As a preview of even deeper strangeness:
 
 > We can set up a pass-through detector on one branch with **adjustable sensitivity** — so it only works some fraction of the time, disturbing the atoms less.
 
-What happens? The results become a **weighted mixture** of the quantum and classical outcomes, <abbr title="成正比的">proportional</abbr> to how often we obtain which-path information. This foreshadows the **Wheeler delayed-choice experiment**, where the decision to observe or not can be made *after* the particle has already passed through the region of interference.
+What happens? The results become a **weighted mixture** of the quantum and classical outcomes, <span class="qtip" data-cn="成正比的">proportional</span> to how often we obtain which-path information. This foreshadows the **Wheeler delayed-choice experiment**, where the decision to observe or not can be made *after* the particle has already passed through the region of interference.
 
 ---
 

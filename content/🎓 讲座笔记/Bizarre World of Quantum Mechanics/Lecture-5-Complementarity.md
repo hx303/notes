@@ -9,14 +9,14 @@ tags:
   - wheeler-delayed-choice
 ---
 
-# Lecture 5: <abbr title="互补性：波粒二象性的本质">complementarity</abbr>
+# Lecture 5: <span class="qtip" data-cn="互补性：波粒二象性的本质">complementarity</span>
 
 > "The student suddenly says to himself, 'I understand quantum mechanics,' or rather he says, 'I understand now that there isn't anything to be understood.'" — Freeman Dyson, *Innovation in Physics*, Scientific American (1958)
 
 ## Learning Goals
 
-- Review the two-slit experiment with <abbr title="分析器：Stern-Gerlach 型自旋测量装置">analyzer</abbr>-loops (watched and unwatched)
-- Identify how one can **erase <abbr title="路径信息：粒子走哪条路径的知识">which-way information</abbr>** and restore <abbr title="干涉：多个波的叠加效应">interference</abbr>
+- Review the two-slit experiment with <span class="qtip" data-cn="分析器：Stern-Gerlach 型自旋测量装置">analyzer</span>-loops (watched and unwatched)
+- Identify how one can **erase <span class="qtip" data-cn="路径信息：粒子走哪条路径的知识">which-way information</span>** and restore <span class="qtip" data-cn="干涉：多个波的叠加效应">interference</span>
 - Describe how complementarity can be partially destroyed or reinstated
 
 ---
@@ -35,9 +35,9 @@ A more modern formulation focuses on **which-way information**:
   - If we **know which way** the particle went → it adopts the properties associated with that path
   - If we **do not know** which way → the particle retains whatever properties it had prior to entering the device
 
-This behavior is exactly what we exploit in the Stern-Gerlach <abbr title="分析器回路：多次 SG 分析组成的闭合路径">analyzer loop</abbr>.
+This behavior is exactly what we exploit in the Stern-Gerlach <span class="qtip" data-cn="分析器回路：多次 SG 分析组成的闭合路径">analyzer loop</span>.
 
-### Gentle Measurement and <abbr title="叠加：同时处于多个态的量子性质">superposition</abbr>
+### Gentle Measurement and <span class="qtip" data-cn="叠加：同时处于多个态的量子性质">superposition</span>
 
 - Historically, it was thought that "watching" a particle inevitably disturbed it enough to change the experiment.
 - **Modern experiments** have found ways to determine "which way" much more gently — so gently that the particle cannot be disturbed in the old classical sense, yet the quantum behavior still changes.
@@ -55,7 +55,7 @@ This behavior is exactly what we exploit in the Stern-Gerlach <abbr title="分�
 
 John Wheeler (Feynman's Ph.D. adviser) asked:
 
-> **When does a <abbr title="量子粒子：遵循量子力学的微观粒子">quantum particle</abbr> realize it is being watched?**
+> **When does a <span class="qtip" data-cn="量子粒子：遵循量子力学的微观粒子">quantum particle</span> realize it is being watched?**
 
 Can we set up an experiment and **decide after the atom passes through the two paths** whether or not we want to watch? The answer is **yes**.
 
@@ -65,7 +65,7 @@ This raises a deep philosophical question: does the choice get communicated to t
 
 A **classical explanation** (the "conspiracy theory") proposes:
 
-- The atom knows the arrangement of the <abbr title="实验装置">apparatus</abbr> **in advance**
+- The atom knows the arrangement of the <span class="qtip" data-cn="实验装置">apparatus</span> **in advance**
 - If the final analyzer is vertical → the atom takes both paths
 - If the final analyzer is horizontal → the atom chooses one path, even if unwatched
 
@@ -80,7 +80,7 @@ A **classical explanation** (the "conspiracy theory") proposes:
 | Unwatched (H) | Horizontal | 50% → D1, 50% → D2 | Atom unchanged, randomly measured in x-basis |
 | Watched (H) | Horizontal | 50% → D1, 50% → D2 | No difference from watched case — tempting but misleading |
 
-> **Key insight**: The horizontal-analyzer results alone could be explained classically (atom has definite state at all times). We need the <abbr title="垂直的">perpendicular</abbr>-analyzer results to reveal quantum behavior.
+> **Key insight**: The horizontal-analyzer results alone could be explained classically (atom has definite state at all times). We need the <span class="qtip" data-cn="垂直的">perpendicular</span>-analyzer results to reveal quantum behavior.
 
 ### The Delayed Choice Test
 
@@ -116,13 +116,13 @@ Since $P(+x) \leq 1$ (it is a probability), this requires $\theta \geq 45^\circ$
 **Tagging** atoms provides a concrete way to mark which-way information:
 
 - **Exciter**: Shine light of the right energy to excite an atom from its ground state to a higher-energy state
-- **De-exciter**: Shine light on an already-excited atom to coax it to emit a <abbr title="光子：光的量子，电磁辐射的基本粒子">photon</abbr> and return to the ground state
+- **De-exciter**: Shine light on an already-excited atom to coax it to emit a <span class="qtip" data-cn="光子：光的量子，电磁辐射的基本粒子">photon</span> and return to the ground state
 
 - An excited atom is **distinguishable** from a ground-state atom — they are no longer alike
 - This means we have **which-way information**, destroying interference
 - If the tag is later **removed** (the which-way information is erased), interference can be **restored**
 
-> (Video demonstration of this with light, using <abbr title="偏振：光波振动方向的空间取向">polarization</abbr> as the tag, will be shown later in the course.)
+> (Video demonstration of this with light, using <span class="qtip" data-cn="偏振：光波振动方向的空间取向">polarization</span> as the tag, will be shown later in the course.)
 
 ---
 
@@ -136,4 +136,4 @@ Since $P(+x) \leq 1$ (it is a probability), this requires $\theta \geq 45^\circ$
 
 4. **Which-way information can be erased**: Tagging atoms (making them distinguishable) destroys interference, but removing the tag can restore quantum behavior. This is the principle behind **quantum eraser** experiments.
 
-5. **The <abbr title="概率性的：结果用概率描述">probabilistic</abbr> nature is fundamental**: We can predict probabilities of events, but never the precise outcome of a single quantum experiment.
+5. **The <span class="qtip" data-cn="概率性的：结果用概率描述">probabilistic</span> nature is fundamental**: We can predict probabilities of events, but never the precise outcome of a single quantum experiment.

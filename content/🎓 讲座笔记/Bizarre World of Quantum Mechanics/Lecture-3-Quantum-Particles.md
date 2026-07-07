@@ -21,7 +21,7 @@ tags:
 
 - Understand that quantum particles **only remember the last thing** that was measured about them
 - Be able to predict the results of **repeated measurements** on quantum particles
-- Analyze experiments with **<abbr title="分析器：Stern-Gerlach 型自旋测量装置">analyzer</abbr> loops** (quantum erasers)
+- Analyze experiments with **<span class="qtip" data-cn="分析器：Stern-Gerlach 型自旋测量装置">analyzer</span> loops** (quantum erasers)
 - Understand how quantum measurements can be **erased**
 
 > **Prerequisites:** Understanding how Stern-Gerlach analyzers work, especially in multiple-measurement configurations.
@@ -30,7 +30,7 @@ tags:
 
 ## What We've Learned So Far
 
-1. **Quantum mechanics is <abbr title="随机的">stochastic</abbr>.** We cannot determine precisely what will happen — only the probability of different events.
+1. **Quantum mechanics is <span class="qtip" data-cn="随机的">stochastic</span>.** We cannot determine precisely what will happen — only the probability of different events.
 2. These results are **real** and hold for all quantum systems.
 3. Quantum mechanics allows **extreme precision** in certain measurements (light color, clock ticking) — verified more accurately than any other theory in science.
 4. Amidst uncertainty, there is **remarkable certainty** in other quantities.
@@ -39,24 +39,24 @@ tags:
 
 ## "Atoms Are Stupid" — And What Comes Next
 
-The atom is **schizophrenic** — it has more than one identity. The core theme: the atom only remembers **the last axis** it had its <abbr title="投影：矢量在某方向上的分量">projection</abbr> measured on.
+The atom is **schizophrenic** — it has more than one identity. The core theme: the atom only remembers **the last axis** it had its <span class="qtip" data-cn="投影：矢量在某方向上的分量">projection</span> measured on.
 
 ### Preview of This Module
 
-- **Analyzer loops** — extending the SG experiment to explore quantum <abbr title="干涉：多个波的叠加效应">interference</abbr>
+- **Analyzer loops** — extending the SG experiment to explore quantum <span class="qtip" data-cn="干涉：多个波的叠加效应">interference</span>
 - **Two-slit analog** — introducing the quantum mystery via Stern-Gerlach devices
 - **John Wheeler's delayed-choice experiment** — deciding about interference *after* the particle has passed
 - **Einstein-Podolsky-Rosen (EPR)** — "spooky action at a distance"
-- **Bell inequalities** — proving <abbr title="隐变量：试图用经典确定性解释量子力学">hidden variable</abbr> theories incorrect
+- **Bell inequalities** — proving <span class="qtip" data-cn="隐变量：试图用经典确定性解释量子力学">hidden variable</span> theories incorrect
 - **Real-world applications** — NMR (nuclear magnetic resonance) and MRI
 
 ---
 
-## The Stern-Gerlach <abbr title="分析器回路：多次 SG 分析组成的闭合路径">analyzer loop</abbr>
+## The Stern-Gerlach <span class="qtip" data-cn="分析器回路：多次 SG 分析组成的闭合路径">analyzer loop</span>
 
 ### What Is It?
 
-A new <abbr title="实验装置">apparatus</abbr> that **erases the measurement** made by a Stern-Gerlach analyzer. It consists of two parts:
+A new <span class="qtip" data-cn="实验装置">apparatus</span> that **erases the measurement** made by a Stern-Gerlach analyzer. It consists of two parts:
 
 1. **Front end:** Conventional Stern-Gerlach analyzer — separates atoms into two paths
 2. **Back end (quantum eraser):** Undoes what the analyzer did — brings the two paths back together in such a way that **we cannot tell which path** the atom traveled
@@ -121,7 +121,7 @@ When only the **+x branch** is open (gate on −x closed):
 
 - All atoms reaching analyzer B **must** have passed through the +x branch
 - The analyzer loop acts like a **regular analyzer at 90°**
-- Results: **~50% D1, ~50% D2** — exactly as if we had a single <abbr title="垂直的">perpendicular</abbr> analyzer
+- Results: **~50% D1, ~50% D2** — exactly as if we had a single <span class="qtip" data-cn="垂直的">perpendicular</span> analyzer
 
 When only the **−x branch** is open (gate on +x closed):
 - Same results — 50/50 split

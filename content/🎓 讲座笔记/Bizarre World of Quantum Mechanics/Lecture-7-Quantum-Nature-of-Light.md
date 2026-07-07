@@ -17,11 +17,11 @@ tags:
 ## Learning Goals
 
 - Determine how light, while acting as a particle, manages to **partially reflect** off glass
-- Use the quantum theory to describe <abbr title="部分反射：光在界面按概率部分反射">partial reflection</abbr>
+- Use the quantum theory to describe <span class="qtip" data-cn="部分反射：光在界面按概率部分反射">partial reflection</span>
 - Determine the physical origin of the **colors on soap bubbles and oil slicks**
-- Describe how one can measure the **<abbr title="波长：相邻波峰间的距离">wavelength</abbr> of light** simply by measuring an angle
+- Describe how one can measure the **<span class="qtip" data-cn="波长：相邻波峰间的距离">wavelength</span> of light** simply by measuring an angle
 
-**Prerequisites**: Familiarity with the <abbr title="光子：光的量子，电磁辐射的基本粒子">photon</abbr> as a particle of light and with the quantum rules from Lecture 6.
+**Prerequisites**: Familiarity with the <span class="qtip" data-cn="光子：光的量子，电磁辐射的基本粒子">photon</span> as a particle of light and with the quantum rules from Lecture 6.
 
 ---
 
@@ -45,7 +45,7 @@ One might think glass has "holes" (like a screen) — photons pass through holes
 
 > This is a **thought experiment** — it cannot be actually performed, but we can imagine how it would work and use the quantum theory to explain the results.
 
-- Light is <abbr title="入射的（光/束流）">incident</abbr> **vertically** (normal incidence) — the diagrams show paths at small angles only for visual clarity
+- Light is <span class="qtip" data-cn="入射的（光/束流）">incident</span> **vertically** (normal incidence) — the diagrams show paths at small angles only for visual clarity
 - We consider light reflecting off a glass slab and determine how the arrow method explains the observed behavior
 
 ### Two Paths for Reflection
@@ -104,7 +104,7 @@ $$
 
 ## The Probability Problem
 
-### <abbr title="守恒">conservation</abbr> of Probability
+### <span class="qtip" data-cn="守恒">conservation</span> of Probability
 
 A photon must either reflect **or** transmit — the probabilities should sum to 100%:
 
@@ -184,7 +184,7 @@ $$
 
 (Images: soap bubble by Iman Sadeghi; oil slick by Jim Freericks)
 
-The colors on soap bubbles and oil slicks come from **partial reflection of light** — exactly the quantum <abbr title="现象">phenomenon</abbr> we have been analyzing.
+The colors on soap bubbles and oil slicks come from **partial reflection of light** — exactly the quantum <span class="qtip" data-cn="现象">phenomenon</span> we have been analyzing.
 
 ### How It Works
 
@@ -199,7 +199,7 @@ The colors on soap bubbles and oil slicks come from **partial reflection of ligh
 
 - Soap films and oil layers behave just like glass — they have interfaces with air and/or water
 - The film thickness acts like the glass thickness in our calculations
-- Different colors (photons with different rotation rates) will have different constructive/<abbr title="相消干涉：波叠加互相抵消">destructive <abbr title="干涉：多个波的叠加效应">interference</abbr></abbr> conditions for the same thickness
+- Different colors (photons with different rotation rates) will have different constructive/<abbr title="相消干涉：波叠加互相抵消">destructive <span class="qtip" data-cn="干涉：多个波的叠加效应">interference</span></abbr> conditions for the same thickness
 - This is how **interference colors** arise in thin films
 
 ### Measuring Wavelength from an Angle

@@ -35,7 +35,7 @@ tags: [quantum-mechanics, lecture-notes, course-overview]
 
 ## 📖 阅读提示
 
-笔记中的 **下划线术语**（如 <abbr title="量子粒子：遵循量子力学的微观粒子">quantum particle</abbr>）可在网页上**鼠标悬停/手机长按**查看中文翻译。完整术语对照见 → [术语表 (Glossary)](Glossary.md)
+笔记中的 **下划线术语**（如 <span class="qtip" data-cn="量子粒子：遵循量子力学的微观粒子">quantum particle</span>）可在网页上**鼠标悬停/手机长按**查看中文翻译。完整术语对照见 → [术语表 (Glossary)](Glossary.md)
 
 ## Lecture 目录
 

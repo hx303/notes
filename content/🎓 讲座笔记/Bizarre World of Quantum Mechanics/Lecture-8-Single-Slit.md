@@ -4,23 +4,23 @@ date: 2026-07-07
 tags: [quantum-mechanics, lecture-notes, single-slit, diffraction, feynman]
 ---
 
-# Lecture 8: The <abbr title="单缝：一条狭缝的衍射实验">single slit</abbr>
+# Lecture 8: The <span class="qtip" data-cn="单缝：一条狭缝的衍射实验">single slit</span>
 
 ## Learning Goals
 
 - Develop Feynman's model for how light travels from one point to another employing the rules of quantum mechanics.
-- **<abbr title="先决条件、必备知识">prerequisite</abbr>:** You should be familiar with the quantum model for how light partially reflects from the surface of glass.
+- **<span class="qtip" data-cn="先决条件、必备知识">prerequisite</span>:** You should be familiar with the quantum model for how light partially reflects from the surface of glass.
 - **After this lesson,** you will be able to:
   - Describe how light appears to travel in straight lines.
   - Explain what happens when light is forced to travel through a narrow slit.
   - Understand how slit width depends on the color of the light.
-- **Stretch goal:** You may be able to explain the single-slit <abbr title="衍射：波绕过障碍物时弯曲扩展">diffraction</abbr> patterns that develop when light travels through a narrow slit.
+- **Stretch goal:** You may be able to explain the single-slit <span class="qtip" data-cn="衍射：波绕过障碍物时弯曲扩展">diffraction</span> patterns that develop when light travels through a narrow slit.
 
 ---
 
 ## Introduction: Why Single and Multiple Slits?
 
-Having mastered **<abbr title="部分反射：光在界面按概率部分反射">partial reflection</abbr>** and the concept of a <abbr title="光子：光的量子，电磁辐射的基本粒子">photon</abbr> undergoing **quantum <abbr title="干涉：多个波的叠加效应">interference</abbr>**, we now move to a different series of experiments — ones that will ultimately unveil the quantum mystery.
+Having mastered **<span class="qtip" data-cn="部分反射：光在界面按概率部分反射">partial reflection</span>** and the concept of a <span class="qtip" data-cn="光子：光的量子，电磁辐射的基本粒子">photon</span> undergoing **quantum <span class="qtip" data-cn="干涉：多个波的叠加效应">interference</span>**, we now move to a different series of experiments — ones that will ultimately unveil the quantum mystery.
 
 The experiment is simple:
 
@@ -45,7 +45,7 @@ In the quantum theory, **many paths** contribute to the light that goes through 
 
 ---
 
-## The Role of Color (<abbr title="波长：相邻波峰间的距离">wavelength</abbr>)
+## The Role of Color (<span class="qtip" data-cn="波长：相邻波峰间的距离">wavelength</span>)
 
 The **color of light** determines how fast the stopwatch hand rotates:
 
@@ -57,7 +57,7 @@ The **color of light** determines how fast the stopwatch hand rotates:
 
 ### Key Relationships
 
-- **Photon energy is <abbr title="成正比的">proportional</abbr> to rotation rate** — blue light carries more energy than green, which carries more than red.
+- **Photon energy is <span class="qtip" data-cn="成正比的">proportional</span> to rotation rate** — blue light carries more energy than green, which carries more than red.
 - **Wavelength** is defined as the distance the photon travels during **one full revolution of the clock**.
 
 ### Practical Consequences
@@ -77,7 +77,7 @@ The **color of light** determines how fast the stopwatch hand rotates:
 
 > The pattern seen when the slit is made extremely narrow is relevant to the famous debate in the movie *Big Bang*.
 
-Changing the **color of light** acts similarly to changing the **width of the slit opening** — increasing <abbr title="频率：单位时间内的周期数">frequency</abbr> (red → blue) is comparable to narrowing the slit.
+Changing the **color of light** acts similarly to changing the **width of the slit opening** — increasing <span class="qtip" data-cn="频率：单位时间内的周期数">frequency</span> (red → blue) is comparable to narrowing the slit.
 
 ---
 

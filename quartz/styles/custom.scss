@@ -1096,6 +1096,93 @@ details.quiz-check {
   }
 }
 
+// ========================
+// 🌐 量子力学笔记 — 自定义术语悬浮翻译 (Floating Translation Tooltip)
+// 替代原生 <abbr title> 解决浏览器 tooltip 截断问题
+// ========================
+
+.qtip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1.5px dashed var(--tertiary);
+  text-decoration: none !important;
+  display: inline;
+}
+
+.qtip::after {
+  content: attr(data-cn);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 8px);
+  background: #1e1e2e;
+  color: #f8f8f2;
+  padding: 8px 14px;
+  border-radius: 8px;
+  white-space: normal;
+  max-width: 380px;
+  min-width: 60px;
+  width: max-content;
+  font-size: 0.88em;
+  line-height: 1.55;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.qtip:hover::after,
+.qtip:focus::after,
+.qtip:active::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+// 小箭头指示器
+.qtip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 1px);
+  border: 6px solid transparent;
+  border-top-color: #1e1e2e;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.qtip:hover::before,
+.qtip:focus::before,
+.qtip:active::before {
+  opacity: 1;
+}
+
+// 暗色模式适配
+:root[saved-theme="dark"] {
+  .qtip::after {
+    background: #2d2d3f;
+    color: #e8e8ed;
+  }
+  .qtip::before {
+    border-top-color: #2d2d3f;
+  }
+}
+
+// 移动端：点击显示（hover 不可用）
+@media (hover: none) and (pointer: coarse) {
+  .qtip {
+    border-bottom-style: solid;
+    border-bottom-width: 2px;
+  }
+}
+
 // --- 移动端 ---
 @media (max-width: 600px) {
   h1 { font-size: 1.6rem; }

@@ -4,23 +4,23 @@ date: 2026-07-07
 tags: [quantum-mechanics, lecture-notes, double-slit, quantum-mystery, complementarity, feynman]
 ---
 
-# Lecture 9: The <abbr title="双缝：两条平行狭缝的干涉实验">double slit</abbr> Experiment
+# Lecture 9: The <span class="qtip" data-cn="双缝：两条平行狭缝的干涉实验">double slit</span> Experiment
 
-> *"We choose to examine a <abbr title="现象">phenomenon</abbr> which is impossible, absolutely impossible to explain in any classical way, and which has in it the heart of quantum mechanics. In reality, it contains the only mystery... Any other situation in quantum mechanics, it turns out, can always be explained by saying, 'You remember the case of the experiment with the two holes? It's the same thing.'"*
+> *"We choose to examine a <span class="qtip" data-cn="现象">phenomenon</span> which is impossible, absolutely impossible to explain in any classical way, and which has in it the heart of quantum mechanics. In reality, it contains the only mystery... Any other situation in quantum mechanics, it turns out, can always be explained by saying, 'You remember the case of the experiment with the two holes? It's the same thing.'"*
 >
 > — **Richard Feynman**, *The Character of Physical Law* (1965)
 
 ## Learning Goals
 
-- Articulate the <abbr title="奇异的、怪诞的">bizarre</abbr> results of the two-slit experiment and calculate them using quantum rules.
-- **<abbr title="先决条件、必备知识">prerequisite</abbr>:** You must be familiar with quantum rules for light, <abbr title="部分反射：光在界面按概率部分反射">partial reflection</abbr>, and single-slit <abbr title="衍射：波绕过障碍物时弯曲扩展">diffraction</abbr>.
+- Articulate the <span class="qtip" data-cn="奇异的、怪诞的">bizarre</span> results of the two-slit experiment and calculate them using quantum rules.
+- **<span class="qtip" data-cn="先决条件、必备知识">prerequisite</span>:** You must be familiar with quantum rules for light, <span class="qtip" data-cn="部分反射：光在界面按概率部分反射">partial reflection</span>, and single-slit <span class="qtip" data-cn="衍射：波绕过障碍物时弯曲扩展">diffraction</span>.
 - **After this lesson,** you will be able to:
   - Explain what the **quantum mystery** is.
 - **Stretch goal:** Generalize these techniques to more complicated situations.
 
 ---
 
-## Demonstration: <abbr title="单缝：一条狭缝的衍射实验">single slit</abbr> vs. Double Slit
+## Demonstration: <span class="qtip" data-cn="单缝：一条狭缝的衍射实验">single slit</span> vs. Double Slit
 
 ### Single Slit
 - A central broad region with additional, dimmer diffraction fringes on the wings.
@@ -30,7 +30,7 @@ tags: [quantum-mechanics, lecture-notes, double-slit, quantum-mystery, complemen
 - The same single-slit fringes are present, but with **additional bright fringes** within each diffraction band.
 - The double-slit image is **four times brighter** than the single-slit image.
 
-With **single-<abbr title="光子：光的量子，电磁辐射的基本粒子">photon</abbr>-sensitive detectors**, the initially random distribution of individual photon hits gradually builds up into the <abbr title="干涉：多个波的叠加效应">interference</abbr> fringe pattern. Each photon arrives one at a time — yet collectively, they trace out a wave interference pattern.
+With **single-<span class="qtip" data-cn="光子：光的量子，电磁辐射的基本粒子">photon</span>-sensitive detectors**, the initially random distribution of individual photon hits gradually builds up into the <span class="qtip" data-cn="干涉：多个波的叠加效应">interference</span> fringe pattern. Each photon arrives one at a time — yet collectively, they trace out a wave interference pattern.
 
 (Video demonstrations — MIT "Double Trouble" and University of Leiden "Photons Can Do That?")
 
@@ -38,7 +38,7 @@ With **single-<abbr title="光子：光的量子，电磁辐射的基本粒子">
 
 ## The Quantum Mystery: Part 1
 
-When the light intensity is dimmed so that **only one photon is in the <abbr title="实验装置">apparatus</abbr> at any given time**:
+When the light intensity is dimmed so that **only one photon is in the <span class="qtip" data-cn="实验装置">apparatus</span> at any given time**:
 
 - Individual photons hit the screen at seemingly random positions.
 - Over time, these individual hits **build up** to show the interference fringes that are characteristic of a wave pattern.
@@ -56,7 +56,7 @@ When the light intensity is dimmed so that **only one photon is in the <abbr tit
 
 To find out what the photon is doing, we add detectors near the slits:
 
-- **<abbr title="探测器：检测粒子到达状态的装置">detector</abbr> A** at the top slit
+- **<span class="qtip" data-cn="探测器：检测粒子到达状态的装置">detector</span> A** at the top slit
 - **Detector B** at the bottom slit
 - **Detector D** on the screen (as before)
 
@@ -100,16 +100,16 @@ Nature does not reveal her secrets:
 
 If we want to localize the photon's position well enough to determine which slit it passed through:
 
-1. We must hit it with a probe particle whose **quantum <abbr title="波长：相邻波峰间的距离">wavelength</abbr>** is small enough to resolve the slit separation.
+1. We must hit it with a probe particle whose **quantum <span class="qtip" data-cn="波长：相邻波峰间的距离">wavelength</span>** is small enough to resolve the slit separation.
 2. A small-wavelength particle has **large energy and momentum**.
 3. When it scatters off the photon, the photon receives a huge "kick" — it is **greatly disturbed**.
 4. This disturbance **destroys** the quantum interference.
 
-> **Analogy:** Trying to track a ping-pong ball by shooting BB pellets at it — each BB strike violently changes the ball's <abbr title="轨迹">trajectory</abbr>.
+> **Analogy:** Trying to track a ping-pong ball by shooting BB pellets at it — each BB strike violently changes the ball's <span class="qtip" data-cn="轨迹">trajectory</span>.
 
 ---
 
-## Imperfect Detectors: A <abbr title="连续的">continuous</abbr> Transition
+## Imperfect Detectors: A <span class="qtip" data-cn="连续的">continuous</span> Transition
 
 What if we use a detector with **less than perfect efficiency** (e.g., 36%)?
 
@@ -122,13 +122,13 @@ What if we use a detector with **less than perfect efficiency** (e.g., 36%)?
 
 ---
 
-## The Principle of <abbr title="互补性：波粒二象性的本质">complementarity</abbr>
+## The Principle of <span class="qtip" data-cn="互补性：波粒二象性的本质">complementarity</span>
 
 > **Niels Bohr (1927):** Whenever we can tell which slit the particle goes through, the quantum interference disappears and we see the particle pattern.
 
 Key facts:
 
-- **Every experiment** that has tried to determine how a <abbr title="量子粒子：遵循量子力学的微观粒子">quantum particle</abbr> "interferes with itself" has **failed**.
+- **Every experiment** that has tried to determine how a <span class="qtip" data-cn="量子粒子：遵循量子力学的微观粒子">quantum particle</span> "interferes with itself" has **failed**.
 - No experiment has ever **violated** this principle.
 - Related ideas: **quantum eraser** and **delayed choice** experiments explore the boundaries of this principle.
 
@@ -142,7 +142,7 @@ We have a **set of quantum rules** that work perfectly:
 
 1. Identify the event(s).
 2. Find the different alternative ways each event can occur.
-3. Assign an arrow (<abbr title="概率幅：复数，模方等于概率">probability <abbr title="振幅：波偏离平衡位置的最大值">amplitude</abbr></abbr>) to each way.
+3. Assign an arrow (<abbr title="概率幅：复数，模方等于概率">probability <span class="qtip" data-cn="振幅：波偏离平衡位置的最大值">amplitude</span></abbr>) to each way.
 4. Sum the arrows to get the final arrow.
 5. Square the final arrow to get the probability.
 6. Add probabilities from all events to get the total probability.
@@ -181,8 +181,8 @@ With three narrow slits (each giving 0.05 arrow size):
 - The **two-slit experiment** is the preeminent example of quantum mechanics. It contains deep mysteries we may never fully unravel.
 - We *can* create abstract theories that predict quantum behavior with great accuracy.
 - You now possess the knowledge of **what quantum mechanics is** and **how to describe its behavior**.
-- Future topics building on this: quantum teleportation, quantum computing, quantum encryption, quantum <abbr title="纠缠：多粒子量子态的不可分割关联">entanglement</abbr>.
-- Next module: quantum Zeno effect, <abbr title="无相互作用测量：不接触物体也能探测其存在">interaction-free measurement</abbr>, and the Hong-Ou-Mandel effect.
+- Future topics building on this: quantum teleportation, quantum computing, quantum encryption, quantum <span class="qtip" data-cn="纠缠：多粒子量子态的不可分割关联">entanglement</span>.
+- Next module: quantum Zeno effect, <span class="qtip" data-cn="无相互作用测量：不接触物体也能探测其存在">interaction-free measurement</span>, and the Hong-Ou-Mandel effect.
 
 ---
 
@@ -190,7 +190,7 @@ With three narrow slits (each giving 0.05 arrow size):
 
 1. **Single particles produce interference patterns:** When photons pass through a double slit one at a time, they still build up an interference pattern — each photon somehow "interferes with itself."
 
-2. **Observation destroys interference:** Placing detectors at the slits to determine which path the photon takes causes the interference pattern to <abbr title="坍缩：量子态从叠加态变为确定态">collapse</abbr> into a simple particle pattern. The act of measurement changes the outcome.
+2. **Observation destroys interference:** Placing detectors at the slits to determine which path the photon takes causes the interference pattern to <span class="qtip" data-cn="坍缩：量子态从叠加态变为确定态">collapse</span> into a simple particle pattern. The act of measurement changes the outcome.
 
 3. **The quantum rules work perfectly:** Identify events, enumerate alternatives, assign arrows, sum, and square. This procedure predicts every experimental result with perfect accuracy, even if the underlying reality remains mysterious.
 

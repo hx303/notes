@@ -8,9 +8,9 @@ tags:
   - spin
 ---
 
-# Lecture 2: The Classical <abbr title="斯特恩-盖拉赫实验：用非均匀磁场分离原子自旋态">Stern-Gerlach experiment</abbr>
+# Lecture 2: The Classical <span class="qtip" data-cn="斯特恩-盖拉赫实验：用非均匀磁场分离原子自旋态">Stern-Gerlach experiment</span>
 
-## Introduction: Separating Current Loops by Their <abbr title="投影：矢量在某方向上的分量">projection</abbr>
+## Introduction: Separating Current Loops by Their <span class="qtip" data-cn="投影：矢量在某方向上的分量">projection</span>
 
 We have a collection of very small objects that act like current loops. We want to **separate them according to the projection** of the effective magnetic needle (representing the current loop) onto the axis of an increasing magnetic field. This separation allows us to determine the different values the projection can take and helps us understand the properties of these particles.
 
@@ -18,15 +18,15 @@ We have a collection of very small objects that act like current loops. We want 
 
 This type of separation experiment is common in physics. The simplest example: shining white light into a **prism** and separating it into the spectrum of the rainbow.
 
-- Separating light by **color** = separating by **energy** = separating by **<abbr title="频率：单位时间内的周期数">frequency</abbr>**
-- Our experiment with current loops is <abbr title="类似的、可类比的">analogous</abbr>, but selecting by **projection of the effective needle** on the magnetic field axis
+- Separating light by **color** = separating by **energy** = separating by **<span class="qtip" data-cn="频率：单位时间内的周期数">frequency</span>**
+- Our experiment with current loops is <span class="qtip" data-cn="类似的、可类比的">analogous</span>, but selecting by **projection of the effective needle** on the magnetic field axis
 
 ### The Experimental Setup
 
 - The "current loops" are actually **atoms** — extremely small
-- We shoot atoms **<abbr title="垂直的">perpendicular</abbr>** to the direction of increasing magnetic field
+- We shoot atoms **<span class="qtip" data-cn="垂直的">perpendicular</span>** to the direction of increasing magnetic field
 - They feel a push or pull for a fixed time near the magnet
-- The **<abbr title="偏转：粒子偏离原路径">deflection</abbr>** of the path is <abbr title="成正比的">proportional</abbr> to the <abbr title="大小、量值">magnitude</abbr> and sign of the projection
+- The **<span class="qtip" data-cn="偏转：粒子偏离原路径">deflection</span>** of the path is <span class="qtip" data-cn="成正比的">proportional</span> to the <span class="qtip" data-cn="大小、量值">magnitude</span> and sign of the projection
 - Collecting far enough away amplifies the differences (acts like a microscope)
 - Final experiment: beam of atoms → magnet → screen
 
@@ -34,11 +34,11 @@ This type of separation experiment is common in physics. The simplest example: s
 
 ## Designing the Classical Stern-Gerlach Experiment
 
-### The Stern-Gerlach <abbr title="实验装置">apparatus</abbr>
+### The Stern-Gerlach <span class="qtip" data-cn="实验装置">apparatus</span>
 
 - **Otto Stern** (Nobel Prize 1943) and **Walter Gerlach** co-invented the experiment
 - Gerlach was excluded from the Nobel because of his association with the Nazis
-- **Silver atoms** are injected at a fixed <abbr title="速度">velocity</abbr> through a region with a **non-uniform magnetic field**
+- **Silver atoms** are injected at a fixed <span class="qtip" data-cn="速度">velocity</span> through a region with a **non-uniform magnetic field**
 - Current loops **precess** in the field but keep their projection on the axis of increasing field constant
 - Result: they feel a **push (up)** or **pull (down)** depending on the projection
 
@@ -46,13 +46,13 @@ This type of separation experiment is common in physics. The simplest example: s
 
 Three possible scenarios for what the screen might show:
 
-1. **Random projection** of effective needle — a <abbr title="连续的">continuous</abbr> smear on the screen
+1. **Random projection** of effective needle — a <span class="qtip" data-cn="连续的">continuous</span> smear on the screen
 2. **Only one value** — a single spot
-3. **Only two values** — two <abbr title="分立的、离散的">discrete</abbr> spots
+3. **Only two values** — two <span class="qtip" data-cn="分立的、离散的">discrete</span> spots
 
 > (Video demonstration: `sge_exp_1-01_sg_current_loops.html`)
 
-The quantum case: the atom always shows **two projections** with the same splitting amount, **regardless of field <abbr title="取向、方向">orientation</abbr>** — a result that cannot be reconciled with any classical picture.
+The quantum case: the atom always shows **two projections** with the same splitting amount, **regardless of field <span class="qtip" data-cn="取向、方向">orientation</span>** — a result that cannot be reconciled with any classical picture.
 
 > (Video demonstration: `sge_exp_1-02_sg_atoms.html`)
 
@@ -63,11 +63,11 @@ The quantum case: the atom always shows **two projections** with the same splitt
 Two key realizations emerge:
 
 1. **Quantum mechanics is fundamentally different from classical physics.** Something unexpected has happened. We must incorporate this different behavior into a new model — we cannot keep forcing classical explanations.
-2. **Quantum mechanics is random (<abbr title="随机的">stochastic</abbr>).** We cannot say what will happen to any particular particle; we can only calculate the **probability** of outcomes over many trials.
+2. **Quantum mechanics is random (<span class="qtip" data-cn="随机的">stochastic</span>).** We cannot say what will happen to any particular particle; we can only calculate the **probability** of outcomes over many trials.
 
 ---
 
-## The Stern-Gerlach <abbr title="分析器：Stern-Gerlach 型自旋测量装置">analyzer</abbr>
+## The Stern-Gerlach <span class="qtip" data-cn="分析器：Stern-Gerlach 型自旋测量装置">analyzer</span>
 
 To study quantum behavior systematically, we package the Stern-Gerlach experiment into a compact device called a **Stern-Gerlach analyzer**.
 
@@ -82,7 +82,7 @@ To study quantum behavior systematically, we package the Stern-Gerlach experimen
 > (Video demonstration: `sge_exp_1-04_repeated_measurements.html`)
 
 - Atoms with a -z measurement always measure as -z again
-- The measurement **defines** the state; <abbr title="随后的">subsequent</abbr> identical measurements are fully reproducible
+- The measurement **defines** the state; <span class="qtip" data-cn="随后的">subsequent</span> identical measurements are fully reproducible
 
 ### Measurements and Quantum States
 
@@ -137,7 +137,7 @@ To study quantum behavior systematically, we package the Stern-Gerlach experimen
 
 ## Analyzers at an Angle
 
-When the second analyzer is at an <abbr title="任意的">arbitrary</abbr> angle θ (not 0°, 90°, or 180°):
+When the second analyzer is at an <span class="qtip" data-cn="任意的">arbitrary</span> angle θ (not 0°, 90°, or 180°):
 
 > (Video demonstration: `sge_exp_1-07_arbitrary_angles.html`)
 
@@ -171,7 +171,7 @@ Statistical fluctuations mean experimental points won't lie exactly on the curve
 |-----------|---------|
 | Appears random due to unknown initial state | **Truly random** |
 | In principle, path could be followed precisely | Cannot follow the path |
-| <abbr title="确定性的：结果唯一确定">deterministic</abbr> underneath | Intrinsically <abbr title="概率性的：结果用概率描述">probabilistic</abbr> |
+| <span class="qtip" data-cn="确定性的：结果唯一确定">deterministic</span> underneath | Intrinsically <span class="qtip" data-cn="概率性的：结果用概率描述">probabilistic</span> |
 
 In the quantum case, we cannot detect atoms until they hit the screen, so we don't know their precise path. The overwhelming consensus: quantum results are **truly random**, and we can only predict probabilities — but we can predict those probabilities **precisely**.
 
@@ -195,7 +195,7 @@ The most accurate quantum measurements typically involve:
 
 ## The End of Determinism
 
-> Quantum <abbr title="现象（复数）">phenomena</abbr> have **no classical description**. Quantum events have **unavoidable randomness**.
+> Quantum <span class="qtip" data-cn="现象（复数）">phenomena</span> have **no classical description**. Quantum events have **unavoidable randomness**.
 
 These two facts undermine the philosophy of **determinism**. The quantum world is manifestly **not deterministic** — randomness is inherent whenever a measurement is performed.
 
