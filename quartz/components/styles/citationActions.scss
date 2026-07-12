@@ -1,0 +1,98 @@
+.citation-actions {
+  padding-block: var(--space-6);
+  border-block-end: var(--article-rule);
+  color: var(--color-text-primary);
+}
+
+.citation-actions-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-5);
+
+  h2 {
+    margin: var(--space-1) 0 0;
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-lg);
+  }
+
+  > p {
+    max-inline-size: 24rem;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-xs);
+    line-height: 1.55;
+    text-align: end;
+  }
+}
+
+.citation-action-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block-start: var(--space-5);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-block-size: var(--touch-target-min);
+    padding-inline: var(--space-4);
+    border: var(--border-width-hairline) solid var(--color-border-primary);
+    border-radius: var(--border-radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-bg-surface-subtle);
+    }
+    &:active {
+      transform: translateY(1px);
+    }
+
+    svg {
+      inline-size: 1.1rem;
+      block-size: 1.1rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.6;
+    }
+  }
+}
+
+.citation-actions-status {
+  min-block-size: 1.5em;
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-xs);
+}
+
+.citation-actions-status[data-state="error"] {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+@media all and (max-width: 799px) {
+  .citation-actions-heading {
+    display: block;
+  }
+  .citation-actions-heading > p {
+    margin-block-start: var(--space-2);
+    text-align: start;
+  }
+  .citation-action-list {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .citation-action-list button {
+    inline-size: 100%;
+  }
+}

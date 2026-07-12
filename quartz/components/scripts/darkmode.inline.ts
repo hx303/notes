@@ -1,37 +1,54 @@
-const userPref = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"
-const currentTheme = localStorage.getItem("theme") ?? userPref
-document.documentElement.setAttribute("saved-theme", currentTheme)
-
-const emitThemeChangeEvent = (theme: "light" | "dark") => {
-  const event: CustomEventMap["themechange"] = new CustomEvent("themechange", {
-    detail: { theme },
-  })
-  document.dispatchEvent(event)
+const themeQuery = window.matchMedia("(prefers-color-scheme: dark)")
+const storedTheme = () => {
+  try {
+    const value = localStorage.getItem("theme")
+    return value === "light" || value === "dark" ? value : null
+  } catch {
+    return null
+  }
 }
-
+const syncThemeControls = (theme: "light" | "dark") => {
+  document.querySelectorAll<HTMLButtonElement>(".darkmode").forEach((button) => {
+    const dark = theme === "dark"
+    button.setAttribute("aria-pressed", String(dark))
+    button.setAttribute("aria-label", dark ? "切换到浅色外观" : "切换到深色外观")
+  })
+  document.querySelectorAll<HTMLElement>(".theme-value").forEach((value) => {
+    value.textContent = theme === "dark" ? "深色" : "浅色"
+  })
+}
+const applyTheme = (theme: "light" | "dark") => {
+  document.documentElement.setAttribute("saved-theme", theme)
+  syncThemeControls(theme)
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
+    const color = theme === "dark" ? meta.dataset.themeColorDark : meta.dataset.themeColorLight
+    if (color) meta.content = color
+  })
+  document.dispatchEvent(new CustomEvent("themechange", { detail: { theme } }))
+}
+applyTheme(storedTheme() ?? (themeQuery.matches ? "dark" : "light"))
 document.addEventListener("nav", () => {
-  const switchTheme = () => {
-    const newTheme =
-      document.documentElement.getAttribute("saved-theme") === "dark" ? "light" : "dark"
-    document.documentElement.setAttribute("saved-theme", newTheme)
-    localStorage.setItem("theme", newTheme)
-    emitThemeChangeEvent(newTheme)
+  applyTheme(storedTheme() ?? (themeQuery.matches ? "dark" : "light"))
+  const toggle = () => {
+    const theme = document.documentElement.getAttribute("saved-theme") === "dark" ? "light" : "dark"
+    try {
+      localStorage.setItem("theme", theme)
+    } catch {}
+    applyTheme(theme)
   }
-
-  const themeChange = (e: MediaQueryListEvent) => {
-    const newTheme = e.matches ? "dark" : "light"
-    document.documentElement.setAttribute("saved-theme", newTheme)
-    localStorage.setItem("theme", newTheme)
-    emitThemeChangeEvent(newTheme)
+  document.querySelectorAll<HTMLElement>(".darkmode").forEach((button) => {
+    button.addEventListener("click", toggle)
+    window.addCleanup(() => button.removeEventListener("click", toggle))
+  })
+  const followSystem = () => {
+    if (!storedTheme()) applyTheme(themeQuery.matches ? "dark" : "light")
   }
-
-  for (const darkmodeButton of document.getElementsByClassName("darkmode")) {
-    darkmodeButton.addEventListener("click", switchTheme)
-    window.addCleanup(() => darkmodeButton.removeEventListener("click", switchTheme))
-  }
-
-  // Listen for changes in prefers-color-scheme
-  const colorSchemeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-  colorSchemeMediaQuery.addEventListener("change", themeChange)
-  window.addCleanup(() => colorSchemeMediaQuery.removeEventListener("change", themeChange))
+  themeQuery.addEventListener("change", followSystem)
+  window.addCleanup(() => themeQuery.removeEventListener("change", followSystem))
+})
+document.addEventListener("readingpreferencesreset", () => {
+  try {
+    localStorage.removeItem("theme")
+  } catch {}
+  applyTheme(themeQuery.matches ? "dark" : "light")
 })

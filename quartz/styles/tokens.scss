@@ -1,0 +1,266 @@
+/**
+ * wouldkeep design tokens
+ * Philosophy: Personal Archive × Public Knowledge Network
+ *
+ * These semantic tokens intentionally coexist with Quartz's legacy theme
+ * variables. Components should migrate to these names by role rather than
+ * aliasing every legacy color one-to-one.
+ */
+
+@mixin wouldkeep-dark-tokens {
+  color-scheme: dark;
+
+  // Surfaces: warm charcoal, never pure black.
+  --color-bg-canvas: #171914;
+  --color-bg-surface: #1e211b;
+  --color-bg-surface-raised: #262922;
+  --color-bg-surface-subtle: #2b2e27;
+  --color-bg-inverse: #e9e6dd;
+
+  // Text: softened off-white for long-form reading.
+  --color-text-primary: #e8e6de;
+  --color-text-secondary: #bbb8ae;
+  --color-text-tertiary: #9e9a90;
+  --color-text-inverse: #1b1d18;
+  --color-text-link: #7fc1d1;
+  --color-text-link-hover: #9fd4df;
+
+  // Structure and interaction.
+  --color-border-primary: #777a70;
+  --color-border-secondary: #4a4d45;
+  --color-border-subtle: #34372f;
+  --color-border-focus: #8cc7ff;
+  --color-accent-primary: #7eb59c;
+  --color-accent-primary-hover: #94c7af;
+  --color-accent-primary-active: #6ca88d;
+  --color-accent-secondary: #d18b67;
+  --color-accent-secondary-hover: #e09d79;
+
+  // Feedback and knowledge maturity.
+  --color-status-success: #82bd9e;
+  --color-status-warning: #e0b25b;
+  --color-status-error: #ef8985;
+  --color-status-info: #80bfd3;
+  --color-status-success-bg: #20372b;
+  --color-status-warning-bg: #3a301d;
+  --color-status-error-bg: #3d2524;
+  --color-status-info-bg: #20343b;
+  --color-maturity-seed: #d18b67;
+  --color-maturity-growing: #e0b25b;
+  --color-maturity-stable: #82bd9e;
+
+  // Selection, overlays, and graph palette.
+  --color-selection-bg: #355846;
+  --color-selection-text: #f3f1e9;
+  --color-surface-overlay: rgb(7 9 7 / 72%);
+  --color-map-1: #7eb59c;
+  --color-map-2: #80bfd3;
+  --color-map-3: #d18b67;
+  --color-map-4: #b3a0d2;
+  --color-map-5: #e0b25b;
+  --color-map-6: #8fb8b0;
+
+  // Depth is restrained; borders do most structural work.
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 24%);
+  --shadow-md: 0 10px 28px rgb(0 0 0 / 28%);
+  --shadow-lg: 0 20px 56px rgb(0 0 0 / 36%);
+  --shadow-focus: 0 0 0 3px rgb(140 199 255 / 34%);
+}
+
+:root {
+  color-scheme: light;
+
+  // Color — canvas, paper, and ink.
+  --color-bg-canvas: #f4f1e9;
+  --color-bg-surface: #fbf9f4;
+  --color-bg-surface-raised: #ffffff;
+  --color-bg-surface-subtle: #ebe7dd;
+  --color-bg-inverse: #252722;
+  --color-text-primary: #25261f;
+  --color-text-secondary: #5d5f56;
+  --color-text-tertiary: #6c6e64;
+  --color-text-inverse: #f8f6ef;
+  --color-text-link: #1f6070;
+  --color-text-link-hover: #164c5a;
+
+  // Color — borders and functional accents.
+  --color-border-primary: #8f9188;
+  --color-border-secondary: #c9c6bb;
+  --color-border-subtle: #dedad0;
+  --color-border-focus: #0b6fc2;
+  --color-accent-primary: #2f6752;
+  --color-accent-primary-hover: #275846;
+  --color-accent-primary-active: #1e4939;
+  --color-accent-secondary: #9a5d3f;
+  --color-accent-secondary-hover: #7d4932;
+
+  // Color — feedback and maturity. Never rely on color alone.
+  --color-status-success: #2f6b4f;
+  --color-status-warning: #825600;
+  --color-status-error: #a33b3b;
+  --color-status-info: #28657d;
+  --color-status-success-bg: #e2eee7;
+  --color-status-warning-bg: #f5ead1;
+  --color-status-error-bg: #f7e3e1;
+  --color-status-info-bg: #dfedf1;
+  --color-maturity-seed: #9a5d3f;
+  --color-maturity-growing: #825600;
+  --color-maturity-stable: #2f6b4f;
+
+  // Color — selection, overlays, and knowledge-map categories.
+  --color-selection-bg: #d9e8df;
+  --color-selection-text: #1f3329;
+  --color-surface-overlay: rgb(25 26 23 / 55%);
+  --color-map-1: #2f6752;
+  --color-map-2: #28657d;
+  --color-map-3: #9a5d3f;
+  --color-map-4: #685b8e;
+  --color-map-5: #825600;
+  --color-map-6: #50756f;
+
+  // Typography — preserve the existing local font stack.
+  --font-family-display: "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-family-body: "Noto Sans SC", "Source Han Sans SC", sans-serif;
+  --font-family-ui: "Noto Sans SC", "Source Han Sans SC", sans-serif;
+  --font-family-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-md: 1.125rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 1.875rem;
+  --font-size-3xl: clamp(2rem, 3.6vw, 2.75rem);
+  --font-size-4xl: clamp(2.5rem, 6vw, 4.75rem);
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.22;
+  --line-height-snug: 1.4;
+  --line-height-normal: 1.65;
+  --line-height-relaxed: 1.82;
+  --letter-spacing-tight: -0.018em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.08em;
+
+  // Spacing — 4px base with an editorial long-form cadence.
+  --space-0: 0;
+  --space-1: 0.125rem;
+  --space-2: 0.25rem;
+  --space-3: 0.375rem;
+  --space-4: 0.5rem;
+  --space-5: 0.75rem;
+  --space-6: 1rem;
+  --space-7: 1.5rem;
+  --space-8: 2rem;
+  --space-9: 3rem;
+  --space-10: 4rem;
+  --space-11: 6rem;
+  --space-12: 8rem;
+  --space-13: 12rem;
+
+  // Layout — content width is intentionally independent from chrome width.
+  --max-width-reading: 46rem;
+  --max-width-content: 64rem;
+  --max-width-wide: 78rem;
+  --max-width-page: 96rem;
+  --width-sidebar: 18rem;
+  --width-context-panel: 19rem;
+  --height-header: 4rem;
+  --height-header-compact: 3.5rem;
+  --layout-gutter: clamp(1rem, 3vw, 2rem);
+  --layout-section-gap: clamp(3rem, 8vw, 7rem);
+
+  // Breakpoint documentation. Sass media queries continue to own behavior.
+  --breakpoint-sm: 375px;
+  --breakpoint-md: 800px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1536px;
+
+  // Shape — archival precision with restrained softness.
+  --border-width-hairline: 1px;
+  --border-width-emphasis: 2px;
+  --border-radius-xs: 0.125rem;
+  --border-radius-sm: 0.25rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 0.75rem;
+  --border-radius-xl: 1rem;
+  --border-radius-full: 999px;
+
+  // Depth — quiet paper separation, not floating card stacks.
+  --shadow-sm: 0 1px 2px rgb(37 38 31 / 8%);
+  --shadow-md: 0 10px 28px rgb(37 38 31 / 10%);
+  --shadow-lg: 0 20px 56px rgb(37 38 31 / 14%);
+  --shadow-focus: 0 0 0 3px rgb(11 111 194 / 24%);
+
+  // Motion — state change first, ornament last.
+  --duration-instant: 50ms;
+  --duration-fast: 140ms;
+  --duration-normal: 220ms;
+  --duration-slow: 360ms;
+  --duration-slower: 520ms;
+  --easing-default: cubic-bezier(0.2, 0, 0, 1);
+  --easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --easing-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-distance-sm: 0.25rem;
+  --motion-distance-md: 0.5rem;
+
+  // Component-level contracts.
+  --control-height-sm: 2.25rem;
+  --control-height-md: 2.75rem;
+  --control-height-lg: 3rem;
+  --control-inline-padding: 0.875rem;
+  --touch-target-min: 2.75rem;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  --card-padding: clamp(1rem, 2vw, 1.5rem);
+  --card-border: var(--border-width-hairline) solid var(--color-border-secondary);
+  --card-radius: var(--border-radius-md);
+  --input-border: var(--border-width-hairline) solid var(--color-border-primary);
+  --article-paragraph-gap: 1.1em;
+  --article-section-gap: clamp(2.5rem, 6vw, 4.5rem);
+  --article-rule: var(--border-width-hairline) solid var(--color-border-subtle);
+  --map-node-min-size: 2.75rem;
+  --map-edge-width: 1.25px;
+  --map-focus-width: 3px;
+
+  // Layering.
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-toolbar: 300;
+  --z-popover: 500;
+  --z-overlay: 700;
+  --z-modal: 800;
+  --z-toast: 900;
+}
+
+// Quartz's current manual theme selector.
+:root[saved-theme="dark"],
+[data-theme="dark"] {
+  @include wouldkeep-dark-tokens;
+}
+
+// System preference remains a fallback until the user explicitly chooses.
+@media (prefers-color-scheme: dark) {
+  :root:not([saved-theme="light"]):not([data-theme="light"]) {
+    @include wouldkeep-dark-tokens;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 1ms;
+    --duration-fast: 1ms;
+    --duration-normal: 1ms;
+    --duration-slow: 1ms;
+    --duration-slower: 1ms;
+    --motion-distance-sm: 0;
+    --motion-distance-md: 0;
+  }
+}

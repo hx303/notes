@@ -12,7 +12,7 @@ $breakpoints: (
   desktop: 1200px,
 );
 
-$mobile: "(max-width: #{map.get($breakpoints, mobile)})";
+$mobile: "(max-width: 799px)";
 $tablet: "(min-width: #{map.get($breakpoints, mobile)}) and (max-width: #{map.get($breakpoints, desktop)})";
 $desktop: "(min-width: #{map.get($breakpoints, desktop)})";
 
@@ -29,8 +29,8 @@ $mobileGrid: (
   rowGap: "5px",
   columnGap: "5px",
   templateAreas:
-    '"grid-sidebar-left"\
-      "grid-header"\
+    '"grid-header"\
+      "grid-sidebar-left"\
       "grid-center"\
       "grid-sidebar-right"\
       "grid-footer"',
@@ -52,7 +52,7 @@ $desktopGrid: (
   rowGap: "5px",
   columnGap: "5px",
   templateAreas:
-    '"grid-sidebar-left grid-header grid-sidebar-right"\
+    '"grid-sidebar-left grid-header grid-header"\
       "grid-sidebar-left grid-center grid-sidebar-right"\
       "grid-sidebar-left grid-footer grid-sidebar-right"',
 );

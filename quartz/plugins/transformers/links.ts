@@ -8,11 +8,13 @@ import {
   simplifySlug,
   splitAnchor,
   transformLink,
+  resolveRelative,
 } from "../../util/path"
 import path from "path"
 import { visit } from "unist-util-visit"
 import isAbsoluteUrl from "is-absolute-url"
 import { Root } from "hast"
+import { resolveCanonicalSlug } from "../../util/canonicalSlug"
 
 interface Options {
   /** How to resolve Markdown paths */
@@ -32,6 +34,19 @@ const defaultOptions: Options = {
   externalLinkIcon: true,
 }
 
+function fullSlugFromRelative(currentSlug: FullSlug, destination: RelativeURL) {
+  const current = simplifySlug(currentSlug)
+  const [destinationPath, anchor] = splitAnchor(destination)
+  const url = new URL(destinationPath, "https://base.com/" + stripSlashes(current, true))
+  let canonicalDestination = url.pathname
+  if (canonicalDestination.endsWith("/")) canonicalDestination += "index"
+
+  return {
+    fullSlug: decodeURIComponent(stripSlashes(canonicalDestination, true)) as FullSlug,
+    anchor,
+  }
+}
+
 export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) => {
   const opts = { ...defaultOptions, ...userOpts }
   return {
@@ -40,7 +55,8 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
       return [
         () => {
           return (tree: Root, file) => {
-            const curSlug = simplifySlug(file.data.slug!)
+            const renderedSlug = file.data.slug!
+            const sourceSlug = file.data.sourceSlug ?? renderedSlug
             const outgoing: Set<SimpleSlug> = new Set()
 
             const transformOptions: TransformOptions = {
@@ -103,23 +119,10 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
                   isAbsoluteUrl(dest, { httpOnly: false }) || dest.startsWith("#")
                 )
                 if (isInternal) {
-                  dest = node.properties.href = transformLink(
-                    file.data.slug!,
-                    dest,
-                    transformOptions,
-                  )
-
-                  // url.resolve is considered legacy
-                  // WHATWG equivalent https://nodejs.dev/en/api/v18/url/#urlresolvefrom-to
-                  const url = new URL(dest, "https://base.com/" + stripSlashes(curSlug, true))
-                  const canonicalDest = url.pathname
-                  let [destCanonical, _destAnchor] = splitAnchor(canonicalDest)
-                  if (destCanonical.endsWith("/")) {
-                    destCanonical += "index"
-                  }
-
-                  // need to decodeURIComponent here as WHATWG URL percent-encodes everything
-                  const full = decodeURIComponent(stripSlashes(destCanonical, true)) as FullSlug
+                  dest = transformLink(sourceSlug, dest, transformOptions)
+                  const { fullSlug, anchor } = fullSlugFromRelative(sourceSlug, dest)
+                  const full = resolveCanonicalSlug(fullSlug, ctx.canonicalSlugMap)
+                  node.properties.href = `${resolveRelative(renderedSlug, full)}${anchor}`
                   const simple = simplifySlug(full)
                   outgoing.add(simple)
                   node.properties["data-slug"] = full
@@ -148,19 +151,13 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
                 }
 
                 if (!isAbsoluteUrl(node.properties.src, { httpOnly: false })) {
-                  let dest = node.properties.src as RelativeURL
-                  // Only transform non-relative paths (wiki-link resolutions from OFM)
-                  // Relative paths (./ or ../) are already correct — keep them as-is
-                  if (dest.startsWith("./") || dest.startsWith("../")) {
-                    // Already relative to the current page — don't rewrite
-                  } else {
-                    dest = node.properties.src = transformLink(
-                      file.data.slug!,
-                      dest,
-                      transformOptions,
-                    )
-                    node.properties.src = dest
-                  }
+                  const source = node.properties.src as RelativeURL
+                  const transformed =
+                    source.startsWith("./") || source.startsWith("../")
+                      ? source
+                      : transformLink(sourceSlug, source, transformOptions)
+                  const { fullSlug, anchor } = fullSlugFromRelative(sourceSlug, transformed)
+                  node.properties.src = `${resolveRelative(renderedSlug, fullSlug)}${anchor}`
                 }
               }
             })
@@ -176,5 +173,6 @@ export const CrawlLinks: QuartzTransformerPlugin<Partial<Options>> = (userOpts) 
 declare module "vfile" {
   interface DataMap {
     links: SimpleSlug[]
+    sourceSlug: FullSlug
   }
 }

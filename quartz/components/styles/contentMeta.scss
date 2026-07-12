@@ -1,14 +1,16 @@
 .content-meta {
-  margin-top: 0;
-  color: var(--darkgray);
+  margin-block: var(--space-4) var(--space-7);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-sm);
 
-  &[show-comma="true"] {
-    > *:not(:last-child) {
-      margin-right: 8px;
+  &[show-comma="true"] > *:not(:last-child) {
+    margin-inline-end: var(--space-4);
 
-      &::after {
-        content: ",";
-      }
+    &::after {
+      content: "·";
+      margin-inline-start: var(--space-4);
+      color: var(--color-border-primary);
     }
   }
 }

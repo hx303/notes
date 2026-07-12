@@ -65,10 +65,10 @@ export default ((opts?: Partial<GraphOptions>) => {
     const globalGraph = { ...defaultOptions.globalGraph, ...opts?.globalGraph }
     return (
       <div class={classNames(displayClass, "graph")}>
-        <h3>{i18n(cfg.locale).components.graph.title}</h3>
+        <h2>{i18n(cfg.locale).components.graph.title}</h2>
         <div class="graph-outer">
           <div class="graph-container" data-cfg={JSON.stringify(localGraph)}></div>
-          <button class="global-graph-icon" aria-label="Global Graph">
+          <button class="global-graph-icon" aria-label="打开全局知识图谱">
             <svg
               version="1.1"
               xmlns="http://www.w3.org/2000/svg"
@@ -78,6 +78,8 @@ export default ((opts?: Partial<GraphOptions>) => {
               viewBox="0 0 55 55"
               fill="currentColor"
               xmlSpace="preserve"
+              aria-hidden="true"
+              focusable="false"
             >
               <path
                 d="M49,0c-3.309,0-6,2.691-6,6c0,1.035,0.263,2.009,0.726,2.86l-9.829,9.829C32.542,17.634,30.846,17,29,17

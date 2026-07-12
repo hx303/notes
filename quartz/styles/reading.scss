@@ -1,0 +1,292 @@
+// R01 · Editorial long-form reading system.
+
+.center > article.popover-hint {
+  width: 100%;
+  max-width: var(--max-width-reading);
+  box-sizing: border-box;
+  padding: var(--space-8) 0 var(--space-10);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
+  font-size: clamp(1rem, 0.975rem + 0.12vw, 1.075rem);
+  line-height: var(--line-height-relaxed);
+  text-align: left;
+}
+
+.center > article.popover-hint :where(p, li, dd, figcaption) {
+  color: var(--color-text-primary);
+  line-height: var(--line-height-relaxed);
+  text-align: left;
+}
+
+.center > article.popover-hint > :where(p, ul, ol) {
+  margin-block: 0 var(--article-paragraph-gap);
+}
+
+.center > article.popover-hint :where(ul, ol) {
+  padding-left: 1.4em;
+}
+
+.center > article.popover-hint li + li {
+  margin-top: var(--space-3);
+}
+
+.center > article.popover-hint :where(h2, h3, h4, h5, h6) {
+  color: var(--color-text-primary);
+  scroll-margin-top: calc(var(--height-header) + var(--space-7));
+  text-wrap: balance;
+}
+
+.center > article.popover-hint h2 {
+  margin: var(--article-section-gap) 0 var(--space-7);
+  border-top: var(--article-rule);
+  padding-top: var(--space-7);
+  font-family: var(--font-family-display);
+  font-size: clamp(1.55rem, 1.35rem + 0.65vw, 2rem);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.center > article.popover-hint h2::before,
+.center > article.popover-hint blockquote::before {
+  content: none;
+}
+
+.center > article.popover-hint h3 {
+  margin: var(--space-9) 0 var(--space-5);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
+  font-size: clamp(1.2rem, 1.12rem + 0.28vw, 1.4rem);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+  letter-spacing: 0;
+}
+
+.center > article.popover-hint :where(h4, h5, h6) {
+  margin: var(--space-8) 0 var(--space-4);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+}
+
+.center > article.popover-hint :where(h2, h3, h4, h5, h6)[id] > a[href^="#"] {
+  color: var(--color-text-link);
+}
+
+.center > article.popover-hint a:not(.tag-link) {
+  color: var(--color-text-link);
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 42%, transparent);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  transition:
+    color var(--duration-fast) var(--easing-out),
+    text-decoration-color var(--duration-fast) var(--easing-out);
+}
+
+.center > article.popover-hint a:not(.tag-link):hover {
+  color: var(--color-text-link-hover);
+  text-decoration-color: currentColor;
+}
+
+.center > article.popover-hint blockquote {
+  margin: var(--space-8) 0;
+  border: 0;
+  border-left: var(--border-width-emphasis) solid var(--color-accent-primary);
+  border-radius: 0;
+  background: transparent;
+  padding: var(--space-2) 0 var(--space-2) var(--space-7);
+  box-shadow: none;
+  color: var(--color-text-secondary);
+}
+
+.center > article.popover-hint blockquote p {
+  margin-left: 0;
+  color: inherit;
+}
+
+.center > article.popover-hint .callout {
+  margin: var(--space-8) 0;
+  border: var(--border-width-hairline) solid var(--color-border-secondary);
+  border-left: 3px solid var(--color-status-info);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-status-info-bg);
+  padding: var(--space-6) var(--space-7);
+  box-shadow: none;
+  color: var(--color-text-primary);
+  transition: border-color var(--duration-fast) var(--easing-out);
+}
+
+.center > article.popover-hint .callout:hover {
+  box-shadow: none;
+}
+
+.center > article.popover-hint .callout[data-callout="warning"] {
+  border-left-color: var(--color-status-warning);
+  background: var(--color-status-warning-bg);
+}
+
+.center > article.popover-hint .callout:is([data-callout="danger"], [data-callout="failure"]) {
+  border-left-color: var(--color-status-error);
+  background: var(--color-status-error-bg);
+}
+
+.center > article.popover-hint :where(pre, figure[data-rehype-pretty-code-figure]) {
+  margin: var(--space-8) 0;
+}
+
+.center > article.popover-hint pre {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  border: var(--border-width-hairline) solid var(--color-border-secondary);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-bg-surface);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: none;
+  scrollbar-gutter: stable;
+}
+
+.center > article.popover-hint :not(pre) > code {
+  border: 0;
+  border-radius: var(--border-radius-xs);
+  background: var(--color-bg-surface-subtle);
+  color: var(--color-text-primary);
+  padding: 0.12em 0.32em;
+}
+
+.center > article.popover-hint .table-container {
+  width: 100%;
+  margin: var(--space-8) 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+.center > article.popover-hint .table-container > table,
+.center > article.popover-hint > table {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: var(--border-width-emphasis) solid var(--color-border-primary);
+  border-bottom: var(--border-width-hairline) solid var(--color-border-primary);
+  border-radius: 0;
+  border-collapse: collapse;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.center > article.popover-hint table th {
+  background: var(--color-bg-surface-subtle);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.center > article.popover-hint table :where(th, td) {
+  border-bottom: var(--border-width-hairline) solid var(--color-border-subtle);
+  padding: var(--space-4) var(--space-5);
+  vertical-align: top;
+}
+
+.center
+  > article.popover-hint
+  :where(.katex-display, mjx-container[display="true"], .math-display) {
+  max-width: 100%;
+  margin-block: var(--space-8);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  padding-block: var(--space-2);
+}
+
+.center > article.popover-hint :where(img, video, iframe) {
+  max-width: 100%;
+  height: auto;
+}
+
+.center > article.popover-hint img {
+  box-sizing: border-box;
+  margin: var(--space-8) auto var(--space-3);
+  border: var(--border-width-hairline) solid var(--color-border-subtle);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-bg-surface);
+  box-shadow: none;
+  transform: none;
+  transition: border-color var(--duration-fast) var(--easing-out);
+}
+
+.center > article.popover-hint img:hover {
+  border-color: var(--color-border-primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.center > article.popover-hint :where(figure, p:has(> img)) {
+  margin-inline: 0;
+  text-align: center;
+}
+
+.center > article.popover-hint :where(figure, p:has(> img))::after {
+  content: none;
+}
+
+.center > article.popover-hint :where(figcaption, p > img + em) {
+  display: block;
+  margin: var(--space-3) auto var(--space-8);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-snug);
+  text-align: center;
+  transform: none;
+}
+
+.center > article.popover-hint hr {
+  margin: var(--space-9) 0;
+  background: var(--color-border-subtle);
+}
+
+@media all and (max-width: 799px) {
+  .center > article.popover-hint {
+    padding-top: var(--space-7);
+    font-size: var(--font-size-base);
+  }
+
+  .center > article.popover-hint h2 {
+    margin-top: var(--space-9);
+  }
+
+  .center > article.popover-hint :where(pre, .table-container, .katex-display) {
+    margin-inline: calc(-1 * var(--space-2));
+  }
+
+  .center > article.popover-hint .callout {
+    padding: var(--space-6);
+  }
+}
+
+@media print {
+  .toc,
+  body::before {
+    display: none !important;
+  }
+
+  .center > article.popover-hint {
+    max-width: none;
+    padding: 0;
+    color: #20211d;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  .center > article.popover-hint :where(pre, table, blockquote, .callout, figure) {
+    break-inside: avoid;
+  }
+}
