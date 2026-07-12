@@ -7,6 +7,7 @@ import { QuartzEmitterPlugin } from "../types"
 import { toHtml } from "hast-util-to-html"
 import { write } from "./helpers"
 import { i18n } from "../../i18n"
+import type { KnowledgeMetadata } from "../../util/knowledgeMetadata"
 
 export type ContentIndexMap = Map<FullSlug, ContentDetails>
 export type ContentDetails = {
@@ -19,6 +20,7 @@ export type ContentDetails = {
   richContent?: string
   date?: Date
   description?: string
+  knowledgeMetadata?: KnowledgeMetadata
 }
 
 interface Options {
@@ -115,6 +117,7 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
               : undefined,
             date: date,
             description: file.data.description ?? "",
+            knowledgeMetadata: file.data.knowledgeMetadata,
           })
         }
       }

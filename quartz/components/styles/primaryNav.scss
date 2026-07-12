@@ -1,0 +1,187 @@
+@use "../../styles/variables.scss" as *;
+
+.primary-nav {
+  margin-inline-start: auto;
+}
+
+.primary-nav-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.primary-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--touch-target-min);
+  padding-inline: var(--space-5);
+  border-block-end: var(--border-width-emphasis) solid transparent;
+  background: transparent !important;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    border-block-end-color: var(--color-border-secondary);
+    color: var(--color-text-primary);
+  }
+
+  &[aria-current="page"] {
+    border-block-end-color: var(--color-accent-primary);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.primary-nav-current {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.primary-nav-toggle,
+.primary-nav-close {
+  display: none;
+  place-items: center;
+  padding: 0;
+  border: var(--border-width-hairline) solid var(--color-border-secondary);
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+
+  svg {
+    inline-size: 1.35rem;
+    block-size: 1.35rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.75;
+  }
+
+  &:hover {
+    border-color: var(--color-border-primary);
+    background: var(--color-bg-surface-subtle);
+  }
+}
+
+.primary-nav-dialog {
+  inline-size: min(28rem, calc(100vw - 2rem));
+  max-inline-size: none;
+  max-block-size: calc(100dvh - 2rem);
+  margin: auto;
+  padding: var(--space-7);
+  border: var(--border-width-hairline) solid var(--color-border-primary);
+  border-radius: var(--border-radius-md);
+  background: var(--color-bg-surface-raised);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-lg);
+
+  &::backdrop {
+    background: var(--color-surface-overlay);
+  }
+}
+
+.primary-nav-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding-block-end: var(--space-6);
+  border-block-end: var(--article-rule);
+
+  h2 {
+    margin: var(--space-2) 0 0;
+    font-size: var(--font-size-xl);
+  }
+}
+
+.primary-nav-eyebrow,
+.primary-nav-dialog-note {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.primary-nav-eyebrow {
+  letter-spacing: 0.12em;
+}
+
+.primary-nav-dialog-note {
+  margin-block-start: var(--space-7);
+  line-height: 1.6;
+}
+
+.primary-nav-list-mobile {
+  display: grid;
+  gap: 0;
+  margin-block-start: var(--space-5);
+
+  .primary-nav-link {
+    justify-content: space-between;
+    inline-size: 100%;
+    box-sizing: border-box;
+    padding-inline: var(--space-4);
+    border-block-end: var(--article-rule);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-md);
+  }
+
+  .primary-nav-link[aria-current="page"] {
+    border-inline-start: var(--border-width-emphasis) solid var(--color-accent-primary);
+  }
+
+  .primary-nav-link[aria-current="page"] .primary-nav-current {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    clip-path: none;
+    color: var(--color-accent-primary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+body[data-primary-nav-open="true"] {
+  overflow: hidden;
+}
+
+@media all and (max-width: 1349px) {
+  .primary-nav > .primary-nav-list {
+    display: none;
+  }
+  .primary-nav-toggle,
+  .primary-nav-close {
+    display: grid;
+  }
+}
+
+@media all and ($mobile) {
+  .primary-nav-dialog {
+    inline-size: 100vw;
+    max-block-size: 100dvh;
+    min-block-size: 100dvh;
+    box-sizing: border-box;
+    margin: 0;
+    padding: max(var(--space-7), env(safe-area-inset-top))
+      max(var(--space-6), env(safe-area-inset-right))
+      max(var(--space-7), env(safe-area-inset-bottom))
+      max(var(--space-6), env(safe-area-inset-left));
+    border: 0;
+    border-radius: 0;
+  }
+}

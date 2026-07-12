@@ -1,0 +1,44 @@
+.article-title-block {
+  max-inline-size: var(--max-width-reading);
+}
+
+.article-title-kicker {
+  margin: 0 0 var(--space-5);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.12em;
+  line-height: var(--line-height-snug);
+  text-transform: uppercase;
+}
+
+.article-title {
+  max-inline-size: 18ch;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.article-title:not(.knowledge-article-title) {
+  margin-block-start: var(--space-8);
+}
+
+@media (max-width: 799px) {
+  .article-title-kicker {
+    margin-block-end: var(--space-4);
+  }
+
+  .article-title {
+    max-inline-size: 22ch;
+    font-size: clamp(1.8rem, 9vw, 2.35rem);
+    line-height: 1.18;
+  }
+}

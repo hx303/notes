@@ -1,23 +1,28 @@
-import { PageLayout, SharedLayout } from "./quartz/cfg"
-import * as Component from "./quartz/components"
+import { PageLayout, SharedLayout } from "./quartz/cfg";
+import * as Component from "./quartz/components";
 
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
-  header: [],
+  header: [Component.Masthead(), Component.PrimaryNav(), Component.Search()],
   afterBody: [
-    Component.BackToTop(),
+    Component.RevisionHistory(),
+    Component.CitationActions(),
+    Component.RelatedKnowledge(),
+    Component.CorrectionAction(),
     Component.SupabaseComments({
       supabaseUrl: "https://agocyybolrisqujvjqdj.supabase.co",
       supabaseAnonKey: "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc",
     }),
+    Component.BackToTop(),
+    Component.MobileReadingTools(),
   ],
   footer: Component.Footer({
     links: {
-      "🌐 GitHub": "https://github.com/hx303/notes",
-      "✍️ 由 Quartz 驱动": "https://quartz.jzhao.xyz",
+      GitHub: "https://github.com/hx303/notes",
+      Quartz: "https://quartz.jzhao.xyz",
     },
   }),
-}
+};
 
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
@@ -26,38 +31,26 @@ export const defaultContentPageLayout: PageLayout = {
       condition: (page) => page.fileData.slug !== "index",
     }),
     Component.ArticleTitle(),
+    Component.KnowledgeMeta(),
     Component.ContentMeta(),
     Component.TagList(),
+    Component.PrerequisiteBlock(),
+    Component.TableOfContents({ display: "inline" }),
   ],
   left: [
-    Component.PageTitle(),
-    Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-        { Component: Component.FontSize() },
-        { Component: Component.ReaderMode() },
-      ],
-    }),
-    Component.Explorer({
-      filterFn: (node) => {
-        if (node.slugSegment === "tags") return false
-        if (node.displayName === "attachments") return false
-        if (node.displayName.endsWith("_图片")) return false
-        return true
-      },
-    }),
+    Component.ReadingTools(),
+    Component.DesktopOnly(
+      Component.Explorer({
+        title: "知识目录",
+        folderDefaultState: "collapsed",
+      }),
+    ),
   ],
   right: [
     Component.DesktopOnly(Component.TableOfContents()),
     Component.Backlinks(),
-    Component.Graph(),
   ],
-}
+};
 
 export const defaultListPageLayout: PageLayout = {
   beforeBody: [
@@ -66,25 +59,13 @@ export const defaultListPageLayout: PageLayout = {
     Component.ContentMeta(),
   ],
   left: [
-    Component.PageTitle(),
-    Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-      ],
-    }),
-    Component.Explorer({
-      filterFn: (node) => {
-        if (node.slugSegment === "tags") return false
-        if (node.displayName === "attachments") return false
-        if (node.displayName.endsWith("_图片")) return false
-        return true
-      },
-    }),
+    Component.ReadingTools(),
+    Component.DesktopOnly(
+      Component.Explorer({
+        title: "知识目录",
+        folderDefaultState: "collapsed",
+      }),
+    ),
   ],
   right: [
     Component.RecentNotes({
@@ -93,4 +74,4 @@ export const defaultListPageLayout: PageLayout = {
       showTags: false,
     }),
   ],
-}
+};

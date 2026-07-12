@@ -1,71 +1,74 @@
 let isReaderMode = false
-
-// Persist across navigation
 try {
-  const saved = localStorage.getItem("reader-mode")
-  if (saved === "on") isReaderMode = true
-} catch (e) { /* ignore */ }
-
-const emitReaderModeChangeEvent = (mode: "on" | "off") => {
-  const event: CustomEventMap["readermodechange"] = new CustomEvent("readermodechange", {
-    detail: { mode },
+  isReaderMode = localStorage.getItem("reader-mode") === "on"
+} catch {}
+const syncReaderControls = () => {
+  document.querySelectorAll<HTMLButtonElement>(".readermode").forEach((button) => {
+    button.setAttribute("aria-pressed", String(isReaderMode))
+    button.setAttribute("aria-label", isReaderMode ? "关闭专注阅读" : "开启专注阅读")
   })
-  document.dispatchEvent(event)
+  document.querySelectorAll<HTMLElement>(".reader-mode-value").forEach((value) => {
+    value.textContent = isReaderMode ? "开启" : "关闭"
+  })
 }
-
 const ensureExitButton = () => {
   if (document.querySelector(".focus-exit-btn")) return
-  const btn = document.createElement("button")
-  btn.className = "focus-exit-btn"
-  btn.innerHTML = "✕"
-  btn.title = "退出专注模式 (F)"
-  btn.addEventListener("click", toggleReaderMode)
-  document.body.appendChild(btn)
+  const button = document.createElement("button")
+  button.className = "focus-exit-btn"
+  button.type = "button"
+  button.setAttribute("aria-label", "退出专注阅读")
+  button.innerHTML = '<span aria-hidden="true">×</span><span>退出专注</span>'
+  button.addEventListener("click", toggleReaderMode)
+  document.body.appendChild(button)
 }
-
-const applyReaderMode = () => {
-  const newMode = isReaderMode ? "on" : "off"
-  document.documentElement.setAttribute("reader-mode", newMode)
-  try { localStorage.setItem("reader-mode", newMode) } catch (e) { /* ignore */ }
-  emitReaderModeChangeEvent(newMode)
-
-  if (isReaderMode) {
-    ensureExitButton()
-  } else {
-    const btn = document.querySelector(".focus-exit-btn")
-    if (btn) btn.remove()
+const applyReaderMode = (persist = true) => {
+  const mode = isReaderMode ? "on" : "off"
+  document.documentElement.setAttribute("reader-mode", mode)
+  syncReaderControls()
+  if (persist) {
+    try {
+      localStorage.setItem("reader-mode", mode)
+    } catch {}
   }
+  if (isReaderMode) ensureExitButton()
+  else document.querySelector(".focus-exit-btn")?.remove()
+  document.dispatchEvent(new CustomEvent("readermodechange", { detail: { mode } }))
 }
-
-const toggleReaderMode = () => {
+function toggleReaderMode() {
   isReaderMode = !isReaderMode
   applyReaderMode()
 }
-
 document.addEventListener("nav", () => {
-  // Sidebar button click handler
-  for (const btn of document.getElementsByClassName("readermode")) {
-    btn.addEventListener("click", toggleReaderMode)
-    window.addCleanup(() => btn.removeEventListener("click", toggleReaderMode))
-  }
-
-  // Keyboard shortcut: press F to toggle (not when typing in inputs)
-  const handleKey = (e: KeyboardEvent) => {
-    // Ignore if user is typing in an input/textarea/contenteditable
-    const target = e.target as HTMLElement
-    const tag = target?.tagName?.toLowerCase()
-    const isEditable = target?.isContentEditable
-    if (tag === "input" || tag === "textarea" || tag === "select" || isEditable) return
-    // Ignore if modifier keys are held (Ctrl+F, Alt+F, etc.)
-    if (e.ctrlKey || e.altKey || e.metaKey) return
-    if (e.key === "f" || e.key === "F") {
-      e.preventDefault()
+  try {
+    isReaderMode = localStorage.getItem("reader-mode") === "on"
+  } catch {}
+  applyReaderMode(false)
+  document.querySelectorAll<HTMLElement>(".readermode").forEach((button) => {
+    button.addEventListener("click", toggleReaderMode)
+    window.addCleanup(() => button.removeEventListener("click", toggleReaderMode))
+  })
+  const handleKey = (event: KeyboardEvent) => {
+    const target = event.target as HTMLElement
+    if (
+      ["input", "textarea", "select"].includes(target?.tagName?.toLowerCase()) ||
+      target?.isContentEditable ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey
+    )
+      return
+    if (event.key.toLowerCase() === "f") {
+      event.preventDefault()
       toggleReaderMode()
     }
   }
   document.addEventListener("keydown", handleKey)
   window.addCleanup(() => document.removeEventListener("keydown", handleKey))
-
-  // Apply initial state (restore from localStorage)
-  applyReaderMode()
+})
+document.addEventListener("readingpreferencesreset", () => {
+  isReaderMode = false
+  try {
+    localStorage.removeItem("reader-mode")
+  } catch {}
+  applyReaderMode(false)
 })

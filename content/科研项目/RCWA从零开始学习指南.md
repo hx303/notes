@@ -2,6 +2,35 @@
 title: "RCWA与TMM光学建模——从零开始的完整学习指南"
 date: 2026-07-07
 description: "面向大一学生的光学建模学习指南。从'光是什么'开始，经Fresnel方程、薄膜干涉、TMM传输矩阵、光栅衍射，一路讲到RCWA严格耦合波分析。12章 + 附录，每章含自测题和项目关联。"
+summary: "从光学基础、Fresnel 方程和薄膜干涉出发，逐步理解 TMM 与 RCWA，并将它们用于钙钛矿薄膜反演。"
+canonicalSlug: notes/rcwa-from-zero
+commentKey: content/科研项目/RCWA从零开始学习指南.md
+primaryTopic: computing-simulation
+topics:
+  - physics-optics
+  - chemistry-materials
+  - research-methods
+type: project-guide
+maturity: growing
+created: 2026-07-07
+updated: 2026-07-07
+prerequisites:
+  - 高中物理
+  - 微积分基础
+  - 电磁学基础
+related:
+  - slug: 大学物理
+    reason: 建立波动、电磁场与边界条件的物理直觉。
+  - slug: 微积分上
+    reason: 补足连续模型、微分方程与复数表达所需的数学语言。
+  - slug: COMSOL 基础培训
+    reason: 对照有限元仿真工作流，理解 RCWA 与通用数值方法的差异。
+sources:
+  - title: Callies 2025 (Solar RRL)
+  - title: Bonnin-Ripoll 2019/2021
+  - title: Wong 2024 (RayFlare)
+license: 未声明许可
+publish: true
 tags:
   - 光学建模
   - RCWA
@@ -13,8 +42,6 @@ aliases:
   - RCWA从零开始
   - 光学建模入门
 ---
-
-# RCWA 与 TMM 光学建模 — 从零开始的完整学习指南
 
 > 写给大一学生的光学建模入门教程。假设你学过高中物理（知道反射、折射、干涉这些词），正在学微积分，刚开始接触电磁学。我们从最基础开始，一步一个台阶，走到你能理解 RCWA 在我们的薄膜反演项目中究竟做了什么、为什么它比 RT+TMM 精确 23 倍。
 

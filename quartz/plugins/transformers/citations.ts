@@ -21,7 +21,7 @@ export const Citations: QuartzTransformerPlugin<Partial<Options>> = (userOpts) =
   const opts = { ...defaultOptions, ...userOpts }
   return {
     name: "Citations",
-    htmlPlugins(ctx) {
+    htmlPlugins() {
       const plugins: PluggableList = []
       // per default, rehype-citations only supports en-US
       // see: https://github.com/timlrx/rehype-citation/issues/12

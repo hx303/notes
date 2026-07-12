@@ -190,6 +190,8 @@ a {
 
   & > #quartz-body {
     display: grid;
+    box-sizing: border-box;
+    width: 100%;
     grid-template-columns: #{map.get($desktopGrid, templateColumns)};
     grid-template-rows: #{map.get($desktopGrid, templateRows)};
     column-gap: #{map.get($desktopGrid, columnGap)};
@@ -204,7 +206,7 @@ a {
       grid-template-areas: #{map.get($tabletGrid, templateAreas)};
     }
     @media all and ($mobile) {
-      grid-template-columns: #{map.get($mobileGrid, templateColumns)};
+      grid-template-columns: minmax(0, 1fr);
       grid-template-rows: #{map.get($mobileGrid, templateRows)};
       column-gap: #{map.get($mobileGrid, columnGap)};
       row-gap: #{map.get($mobileGrid, rowGap)};
@@ -235,12 +237,20 @@ a {
       @media all and ($mobile) {
         gap: 0;
         align-items: center;
+        justify-content: space-between;
         position: initial;
         display: flex;
         height: unset;
         flex-direction: row;
+        flex-wrap: wrap;
         padding: 0;
         padding-top: 2rem;
+
+        & > .flex-component {
+          flex: 1 1 100%;
+          min-width: 0;
+          gap: var(--space-4) !important;
+        }
       }
     }
 
@@ -285,6 +295,10 @@ a {
       grid-area: grid-center;
     }
 
+    & .center {
+      grid-area: grid-center;
+    }
+
     & footer {
       grid-area: grid-footer;
     }
@@ -292,7 +306,7 @@ a {
     & .center,
     & footer {
       max-width: 100%;
-      min-width: 100%;
+      min-width: 0;
       margin-left: auto;
       margin-right: auto;
       @media all and ($tablet) {
