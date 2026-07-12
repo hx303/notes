@@ -27,13 +27,21 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
           <p class="account-kicker">ACCOUNT</p>
           <h2 id="account-panel-title">先登录，再开始整理</h2>
         </div>
+        <div class="account-tabs" role="tablist" aria-label="账户操作">
+          <button type="button" role="tab" aria-selected="true" data-account-tab="signin">登录</button>
+          <button type="button" role="tab" aria-selected="false" data-account-tab="signup">注册</button>
+        </div>
         <form class="account-login" data-account-login>
+          <input type="hidden" name="mode" value="signin" data-account-mode />
           <label>
             <span>邮箱</span>
             <input type="email" name="email" autocomplete="email" required placeholder="you@example.com" />
           </label>
-          <button type="submit">发送登录链接</button>
-          <p class="account-help">我们会发送一封一次性登录邮件，不需要记密码。</p>
+          <label><span>密码</span><input type="password" name="password" autocomplete="current-password" required minLength={12} placeholder="至少 12 个字符" /></label>
+          <p class="account-password-help">建议使用一句容易记住的长密码，长度比复杂符号更重要。</p>
+          <button type="submit" data-account-submit>登录</button>
+          <button type="button" class="account-forgot" data-account-forgot>忘记密码？发送重置邮件</button>
+          <p class="account-help">你的账户用于保存草稿、管理分享权限和同步知识。</p>
         </form>
         <div class="account-session" data-account-session hidden>
           <p class="account-signed-in">已登录：<strong data-account-email /></p>

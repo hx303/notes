@@ -4,6 +4,9 @@
 .account-hero h1 { margin: 0 0 1rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.08; }
 .account-hero p:not(.account-kicker) { max-width: 640px; color: var(--darkgray); line-height: 1.7; }
 .account-panel, .editor-panel { margin-top: 2.5rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--lightgray); background: color-mix(in srgb, var(--light) 92%, var(--secondary)); }
+.account-tabs { display:flex; gap:.35rem; margin-bottom:1.25rem; border-bottom:1px solid var(--lightgray); }
+.account-tabs button { border:0; border-bottom:2px solid transparent; padding:.7rem .9rem; background:transparent; color:var(--darkgray); font:inherit; cursor:pointer; }
+.account-tabs button[aria-selected="true"] { border-bottom-color:var(--dark); color:var(--dark); font-weight:700; }
 .account-panel-heading, .editor-panel-heading { display:flex; justify-content:space-between; gap:1rem; align-items:baseline; }
 .account-panel h2, .editor-panel h2 { margin: 0 0 1.5rem; }
 .account-login, .editor-form { display:grid; gap:1rem; }
@@ -11,6 +14,8 @@
 .account-login input, .editor-form input, .editor-form select, .editor-form textarea { box-sizing:border-box; width:100%; border:1px solid var(--gray); border-radius:8px; background:var(--light); color:var(--dark); padding:.8rem .9rem; font:inherit; }
 .account-login button, .editor-actions button:first-child { min-height:44px; border:0; border-radius:999px; padding:.7rem 1.1rem; background:var(--dark); color:var(--light); cursor:pointer; font:inherit; font-weight:600; }
 .account-help, .editor-note, .account-status { margin:0; color:var(--darkgray); font-size:.86rem; line-height:1.6; }
+.account-password-help, .account-forgot { margin:0; color:var(--darkgray); font-size:.82rem; }
+.account-forgot { justify-self:start; border:0; padding:0; background:transparent; color:var(--secondary); cursor:pointer; font:inherit; text-decoration:underline; }
 .account-actions, .editor-actions, .editor-modules { display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; }
 .account-primary, .account-secondary, .editor-modules button { min-height:44px; display:inline-flex; align-items:center; border:1px solid var(--gray); border-radius:999px; padding:.65rem 1rem; background:transparent; color:var(--dark); font:inherit; text-decoration:none; cursor:pointer; }
 .account-primary { border-color:var(--dark); background:var(--dark); color:var(--light); }
