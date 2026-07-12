@@ -65,11 +65,19 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
               <label><span>主题</span><select name="topic"><option value="">稍后再归类</option><option>数学</option><option>物理与光学</option><option>计算与仿真</option><option>研究方法</option></select></label>
               <label><span>成熟度</span><select name="maturity"><option value="seed">萌芽</option><option value="growing">整理中</option><option value="stable">相对完整</option></select></label>
             </div>
+            <label><span>标签</span><input name="tags" placeholder="例如：RCWA，边界条件，光学建模（用逗号分隔）" /><small>标签会用于搜索和自动归类。</small></label>
+            <div class="editor-assist"><button type="button" class="account-secondary" data-auto-classify>根据内容建议主题</button><p data-classify-status role="status" aria-live="polite" /></div>
             <label><span>正文</span><textarea name="body" rows={12} placeholder="把问题、解释、例子和来源写下来……" /></label>
             <div class="editor-modules" aria-label="知识模块">
               <button type="button" data-module="source">＋ 添加来源</button>
               <button type="button" data-module="relation">＋ 添加前置知识</button>
               <button type="button" data-module="question">＋ 添加待解决问题</button>
+            </div>
+            <div class="editor-links" data-editor-links>
+              <label><span>前置知识</span><input name="prerequisites" placeholder="输入已有知识标题或链接" /></label>
+              <label><span>相关知识</span><input name="related" placeholder="输入相关知识标题或链接" /></label>
+              <label><span>引用来源</span><input name="sources" type="url" placeholder="https://..." /></label>
+              <p class="editor-note">每行一个链接，发布前可以继续补充和调整。</p>
             </div>
             <div class="editor-actions"><button type="submit">保存为草稿</button><button type="button" class="account-secondary" data-editor-clear>清空</button></div>
             <p class="editor-note">当前版本先保存到你的浏览器草稿箱；发布到共享知识库需要下一阶段的权限与发布接口。</p>
