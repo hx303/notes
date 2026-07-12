@@ -22,6 +22,7 @@ import MapPageConstructor from "../MapPage";
 import RecentGrowthConstructor from "../RecentGrowth";
 import DiscoverHomeConstructor from "../DiscoverHome";
 import CapturePageConstructor from "../CapturePage";
+import AccountPageConstructor from "../AccountPage";
 
 const TopicIndex = TopicIndexConstructor();
 const TopicPage = TopicPageConstructor();
@@ -32,6 +33,7 @@ const MapPage = MapPageConstructor();
 const RecentGrowth = RecentGrowthConstructor();
 const DiscoverHome = DiscoverHomeConstructor();
 const CapturePage = CapturePageConstructor();
+const AccountPage = AccountPageConstructor();
 
 interface FolderContentOptions {
   /**
@@ -59,6 +61,10 @@ export default ((opts?: Partial<FolderContentOptions>) => {
 
     if (fileData.slug === "capture" || fileData.slug === "capture/index") {
       return <CapturePage {...props} />;
+    }
+
+    if (fileData.slug === "account/index" || fileData.slug === "workspace/index") {
+      return <AccountPage {...props} />;
     }
 
     if (fileData.slug === "topics/index") {
@@ -191,6 +197,7 @@ export default ((opts?: Partial<FolderContentOptions>) => {
     RecentGrowth.css,
     DiscoverHome.css,
     CapturePage.css,
+    AccountPage.css,
     LearningPath.css,
   );
   FolderContent.afterDOMLoaded = concatenateResources(

@@ -39,6 +39,7 @@ import MapPage from "./MapPage";
 import RecentGrowth from "./RecentGrowth";
 import DiscoverHome from "./DiscoverHome";
 import CapturePage from "./CapturePage";
+import AccountPage from "./AccountPage";
 import RevisionHistory from "./RevisionHistory";
 import CitationActions from "./CitationActions";
 import CorrectionAction from "./CorrectionAction";
@@ -89,6 +90,7 @@ export {
   RecentGrowth,
   DiscoverHome,
   CapturePage,
+  AccountPage,
   RevisionHistory,
   CitationActions,
   CorrectionAction,
