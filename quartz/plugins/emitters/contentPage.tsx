@@ -7,13 +7,24 @@ import { pageResources, renderPage } from "../../components/renderPage"
 import { FullPageLayout } from "../../cfg"
 import { pathToRoot } from "../../util/path"
 import { defaultContentPageLayout, sharedPageComponents } from "../../../quartz.layout"
-import { Content } from "../../components"
+import { Content, DiscoverHome } from "../../components"
 import { styleText } from "util"
 import { write } from "./helpers"
 import { BuildCtx } from "../../util/ctx"
 import { Node } from "unist"
 import { StaticResources } from "../../util/resources"
 import { QuartzPluginData } from "../vfile"
+
+const ContentComponent = Content()
+const DiscoverHomeComponent = DiscoverHome()
+
+const HomeAwareContent = (props: QuartzComponentProps) =>
+  (props.fileData.slug === "index" ||
+  props.fileData.slug === "" ||
+  props.fileData.slug === "/" ||
+  props.fileData.filePath?.replaceAll("\\", "/").endsWith("content/index.md"))
+    ? <DiscoverHomeComponent {...props} />
+    : <ContentComponent {...props} />
 
 async function processContent(
   ctx: BuildCtx,
@@ -49,7 +60,7 @@ export const ContentPage: QuartzEmitterPlugin<Partial<FullPageLayout>> = (userOp
   const opts: FullPageLayout = {
     ...sharedPageComponents,
     ...defaultContentPageLayout,
-    pageBody: Content(),
+    pageBody: HomeAwareContent,
     ...userOpts,
   }
 

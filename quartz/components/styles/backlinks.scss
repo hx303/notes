@@ -1,24 +1,88 @@
-@use "../../styles/variables.scss" as *;
-
 .backlinks {
+  display: flex;
   flex-direction: column;
-
-  & > h3 {
-    font-size: 1rem;
+  gap: var(--space-4);
+  font-family: var(--font-family-ui);
+}
+.backlinks-heading {
+  p,
+  h2 {
     margin: 0;
   }
-
-  & > ul.overflow {
-    list-style: none;
-    padding: 0;
-    margin: 0.5rem 0;
-    max-height: calc(100% - 2rem);
-    overscroll-behavior: contain;
-
-    & > li {
-      & > a {
-        background-color: transparent;
-      }
-    }
+  p {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.12em;
   }
+  h2 {
+    margin-block-start: var(--space-1);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-md);
+  }
+}
+.backlinks-groups {
+  display: grid;
+  gap: var(--space-5);
+  max-block-size: 28rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.backlink-group {
+  > p {
+    margin: var(--space-1) 0 var(--space-3);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+  }
+  ul {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  li {
+    display: grid;
+    gap: var(--space-1);
+    padding-block-end: var(--space-3);
+    border-block-end: var(--article-rule);
+  }
+  li > a {
+    background: transparent;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.45;
+  }
+  li > span {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+  }
+}
+.backlink-group-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  h3 {
+    margin: 0;
+    font-size: var(--font-size-sm);
+  }
+  span {
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+  }
+}
+.backlinks-empty,
+.backlink-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+.backlink-empty {
+  padding-block: var(--space-2);
+  border-block: var(--article-rule);
 }

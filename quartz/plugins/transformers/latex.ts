@@ -74,7 +74,7 @@ export const Latex: QuartzTransformerPlugin<Partial<Options>> = (opts) => {
                 contentType: "external",
               },
               {
-                content: `
+                script: `
 (function() {
   if (typeof SmilesDrawer === 'undefined') return;
   var opts = { width: 300, height: 200, bondThickness: 2, bondLength: 20, shortBondLength: 0.8, terminalCarbons: true, explicitHydrogens: false, compactDrawing: false, fontSize: 14, overlapSensitivity: 0.42, spacingFactor: 1.2 };

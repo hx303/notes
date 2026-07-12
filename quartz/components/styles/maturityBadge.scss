@@ -1,0 +1,57 @@
+.maturity-badge {
+  --maturity-color: var(--color-maturity-seed);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 1.75rem;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &[data-maturity="growing"] {
+    --maturity-color: var(--color-maturity-growing);
+  }
+
+  &[data-maturity="stable"] {
+    --maturity-color: var(--color-maturity-stable);
+  }
+}
+
+.maturity-index {
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-mono);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.maturity-mark {
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  box-sizing: border-box;
+  border: var(--border-width-emphasis) solid var(--maturity-color);
+  background: transparent;
+  transform: rotate(45deg);
+}
+
+[data-maturity="growing"] .maturity-mark {
+  background: linear-gradient(135deg, var(--maturity-color) 50%, transparent 50%);
+}
+
+[data-maturity="stable"] .maturity-mark {
+  background: var(--maturity-color);
+}
+
+@media (forced-colors: active) {
+  .maturity-mark {
+    border-color: CanvasText;
+  }
+
+  [data-maturity="growing"] .maturity-mark,
+  [data-maturity="stable"] .maturity-mark {
+    background: CanvasText;
+  }
+}

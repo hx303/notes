@@ -1,58 +1,73 @@
 const SCALE_STEP = 0.0625
-const SCALE_MIN = 0.75
-const SCALE_MAX = 1.5
-const KEY = "content-scale"
-
-let currentScale = 1
-try {
-  const saved = localStorage.getItem(KEY)
-  if (saved) currentScale = parseFloat(saved) || 1
-} catch (e) { /* ignore */ }
-
-const apply = () => {
-  const center = document.querySelector(".center") as HTMLElement | null
-  const article = document.querySelector(".center > article") as HTMLElement | null
-
-  if (center && article) {
-    if (currentScale > 1.01) {
-      // Lock center width so zoomed article overflows → scrollbar
-      if (!center.style.maxWidth) {
-        center.style.maxWidth = center.offsetWidth + "px"
-      }
-      center.style.overflowX = "auto"
-      ;(article as any).style.zoom = String(currentScale)
-    } else {
-      // Reset: no zoom, no lock
-      center.style.maxWidth = ""
-      center.style.overflowX = ""
-      ;(article as any).style.zoom = ""
-    }
+const SCALE_MIN = 0.875
+const SCALE_MAX = 1.25
+const SCALE_KEY = "content-scale"
+const savedScale = () => {
+  try {
+    const value = Number(localStorage.getItem(SCALE_KEY))
+    return Number.isFinite(value) ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, value)) : 1
+  } catch {
+    return 1
   }
-
-  document.documentElement.style.setProperty("--content-scale", String(currentScale))
-  try { localStorage.setItem(KEY, String(currentScale)) } catch (e) { /* ignore */ }
-
-  const reset = document.querySelector(".zoom-reset") as HTMLElement | null
-  if (reset) reset.style.display = Math.abs(currentScale - 1) < 0.01 ? "none" : ""
 }
-
+let currentScale = savedScale()
+const applyScale = (persist = true) => {
+  document.documentElement.style.setProperty("--content-scale", String(currentScale))
+  document.querySelectorAll<HTMLElement>(".center > article").forEach((article) => {
+    article.style.fontSize = `${currentScale}em`
+  })
+  document.querySelectorAll<HTMLOutputElement>(".fontsize-value").forEach((output) => {
+    output.value = `${Math.round(currentScale * 100)}%`
+    output.textContent = output.value
+  })
+  document.querySelectorAll<HTMLButtonElement>(".zoom-out").forEach((button) => {
+    button.disabled = currentScale <= SCALE_MIN
+  })
+  document.querySelectorAll<HTMLButtonElement>(".zoom-in").forEach((button) => {
+    button.disabled = currentScale >= SCALE_MAX
+  })
+  document.querySelectorAll<HTMLButtonElement>(".zoom-reset").forEach((button) => {
+    button.disabled = Math.abs(currentScale - 1) < 0.001
+  })
+  if (persist) {
+    try {
+      localStorage.setItem(SCALE_KEY, String(currentScale))
+    } catch {}
+  }
+  document.dispatchEvent(new CustomEvent("fontsizechange", { detail: { scale: currentScale } }))
+}
 document.addEventListener("nav", () => {
-  apply()
-
-  const zoomIn = document.querySelector(".zoom-in")
-  const zoomOut = document.querySelector(".zoom-out")
-  const zoomReset = document.querySelector(".zoom-reset")
-
-  zoomIn?.addEventListener("click", () => {
+  currentScale = savedScale()
+  applyScale(false)
+  const increase = () => {
     currentScale = Math.min(SCALE_MAX, currentScale + SCALE_STEP)
-    apply()
-  })
-  zoomOut?.addEventListener("click", () => {
+    applyScale()
+  }
+  const decrease = () => {
     currentScale = Math.max(SCALE_MIN, currentScale - SCALE_STEP)
-    apply()
-  })
-  zoomReset?.addEventListener("click", () => {
+    applyScale()
+  }
+  const reset = () => {
     currentScale = 1
-    apply()
+    applyScale()
+  }
+  document.querySelectorAll<HTMLElement>(".zoom-in").forEach((button) => {
+    button.addEventListener("click", increase)
+    window.addCleanup(() => button.removeEventListener("click", increase))
   })
+  document.querySelectorAll<HTMLElement>(".zoom-out").forEach((button) => {
+    button.addEventListener("click", decrease)
+    window.addCleanup(() => button.removeEventListener("click", decrease))
+  })
+  document.querySelectorAll<HTMLElement>(".zoom-reset").forEach((button) => {
+    button.addEventListener("click", reset)
+    window.addCleanup(() => button.removeEventListener("click", reset))
+  })
+})
+document.addEventListener("readingpreferencesreset", () => {
+  currentScale = 1
+  try {
+    localStorage.removeItem(SCALE_KEY)
+  } catch {}
+  applyScale(false)
 })

@@ -6,6 +6,21 @@ import toml from "toml"
 import { FilePath, FullSlug, getFileExtension, slugifyFilePath, slugTag } from "../../util/path"
 import { QuartzPluginData } from "../vfile"
 import { i18n } from "../../i18n"
+import {
+  actionableKnowledgeIssues,
+  formatKnowledgeIssue,
+  normalizeKnowledgeMetadata,
+} from "../../util/knowledgeMetadata"
+import type {
+  KnowledgeMaturity,
+  KnowledgeMetadata,
+  KnowledgeMetadataIssue,
+  KnowledgeRelation,
+  KnowledgeSource,
+  KnowledgeTopic,
+  KnowledgeType,
+} from "../../util/knowledgeMetadata"
+import { styleText } from "util"
 
 export interface Options {
   delimiters: string | [string, string]
@@ -62,6 +77,7 @@ export const FrontMatter: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
         [remarkFrontmatter, ["yaml", "toml"]],
         () => {
           return (_, file) => {
+            const sourceSlug = file.data.slug!
             const fileData = Buffer.from(file.value as Uint8Array)
             const { data } = matter(fileData, {
               ...opts,
@@ -70,6 +86,13 @@ export const FrontMatter: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
                 toml: (s) => toml.parse(s) as object,
               },
             })
+
+            file.data.sourceSlug = sourceSlug
+            const canonicalSlug = ctx.canonicalSlugMap[sourceSlug]
+            if (canonicalSlug) {
+              data.canonicalSlug = canonicalSlug
+              file.data.slug = canonicalSlug
+            }
 
             if (data.title != null && data.title.toString() !== "") {
               data.title = data.title.toString()
@@ -81,11 +104,22 @@ export const FrontMatter: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
             if (tags) data.tags = [...new Set(tags.map((tag: string) => slugTag(tag)))]
 
             const aliases = coerceToArray(coalesceAliases(data, ["aliases", "alias"]))
+            const aliasSlugs = aliases ? getAliasSlugs(aliases) : []
+            if (canonicalSlug && canonicalSlug !== sourceSlug) {
+              aliasSlugs.push(sourceSlug)
+            }
             if (aliases) {
               data.aliases = aliases // frontmatter
-              file.data.aliases = getAliasSlugs(aliases)
-              allSlugs.push(...file.data.aliases)
             }
+            file.data.aliases = [...new Set(aliasSlugs)]
+            allSlugs.push(...file.data.aliases)
+
+            const commentKey = coalesceAliases(data, ["commentKey", "comment_key"])
+            if (commentKey !== undefined && commentKey !== null && commentKey.toString() !== "") {
+              data.commentKey = commentKey.toString()
+            }
+            file.data.commentKey =
+              data.commentKey?.toString() ?? file.data.filePath?.toString() ?? sourceSlug
 
             if (data.permalink != null && data.permalink.toString() !== "") {
               data.permalink = data.permalink.toString() as FullSlug
@@ -118,6 +152,19 @@ export const FrontMatter: QuartzTransformerPlugin<Partial<Options>> = (userOpts)
             if (published) data.published = published
 
             if (socialImage) data.socialImage = socialImage
+
+            const normalizedKnowledge = normalizeKnowledgeMetadata(data, {
+              sourceSlug,
+              commentKey: file.data.commentKey ?? file.data.filePath?.toString() ?? sourceSlug,
+            })
+            file.data.knowledgeMetadata = normalizedKnowledge.metadata
+            file.data.knowledgeMetadataIssues = normalizedKnowledge.issues
+            for (const issue of actionableKnowledgeIssues(
+              normalizedKnowledge.metadata,
+              normalizedKnowledge.issues,
+            )) {
+              console.warn(styleText("yellow", formatKnowledgeIssue(sourceSlug, issue)))
+            }
 
             // Remove duplicate slugs
             const uniqueSlugs = [...new Set(allSlugs)]
@@ -152,6 +199,22 @@ declare module "vfile" {
         cssclasses: string[]
         socialImage: string
         comments: boolean | string
+        canonicalSlug: string
+        commentKey: string
+        summary: string
+        primaryTopic: KnowledgeTopic
+        topics: KnowledgeTopic[]
+        type: KnowledgeType
+        maturity: KnowledgeMaturity
+        updated: string
+        prerequisites: string[]
+        related: KnowledgeRelation[]
+        sources: KnowledgeSource[]
+        license: string
       }>
+    sourceSlug: FullSlug
+    commentKey: string
+    knowledgeMetadata: KnowledgeMetadata
+    knowledgeMetadataIssues: KnowledgeMetadataIssue[]
   }
 }

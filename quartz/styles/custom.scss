@@ -1,4 +1,7 @@
 @use "./base.scss";
+@use "./tokens.scss";
+@use "./accessibility.scss";
+@use "./reading.scss";
 
 // ========================
 // 🎨 大幅美化 — 让网站脱胎换骨
@@ -15,7 +18,7 @@
 html {
   scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
-  overflow-x: auto;
+  overflow-x: clip;
   width: 100%;
 }
 
@@ -26,7 +29,8 @@ body {
 
 // Force horizontal scrollbar when content overflows (e.g. zoomed)
 .center {
-  overflow-x: auto;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 // ========================
@@ -70,36 +74,46 @@ body::before {
 // 返回顶部 — 右下角浮动按钮
 .back-to-top {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--tertiary);
-  color: #fff;
+  bottom: max(var(--space-7), env(safe-area-inset-bottom));
+  right: max(var(--space-7), env(safe-area-inset-right));
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  border-radius: var(--border-radius-full);
+  background: var(--color-accent-primary);
+  color: var(--color-text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2em;
   text-decoration: none;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  z-index: 900;
-  transition: all 0.3s ease;
-  opacity: 0.75;
-  font-weight: 700;
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-toast);
+  transition:
+    background-color var(--duration-fast) var(--easing-out),
+    box-shadow var(--duration-fast) var(--easing-out),
+    opacity var(--duration-fast) var(--easing-out),
+    transform var(--duration-fast) var(--easing-out);
+  opacity: 0.86;
+  font-weight: var(--font-weight-bold);
 }
 
 .back-to-top:hover {
   opacity: 1;
-  transform: translateY(-3px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transform: translateY(calc(-1 * var(--motion-distance-sm)));
+  box-shadow: var(--shadow-lg);
+  background: var(--color-accent-primary-hover);
   text-decoration: none;
+}
+
+.back-to-top:active {
+  background: var(--color-accent-primary-active);
+  transform: translateY(0);
 }
 
 // 暗色模式返回顶部
 :root[saved-theme="dark"] .back-to-top {
-  background: var(--secondary);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  background: var(--color-accent-primary);
+  box-shadow: var(--shadow-md);
 }
 
 // --- 顶部导航栏 ---
@@ -539,7 +553,7 @@ footer {
 // --- 暗色模式特殊处理 ---
 :root[saved-theme="dark"] {
   .page-header {
-    background: var(--dark);
+    background: var(--color-bg-canvas);
   }
 
   .callout:hover {

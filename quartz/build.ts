@@ -9,7 +9,7 @@ import { parseMarkdown } from "./processors/parse"
 import { filterContent } from "./processors/filter"
 import { emitContent } from "./processors/emit"
 import cfg from "../quartz.config"
-import { FilePath, joinSegments, slugifyFilePath } from "./util/path"
+import { FilePath, joinSegments } from "./util/path"
 import chokidar from "chokidar"
 import { ProcessedContent } from "./plugins/vfile"
 import { Argv, BuildCtx } from "./util/ctx"
@@ -21,6 +21,7 @@ import { getStaticResourcesFromPlugins } from "./plugins"
 import { randomIdNonSecure } from "./util/random"
 import { ChangeEvent } from "./plugins/types"
 import { minimatch } from "minimatch"
+import { collectSlugs, loadCanonicalSlugMap } from "./util/canonicalSlug"
 
 type ContentMap = Map<
   FilePath,
@@ -49,6 +50,7 @@ async function buildQuartz(argv: Argv, mut: Mutex, clientRefresh: () => void) {
     cfg,
     allSlugs: [],
     allFiles: [],
+    canonicalSlugMap: {},
     incremental: false,
   }
 
@@ -79,7 +81,8 @@ async function buildQuartz(argv: Argv, mut: Mutex, clientRefresh: () => void) {
 
   const filePaths = markdownPaths.map((fp) => joinSegments(argv.directory, fp) as FilePath)
   ctx.allFiles = allFiles
-  ctx.allSlugs = allFiles.map((fp) => slugifyFilePath(fp as FilePath))
+  ctx.canonicalSlugMap = await loadCanonicalSlugMap(argv.directory, markdownPaths as FilePath[])
+  ctx.allSlugs = collectSlugs(allFiles, ctx.canonicalSlugMap)
 
   const parsedFiles = await parseMarkdown(ctx, filePaths)
   const filteredContent = filterContent(ctx, parsedFiles)
@@ -200,6 +203,21 @@ async function rebuild(changes: ChangeEvent[], clientRefresh: () => void, buildD
     changesSinceLastBuild[change.path] = change.type
   }
 
+  // Refresh canonical mappings before parsing so workers and link processing
+  // share one consistent view of physical and public URLs.
+  const nextFiles = new Set(contentMap.keys())
+  for (const [file, type] of Object.entries(changesSinceLastBuild)) {
+    if (type === "delete") {
+      nextFiles.delete(file as FilePath)
+    } else {
+      nextFiles.add(file as FilePath)
+    }
+  }
+  ctx.allFiles = Array.from(nextFiles)
+  const nextMarkdownPaths = ctx.allFiles.filter((file) => file.endsWith(".md"))
+  ctx.canonicalSlugMap = await loadCanonicalSlugMap(argv.directory, nextMarkdownPaths)
+  ctx.allSlugs = collectSlugs(ctx.allFiles, ctx.canonicalSlugMap)
+
   const staticResources = getStaticResourcesFromPlugins(ctx)
   const pathsToParse: FilePath[] = []
   for (const [fp, type] of Object.entries(changesSinceLastBuild)) {
@@ -252,9 +270,9 @@ async function rebuild(changes: ChangeEvent[], clientRefresh: () => void, buildD
     }
   })
 
-  // update allFiles and then allSlugs with the consistent view of content map
+  // update allFiles with the consistent view of content map. Canonical slugs
+  // were refreshed before parsing this batch.
   ctx.allFiles = Array.from(contentMap.keys())
-  ctx.allSlugs = ctx.allFiles.map((fp) => slugifyFilePath(fp as FilePath))
   let processedFiles = filterContent(
     ctx,
     Array.from(contentMap.values())

@@ -1,0 +1,21 @@
+.discover-home { max-width: 980px; margin: 0 auto; padding: 4rem 2rem 6rem; }
+.discover-hero { padding: 2rem 0 4rem; border-bottom: 1px solid var(--lightgray); }
+.discover-kicker { color: var(--secondary); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 1rem; }
+.discover-hero h1 { max-width: 760px; font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: .98; letter-spacing: -.045em; margin: 0; }
+.discover-lede { max-width: 650px; font-size: 1.15rem; line-height: 1.8; color: var(--darkgray); margin: 1.75rem 0 2rem; }
+.discover-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.discover-actions a { border-radius: 999px; padding: .8rem 1.1rem; text-decoration: none; }
+.discover-primary { background: var(--dark); color: var(--light); }
+.discover-secondary { border: 1px solid var(--gray); color: var(--dark); }
+.discover-story { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; padding: 3rem 0; border-bottom: 1px solid var(--lightgray); }
+.discover-section-heading h2 { font-size: 1.8rem; line-height: 1.15; margin: 0 0 1rem; }
+.discover-section-heading a { color: var(--secondary); }
+.discover-records { list-style: none; margin: 0; padding: 0; }
+.discover-records li { display: grid; grid-template-columns: 2rem 1fr auto; gap: 1rem; align-items: baseline; padding: 1rem 0; border-top: 1px solid var(--lightgray); }
+.discover-records a { color: var(--dark); font-weight: 600; }
+.discover-index, .discover-records time { color: var(--gray); font-size: .8rem; }
+.discover-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding-top: 2rem; }
+.discover-stats div { display: flex; flex-direction: column; gap: .25rem; }
+.discover-stats strong { font-size: 2.5rem; letter-spacing: -.04em; }
+.discover-stats span { color: var(--darkgray); }
+@media (max-width: 700px) { .discover-home { padding: 2rem 1rem 4rem; } .discover-story { grid-template-columns: 1fr; gap: 1.5rem; } .discover-records li { grid-template-columns: 1.5rem 1fr; } .discover-records time { grid-column: 2; } .discover-stats { grid-template-columns: 1fr 1fr; } }

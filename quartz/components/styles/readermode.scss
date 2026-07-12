@@ -1,132 +1,51 @@
-.readermode {
-  cursor: pointer;
-  padding: 0;
-  position: relative;
-  background: none;
-  border: none;
-  width: 20px;
-  height: 32px;
-  margin: 0;
-  text-align: inherit;
-  flex-shrink: 0;
-
-  & svg {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    top: calc(50% - 10px);
-    fill: var(--darkgray);
-    stroke: var(--darkgray);
-    transition: opacity 0.1s ease;
-  }
+:root[reader-mode="on"] .sidebar.left,
+:root[reader-mode="on"] .sidebar.right {
+  inline-size: 0 !important;
+  min-inline-size: 0 !important;
+  max-inline-size: 0 !important;
+  overflow: hidden;
+  opacity: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none;
 }
-
-/* ============================================================ */
-/* Focus Mode (reader-mode="on"): hide sidebars + floating exit  */
-/* ============================================================ */
-
-:root[reader-mode="on"] {
-  --sidebar-transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Hide left sidebar */
-  & .sidebar.left {
-    width: 0 !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
-    overflow: hidden;
-    opacity: 0;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    transition: width var(--sidebar-transition),
-                opacity var(--sidebar-transition),
-                padding var(--sidebar-transition);
-    pointer-events: none;
-
-    & * {
-      display: none;
-    }
-  }
-
-  /* Hide right sidebar */
-  & .sidebar.right {
-    width: 0 !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
-    overflow: hidden;
-    opacity: 0;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    transition: width var(--sidebar-transition),
-                opacity var(--sidebar-transition),
-                padding var(--sidebar-transition);
-    pointer-events: none;
-
-    & * {
-      display: none;
-    }
-  }
-
-  /* Center content gets full width */
-  & .center {
-    margin-left: auto !important;
-    margin-right: auto !important;
-    max-width: 840px !important;
-    flex: 1;
-    transition: max-width var(--sidebar-transition),
-                margin var(--sidebar-transition);
-  }
-
-  /* Paper notes get extra width in focus mode */
-  & article.paper {
-    max-width: 960px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-
-  /* Floating exit button — always visible, not inside sidebar */
-  & .focus-exit-btn {
-    display: flex !important;
-    opacity: 0.85;
-    animation: focusExitIn 0.4s ease-out;
-
-    &:hover {
-      opacity: 1;
-      background: var(--tertiary);
-    }
-  }
-
-  /* Back-to-top button when in focus */
-  & .back-to-top {
-    right: 16px;
-    bottom: 24px;
-  }
+:root[reader-mode="on"] .center {
+  max-inline-size: 52.5rem !important;
+  margin-inline: auto !important;
+  flex: 1;
 }
-
-/* Floating exit button — hidden by default, shown in reader mode via JS injection */
+:root[reader-mode="on"] article.paper {
+  max-inline-size: 60rem !important;
+  margin-inline: auto !important;
+}
 .focus-exit-btn {
-  display: none;
   position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 9999;
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background: var(--highlight);
-  border: 1px solid var(--tertiary);
-  color: var(--dark);
-  font-size: 1.2rem;
-  cursor: pointer;
+  inset-block-start: max(var(--space-4), env(safe-area-inset-top));
+  inset-inline-end: max(var(--space-4), env(safe-area-inset-right));
+  z-index: var(--z-toolbar);
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
+  gap: var(--space-2);
+  min-block-size: var(--touch-target-min);
+  padding: 0 var(--space-4);
+  border: var(--border-width-hairline) solid var(--color-border-primary);
+  border-radius: 999px;
+  background: var(--color-bg-surface-raised);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-md);
+  font: inherit;
+  cursor: pointer;
 }
-
-@keyframes focusExitIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to   { transform: scale(1); opacity: 0.85; }
+.focus-exit-btn:hover {
+  background: var(--color-bg-surface-subtle);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar.left,
+  .sidebar.right,
+  .center {
+    transition:
+      inline-size 0.2s ease,
+      opacity 0.2s ease,
+      max-inline-size 0.2s ease;
+  }
 }

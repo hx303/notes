@@ -1,0 +1,2519 @@
+{
+  "version": 1,
+  "totals": {
+    "records": 273,
+    "migrated": 1,
+    "legacyCovered": 273
+  },
+  "entries": [
+    {
+      "sourcePath": "Callies 2025 + RayFlare/experiment-plan-callies-rayflare.md",
+      "legacySlug": "Callies-2025-+-RayFlare/experiment-plan-callies-rayflare",
+      "canonicalSlug": "Callies-2025-+-RayFlare/experiment-plan-callies-rayflare",
+      "aliases": [],
+      "commentKey": "content/Callies 2025 + RayFlare/experiment-plan-callies-rayflare.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "Mermaid图表功能演示.md",
+      "legacySlug": "Mermaid图表功能演示",
+      "canonicalSlug": "Mermaid图表功能演示",
+      "aliases": [],
+      "commentKey": "content/Mermaid图表功能演示.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "build/index.md",
+      "legacySlug": "build/index",
+      "canonicalSlug": "build/index",
+      "aliases": [],
+      "commentKey": "content/build/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "capture/index.md",
+      "legacySlug": "capture/index",
+      "canonicalSlug": "capture/index",
+      "aliases": [],
+      "commentKey": "content/capture/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "changes/index.md",
+      "legacySlug": "changes/index",
+      "canonicalSlug": "changes/index",
+      "aliases": [],
+      "commentKey": "content/changes/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "index.md",
+      "legacySlug": "index",
+      "canonicalSlug": "index",
+      "aliases": [],
+      "commentKey": "content/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "map/index.md",
+      "legacySlug": "map/index",
+      "canonicalSlug": "map/index",
+      "aliases": [],
+      "commentKey": "content/map/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "paths/calculus-to-differential-equations/index.md",
+      "legacySlug": "paths/calculus-to-differential-equations/index",
+      "canonicalSlug": "paths/calculus-to-differential-equations/index",
+      "aliases": [],
+      "commentKey": "content/paths/calculus-to-differential-equations/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "paths/index.md",
+      "legacySlug": "paths/index",
+      "canonicalSlug": "paths/index",
+      "aliases": [],
+      "commentKey": "content/paths/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "paths/linear-algebra-for-modeling/index.md",
+      "legacySlug": "paths/linear-algebra-for-modeling/index",
+      "canonicalSlug": "paths/linear-algebra-for-modeling/index",
+      "aliases": [],
+      "commentKey": "content/paths/linear-algebra-for-modeling/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "paths/physics-to-optical-modeling/index.md",
+      "legacySlug": "paths/physics-to-optical-modeling/index",
+      "canonicalSlug": "paths/physics-to-optical-modeling/index",
+      "aliases": [],
+      "commentKey": "content/paths/physics-to-optical-modeling/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "search/index.md",
+      "legacySlug": "search/index",
+      "canonicalSlug": "search/index",
+      "aliases": [],
+      "commentKey": "content/search/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/chemistry-materials/index.md",
+      "legacySlug": "topics/chemistry-materials/index",
+      "canonicalSlug": "topics/chemistry-materials/index",
+      "aliases": [],
+      "commentKey": "content/topics/chemistry-materials/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/computing-simulation/index.md",
+      "legacySlug": "topics/computing-simulation/index",
+      "canonicalSlug": "topics/computing-simulation/index",
+      "aliases": [],
+      "commentKey": "content/topics/computing-simulation/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/growth-practice/index.md",
+      "legacySlug": "topics/growth-practice/index",
+      "canonicalSlug": "topics/growth-practice/index",
+      "aliases": [],
+      "commentKey": "content/topics/growth-practice/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/history-society/index.md",
+      "legacySlug": "topics/history-society/index",
+      "canonicalSlug": "topics/history-society/index",
+      "aliases": [],
+      "commentKey": "content/topics/history-society/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/index.md",
+      "legacySlug": "topics/index",
+      "canonicalSlug": "topics/index",
+      "aliases": [],
+      "commentKey": "content/topics/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/mathematics/index.md",
+      "legacySlug": "topics/mathematics/index",
+      "canonicalSlug": "topics/mathematics/index",
+      "aliases": [],
+      "commentKey": "content/topics/mathematics/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/physics-optics/index.md",
+      "legacySlug": "topics/physics-optics/index",
+      "canonicalSlug": "topics/physics-optics/index",
+      "aliases": [],
+      "commentKey": "content/topics/physics-optics/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "topics/research-methods/index.md",
+      "legacySlug": "topics/research-methods/index",
+      "canonicalSlug": "topics/research-methods/index",
+      "aliases": [],
+      "commentKey": "content/topics/research-methods/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "⚙️ 管理/管理面板.md",
+      "legacySlug": "⚙️-管理/管理面板",
+      "canonicalSlug": "⚙️-管理/管理面板",
+      "aliases": [],
+      "commentKey": "content/⚙️ 管理/管理面板.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "公式速查/index.md",
+      "legacySlug": "公式速查/index",
+      "canonicalSlug": "公式速查/index",
+      "aliases": [],
+      "commentKey": "content/公式速查/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "公式速查/大学物理公式速查.md",
+      "legacySlug": "公式速查/大学物理公式速查",
+      "canonicalSlug": "公式速查/大学物理公式速查",
+      "aliases": [],
+      "commentKey": "content/公式速查/大学物理公式速查.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "公式速查/微积分公式速查.md",
+      "legacySlug": "公式速查/微积分公式速查",
+      "canonicalSlug": "公式速查/微积分公式速查",
+      "aliases": [],
+      "commentKey": "content/公式速查/微积分公式速查.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "公式速查/线性代数公式速查.md",
+      "legacySlug": "公式速查/线性代数公式速查",
+      "canonicalSlug": "公式速查/线性代数公式速查",
+      "aliases": [],
+      "commentKey": "content/公式速查/线性代数公式速查.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "南城卿：川大保研/川大保研秘辛.md",
+      "legacySlug": "南城卿：川大保研/川大保研秘辛",
+      "canonicalSlug": "南城卿：川大保研/川大保研秘辛",
+      "aliases": [],
+      "commentKey": "content/南城卿：川大保研/川大保研秘辛.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "学术引用功能演示.md",
+      "legacySlug": "学术引用功能演示",
+      "canonicalSlug": "学术引用功能演示",
+      "aliases": [],
+      "commentKey": "content/学术引用功能演示.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "学科能力功能指南.md",
+      "legacySlug": "学科能力功能指南",
+      "canonicalSlug": "学科能力功能指南",
+      "aliases": [],
+      "commentKey": "content/学科能力功能指南.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/Callies方法扩展_膜厚定量_可行性方案.md",
+      "legacySlug": "科研项目/Callies方法扩展_膜厚定量_可行性方案",
+      "canonicalSlug": "科研项目/Callies方法扩展_膜厚定量_可行性方案",
+      "aliases": [],
+      "commentKey": "content/科研项目/Callies方法扩展_膜厚定量_可行性方案.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/RCWA从零开始学习指南.md",
+      "legacySlug": "科研项目/RCWA从零开始学习指南",
+      "canonicalSlug": "notes/rcwa-from-zero",
+      "aliases": [
+        "RCWA从零开始",
+        "光学建模入门",
+        "科研项目/RCWA从零开始学习指南"
+      ],
+      "commentKey": "content/科研项目/RCWA从零开始学习指南.md",
+      "migrated": true,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/TMM 建模原理与适用方法.md",
+      "legacySlug": "科研项目/TMM-建模原理与适用方法",
+      "canonicalSlug": "科研项目/TMM-建模原理与适用方法",
+      "aliases": [],
+      "commentKey": "content/科研项目/TMM 建模原理与适用方法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/plane v3.md",
+      "legacySlug": "科研项目/plane-v3",
+      "canonicalSlug": "科研项目/plane-v3",
+      "aliases": [],
+      "commentKey": "content/科研项目/plane v3.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/多波长-变温 PL 钙钛矿膜厚测量方案：可行性分析.md",
+      "legacySlug": "科研项目/多波长-变温-PL-钙钛矿膜厚测量方案：可行性分析",
+      "canonicalSlug": "科研项目/多波长-变温-PL-钙钛矿膜厚测量方案：可行性分析",
+      "aliases": [],
+      "commentKey": "content/科研项目/多波长-变温 PL 钙钛矿膜厚测量方案：可行性分析.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/多波长-变温 PL 钙钛矿膜厚测量：实验方案与决策树.md",
+      "legacySlug": "科研项目/多波长-变温-PL-钙钛矿膜厚测量：实验方案与决策树",
+      "canonicalSlug": "科研项目/多波长-变温-PL-钙钛矿膜厚测量：实验方案与决策树",
+      "aliases": [],
+      "commentKey": "content/科研项目/多波长-变温 PL 钙钛矿膜厚测量：实验方案与决策树.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/多波长-变温PL测厚方案：剩余不确定性分析.md",
+      "legacySlug": "科研项目/多波长-变温PL测厚方案：剩余不确定性分析",
+      "canonicalSlug": "科研项目/多波长-变温PL测厚方案：剩余不确定性分析",
+      "aliases": [],
+      "commentKey": "content/科研项目/多波长-变温PL测厚方案：剩余不确定性分析.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/方案B不成立时的后备路线.md",
+      "legacySlug": "科研项目/方案B不成立时的后备路线",
+      "canonicalSlug": "科研项目/方案B不成立时的后备路线",
+      "aliases": [],
+      "commentKey": "content/科研项目/方案B不成立时的后备路线.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "科研项目/钙钛矿金字塔绒面膜厚光学测量：两大方案对比分析.md",
+      "legacySlug": "科研项目/钙钛矿金字塔绒面膜厚光学测量：两大方案对比分析",
+      "canonicalSlug": "科研项目/钙钛矿金字塔绒面膜厚光学测量：两大方案对比分析",
+      "aliases": [],
+      "commentKey": "content/科研项目/钙钛矿金字塔绒面膜厚光学测量：两大方案对比分析.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "课堂笔记/20260522_两会解读与青年机遇.md",
+      "legacySlug": "课堂笔记/20260522_两会解读与青年机遇",
+      "canonicalSlug": "课堂笔记/20260522_两会解读与青年机遇",
+      "aliases": [],
+      "commentKey": "content/课堂笔记/20260522_两会解读与青年机遇.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "课堂笔记/20260522_特征值与特征向量.md",
+      "legacySlug": "课堂笔记/20260522_特征值与特征向量",
+      "canonicalSlug": "课堂笔记/20260522_特征值与特征向量",
+      "aliases": [],
+      "commentKey": "content/课堂笔记/20260522_特征值与特征向量.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "课堂笔记/20260525_八七会议与革命道路.md",
+      "legacySlug": "课堂笔记/20260525_八七会议与革命道路",
+      "canonicalSlug": "课堂笔记/20260525_八七会议与革命道路",
+      "aliases": [],
+      "commentKey": "content/课堂笔记/20260525_八七会议与革命道路.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "课堂笔记/20260526_周边安全形势分析.md",
+      "legacySlug": "课堂笔记/20260526_周边安全形势分析",
+      "canonicalSlug": "课堂笔记/20260526_周边安全形势分析",
+      "aliases": [],
+      "commentKey": "content/课堂笔记/20260526_周边安全形势分析.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "闪卡自测/index.md",
+      "legacySlug": "闪卡自测/index",
+      "canonicalSlug": "闪卡自测/index",
+      "aliases": [],
+      "commentKey": "content/闪卡自测/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "闪卡自测/微积分概念闪卡.md",
+      "legacySlug": "闪卡自测/微积分概念闪卡",
+      "canonicalSlug": "闪卡自测/微积分概念闪卡",
+      "aliases": [],
+      "commentKey": "content/闪卡自测/微积分概念闪卡.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "闪卡自测/微积分自测题.md",
+      "legacySlug": "闪卡自测/微积分自测题",
+      "canonicalSlug": "闪卡自测/微积分自测题",
+      "aliases": [],
+      "commentKey": "content/闪卡自测/微积分自测题.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "闪卡自测/空间解析几何概念闪卡.md",
+      "legacySlug": "闪卡自测/空间解析几何概念闪卡",
+      "canonicalSlug": "闪卡自测/空间解析几何概念闪卡",
+      "aliases": [],
+      "commentKey": "content/闪卡自测/空间解析几何概念闪卡.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "闪卡自测/空间解析几何自测题.md",
+      "legacySlug": "闪卡自测/空间解析几何自测题",
+      "canonicalSlug": "闪卡自测/空间解析几何自测题",
+      "aliases": [],
+      "commentKey": "content/闪卡自测/空间解析几何自测题.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "闪卡自测/线性代数概念闪卡.md",
+      "legacySlug": "闪卡自测/线性代数概念闪卡",
+      "canonicalSlug": "闪卡自测/线性代数概念闪卡",
+      "aliases": [],
+      "commentKey": "content/闪卡自测/线性代数概念闪卡.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/2027各省选调生考试全攻略.md",
+      "legacySlug": "🎓-讲座笔记/2027各省选调生考试全攻略",
+      "canonicalSlug": "🎓-讲座笔记/2027各省选调生考试全攻略",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/2027各省选调生考试全攻略.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/AIGC使用边界指南笔记.md",
+      "legacySlug": "🎓-讲座笔记/AIGC使用边界指南笔记",
+      "canonicalSlug": "🎓-讲座笔记/AIGC使用边界指南笔记",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/AIGC使用边界指南笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Glossary-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Glossary-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Glossary-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Glossary-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Glossary.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Glossary",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Glossary",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Glossary.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-10-Applications-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-10-Applications-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-10-Applications-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-10-Applications-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-10-Applications.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-10-Applications",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-10-Applications",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-10-Applications.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-2-Stern-Gerlach-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-2-Stern-Gerlach-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-2-Stern-Gerlach-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-2-Stern-Gerlach-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-2-Stern-Gerlach.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-2-Stern-Gerlach",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-2-Stern-Gerlach",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-2-Stern-Gerlach.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-3-Quantum-Particles-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-3-Quantum-Particles-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-3-Quantum-Particles-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-3-Quantum-Particles-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-3-Quantum-Particles.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-3-Quantum-Particles",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-3-Quantum-Particles",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-3-Quantum-Particles.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-4-Two-Slit-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-4-Two-Slit-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-4-Two-Slit-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-4-Two-Slit-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-4-Two-Slit.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-4-Two-Slit",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-4-Two-Slit",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-4-Two-Slit.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-5-Complementarity-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-5-Complementarity-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-5-Complementarity-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-5-Complementarity-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-5-Complementarity.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-5-Complementarity",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-5-Complementarity",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-5-Complementarity.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-6-Wave-Particle-Duality-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-6-Wave-Particle-Duality-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-6-Wave-Particle-Duality-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-6-Wave-Particle-Duality-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-6-Wave-Particle-Duality.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-6-Wave-Particle-Duality",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-6-Wave-Particle-Duality",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-6-Wave-Particle-Duality.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-7-Quantum-Nature-of-Light-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-7-Quantum-Nature-of-Light-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-7-Quantum-Nature-of-Light-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-7-Quantum-Nature-of-Light-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-7-Quantum-Nature-of-Light.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-7-Quantum-Nature-of-Light",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-7-Quantum-Nature-of-Light",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-7-Quantum-Nature-of-Light.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-8-Single-Slit-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-8-Single-Slit-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-8-Single-Slit-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-8-Single-Slit-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-8-Single-Slit.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-8-Single-Slit",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-8-Single-Slit",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-8-Single-Slit.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-9-Double-Slit-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-9-Double-Slit-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-9-Double-Slit-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-9-Double-Slit-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-9-Double-Slit.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-9-Double-Slit",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/Lecture-9-Double-Slit",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/Lecture-9-Double-Slit.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/index-zh.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/index-zh",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/index-zh",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/index-zh.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/Bizarre World of Quantum Mechanics/index.md",
+      "legacySlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/index",
+      "canonicalSlug": "🎓-讲座笔记/Bizarre-World-of-Quantum-Mechanics/index",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/Bizarre World of Quantum Mechanics/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/CNKI_AI讲座笔记.md",
+      "legacySlug": "🎓-讲座笔记/CNKI_AI讲座笔记",
+      "canonicalSlug": "🎓-讲座笔记/CNKI_AI讲座笔记",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/CNKI_AI讲座笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/index.md",
+      "legacySlug": "🎓-讲座笔记/index",
+      "canonicalSlug": "🎓-讲座笔记/index",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/亲密关系读书笔记.md",
+      "legacySlug": "🎓-讲座笔记/亲密关系读书笔记",
+      "canonicalSlug": "🎓-讲座笔记/亲密关系读书笔记",
+      "aliases": [
+        "亲密关系读书笔记",
+        "Intimate-Relationships"
+      ],
+      "commentKey": "content/🎓 讲座笔记/亲密关系读书笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎓 讲座笔记/各省定向选调逐省详解.md",
+      "legacySlug": "🎓-讲座笔记/各省定向选调逐省详解",
+      "canonicalSlug": "🎓-讲座笔记/各省定向选调逐省详解",
+      "aliases": [],
+      "commentKey": "content/🎓 讲座笔记/各省定向选调逐省详解.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎬 视频笔记/index.md",
+      "legacySlug": "🎬-视频笔记/index",
+      "canonicalSlug": "🎬-视频笔记/index",
+      "aliases": [],
+      "commentKey": "content/🎬 视频笔记/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎬 视频笔记/meta_game_analysis.md",
+      "legacySlug": "🎬-视频笔记/meta_game_analysis",
+      "canonicalSlug": "🎬-视频笔记/meta_game_analysis",
+      "aliases": [],
+      "commentKey": "content/🎬 视频笔记/meta_game_analysis.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🎬 视频笔记/meta_game_philosophy_analysis.md",
+      "legacySlug": "🎬-视频笔记/meta_game_philosophy_analysis",
+      "canonicalSlug": "🎬-视频笔记/meta_game_philosophy_analysis",
+      "aliases": [],
+      "commentKey": "content/🎬 视频笔记/meta_game_philosophy_analysis.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/COMSOL 基础培训/01 基本建模流程.md",
+      "legacySlug": "📖-课堂笔记/COMSOL-基础培训/01-基本建模流程",
+      "canonicalSlug": "📖-课堂笔记/COMSOL-基础培训/01-基本建模流程",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/COMSOL 基础培训/01 基本建模流程.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/COMSOL 基础培训/02 几何建模.md",
+      "legacySlug": "📖-课堂笔记/COMSOL-基础培训/02-几何建模",
+      "canonicalSlug": "📖-课堂笔记/COMSOL-基础培训/02-几何建模",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/COMSOL 基础培训/02 几何建模.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/COMSOL 基础培训/03 网格划分.md",
+      "legacySlug": "📖-课堂笔记/COMSOL-基础培训/03-网格划分",
+      "canonicalSlug": "📖-课堂笔记/COMSOL-基础培训/03-网格划分",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/COMSOL 基础培训/03 网格划分.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/COMSOL 基础培训/04 结果处理与可视化.md",
+      "legacySlug": "📖-课堂笔记/COMSOL-基础培训/04-结果处理与可视化",
+      "canonicalSlug": "📖-课堂笔记/COMSOL-基础培训/04-结果处理与可视化",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/COMSOL 基础培训/04 结果处理与可视化.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/COMSOL 基础培训/COMSOL 基础培训_总索引.md",
+      "legacySlug": "📖-课堂笔记/COMSOL-基础培训/COMSOL-基础培训_总索引",
+      "canonicalSlug": "📖-课堂笔记/COMSOL-基础培训/COMSOL-基础培训_总索引",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/COMSOL 基础培训/COMSOL 基础培训_总索引.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/COMSOL 基础培训/index.md",
+      "legacySlug": "📖-课堂笔记/COMSOL-基础培训/index",
+      "canonicalSlug": "📖-课堂笔记/COMSOL-基础培训/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/COMSOL 基础培训/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/index.md",
+      "legacySlug": "📖-课堂笔记/index",
+      "canonicalSlug": "📖-课堂笔记/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/index.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/index",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/中华文明起源.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/中华文明起源",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/中华文明起源",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/中华文明起源.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/从华夷之辨到天下一家.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/从华夷之辨到天下一家",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/从华夷之辨到天下一家",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/从华夷之辨到天下一家.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/元明两代藏地流迁史.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/元明两代藏地流迁史",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/元明两代藏地流迁史",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/元明两代藏地流迁史.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/元朝大一统下的民族汇流和文化融合.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/元朝大一统下的民族汇流和文化融合",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/元朝大一统下的民族汇流和文化融合",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/元朝大一统下的民族汇流和文化融合.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/共融史话.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/共融史话",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/共融史话",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/共融史话.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/宋辽金时期的民族冲突与融合.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/宋辽金时期的民族冲突与融合",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/宋辽金时期的民族冲突与融合",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/宋辽金时期的民族冲突与融合.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/完整的天下经验.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/完整的天下经验",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/完整的天下经验",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/完整的天下经验.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/明代西藏关系探析——柔性治理与多元一体.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/明代西藏关系探析——柔性治理与多元一体",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/明代西藏关系探析——柔性治理与多元一体",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/明代西藏关系探析——柔性治理与多元一体.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/高原丝绸之路讲座.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/高原丝绸之路讲座",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/高原丝绸之路讲座",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/高原丝绸之路讲座.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中华民族发展史/鸦片战争与中国近代史开端.md",
+      "legacySlug": "📖-课堂笔记/中华民族发展史/鸦片战争与中国近代史开端",
+      "canonicalSlug": "📖-课堂笔记/中华民族发展史/鸦片战争与中国近代史开端",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中华民族发展史/鸦片战争与中国近代史开端.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/20260601_近代史纲要期末课程总复习.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/20260601_近代史纲要期末课程总复习",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/20260601_近代史纲要期末课程总复习",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/20260601_近代史纲要期末课程总复习.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/index.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/index",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/专题二_中国社会各阶级对国家出路的早期探索.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/专题二_中国社会各阶级对国家出路的早期探索",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/专题二_中国社会各阶级对国家出路的早期探索",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/专题二_中国社会各阶级对国家出路的早期探索.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/中国近现代史纲要_第二节课_2026-03-30.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/中国近现代史纲要_第二节课_2026-03-30",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/中国近现代史纲要_第二节课_2026-03-30",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/中国近现代史纲要_第二节课_2026-03-30.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/五四运动与中共讲座笔记.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/五四运动与中共讲座笔记",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/五四运动与中共讲座笔记",
+      "aliases": [
+        "五四与中共",
+        "五四运动与中国共产党的建立"
+      ],
+      "commentKey": "content/📖 课堂笔记/中国近代史/五四运动与中共讲座笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/元朝大一统下的民族汇流和文化融合.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/元朝大一统下的民族汇流和文化融合",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/元朝大一统下的民族汇流和文化融合",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/元朝大一统下的民族汇流和文化融合.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/孙中山三民主义思想.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/孙中山三民主义思想",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/孙中山三民主义思想",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/孙中山三民主义思想.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/康有为与进步观念_戊戌维新_辛亥革命.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/康有为与进步观念_戊戌维新_辛亥革命",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/康有为与进步观念_戊戌维新_辛亥革命",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/康有为与进步观念_戊戌维新_辛亥革命.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/清代多语政治讲座笔记.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/清代多语政治讲座笔记",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/清代多语政治讲座笔记",
+      "aliases": [
+        "清朝多语政治",
+        "同文之治讲座"
+      ],
+      "commentKey": "content/📖 课堂笔记/中国近代史/清代多语政治讲座笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/中国近代史/鸦片战争与中国近代史开端.md",
+      "legacySlug": "📖-课堂笔记/中国近代史/鸦片战争与中国近代史开端",
+      "canonicalSlug": "📖-课堂笔记/中国近代史/鸦片战争与中国近代史开端",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/中国近代史/鸦片战争与中国近代史开端.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/军事理论/index.md",
+      "legacySlug": "📖-课堂笔记/军事理论/index",
+      "canonicalSlug": "📖-课堂笔记/军事理论/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/军事理论/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/军事理论/军事理论_第一节课_2026-03-31.md",
+      "legacySlug": "📖-课堂笔记/军事理论/军事理论_第一节课_2026-03-31",
+      "canonicalSlug": "📖-课堂笔记/军事理论/军事理论_第一节课_2026-03-31",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/军事理论/军事理论_第一节课_2026-03-31.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/军事理论/军事理论_第二节课.md",
+      "legacySlug": "📖-课堂笔记/军事理论/军事理论_第二节课",
+      "canonicalSlug": "📖-课堂笔记/军事理论/军事理论_第二节课",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/军事理论/军事理论_第二节课.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/军事理论/国防法规课笔记.md",
+      "legacySlug": "📖-课堂笔记/军事理论/国防法规课笔记",
+      "canonicalSlug": "📖-课堂笔记/军事理论/国防法规课笔记",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/军事理论/国防法规课笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/军事理论/强军思想解析讲座笔记.md",
+      "legacySlug": "📖-课堂笔记/军事理论/强军思想解析讲座笔记",
+      "canonicalSlug": "📖-课堂笔记/军事理论/强军思想解析讲座笔记",
+      "aliases": [
+        "新时代强军思想",
+        "强军目标"
+      ],
+      "commentKey": "content/📖 课堂笔记/军事理论/强军思想解析讲座笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/index.md",
+      "legacySlug": "📖-课堂笔记/大学物理/index",
+      "canonicalSlug": "📖-课堂笔记/大学物理/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/动量定理解析.md",
+      "legacySlug": "📖-课堂笔记/大学物理/动量定理解析",
+      "canonicalSlug": "📖-课堂笔记/大学物理/动量定理解析",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/动量定理解析.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 第七章 恒定电流与恒定磁场（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-第七章-恒定电流与恒定磁场（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-第七章-恒定电流与恒定磁场（完整版）",
+      "aliases": [
+        "恒定磁场完整版",
+        "第七章恒定电流与恒定磁场",
+        "电磁学磁场篇"
+      ],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 第七章 恒定电流与恒定磁场（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 第三章 质点系的运动定理（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-第三章-质点系的运动定理（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-第三章-质点系的运动定理（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 第三章 质点系的运动定理（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 第二章 质点的运动定理（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-第二章-质点的运动定理（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-第二章-质点的运动定理（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 第二章 质点的运动定理（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 第五章 真空中的静电场（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-第五章-真空中的静电场（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-第五章-真空中的静电场（完整版）",
+      "aliases": [
+        "静电场完整版",
+        "第五章静电场"
+      ],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 第五章 真空中的静电场（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 第八章 电磁感应与电磁场（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-第八章-电磁感应与电磁场（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-第八章-电磁感应与电磁场（完整版）",
+      "aliases": [
+        "第八章电磁感应电磁场",
+        "电磁感应完整版"
+      ],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 第八章 电磁感应与电磁场（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 第六章 静电场中的导体和电介质（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-第六章-静电场中的导体和电介质（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-第六章-静电场中的导体和电介质（完整版）",
+      "aliases": [
+        "第六章静电场导体电介质",
+        "导体和电介质完整版"
+      ],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 第六章 静电场中的导体和电介质（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 第四章 刚体的转动（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-第四章-刚体的转动（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-第四章-刚体的转动（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 第四章 刚体的转动（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/大学物理 绪论+第一章 质点的运动（完整版）.md",
+      "legacySlug": "📖-课堂笔记/大学物理/大学物理-绪论+第一章-质点的运动（完整版）",
+      "canonicalSlug": "📖-课堂笔记/大学物理/大学物理-绪论+第一章-质点的运动（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/大学物理 绪论+第一章 质点的运动（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/导体、电容与电介质.md",
+      "legacySlug": "📖-课堂笔记/大学物理/导体、电容与电介质",
+      "canonicalSlug": "📖-课堂笔记/大学物理/导体、电容与电介质",
+      "aliases": [
+        "导体与电容辅导课",
+        "大学物理-电容器"
+      ],
+      "commentKey": "content/📖 课堂笔记/大学物理/导体、电容与电介质.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/第一章_质点的运动.md",
+      "legacySlug": "📖-课堂笔记/大学物理/第一章_质点的运动",
+      "canonicalSlug": "📖-课堂笔记/大学物理/第一章_质点的运动",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/第一章_质点的运动.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/第三章_质点系的运动定理.md",
+      "legacySlug": "📖-课堂笔记/大学物理/第三章_质点系的运动定理",
+      "canonicalSlug": "📖-课堂笔记/大学物理/第三章_质点系的运动定理",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/第三章_质点系的运动定理.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/第二章_质点的运动定理.md",
+      "legacySlug": "📖-课堂笔记/大学物理/第二章_质点的运动定理",
+      "canonicalSlug": "📖-课堂笔记/大学物理/第二章_质点的运动定理",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/第二章_质点的运动定理.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/第五章_真空中的静电场.md",
+      "legacySlug": "📖-课堂笔记/大学物理/第五章_真空中的静电场",
+      "canonicalSlug": "📖-课堂笔记/大学物理/第五章_真空中的静电场",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/第五章_真空中的静电场.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/第四章_刚体的转动.md",
+      "legacySlug": "📖-课堂笔记/大学物理/第四章_刚体的转动",
+      "canonicalSlug": "📖-课堂笔记/大学物理/第四章_刚体的转动",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/第四章_刚体的转动.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/简答题备考_II-1.md",
+      "legacySlug": "📖-课堂笔记/大学物理/简答题备考_II-1",
+      "canonicalSlug": "📖-课堂笔记/大学物理/简答题备考_II-1",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/简答题备考_II-1.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/绪论.md",
+      "legacySlug": "📖-课堂笔记/大学物理/绪论",
+      "canonicalSlug": "📖-课堂笔记/大学物理/绪论",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/绪论.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/补充_惯性系与伽利略变换.md",
+      "legacySlug": "📖-课堂笔记/大学物理/补充_惯性系与伽利略变换",
+      "canonicalSlug": "📖-课堂笔记/大学物理/补充_惯性系与伽利略变换",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/补充_惯性系与伽利略变换.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/角动量与质点系运动定理.md",
+      "legacySlug": "📖-课堂笔记/大学物理/角动量与质点系运动定理",
+      "canonicalSlug": "📖-课堂笔记/大学物理/角动量与质点系运动定理",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/角动量与质点系运动定理.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/转动力学_完整版.md",
+      "legacySlug": "📖-课堂笔记/大学物理/转动力学_完整版",
+      "canonicalSlug": "📖-课堂笔记/大学物理/转动力学_完整版",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/转动力学_完整版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/转动力学解惑.md",
+      "legacySlug": "📖-课堂笔记/大学物理/转动力学解惑",
+      "canonicalSlug": "📖-课堂笔记/大学物理/转动力学解惑",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/大学物理/转动力学解惑.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/大学物理/高斯定理与电势.md",
+      "legacySlug": "📖-课堂笔记/大学物理/高斯定理与电势",
+      "canonicalSlug": "📖-课堂笔记/大学物理/高斯定理与电势",
+      "aliases": [
+        "高斯定理与电势讲解",
+        "大学物理-静电场"
+      ],
+      "commentKey": "content/📖 课堂笔记/大学物理/高斯定理与电势.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/index.md",
+      "legacySlug": "📖-课堂笔记/微积分上/index",
+      "canonicalSlug": "📖-课堂笔记/微积分上/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§1.2 数列的极限.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§1.2-数列的极限",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§1.2-数列的极限",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§1.2 数列的极限.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§1.3 函数的极限.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§1.3-函数的极限",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§1.3-函数的极限",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§1.3 函数的极限.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§1.4 无穷小量.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§1.4-无穷小量",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§1.4-无穷小量",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§1.4 无穷小量.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§1.5 函数的连续性.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§1.5-函数的连续性",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§1.5-函数的连续性",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§1.5 函数的连续性.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§2.1 导数概念与求导法则.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§2.1-导数概念与求导法则",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§2.1-导数概念与求导法则",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§2.1 导数概念与求导法则.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§2.3 高阶导数.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§2.3-高阶导数",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§2.3-高阶导数",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§2.3 高阶导数.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§2.4 隐函数与参数方程求导.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§2.4-隐函数与参数方程求导",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§2.4-隐函数与参数方程求导",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§2.4 隐函数与参数方程求导.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§2.5 函数的微分.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§2.5-函数的微分",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§2.5-函数的微分",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§2.5 函数的微分.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§3.1 微分中值定理.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§3.1-微分中值定理",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§3.1-微分中值定理",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§3.1 微分中值定理.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§3.2 洛必达法则.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§3.2-洛必达法则",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§3.2-洛必达法则",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§3.2 洛必达法则.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§3.3 泰勒公式.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§3.3-泰勒公式",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§3.3-泰勒公式",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§3.3 泰勒公式.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§3.4 函数的单调性与曲线的凹凸性.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§3.4-函数的单调性与曲线的凹凸性",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§3.4-函数的单调性与曲线的凹凸性",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§3.4 函数的单调性与曲线的凹凸性.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§3.5 函数的渐近线和函数曲线.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§3.5-函数的渐近线和函数曲线",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§3.5-函数的渐近线和函数曲线",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§3.5 函数的渐近线和函数曲线.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§3.6 极值与导数的应用.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§3.6-极值与导数的应用",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§3.6-极值与导数的应用",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§3.6 极值与导数的应用.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§3.7 曲率.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§3.7-曲率",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§3.7-曲率",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§3.7 曲率.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§4.1 不定积分的概念与性质.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§4.1-不定积分的概念与性质",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§4.1-不定积分的概念与性质",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§4.1 不定积分的概念与性质.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§4.2(1) 第一类换元法.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§4.2(1)-第一类换元法",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§4.2(1)-第一类换元法",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§4.2(1) 第一类换元法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§4.2(2) 第二类换元法.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§4.2(2)-第二类换元法",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§4.2(2)-第二类换元法",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§4.2(2) 第二类换元法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§4.2(3) 分部积分法.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§4.2(3)-分部积分法",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§4.2(3)-分部积分法",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§4.2(3) 分部积分法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§4.3 几种特殊函数的积分.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§4.3-几种特殊函数的积分",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§4.3-几种特殊函数的积分",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§4.3 几种特殊函数的积分.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§5.1 定积分的基本概念.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§5.1-定积分的基本概念",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§5.1-定积分的基本概念",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§5.1 定积分的基本概念.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§5.2 微积分基本公式.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§5.2-微积分基本公式",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§5.2-微积分基本公式",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§5.2 微积分基本公式.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§5.3 定积分的积分法.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§5.3-定积分的积分法",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§5.3-定积分的积分法",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§5.3 定积分的积分法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§5.4 广义积分.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§5.4-广义积分",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§5.4-广义积分",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§5.4 广义积分.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§5.5 定积分的应用.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§5.5-定积分的应用",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§5.5-定积分的应用",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§5.5 定积分的应用.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§6.1 微分方程的基本概念.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§6.1-微分方程的基本概念",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§6.1-微分方程的基本概念",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§6.1 微分方程的基本概念.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§6.2 一阶微分方程.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§6.2-一阶微分方程",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§6.2-一阶微分方程",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§6.2 一阶微分方程.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§6.3(1) 可降阶的二阶微分方程.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§6.3(1)-可降阶的二阶微分方程",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§6.3(1)-可降阶的二阶微分方程",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§6.3(1) 可降阶的二阶微分方程.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§6.3(2) 二阶常系数齐次线性.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§6.3(2)-二阶常系数齐次线性",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§6.3(2)-二阶常系数齐次线性",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§6.3(2) 二阶常系数齐次线性.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§6.3(3) 解的性质与结构.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§6.3(3)-解的性质与结构",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§6.3(3)-解的性质与结构",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§6.3(3) 解的性质与结构.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分上/微积分-§6.3(4) 非齐次与欧拉方程.md",
+      "legacySlug": "📖-课堂笔记/微积分上/微积分-§6.3(4)-非齐次与欧拉方程",
+      "canonicalSlug": "📖-课堂笔记/微积分上/微积分-§6.3(4)-非齐次与欧拉方程",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分上/微积分-§6.3(4) 非齐次与欧拉方程.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/index.md",
+      "legacySlug": "📖-课堂笔记/微积分下/index",
+      "canonicalSlug": "📖-课堂笔记/微积分下/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.1 对弧长的曲线积分（第一类）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.1-对弧长的曲线积分（第一类）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.1-对弧长的曲线积分（第一类）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.1 对弧长的曲线积分（第一类）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.2 对坐标的曲线积分（第二类）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.2-对坐标的曲线积分（第二类）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.2-对坐标的曲线积分（第二类）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.2 对坐标的曲线积分（第二类）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.3 格林公式（一）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.3-格林公式（一）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.3-格林公式（一）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.3 格林公式（一）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.3 格林公式（二）— 路径无关与全微分求积.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.3-格林公式（二）—-路径无关与全微分求积",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.3-格林公式（二）—-路径无关与全微分求积",
+      "aliases": [
+        "格林公式2",
+        "路径无关",
+        "全微分求积"
+      ],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.3 格林公式（二）— 路径无关与全微分求积.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.4 对面积的曲面积分.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.4-对面积的曲面积分",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.4-对面积的曲面积分",
+      "aliases": [
+        "对面积曲面积分",
+        "第一类曲面积分"
+      ],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.4 对面积的曲面积分.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.5 对坐标的曲面积分.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.5-对坐标的曲面积分",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.5-对坐标的曲面积分",
+      "aliases": [
+        "对坐标曲面积分",
+        "第二类曲面积分"
+      ],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.5 对坐标的曲面积分.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.6 高斯公式.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.6-高斯公式",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.6-高斯公式",
+      "aliases": [
+        "Gauss公式",
+        "散度定理",
+        "高斯定理"
+      ],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.6 高斯公式.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§10.7 斯托克斯公式.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§10.7-斯托克斯公式",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§10.7-斯托克斯公式",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§10.7 斯托克斯公式.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§11.1 常数项级数的概念与性质.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§11.1-常数项级数的概念与性质",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§11.1-常数项级数的概念与性质",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§11.1 常数项级数的概念与性质.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§11.2 常数项级数的审敛法.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§11.2-常数项级数的审敛法",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§11.2-常数项级数的审敛法",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§11.2 常数项级数的审敛法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§11.3 幂级数（一）— 收敛域.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§11.3-幂级数（一）—-收敛域",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§11.3-幂级数（一）—-收敛域",
+      "aliases": [
+        "幂级数收敛域",
+        "power-series-convergence"
+      ],
+      "commentKey": "content/📖 课堂笔记/微积分下/§11.3 幂级数（一）— 收敛域.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§11.3 幂级数（二）— 和函数.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§11.3-幂级数（二）—-和函数",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§11.3-幂级数（二）—-和函数",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§11.3 幂级数（二）— 和函数.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§11.3.4 泰勒级数.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§11.3.4-泰勒级数",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§11.3.4-泰勒级数",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§11.3.4 泰勒级数.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§9.1 二重积分的概念与性质.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§9.1-二重积分的概念与性质",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§9.1-二重积分的概念与性质",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§9.1 二重积分的概念与性质.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§9.2 二重积分的计算法（极坐标与坐标变换）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§9.2-二重积分的计算法（极坐标与坐标变换）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§9.2-二重积分的计算法（极坐标与坐标变换）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§9.2 二重积分的计算法（极坐标与坐标变换）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§9.2 二重积分的计算法（直角坐标）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§9.2-二重积分的计算法（直角坐标）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§9.2-二重积分的计算法（直角坐标）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§9.2 二重积分的计算法（直角坐标）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§9.3 三重积分及其计算（球面坐标）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§9.3-三重积分及其计算（球面坐标）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§9.3-三重积分及其计算（球面坐标）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§9.3 三重积分及其计算（球面坐标）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/§9.3 三重积分及其计算（直角坐标）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/§9.3-三重积分及其计算（直角坐标）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/§9.3-三重积分及其计算（直角坐标）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/§9.3 三重积分及其计算（直角坐标）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§7.1 向量及向量的运算.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§7.1-向量及向量的运算",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§7.1-向量及向量的运算",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§7.1 向量及向量的运算.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§7.1(续) 数量积、向量积与混合积.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§7.1(续)-数量积、向量积与混合积",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§7.1(续)-数量积、向量积与混合积",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§7.1(续) 数量积、向量积与混合积.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§7.2 坐标系与向量的坐标.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§7.2-坐标系与向量的坐标",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§7.2-坐标系与向量的坐标",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§7.2 坐标系与向量的坐标.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§7.3 平面与直线.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§7.3-平面与直线",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§7.3-平面与直线",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§7.3 平面与直线.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§7.4 曲面与曲线.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§7.4-曲面与曲线",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§7.4-曲面与曲线",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§7.4 曲面与曲线.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§7.5 二次曲面的标准型.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§7.5-二次曲面的标准型",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§7.5-二次曲面的标准型",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§7.5 二次曲面的标准型.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.1 多元函数的基本概念与极限.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.1-多元函数的基本概念与极限",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.1-多元函数的基本概念与极限",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.1 多元函数的基本概念与极限.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.1 多元函数（概念与极限）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.1-多元函数（概念与极限）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.1-多元函数（概念与极限）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.1 多元函数（概念与极限）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.1(1) 多元函数的概念与极限.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.1(1)-多元函数的概念与极限",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.1(1)-多元函数的概念与极限",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.1(1) 多元函数的概念与极限.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.1(2) 多元函数的极限与连续.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.1(2)-多元函数的极限与连续",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.1(2)-多元函数的极限与连续",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.1(2) 多元函数的极限与连续.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.1(3) 偏导数与高阶导数.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.1(3)-偏导数与高阶导数",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.1(3)-偏导数与高阶导数",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.1(3) 偏导数与高阶导数.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.1(续) 极限求法与连续性.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.1(续)-极限求法与连续性",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.1(续)-极限求法与连续性",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.1(续) 极限求法与连续性.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.10 多元函数的极值与最值.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.10-多元函数的极值与最值",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.10-多元函数的极值与最值",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.10 多元函数的极值与最值.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.1（续）极限方法与连续性.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.1（续）极限方法与连续性",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.1（续）极限方法与连续性",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.1（续）极限方法与连续性.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.3 偏导数与高阶偏导数.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.3-偏导数与高阶偏导数",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.3-偏导数与高阶偏导数",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.3 偏导数与高阶偏导数.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.4 全微分.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.4-全微分",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.4-全微分",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.4 全微分.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.5 多元复合函数求导法.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.5-多元复合函数求导法",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.5-多元复合函数求导法",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.5 多元复合函数求导法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.5 多元复合函数求导法则.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.5-多元复合函数求导法则",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.5-多元复合函数求导法则",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.5 多元复合函数求导法则.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.6 隐函数的求导法.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.6-隐函数的求导法",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.6-隐函数的求导法",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.6 隐函数的求导法.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.6 隐函数的求导法则.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.6-隐函数的求导法则",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.6-隐函数的求导法则",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.6 隐函数的求导法则.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.7 偏导数在几何中的应用.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.7-偏导数在几何中的应用",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.7-偏导数在几何中的应用",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.7 偏导数在几何中的应用.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.7 微分学在几何中的应用.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.7-微分学在几何中的应用",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.7-微分学在几何中的应用",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.7 微分学在几何中的应用.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/微积分-§8.8 方向导数与梯度.md",
+      "legacySlug": "📖-课堂笔记/微积分下/微积分-§8.8-方向导数与梯度",
+      "canonicalSlug": "📖-课堂笔记/微积分下/微积分-§8.8-方向导数与梯度",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/微积分-§8.8 方向导数与梯度.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/第七章 空间解析几何（完整版）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/第七章-空间解析几何（完整版）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/第七章-空间解析几何（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/第七章 空间解析几何（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/第七章精简笔记.md",
+      "legacySlug": "📖-课堂笔记/微积分下/第七章精简笔记",
+      "canonicalSlug": "📖-课堂笔记/微积分下/第七章精简笔记",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/第七章精简笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/第九章 重积分及其应用（完整版）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/第九章-重积分及其应用（完整版）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/第九章-重积分及其应用（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/第九章 重积分及其应用（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/第八章 多元函数微分学（完整版）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/第八章-多元函数微分学（完整版）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/第八章-多元函数微分学（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/第八章 多元函数微分学（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/第十一章 无穷级数（完整版）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/第十一章-无穷级数（完整版）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/第十一章-无穷级数（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/第十一章 无穷级数（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/微积分下/第十章 曲线积分与曲面积分（完整版）.md",
+      "legacySlug": "📖-课堂笔记/微积分下/第十章-曲线积分与曲面积分（完整版）",
+      "canonicalSlug": "📖-课堂笔记/微积分下/第十章-曲线积分与曲面积分（完整版）",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/微积分下/第十章 曲线积分与曲面积分（完整版）.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/思政与社会/index.md",
+      "legacySlug": "📖-课堂笔记/思政与社会/index",
+      "canonicalSlug": "📖-课堂笔记/思政与社会/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/思政与社会/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/思政与社会/宗教中国化调研资料汇编.md",
+      "legacySlug": "📖-课堂笔记/思政与社会/宗教中国化调研资料汇编",
+      "canonicalSlug": "📖-课堂笔记/思政与社会/宗教中国化调研资料汇编",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/思政与社会/宗教中国化调研资料汇编.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/index.md",
+      "legacySlug": "📖-课堂笔记/有机化学/index",
+      "canonicalSlug": "📖-课堂笔记/有机化学/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/obsidian-chem部署指南.md",
+      "legacySlug": "📖-课堂笔记/有机化学/obsidian-chem部署指南",
+      "canonicalSlug": "📖-课堂笔记/有机化学/obsidian-chem部署指南",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/obsidian-chem部署指南.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/炔烃自学读书报告.md",
+      "legacySlug": "📖-课堂笔记/有机化学/炔烃自学读书报告",
+      "canonicalSlug": "📖-课堂笔记/有机化学/炔烃自学读书报告",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/炔烃自学读书报告.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第二十章_对映异构.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第二十章_对映异构",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第二十章_对映异构",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第二十章_对映异构.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第十七章_不饱和烃(二)_化学性质.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第十七章_不饱和烃(二)_化学性质",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第十七章_不饱和烃(二)_化学性质",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第十七章_不饱和烃(二)_化学性质.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第十七章_不饱和烃.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第十七章_不饱和烃",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第十七章_不饱和烃",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第十七章_不饱和烃.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第十七章_二烯烃与共轭体系.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第十七章_二烯烃与共轭体系",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第十七章_二烯烃与共轭体系",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第十七章_二烯烃与共轭体系.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第十九章_芳香烃.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第十九章_芳香烃",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第十九章_芳香烃",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第十九章_芳香烃.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第十五章_有机化合物和有机化学.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第十五章_有机化合物和有机化学",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第十五章_有机化合物和有机化学",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第十五章_有机化合物和有机化学.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第十八章_脂环烃.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第十八章_脂环烃",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第十八章_脂环烃",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第十八章_脂环烃.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/有机化学/第十六章_烷烃.md",
+      "legacySlug": "📖-课堂笔记/有机化学/第十六章_烷烃",
+      "canonicalSlug": "📖-课堂笔记/有机化学/第十六章_烷烃",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/有机化学/第十六章_烷烃.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/1.1_线性方程组、高斯消元法与矩阵.md",
+      "legacySlug": "📖-课堂笔记/线性代数/1.1_线性方程组、高斯消元法与矩阵",
+      "canonicalSlug": "📖-课堂笔记/线性代数/1.1_线性方程组、高斯消元法与矩阵",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/1.1_线性方程组、高斯消元法与矩阵.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/1.2_行化简与阶梯形矩阵.md",
+      "legacySlug": "📖-课堂笔记/线性代数/1.2_行化简与阶梯形矩阵",
+      "canonicalSlug": "📖-课堂笔记/线性代数/1.2_行化简与阶梯形矩阵",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/1.2_行化简与阶梯形矩阵.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/2.1&2.2_矩阵的代数运算.md",
+      "legacySlug": "📖-课堂笔记/线性代数/2.1-and-2.2_矩阵的代数运算",
+      "canonicalSlug": "📖-课堂笔记/线性代数/2.1-and-2.2_矩阵的代数运算",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/2.1&2.2_矩阵的代数运算.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/2.3_逆矩阵.md",
+      "legacySlug": "📖-课堂笔记/线性代数/2.3_逆矩阵",
+      "canonicalSlug": "📖-课堂笔记/线性代数/2.3_逆矩阵",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/2.3_逆矩阵.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/2.4_转置矩阵与特殊方阵.md",
+      "legacySlug": "📖-课堂笔记/线性代数/2.4_转置矩阵与特殊方阵",
+      "canonicalSlug": "📖-课堂笔记/线性代数/2.4_转置矩阵与特殊方阵",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/2.4_转置矩阵与特殊方阵.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/2.5_分块矩阵.md",
+      "legacySlug": "📖-课堂笔记/线性代数/2.5_分块矩阵",
+      "canonicalSlug": "📖-课堂笔记/线性代数/2.5_分块矩阵",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/2.5_分块矩阵.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/3.1_方阵的行列式.md",
+      "legacySlug": "📖-课堂笔记/线性代数/3.1_方阵的行列式",
+      "canonicalSlug": "📖-课堂笔记/线性代数/3.1_方阵的行列式",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/3.1_方阵的行列式.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/3.2_行列式的主要性质.md",
+      "legacySlug": "📖-课堂笔记/线性代数/3.2_行列式的主要性质",
+      "canonicalSlug": "📖-课堂笔记/线性代数/3.2_行列式的主要性质",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/3.2_行列式的主要性质.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/3.3_行列式的应用.md",
+      "legacySlug": "📖-课堂笔记/线性代数/3.3_行列式的应用",
+      "canonicalSlug": "📖-课堂笔记/线性代数/3.3_行列式的应用",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/3.3_行列式的应用.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/4.1&4.2_向量的线性相关与线性无关.md",
+      "legacySlug": "📖-课堂笔记/线性代数/4.1-and-4.2_向量的线性相关与线性无关",
+      "canonicalSlug": "📖-课堂笔记/线性代数/4.1-and-4.2_向量的线性相关与线性无关",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/4.1&4.2_向量的线性相关与线性无关.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/4.3_向量组的极大无关组和秩.md",
+      "legacySlug": "📖-课堂笔记/线性代数/4.3_向量组的极大无关组和秩",
+      "canonicalSlug": "📖-课堂笔记/线性代数/4.3_向量组的极大无关组和秩",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/4.3_向量组的极大无关组和秩.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/4.4_矩阵的秩.md",
+      "legacySlug": "📖-课堂笔记/线性代数/4.4_矩阵的秩",
+      "canonicalSlug": "📖-课堂笔记/线性代数/4.4_矩阵的秩",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/4.4_矩阵的秩.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/4.5_子空间.md",
+      "legacySlug": "📖-课堂笔记/线性代数/4.5_子空间",
+      "canonicalSlug": "📖-课堂笔记/线性代数/4.5_子空间",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/4.5_子空间.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/4.6_基和维数.md",
+      "legacySlug": "📖-课堂笔记/线性代数/4.6_基和维数",
+      "canonicalSlug": "📖-课堂笔记/线性代数/4.6_基和维数",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/4.6_基和维数.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/4.7_线性方程组有解条件及解的结构.md",
+      "legacySlug": "📖-课堂笔记/线性代数/4.7_线性方程组有解条件及解的结构",
+      "canonicalSlug": "📖-课堂笔记/线性代数/4.7_线性方程组有解条件及解的结构",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/4.7_线性方程组有解条件及解的结构.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/5.1_特征值与特征向量.md",
+      "legacySlug": "📖-课堂笔记/线性代数/5.1_特征值与特征向量",
+      "canonicalSlug": "📖-课堂笔记/线性代数/5.1_特征值与特征向量",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/5.1_特征值与特征向量.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/index.md",
+      "legacySlug": "📖-课堂笔记/线性代数/index",
+      "canonicalSlug": "📖-课堂笔记/线性代数/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第1章_完整版.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第1章_完整版",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第1章_完整版",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第1章_完整版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第2章_完整版.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第2章_完整版",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第2章_完整版",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第2章_完整版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第3章_完整版.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第3章_完整版",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第3章_完整版",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第3章_完整版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第4章_完整版.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第4章_完整版",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第4章_完整版",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第4章_完整版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第6章_完整版.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第6章_完整版",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第6章_完整版",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第6章_完整版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第7章_完整版.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第7章_完整版",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第7章_完整版",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第7章_完整版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第一章_精简笔记.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第一章_精简笔记",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第一章_精简笔记",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第一章_精简笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第三章_精简笔记.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第三章_精简笔记",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第三章_精简笔记",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第三章_精简笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/线性代数/第二章_精简笔记.md",
+      "legacySlug": "📖-课堂笔记/线性代数/第二章_精简笔记",
+      "canonicalSlug": "📖-课堂笔记/线性代数/第二章_精简笔记",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/线性代数/第二章_精简笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/计算机科学/index.md",
+      "legacySlug": "📖-课堂笔记/计算机科学/index",
+      "canonicalSlug": "📖-课堂笔记/计算机科学/index",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/计算机科学/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/计算机科学/专利基本知识.md",
+      "legacySlug": "📖-课堂笔记/计算机科学/专利基本知识",
+      "canonicalSlug": "📖-课堂笔记/计算机科学/专利基本知识",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/计算机科学/专利基本知识.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/计算机科学/计算机科学速成课_第1集_计算机早期历史.md",
+      "legacySlug": "📖-课堂笔记/计算机科学/计算机科学速成课_第1集_计算机早期历史",
+      "canonicalSlug": "📖-课堂笔记/计算机科学/计算机科学速成课_第1集_计算机早期历史",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/计算机科学/计算机科学速成课_第1集_计算机早期历史.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📖 课堂笔记/计算机科学/计算机科学速成课_第3集_布尔逻辑与逻辑门_v2.md",
+      "legacySlug": "📖-课堂笔记/计算机科学/计算机科学速成课_第3集_布尔逻辑与逻辑门_v2",
+      "canonicalSlug": "📖-课堂笔记/计算机科学/计算机科学速成课_第3集_布尔逻辑与逻辑门_v2",
+      "aliases": [],
+      "commentKey": "content/📖 课堂笔记/计算机科学/计算机科学速成课_第3集_布尔逻辑与逻辑门_v2.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📚 文献检索/index.md",
+      "legacySlug": "📚-文献检索/index",
+      "canonicalSlug": "📚-文献检索/index",
+      "aliases": [],
+      "commentKey": "content/📚 文献检索/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📚 文献检索/luminescence_thermometry_literature.md",
+      "legacySlug": "📚-文献检索/luminescence_thermometry_literature",
+      "canonicalSlug": "📚-文献检索/luminescence_thermometry_literature",
+      "aliases": [],
+      "commentKey": "content/📚 文献检索/luminescence_thermometry_literature.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "📚 文献检索/solar_cell_diagnosis_literature.md",
+      "legacySlug": "📚-文献检索/solar_cell_diagnosis_literature",
+      "canonicalSlug": "📚-文献检索/solar_cell_diagnosis_literature",
+      "aliases": [],
+      "commentKey": "content/📚 文献检索/solar_cell_diagnosis_literature.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/1-s2.0-S002223132100212X-main.md",
+      "legacySlug": "🔬-科研笔记/1-s2.0-S002223132100212X-main",
+      "canonicalSlug": "🔬-科研笔记/1-s2.0-S002223132100212X-main",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/1-s2.0-S002223132100212X-main.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/J-V曲线逆向工程验证实验报告.md",
+      "legacySlug": "🔬-科研笔记/J-V曲线逆向工程验证实验报告",
+      "canonicalSlug": "🔬-科研笔记/J-V曲线逆向工程验证实验报告",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/J-V曲线逆向工程验证实验报告.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读.md",
+      "legacySlug": "🔬-科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读",
+      "canonicalSlug": "🔬-科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/Nature_Energy_2026_FA-Cs_论文深度解读.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/Sahli_2018_Fully_Textured_Tandem_NatMater.md",
+      "legacySlug": "🔬-科研笔记/Sahli_2018_Fully_Textured_Tandem_NatMater",
+      "canonicalSlug": "🔬-科研笔记/Sahli_2018_Fully_Textured_Tandem_NatMater",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/Sahli_2018_Fully_Textured_Tandem_NatMater.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/SrSeO3基质稀土离子掺杂发光晶体研究.md",
+      "legacySlug": "🔬-科研笔记/SrSeO3基质稀土离子掺杂发光晶体研究",
+      "canonicalSlug": "🔬-科研笔记/SrSeO3基质稀土离子掺杂发光晶体研究",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/SrSeO3基质稀土离子掺杂发光晶体研究.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/index.md",
+      "legacySlug": "🔬-科研笔记/index",
+      "canonicalSlug": "🔬-科研笔记/index",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/index.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/vanEerden_2017_Optical_Analysis_Multicrystalline_Perovskite.md",
+      "legacySlug": "🔬-科研笔记/vanEerden_2017_Optical_Analysis_Multicrystalline_Perovskite",
+      "canonicalSlug": "🔬-科研笔记/vanEerden_2017_Optical_Analysis_Multicrystalline_Perovskite",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/vanEerden_2017_Optical_Analysis_Multicrystalline_Perovskite.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/大创_探光知温_荧光温度计_笔记_v3_原理实验版.md",
+      "legacySlug": "🔬-科研笔记/大创_探光知温_荧光温度计_笔记_v3_原理实验版",
+      "canonicalSlug": "🔬-科研笔记/大创_探光知温_荧光温度计_笔记_v3_原理实验版",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/大创_探光知温_荧光温度计_笔记_v3_原理实验版.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/太阳能电池物理原理及其效率提升策略分析.md",
+      "legacySlug": "🔬-科研笔记/太阳能电池物理原理及其效率提升策略分析",
+      "canonicalSlug": "🔬-科研笔记/太阳能电池物理原理及其效率提升策略分析",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/太阳能电池物理原理及其效率提升策略分析.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/钙钛矿太阳能电池反向工程_原理与步骤分析.md",
+      "legacySlug": "🔬-科研笔记/钙钛矿太阳能电池反向工程_原理与步骤分析",
+      "canonicalSlug": "🔬-科研笔记/钙钛矿太阳能电池反向工程_原理与步骤分析",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/钙钛矿太阳能电池反向工程_原理与步骤分析.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/钙钛矿太阳能电池反向工程研究笔记.md",
+      "legacySlug": "🔬-科研笔记/钙钛矿太阳能电池反向工程研究笔记",
+      "canonicalSlug": "🔬-科研笔记/钙钛矿太阳能电池反向工程研究笔记",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/钙钛矿太阳能电池反向工程研究笔记.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/钙钛矿太阳能电池诊断方法_适用方法详编.md",
+      "legacySlug": "🔬-科研笔记/钙钛矿太阳能电池诊断方法_适用方法详编",
+      "canonicalSlug": "🔬-科研笔记/钙钛矿太阳能电池诊断方法_适用方法详编",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/钙钛矿太阳能电池诊断方法_适用方法详编.md",
+      "migrated": false,
+      "legacyCovered": true
+    },
+    {
+      "sourcePath": "🔬 科研笔记/领域LLM适配方法论.md",
+      "legacySlug": "🔬-科研笔记/领域LLM适配方法论",
+      "canonicalSlug": "🔬-科研笔记/领域LLM适配方法论",
+      "aliases": [],
+      "commentKey": "content/🔬 科研笔记/领域LLM适配方法论.md",
+      "migrated": false,
+      "legacyCovered": true
+    }
+  ]
+}

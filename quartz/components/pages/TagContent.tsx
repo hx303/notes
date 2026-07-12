@@ -8,6 +8,7 @@ import { htmlToJsx } from "../../util/jsx"
 import { i18n } from "../../i18n"
 import { ComponentChildren } from "preact"
 import { concatenateResources } from "../../util/resources"
+import { tagsMatch } from "../../util/tagNormalization"
 
 interface TagContentOptions {
   sort?: SortFn
@@ -32,7 +33,9 @@ export default ((opts?: Partial<TagContentOptions>) => {
     const tag = simplifySlug(slug.slice("tags/".length) as FullSlug)
     const allPagesWithTag = (tag: string) =>
       allFiles.filter((file) =>
-        (file.frontmatter?.tags ?? []).flatMap(getAllSegmentPrefixes).includes(tag),
+        (file.frontmatter?.tags ?? [])
+          .flatMap(getAllSegmentPrefixes)
+          .some((candidate) => tagsMatch(candidate, tag)),
       )
 
     const content = (

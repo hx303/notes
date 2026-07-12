@@ -2,6 +2,7 @@ import { QuartzConfig } from "../cfg"
 import { QuartzPluginData } from "../plugins/vfile"
 import { FileTrieNode } from "./fileTrie"
 import { FilePath, FullSlug } from "./path"
+import type { CanonicalSlugMap } from "./canonicalSlug"
 
 export interface Argv {
   directory: string
@@ -27,6 +28,7 @@ export interface BuildCtx {
   cfg: QuartzConfig
   allSlugs: FullSlug[]
   allFiles: FilePath[]
+  canonicalSlugMap: CanonicalSlugMap
   trie?: FileTrieNode<BuildTimeTrieData>
   incremental: boolean
 }
