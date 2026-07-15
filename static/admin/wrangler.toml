@@ -35,6 +35,7 @@ workers_dev = true
 # 敏感值请�?wrangler secret put 设置，不要写在这里明�?# ============================================================
 
 [vars]
+R2_PUBLIC_URL = "https://pub-27259b86f2ff470abaf66edbe1c96973.r2.dev"
 # 非敏感变量可以写在这�?# SUPABASE_URL = "https://agocyybolrisqujvjqdj.supabase.co"
 # GITHUB_REPO = "hx303/notes"
 # GITHUB_BRANCH = "v4"
@@ -57,3 +58,9 @@ workers_dev = true
 # 4. 绑定域名: Cloudflare Dashboard �?Workers �?wouldkeep-api �?Custom Domains
 #    添加: api.wouldkeep.com
 # ============================================================
+
+# R2 bucket binding: uploads use Cloudflare binding; no browser credentials.
+[[r2_buckets]]
+binding = "WOULDKEEP_IMAGES"
+bucket_name = "wouldkeep-images"
+preview_bucket_name = "wouldkeep-images"
