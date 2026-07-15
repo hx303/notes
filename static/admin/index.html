@@ -513,23 +513,41 @@ body.light .sidebar .folder-header.drag-over{background:rgba(192,57,43,.15)!impo
 .sidebar .root-drop-zone.drag-over{background:rgba(233,69,96,.15);outline:2px dashed #e94560;outline-offset:-2px;color:#e94560}
 body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outline-color:#c0392b;color:#c0392b}
 </style>
+<link rel="stylesheet" href="/admin/admin.css" />
 </head>
 <body>
 
 <div class="login-overlay" id="loginScreen">
-  <div class="login-box">
-    <h2 id="adminLoginTitle">🔑 管理员登录</h2>
-    <p style="color:#a0a0b0;margin-bottom:16px;font-size:13px" id="adminLoginSubtitle">使用 wouldkeep.com 账号登录</p>
-    <div id="adminLoginError" style="color:#f44336;font-size:12px;margin-bottom:10px;min-height:16px"></div>
-    <div id="adminNameGroup" style="display:none">
-      <input type="text" id="adminNameInput" placeholder="显示名称" style="margin-bottom:10px" />
-    </div>
-    <input type="email" id="adminEmailInput" placeholder="you@example.com" />
-    <input type="password" id="adminPasswordInput" placeholder="密码（最少 6 位）" />
-    <button class="primary" onclick="handleAdminAuth()" id="adminAuthBtn">登录</button>
-    <div class="hint" id="adminToggleHint">
-      <span id="adminToggleLink">没有账号？<a href="#" onclick="toggleAdminMode('register')">注册</a></span>
-    </div>
+  <div class="admin-signin-layout">
+    <section class="admin-signin-intro" aria-labelledby="adminWelcomeTitle">
+      <a class="admin-wordmark" href="/" aria-label="返回 wouldkeep 首页">wouldkeep</a>
+      <p class="admin-eyebrow">站点编辑部</p>
+      <h1 id="adminWelcomeTitle">整理知识，照看分享。</h1>
+      <p>这里用于维护 wouldkeep 的公共内容、处理读者反馈与管理站点权限。个人知识库请前往账户工作区。</p>
+      <a class="admin-text-link" href="/workspace/">前往个人知识工作区 →</a>
+    </section>
+    <form class="login-box" id="adminLoginForm" onsubmit="event.preventDefault();handleAdminAuth();">
+      <div class="admin-signin-mark" aria-hidden="true">W</div>
+      <p class="admin-eyebrow">仅限获授权成员</p>
+      <h2 id="adminLoginTitle">登录站点编辑部</h2>
+      <p class="admin-signin-copy" id="adminLoginSubtitle">使用你的 wouldkeep 邮箱与密码登录。</p>
+      <div id="adminLoginError" class="admin-form-message" role="alert" aria-live="polite"></div>
+      <div id="adminNameGroup" style="display:none">
+        <label for="adminNameInput">显示名称</label>
+        <input type="text" id="adminNameInput" autocomplete="name" />
+      </div>
+      <label for="adminEmailInput">邮箱</label>
+      <input type="email" id="adminEmailInput" placeholder="you@example.com" autocomplete="email" required />
+      <label for="adminPasswordInput">密码</label>
+      <input type="password" id="adminPasswordInput" placeholder="至少 8 个字符" autocomplete="current-password" minlength="8" required />
+      <button class="primary" type="submit" id="adminAuthBtn">登录</button>
+      <div class="admin-signin-help" id="adminToggleHint">
+        <a href="/account/forgot-password/">忘记密码</a>
+        <span aria-hidden="true">·</span>
+        <a href="/account/signup/">创建普通账户</a>
+      </div>
+      <span id="adminToggleLink" hidden></span>
+    </form>
   </div>
 </div>
 
@@ -577,38 +595,95 @@ body.light .sidebar .root-drop-zone.drag-over{background:rgba(192,57,43,.1);outl
   </div>
 </div>
 
-<div class="header" id="mainUI" style="display:none">
+<header class="header admin-header" id="mainUI" style="display:none">
   <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" title="文件列表">☰</button>
-  <h1>📝 笔记后台</h1>
+  <a class="admin-brand" href="/" aria-label="wouldkeep 首页">
+    <span class="admin-brand-mark" aria-hidden="true">W</span>
+    <span><strong>wouldkeep</strong><small>站点编辑部</small></span>
+  </a>
+  <nav class="admin-primary-nav" aria-label="后台功能">
+    <button class="admin-nav-item active" data-admin-nav="overview" onclick="switchAdminView('overview')">总览</button>
+    <button class="admin-nav-item" data-admin-nav="content" onclick="switchAdminView('content')">知识内容</button>
+    <button class="admin-nav-item" data-admin-nav="review" onclick="switchAdminView('review')">评论与纠错 <span class="admin-nav-count" id="reviewNavCount" hidden>0</span></button>
+    <button class="admin-nav-item owner-only" data-admin-nav="users" onclick="switchAdminView('users')">用户与权限</button>
+    <button class="admin-nav-item" data-admin-nav="system" onclick="switchAdminView('system')">系统状态</button>
+  </nav>
   <div class="actions">
-    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="切换亮色/暗色主题">🌓</button>
-    <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">📝 Markdown</button>
-    <button onclick="newFile()">＋ 新建</button>
-    <button onclick="showPdfImport()" title="导入论文 PDF（渲染页面 + 生成笔记）">📄 导入PDF</button>
-    <button onmousedown="handleImageBtn(event)" id="imageBtn" title="上传图片到 Cloudflare R2">📷 插入图片</button>
-    <button onmousedown="handleChemBtn(event)" id="chemBtn" title="插入化学结构式（SMILES → SVG）">🧪 化学结构</button>
-    <button class="primary" id="saveBtn" onclick="saveFile()">💾 保存</button>
-    <button id="roleMgmtBtn" onclick="showRoleMgmt()" title="用户权限管理" style="display:none">👥 用户管理</button>
-    <button class="auth-btn" id="authLoginBtn" onclick="showAuthModal('login')" title="登录后可发表评论">🔑 登录</button>
+    <a class="admin-site-link" href="/" target="_blank" rel="noopener">查看网站 ↗</a>
+    <button class="theme-toggle admin-icon-button" id="themeBtn" onclick="toggleTheme()" title="切换亮色/暗色主题" aria-label="切换亮色或暗色主题">◐</button>
+    <button id="roleMgmtBtn" onclick="switchAdminView('users')" title="用户权限管理" style="display:none">用户管理</button>
+    <button class="auth-btn" id="authLoginBtn" onclick="showAuthModal('login')" title="登录">登录</button>
     <div class="user-menu" id="authUserMenu">
-      <button class="user-menu-btn" id="authUserMenuBtn" onclick="document.getElementById('authUserDropdown').classList.toggle('open')" title="用户菜单">👤 <span id="authUsername">用户</span> ▾</button>
+      <button class="user-menu-btn" id="authUserMenuBtn" onclick="document.getElementById('authUserDropdown').classList.toggle('open')" title="用户菜单"><span class="admin-avatar" aria-hidden="true">W</span><span id="authUsername">用户</span><span class="admin-chevron" aria-hidden="true">⌄</span></button>
       <div class="user-menu-dropdown" id="authUserDropdown">
         <div class="menu-item" style="font-weight:600;cursor:default" id="authUserEmail">加载中...</div>
+        <div class="menu-item admin-role-line" id="adminCurrentRole">正在确认权限…</div>
         <div class="menu-divider"></div>
-        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');showAuthModal('manageRoles')" id="authAdminItem" style="display:none">⚙️ 管理权限</button>
-        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');handleSignOut()">🚪 退出登录</button>
+        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');switchAdminView('users')" id="authAdminItem" style="display:none">管理用户权限</button>
+        <a class="menu-item" href="/workspace/">个人知识工作区</a>
+        <button class="menu-item" onclick="document.getElementById('authUserDropdown').classList.remove('open');handleAdminSignOut()">退出登录</button>
       </div>
     </div>
   </div>
-</div>
+</header>
 <div class="main" id="mainUI2" style="display:none">
+  <section class="admin-view admin-overview-view" id="adminOverviewView" data-admin-view="overview">
+    <div class="admin-page-heading">
+      <div><p class="admin-eyebrow">站点总览</p><h1>今天想先照看哪里？</h1><p>把最常见的站长工作集中到一处，不必记住每个工具的位置。</p></div>
+      <button class="admin-primary-action" onclick="switchAdminView('content');newFile()">新建知识条目</button>
+    </div>
+    <div class="admin-overview-grid">
+      <section class="admin-work-list" aria-labelledby="adminWorkTitle">
+        <h2 id="adminWorkTitle">待办与入口</h2>
+        <button class="admin-work-row" onclick="switchAdminView('content')"><span class="admin-work-icon">文</span><span><strong>继续整理公共知识</strong><small><span id="overviewDocumentCount">—</span> 篇内容已连接，支持搜索、编辑与发布</small></span><span aria-hidden="true">→</span></button>
+        <button class="admin-work-row" onclick="switchAdminView('review')"><span class="admin-work-icon">议</span><span><strong>查看评论与纠错</strong><small id="overviewReviewSummary">正在读取最近反馈…</small></span><span aria-hidden="true">→</span></button>
+        <button class="admin-work-row owner-only" onclick="switchAdminView('users')"><span class="admin-work-icon">人</span><span><strong>管理协作者权限</strong><small id="overviewUserSummary">只有站长可以更改用户角色</small></span><span aria-hidden="true">→</span></button>
+        <button class="admin-work-row" onclick="switchAdminView('system')"><span class="admin-work-icon">站</span><span><strong>检查发布连接</strong><small id="overviewSystemSummary">正在检查 API 与内容仓库…</small></span><span aria-hidden="true">→</span></button>
+      </section>
+      <aside class="admin-side-note">
+        <p class="admin-eyebrow">编辑原则</p>
+        <blockquote>知识不只被收藏，也应该能够被理解、被连接、被继续完善。</blockquote>
+        <dl><div><dt>当前站点</dt><dd>wouldkeep · 生产内容</dd></div><div><dt>你的身份</dt><dd id="overviewRoleLabel">确认中…</dd></div><div><dt>最近草稿</dt><dd id="overviewDraftLabel">暂未读取</dd></div></dl>
+      </aside>
+    </div>
+  </section>
+  <section class="admin-view admin-review-view" id="adminReviewView" data-admin-view="review" hidden>
+    <div class="admin-page-heading"><div><p class="admin-eyebrow">集中处理</p><h1>评论与纠错</h1><p>按时间查看读者反馈，再进入对应知识条目处理。</p></div><button onclick="loadAdminReviewQueue()">刷新</button></div>
+    <div class="admin-filter-bar"><span id="reviewQueueStatus">读取中…</span><label>显示 <select id="reviewLimit" onchange="loadAdminReviewQueue()"><option value="20">最近 20 条</option><option value="50">最近 50 条</option></select></label></div>
+    <div class="admin-queue" id="adminReviewQueue"><div class="admin-empty">正在读取评论…</div></div>
+  </section>
+  <section class="admin-view admin-users-view" id="adminUsersView" data-admin-view="users" hidden>
+    <div class="admin-page-heading"><div><p class="admin-eyebrow">站长专属</p><h1>用户与权限</h1><p>普通用户管理自己的知识库；编辑者可以维护公共站点；管理员可以处理评论。</p></div><button onclick="loadAdminUsers()">刷新</button></div>
+    <div class="admin-permission-layout">
+      <form class="admin-permission-form" onsubmit="event.preventDefault();grantAdminUserRole();">
+        <h2>更改一个用户的角色</h2><p>更改会立即影响对方能否进入站点编辑部。站长身份不可在这里撤销。</p>
+        <label for="adminRoleEmail">用户邮箱</label><input type="email" id="adminRoleEmail" placeholder="user@example.com" required />
+        <label for="adminRoleSelect">新角色</label><select id="adminRoleSelect"><option value="user">普通用户 — 仅管理自己的知识库</option><option value="editor">编辑者 — 可维护公共知识内容</option><option value="admin">管理员 — 可编辑内容并处理评论</option></select>
+        <div class="admin-consequence" id="adminRoleConsequence">对方将只能访问自己的账户与知识工作区。</div>
+        <button class="admin-primary-action" type="submit">确认更改</button><div class="admin-form-message" id="adminRoleMessage" role="status" aria-live="polite"></div>
+      </form>
+      <section class="admin-user-directory" aria-labelledby="adminUserDirectoryTitle"><div class="admin-section-heading"><h2 id="adminUserDirectoryTitle">账户目录</h2><span id="adminUserCount">—</span></div><div id="adminUserList"><div class="admin-empty">正在读取账户…</div></div></section>
+    </div>
+  </section>
+  <section class="admin-view admin-system-view" id="adminSystemView" data-admin-view="system" hidden>
+    <div class="admin-page-heading"><div><p class="admin-eyebrow">连接与安全</p><h1>系统状态</h1><p>这里只显示站点编辑所依赖的关键连接，不暴露任何密钥。</p></div><button onclick="loadAdminSystemStatus()">重新检查</button></div>
+    <div class="admin-status-list" id="adminStatusList"><div class="admin-empty">正在检查…</div></div>
+    <section class="admin-security-note"><h2>安全提醒</h2><p>图片现在通过受权限保护的 Worker 上传，浏览器页面不再保存 R2 访问密钥。请在 Cloudflare 中轮换旧密钥并重新部署 Worker。</p></section>
+  </section>
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
-  <div class="sidebar" id="sidebar">
+  <div class="sidebar" id="sidebar" data-admin-view="content" hidden>
     <div class="sidebar-search"><input type="text" id="sidebarSearch" placeholder="🔍 搜索文件..." oninput="filterFiles()" /><button onclick="document.getElementById('sidebarSearch').value='';filterFiles();document.getElementById('sidebarSearch').focus();" style="display:none;background:transparent;border:none;color:#888;cursor:pointer;font-size:14px;padding:2px 6px" id="sidebarSearchClear">✕</button></div>
     <div class="sidebar-actions"><button onclick="newFile()" title="新建文件">📄＋ 新建文件</button><button onclick="newFolder()" title="新建文件夹">📁＋ 新建文件夹</button></div>
     <div class="sidebar-files" id="sidebarFiles"></div>
   </div>
-  <div class="editor-area">
+  <div class="editor-area" data-admin-view="content" hidden>
+    <div class="admin-content-actions" aria-label="内容编辑操作">
+      <div class="admin-content-title"><span>公共知识内容</span><small>编辑将提交到 wouldkeep 内容仓库</small></div>
+      <button class="toggle-btn" id="modeToggle" onclick="toggleEditorMode()" title="切换 Markdown / 可视化编辑">切换为可视化</button>
+      <details class="admin-more-menu"><summary>插入与导入</summary><div><button type="button" onclick="showPdfImport()" id="pdfImportOpenBtn">导入 PDF</button><button type="button" onmousedown="handleImageBtn(event)" id="imageBtn">插入图片</button><button type="button" onmousedown="handleChemBtn(event)" id="chemBtn">化学结构</button></div></details>
+      <button onclick="newFile()">新建</button>
+      <button class="primary" id="saveBtn" onclick="saveFile()">保存更改</button>
+    </div>
     <div class="toolbar">
       <span class="path" id="filePath">选择左侧文件开始编辑</span>
       <span class="word-count" id="wordCount" title="字数统计">0 字</span>
@@ -672,65 +747,11 @@ var currentMode = localStorage.getItem("editor_mode") || "markdown";
 var RECENT_KEY = "recent_files_v1";
 var MAX_RECENT = 8;
 
-// ===== Cloudflare R2 Storage for image uploads =====
-var _imgCursor = null;  // cursor position to insert image at
-var _r2Cfg = {
-  accountId: "04f9762de46c60b080358dad00a5c9ad",
-  bucket: "wouldkeep-images",
-  accessKey: "91279602f7ac450533ed8eeb20253c0b",
-  secretKey: "7bd7e90323908568073d3bf1b2206b809dc8e510ba5fc43c05b87c603cda23b1",
-  publicUrl: "https://pub-27259b86f2ff470abaf66edbe1c96973.r2.dev"
-};
-var _enc = new TextEncoder();
-
-// AWS SigV4 helpers (Web Crypto API)
-async function _sha256(d) { var b = await crypto.subtle.digest("SHA-256", d); return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join(""); }
-async function _hmacSign(k, d) { var c = await crypto.subtle.importKey("raw", k, {name:"HMAC", hash:"SHA-256"}, false, ["sign"]); return new Uint8Array(await crypto.subtle.sign("HMAC", c, d)); }
-async function _hmacHex(k, d) { var s = await _hmacSign(k, d); return Array.from(s).map(function(x){return x.toString(16).padStart(2,"0")}).join(""); }
-
-// Upload file to Cloudflare R2 via S3-compatible API
-async function _r2Upload(fileName, file) {
-  var c = _r2Cfg, ct = file.type || "application/octet-stream";
-  var host = c.accountId + ".r2.cloudflarestorage.com";
-  var region = "auto", svc = "s3";
-  var now = new Date();
-  var amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, ""); // YYYYMMDDTHHMMSSZ
-  var dateStamp = amzDate.substring(0, 8);
-
-  // Task 1: Canonical Request
-  var uri = "/" + c.bucket + "/" + encodeURIComponent(fileName);
-  var ch = "content-type:" + ct + "\nhost:" + host + "\nx-amz-content-sha256:UNSIGNED-PAYLOAD\nx-amz-date:" + amzDate + "\n";
-  var sh = "content-type;host;x-amz-content-sha256;x-amz-date";
-  var cr = "PUT\n" + uri + "\n\n" + ch + "\n" + sh + "\nUNSIGNED-PAYLOAD";
-
-  // Task 2: String to Sign
-  var algo = "AWS4-HMAC-SHA256";
-  var scope = dateStamp + "/" + region + "/" + svc + "/aws4_request";
-  var sts = algo + "\n" + amzDate + "\n" + scope + "\n" + await _sha256(_enc.encode(cr));
-
-  // Task 3: Signing Key
-  var kd = await _hmacSign(_enc.encode("AWS4" + c.secretKey), _enc.encode(dateStamp));
-  var kr = await _hmacSign(kd, _enc.encode(region));
-  var ks = await _hmacSign(kr, _enc.encode(svc));
-  var ksign = await _hmacSign(ks, _enc.encode("aws4_request"));
-
-  // Task 4: Signature + Authorization
-  var sig = await _hmacHex(ksign, _enc.encode(sts));
-  var auth = algo + " Credential=" + c.accessKey + "/" + scope + ",SignedHeaders=" + sh + ",Signature=" + sig;
-
-  var url = "https://" + host + "/" + c.bucket + "/" + encodeURIComponent(fileName);
-  var resp = await fetch(url, {
-    method: "PUT",
-    headers: { "Authorization": auth, "Content-Type": ct, "x-amz-content-sha256": "UNSIGNED-PAYLOAD", "x-amz-date": amzDate },
-    body: file
-  });
-
-  if (!resp.ok) { var t = await resp.text(); throw new Error("R2 upload: " + resp.status + " " + t.substring(0, 200)); }
-
-  // Public URL — needs r2.dev access enabled on bucket, or custom domain
-  // After enabling r2.dev in Cloudflare Dashboard, update _r2Cfg.publicUrl
-  var pubBase = _r2Cfg.publicUrl || ("https://" + host + "/" + c.bucket);
-  return pubBase + "/" + encodeURIComponent(fileName);
+// Image uploads are implemented by /admin/admin-shell.js and sent through the
+// authenticated Worker. Storage credentials must never be present in browser code.
+var _imgCursor = null;
+async function _r2Upload() {
+  throw new Error("安全上传模块尚未加载，请刷新页面后重试");
 }
 
 // Convert Toast UI Editor v3 selection [[line,col],[line,col]] → character offset
@@ -2695,6 +2716,8 @@ function toggleComments() {
   }
 })();
 </script>
+
+<script src="/admin/admin-shell.js"></script>
 
 </body>
 </html>

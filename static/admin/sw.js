@@ -1,5 +1,7 @@
-const CACHE = "wouldkeep-admin-v3";
+const CACHE = "wouldkeep-admin-v5";
 const ASSETS = [
+  "/admin/admin.css",
+  "/admin/admin-shell.js",
   "/admin/manifest.json",
   "/admin/icon-192.png",
   "/admin/icon-512.png"

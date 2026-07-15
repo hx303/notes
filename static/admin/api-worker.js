@@ -30,8 +30,10 @@ const ALLOWED_ORIGINS = [
   'https://www.wouldkeep.com',
   'http://localhost:3000',
   'http://localhost:5173',
+  'http://localhost:8765',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:8765',
 ];
 
 function corsHeaders(request, extra = {}) {
@@ -360,6 +362,55 @@ async function handleWhoami(request, env, jwtPayload) {
 }
 
 // ============================================================
+// Route: /api/upload — authenticated R2 image upload
+// ============================================================
+
+async function handleImageUpload(request, env, jwtPayload) {
+  if (request.method !== 'PUT') {
+    return corsResponse(request, { error: 'Method not allowed' }, 405);
+  }
+  if (!env.WOULDKEEP_IMAGES) {
+    return corsResponse(request, { error: 'R2 storage binding is not configured' }, 503);
+  }
+
+  const url = new URL(request.url);
+  const filename = (url.searchParams.get('filename') || '').trim();
+  if (!filename || filename.length > 180 || filename.includes('/') || filename.includes('\\') || !/^[a-zA-Z0-9._-]+$/.test(filename)) {
+    return corsResponse(request, { error: 'Invalid upload filename' }, 400);
+  }
+
+  const contentType = (request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+  const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
+  if (!allowedTypes.has(contentType)) {
+    return corsResponse(request, { error: 'Only PNG, JPEG, GIF and WebP images are accepted' }, 415);
+  }
+
+  const declaredSize = Number(request.headers.get('Content-Length') || 0);
+  if (declaredSize > 10 * 1024 * 1024) {
+    return corsResponse(request, { error: 'Image exceeds the 10 MB upload limit' }, 413);
+  }
+
+  const imageBytes = await request.arrayBuffer();
+  if (imageBytes.byteLength > 10 * 1024 * 1024) {
+    return corsResponse(request, { error: 'Image exceeds the 10 MB upload limit' }, 413);
+  }
+
+  await env.WOULDKEEP_IMAGES.put(filename, imageBytes, {
+    httpMetadata: { contentType },
+    customMetadata: {
+      uploaded_by: jwtPayload.sub,
+      uploaded_at: new Date().toISOString(),
+    },
+  });
+
+  const publicBase = (env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+  if (!publicBase) {
+    return corsResponse(request, { error: 'R2 upload succeeded but R2_PUBLIC_URL is not configured' }, 503);
+  }
+  return corsResponse(request, { url: `${publicBase}/${encodeURIComponent(filename)}` }, 201);
+}
+
+// ============================================================
 // 路由: /api/github/*
 // ============================================================
 
@@ -428,6 +479,7 @@ export default {
         timestamp: new Date().toISOString(),
         repo: env.GITHUB_REPO || 'hx303/notes',
         branch: env.GITHUB_BRANCH || 'v4',
+        upload: env.WOULDKEEP_IMAGES ? 'ready' : 'unconfigured',
       });
     }
 
@@ -459,6 +511,11 @@ export default {
       // /api/whoami — 用户信息
       if (path === '/api/whoami') {
         return await handleWhoami(request, env, jwtPayload);
+      }
+
+      // /api/upload — image upload through a protected R2 binding
+      if (path === '/api/upload') {
+        return await handleImageUpload(request, env, jwtPayload);
       }
 
       // /api/edit-logs — 编辑日志
