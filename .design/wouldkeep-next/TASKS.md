@@ -1,0 +1,56 @@
+# Build Tasks: wouldkeep 后续多代理推进
+
+Generated from: `.design/wouldkeep-redesign/DESIGN_BRIEF.md`、`.design/account-knowledge-system/DESIGN_BRIEF.md`、`.design/ai-knowledge-assistant/DESIGN_BRIEF.md`  
+Orchestration: `.design/wouldkeep-next/MULTI_AGENT_WORKTREE_PLAN.md`  
+Date: 2026-07-16
+
+## Foundation / Wave 0
+
+- [ ] **N00 — 完成 AI 安全地基最终验收**：登录站长账户测试 `ai-write`，确认只发送固定测试文字、返回 `mock: true`、不产生模型费用，并把证据写回 AI TASKS。 _Modifies: AI task status only; reuses: deployed Edge Function and RLS tests._
+- [ ] **N01 — 合并并固定新基线**：确认 PR #11 全绿后合并到 `main`，抓取 `origin/main` 并记录基线 SHA。 _Modifies: Git history; reuses: current AI foundation branch._
+- [ ] **N02 — 建立现实状态清单**：逐项对账代码、Supabase、Edge Functions、Vercel/Cloudflare、三份旧 TASKS 与线上行为，标记完成/部分/未部署/过期。 _Creates: `CURRENT_STATE.md`; reuses: existing design artifacts and deployed project._
+- [ ] **N03 — 建立持续协作规则**：在根目录写入构建、测试、安全、文件所有权、迁移和交接约束，确保后续代理不重复开发或越界部署。 _Creates: `AGENTS.md`; reuses: this orchestration plan._
+- [ ] **N04 — 建立第一波 Worktrees**：从新基线创建 integration、platform、workspace、public 四个 Worktree，确认每个目录干净且分支不重名。 _Creates: Git worktrees/branches; modifies no product code._
+
+## Wave 1 / Core Product
+
+- [ ] **P01 — 私密文档与发布边界对账**：用一个真实文档贯穿 owner/other/anonymous、private/unlisted/public、版本冲突、软删除与发布失败测试，只补现有 schema/RLS 缺口。 _Agent: platform; modifies/creates: Supabase migrations, functions and tests; reuses: existing workspace foundation._
+- [ ] **P02 — 稳定发布任务垂直切片**：让一条授权知识通过幂等任务生成预览、保留最后成功版本、失败可重试并可撤回；浏览器不持有服务密钥。 _Agent: platform; modifies: publication flow; creates: repeatable verification. Depends on: P01._
+- [ ] **P03 — 账户与知识库新手闭环验收**：以电脑小白身份完成注册/登录/找回、进入个人空间、创建第一条私密知识和再次找回；修复真实阻塞而不重做正常页面。 _Agent: workspace; modifies: account/workspace routes and states; reuses: current AccountPage and Supabase Auth._
+- [ ] **P04 — DOCX/Markdown 导入预览切片**：支持 DOCX（含内嵌图片）与 Markdown 文件/整篇粘贴，先展示结构和图片预览，再明确保存为私密草稿；错误保留输入。 _Agent: workspace; modifies: import/editor UI; creates: parser adapter and fixtures. Depends on: P03._
+- [ ] **P05 — 可靠编辑与恢复切片**：完成自动保存、离线暂存、双标签页冲突比较、版本恢复、删除/撤销，并统一加载/空/错/成功反馈。 _Agent: workspace; modifies: editor/autosave/version states; reuses: document versions. Depends on: P03._
+- [ ] **P06 — 无代码知识组织切片**：让用户用组合框/选择器维护标签、分类建议、知识关系和多来源，不要求输入 Markdown、UUID 或内部 URL。 _Agent: workspace; modifies: existing organization controls; reuses: tags, links and sources._
+- [ ] **P07 — 公开发现现实验收**：验证首页、知识地图、最近生长、主题和学习路径的实际代码与线上体验，只修复未达到“30 秒理解、两步抵达”的缺口。 _Agent: public; modifies: DiscoverHome/MapPage/RecentGrowth/topic/path components as needed._
+- [ ] **P08 — 建库方法可执行切片**：完成 `/build/` 的方法、边界、内容模型、模板和部署说明，使不懂代码的人可以按步骤行动。 _Agent: public; creates/modifies: build content and copyable examples; reuses: article system._
+- [ ] **P09 — 信任与恢复页面切片**：补齐 About、Privacy、License、404 与页脚入口，明确 wouldkeep/夔嵬关系、数据边界和失败后的下一步。 _Agent: public; creates/modifies: trust pages and Footer._
+
+## Wave 1 Integration
+
+- [ ] **I10 — 集成平台分支**：审查范围、迁移/RLS 证据和回滚方案后合并，运行 TypeScript、相关测试与构建。 _Agent: integrator; modifies: integration branch only._
+- [ ] **I11 — 集成个人空间分支**：审查热点文件、导入安全、数据丢失和移动端证据后合并，运行账户/编辑器回归。 _Agent: integrator; modifies: shared route registration only._
+- [ ] **I12 — 集成公开体验分支**：审查构建数据、URL 稳定性、内容真实性和无障碍证据后合并。 _Agent: integrator; modifies: shared component registration only._
+- [ ] **I13 — 第一波完整演示**：在集成分支完成“创建/导入私密知识 → 组织 → 预览发布”和“首页 → 主题/路径 → 知识”的生产构建验收。 _Reuses: all Wave 1 slices._
+
+## Wave 2 / AI, Content, Quality
+
+- [ ] **A20 — AI 用量与预算保护**：为成功/失败调用写审计，实施并发、日限额、月预算和站长 feature flag；真实密钥只在 Function Secret。 _Agent: AI; modifies: AI migrations/functions/settings; reuses: mock gateway._
+- [ ] **A21 — 选区改写与版本回退**：选中文字后生成独立预览，支持接受、插入、拒绝、重新生成和回退；版本冲突不得应用旧结果。 _Agent: AI; creates: focused AI UI components; reuses: editor version API. Depends on: A20 and P05._
+- [ ] **A22 — 增量索引与混合检索**：实现分块、内容哈希、队列、pgvector、PostgreSQL 全文搜索与 RRF；RLS 限制到当前用户和知识库。 _Agent: AI; creates: index worker/RPC/tests. Depends on: A20._
+- [ ] **A23 — 整理建议收件箱**：提供标签、分类、关系、重复候选的理由/证据/置信度与变更清单，逐条或安全批量接受。 _Agent: AI; creates: `/workspace/organize/`; reuses: tags/links/versions. Depends on: A22 and P06._
+- [ ] **A24 — 带引用的知识问答**：用户先选择证据范围，回答附可跳转引用；证据不足拒答，提示注入测试不能改变系统边界。 _Agent: AI; creates: `/workspace/ask/`, chat function and citation tests. Depends on: A22._
+- [ ] **C20 — 全内容 dry-run 清单**：为全部公开 Markdown 输出日期、成熟度、主题、标签、摘要、来源、许可、canonical 和 aliases 建议，不直接写正文。 _Agent: content; creates: migration utility/report; reuses: knowledge metadata helpers._
+- [ ] **C21 — 优先内容人工策展**：先处理首页、主题和学习路径使用的数学、物理、化学、材料、模拟、研究、历史与成长内容，低置信项保留人工决定。 _Agent: content; modifies: approved content only. Depends on: C20._
+- [ ] **C22 — 永久 URL 与索引传播**：在合并重复目录/标签前建立 aliases/canonical 映射，并验证搜索、地图、反链、RSS、sitemap、评论与引用。 _Agent: content; modifies: approved content and canonical consumers. Depends on: C21._
+- [ ] **Q20 — 跨页面浏览器回归**：在生产构建覆盖公开发现、搜索、地图、账户、导入、保存、组织、预览、发布和旧 URL 的桌面/移动关键路径。 _Agent: QA; creates: browser regression suite; reuses: existing tests._
+- [ ] **Q21 — WCAG 2.2 AA 与失败状态**：覆盖键盘、焦点、屏幕阅读器播报、44px、对比度、200% 缩放、reduced motion、离线、超时和冲突。 _Agent: QA; modifies: only clearly owned small fixes; reports cross-module issues. Depends on: Q20._
+- [ ] **Q22 — 性能预算与静态优先验证**：记录 JS/CSS/图片/字体/地图与 Core Web Vitals；普通文章不得加载编辑器、完整地图或 AI 包。 _Agent: QA; creates: performance report and thresholds._
+- [ ] **Q23 — AI 中文评估集**：建立至少 50 条可重复评估，覆盖引用、拒答、标签、链接、重复、跨账户和提示注入。 _Agent: QA with AI agent; creates: eval fixtures/command. Depends on: A23–A24._
+
+## Review and Release / Wave 3
+
+- [ ] **R30 — 独立安全与隐私终审**：由未实现相应功能的强模型审查 RLS、JWT、CORS、密钥、预算、发布边界、导入清理、XSS 与账户隔离。 _Agent: independent reviewer; modifies nothing until findings are accepted._
+- [ ] **R31 — 设计与 Web 指南终审**：对照三份设计简报运行 design review 与 web guidelines，修复所有 P0/P1 和约定 P2。 _Agent: integrator/reviewer; reuses: current tokens and UI tests._
+- [ ] **R32 — 生产迁移与回滚演练**：在副本/预览环境按顺序执行迁移、函数、构建、URL/RSS/sitemap 和 Cloudflare/Vercel 检查，记录前滚修复。 _Agent: platform + integrator; does not mutate production without user approval._
+- [ ] **R33 — 站长灰度**：只向站长开放新 AI 与发布链路，验证费用、引用、版本回退、撤回和关闭开关。 _Requires: user approval; reuses: feature flags._
+- [ ] **R34 — 最终小白验收**：从账户创建、导入 DOCX/Markdown、形成知识库、组织、分享、AI 辅助到读者发现完整走一遍，确认没有代码术语阻塞。 _Agent: QA/reviewer; depends on all prior tasks._
+- [ ] **R35 — 合并与清理**：全量测试、构建和预览通过后将集成 PR 转 Ready；用户批准合并后再安全移除已合并 Worktree，保留回滚资料。 _Agent: integrator; requires user approval for merge and destructive cleanup._
