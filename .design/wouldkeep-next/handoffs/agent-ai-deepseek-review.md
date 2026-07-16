@@ -41,3 +41,40 @@
 - 隐私政策：`https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html`
 
 截至 2026-07-16，官方文档列出 `deepseek-v4-flash` / `deepseek-v4-pro`，并说明旧别名 `deepseek-chat` / `deepseek-reasoner` 将于 2026-07-24 停用。官方没有公开可用于本接口的零保留承诺；磁盘 context cache 默认启用，隐私政策也没有固定的 API 输入零保留期限，因此本项目不得把该 provider 描述为 zero-retention。
+
+## A20 runtime safety 复审（候选 `b93d1a3a`）
+
+初始候选：`b93d1a3a29e389b356433345f361bdfae02fbfc0` 发现两个接线前 P1；当前代码未接入 `ai-write`，因此不是现网漏洞。
+
+修复候选：`8260d96dfceeac464c4c03addd745753800feca5`。
+
+最终状态：**通过；两项 P1 均已修复，最终无 P0/P1。**
+
+### P1 — 身份与内容 scope 缺少不可伪造的来源
+
+`GuardedAiRequest` 直接接受普通 `ownerId: string` 与 `contentScope`；`GuardedAiProvider` 只验证 UUID 外形，然后把 caller 声明的 owner/scope 交给 reservation。caller 可以提交另一个合法 UUID，并把私密正文标成 `public`，从而使用其他 owner 的 policy/quota 或绕过 private-content gate。README 要求字段来自 JWT 与服务端 visibility 查询，但文档约束不是代码保障。
+
+修复结果：guard 输入已缩减为 Authorization header 与 route `documentId`；注入的 `AiRuntimeContextAuthority` 负责验证 JWT、所有权与内容来源，并返回 owner/scope/publicSource/providerRequest。`public` 必须带服务端 publication snapshot 证明。额外夹带的 body owner/scope 不会进入 authority 决策，测试证明伪造字段无法到达 provider。
+
+### P1 — 缺失 usage 时可能以零成本成功释放 reservation
+
+DeepSeek adapter 对缺失/不完整 token usage 返回 `usage=null`，而 guard 接受 `calculateCostCents(result) === 0` 并把运行标记为 `succeeded`、释放全部 reservation。一次已经发生的付费调用因此可能不计入月预算。现有测试覆盖 NaN 和实际成本超过 reservation，但没有覆盖 `usage=null + cost=0`。
+
+修复结果：缺失或不完整 usage 现在以 `usage_missing` 失败，并按 reservation 保守结算；不会以成功/零成本释放额度。新增回归测试覆盖该路径。
+
+### 已确认的正向证据与剩余 P2
+
+- 如实传入 `private` / `unknown` 时，会在 provider 前 blocked；site/user/zero-budget、daily/monthly/concurrency blocked 路径也不会调用 provider。
+- in-memory reference 在单实例内串行执行 reservation，成功/失败/blocked 都有终态审计；finalize 失败不会静默向 caller 返回成功。
+- 审计结构不保存正文、prompt、输出或上游原始错误。
+- `InMemoryAiQuotaAuditBoundary` 只具有单实例原子性，不能用于生产多实例；README 已明确生产必须替换为 service-role-only 数据库原子 RPC。
+- commit 没有修改 `ai-write`，没有读取 env/Key，没有部署或网络调用；测试使用 fake provider/fetch。
+- 修复后审查代理独立运行 A20 + DeepSeek focused tests 27/27、`tsc --noEmit` 与 diff-check，全部通过。
+
+### 最终剩余 P2 与生产启用门槛
+
+- 普通 SHA-256 `inputHash` 会泄露输入相等性，也可能被字典猜测；生产审计宜改为服务端 HMAC，或在隐私评审中明确接受该风险（P2）。
+- 当前 `AiRuntimeContextAuthority` 只有接口与离线 fake；生产必须实现真实 Supabase JWT 验证、owner/document ownership、publication snapshot 来源与 content scope 查询，并补 owner/other-user/anonymous 证据。
+- `InMemoryAiQuotaAuditBoundary` 只在一个进程实例内原子；生产必须以浏览器不可执行、仅受信服务端可调用的数据库原子 reserve/finalize RPC 替换，并验证站点开关、用户开关、月预算、每日次数和并发在多实例下不能竞态绕过。
+- 必须建立受版本控制的 DeepSeek rate card 与最坏情况 reservation 计算，验证 cache hit/miss、输入/输出 token、舍入、模型切换、usage 缺失及价格变更。
+- 仍需数据库迁移/RLS 双账户证据、真实审计 finalize 故障演练、secret/feature flag 配置记录、部署前后 SHA 与回滚验证；在这些门槛和单独用户授权完成前，不得接入 `ai-write`、设置 Key、部署或发起真实/付费调用。
