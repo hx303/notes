@@ -7,7 +7,7 @@ const supabaseUrl = "https://agocyybolrisqujvjqdj.supabase.co"
 const supabaseAnonKey = "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc"
 
 type AuthView = "signin" | "signup" | "forgot" | "recover"
-type WorkspaceView = "overview" | "knowledge" | "write" | "settings"
+type WorkspaceView = "overview" | "knowledge" | "write" | "settings" | "ai-settings"
 
 const authViewForSlug = (slug = ""): AuthView => {
   if (slug.includes("account/signup")) return "signup"
@@ -19,6 +19,7 @@ const authViewForSlug = (slug = ""): AuthView => {
 const workspaceViewForSlug = (slug = ""): WorkspaceView => {
   if (/^workspace\/knowledge(?:\/index)?$/.test(slug)) return "knowledge"
   if (/^workspace\/write(?:\/index)?$/.test(slug)) return "write"
+  if (/^workspace\/settings\/ai(?:\/index)?$/.test(slug)) return "ai-settings"
   if (/^workspace\/settings(?:\/index)?$/.test(slug)) return "settings"
   return "overview"
 }
@@ -35,9 +36,11 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
       ? "你的知识，都在这里"
       : workspaceView === "write"
         ? "选择最顺手的方式开始"
-        : workspaceView === "settings"
-          ? "让个人空间更像你"
-          : "回到你的个人知识空间"
+        : workspaceView === "ai-settings"
+          ? "让 AI 先学会尊重边界"
+          : workspaceView === "settings"
+            ? "让个人空间更像你"
+            : "回到你的个人知识空间"
     : authView === "signup"
       ? "建立属于你的知识库"
       : authView === "forgot"
@@ -51,9 +54,11 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
       ? "查找、筛选并继续整理已经保存的知识；每一条都由你决定何时分享。"
       : workspaceView === "write"
         ? "快速粘贴整篇文稿，或进入详细编辑器补充标签、关系与来源。"
-        : workspaceView === "settings"
-          ? "设置头像与显示名称；这些信息会用于个人空间和你主动公开的知识。"
-          : "从概览前往知识库或写作工作台；站长工具只对拥有权限的账户显示。"
+        : workspaceView === "ai-settings"
+          ? "先决定是否启用、可以处理哪些内容和费用上限；在你明确接受前，AI 不会改动或发布知识。"
+          : workspaceView === "settings"
+            ? "设置头像与显示名称；这些信息会用于个人空间和你主动公开的知识。"
+            : "从概览前往知识库或写作工作台；站长工具只对拥有权限的账户显示。"
     : authView === "signup"
       ? "一个账户对应一座个人知识库。内容默认仅自己可见，何时分享由你决定。"
       : authView === "forgot"
@@ -113,6 +118,16 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
               <span>
                 <strong>个人设置</strong>
                 <small>头像与显示名称</small>
+              </span>
+            </a>
+            <a
+              href="/workspace/settings/ai/"
+              aria-current={workspaceView === "ai-settings" ? "page" : undefined}
+            >
+              <span aria-hidden="true">05</span>
+              <span>
+                <strong>AI 助手</strong>
+                <small>开关、范围与额度</small>
               </span>
             </a>
           </div>
@@ -659,6 +674,121 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
               </footer>
             </div>
           </dialog>
+        </section>
+      )}
+
+      {workspaceView === "ai-settings" && (
+        <section
+          class="workspace-ai-settings"
+          data-ai-settings
+          hidden
+          aria-labelledby="ai-settings-title"
+        >
+          <div class="workspace-ai-settings-heading">
+            <p class="account-kicker">AI ASSISTANT / 安全设置</p>
+            <h2 id="ai-settings-title">先设置边界，再使用 AI</h2>
+            <p>
+              这里控制 AI 是否启用、可以读取哪些内容，以及每月最多可以产生多少费用。默认全部关闭。
+            </p>
+          </div>
+
+          <ul class="ai-trust-list" aria-label="AI 使用承诺">
+            <li>
+              <strong>默认关闭</strong>
+              <span>你主动开启前，不会调用任何 AI 模型。</span>
+            </li>
+            <li>
+              <strong>最少发送</strong>
+              <span>优先只处理你当前选中的文字，不自动读取整个知识库。</span>
+            </li>
+            <li>
+              <strong>由你决定</strong>
+              <span>AI 只能提出建议；接受、保存和发布仍由你操作。</span>
+            </li>
+          </ul>
+
+          <div class="ai-settings-layout">
+            <form class="ai-settings-form" data-ai-settings-form>
+              <label class="ai-toggle-card" for="ai-enabled">
+                <input id="ai-enabled" name="enabled" type="checkbox" data-ai-enabled />
+                <span>
+                  <strong>启用 AI 助手</strong>
+                  <small>开启后仍需在具体操作时确认内容范围。</small>
+                </span>
+              </label>
+
+              <label class="ai-toggle-card" for="ai-private-content">
+                <input
+                  id="ai-private-content"
+                  name="allowPrivate"
+                  type="checkbox"
+                  data-ai-private-content
+                  disabled
+                />
+                <span>
+                  <strong>允许处理私密知识</strong>
+                  <small>敏感笔记建议保持关闭；公开内容不受此项影响。</small>
+                </span>
+              </label>
+
+              <label class="ai-settings-field" for="ai-grounding-mode">
+                <span>默认读取范围</span>
+                <select id="ai-grounding-mode" name="groundingMode" data-ai-grounding-mode>
+                  <option value="selected_only">仅我选中的文字（推荐）</option>
+                  <option value="knowledge_base">当前知识库中允许的内容</option>
+                </select>
+                <small>每次实际调用前，界面还会再次显示将要发送的范围。</small>
+              </label>
+
+              <label class="ai-settings-field" for="ai-monthly-budget">
+                <span>每月费用上限</span>
+                <select id="ai-monthly-budget" name="monthlyBudget" data-ai-monthly-budget>
+                  <option value="0">不开启付费调用（推荐）</option>
+                  <option value="500">不超过 ¥5</option>
+                  <option value="1000">不超过 ¥10</option>
+                  <option value="2000">不超过 ¥20</option>
+                </select>
+                <small>达到上限后自动停止。第一阶段不会产生任何模型费用。</small>
+              </label>
+
+              <div class="ai-settings-actions">
+                <button type="submit" class="account-primary" data-ai-save>
+                  保存 AI 设置
+                </button>
+                <a class="account-secondary" href="/workspace/">
+                  返回个人空间
+                </a>
+              </div>
+              <p
+                class="ai-settings-status"
+                data-ai-settings-status
+                role="status"
+                aria-live="polite"
+              />
+            </form>
+
+            <aside class="ai-stage-card" aria-labelledby="ai-stage-title">
+              <span class="ai-stage-badge">安全骨架 · 未连接付费模型</span>
+              <h3 id="ai-stage-title">当前阶段</h3>
+              <p>
+                现在只搭建设置、权限和调用入口。测试按钮只验证安全网关，不会发送你的笔记，也不会产生费用。
+              </p>
+              <ol class="ai-stage-list">
+                <li>保存个人开关与额度</li>
+                <li>验证登录身份和请求格式</li>
+                <li>下一阶段再由站长配置模型密钥</li>
+              </ol>
+              <button type="button" class="account-secondary" data-ai-test-gateway>
+                测试安全网关
+              </button>
+              <p
+                class="ai-gateway-status"
+                data-ai-gateway-status
+                role="status"
+                aria-live="polite"
+              />
+            </aside>
+          </div>
         </section>
       )}
 

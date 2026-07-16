@@ -154,6 +154,16 @@ const init = async () => {
   const workspaceOverview = root.querySelector<HTMLElement>("[data-workspace-overview]")
   const writeLauncher = root.querySelector<HTMLElement>("[data-write-launcher]")
   const profileSettings = root.querySelector<HTMLElement>("[data-profile-settings]")
+  const aiSettings = root.querySelector<HTMLElement>("[data-ai-settings]")
+  const aiSettingsForm = root.querySelector<HTMLFormElement>("[data-ai-settings-form]")
+  const aiEnabled = root.querySelector<HTMLInputElement>("[data-ai-enabled]")
+  const aiPrivateContent = root.querySelector<HTMLInputElement>("[data-ai-private-content]")
+  const aiGroundingMode = root.querySelector<HTMLSelectElement>("[data-ai-grounding-mode]")
+  const aiMonthlyBudget = root.querySelector<HTMLSelectElement>("[data-ai-monthly-budget]")
+  const aiSettingsStatus = root.querySelector<HTMLElement>("[data-ai-settings-status]")
+  const aiSave = root.querySelector<HTMLButtonElement>("[data-ai-save]")
+  const aiTestGateway = root.querySelector<HTMLButtonElement>("[data-ai-test-gateway]")
+  const aiGatewayStatus = root.querySelector<HTMLElement>("[data-ai-gateway-status]")
   const profileSettingsForm = root.querySelector<HTMLFormElement>("[data-profile-settings-form]")
   const profileAvatarInput = root.querySelector<HTMLInputElement>("[data-profile-avatar-input]")
   const profileAvatarPreview = root.querySelector<HTMLImageElement>("[data-profile-avatar-preview]")
@@ -239,6 +249,50 @@ const init = async () => {
     if (!profileSettingsStatus) return
     profileSettingsStatus.textContent = message
     profileSettingsStatus.dataset.state = type
+  }
+
+  const setAiStatus = (message: string, type: "" | "error" | "success" = "") => {
+    if (!aiSettingsStatus) return
+    aiSettingsStatus.textContent = message
+    aiSettingsStatus.dataset.state = type
+  }
+
+  const setAiGatewayStatus = (message: string, type: "" | "error" | "success" = "") => {
+    if (!aiGatewayStatus) return
+    aiGatewayStatus.textContent = message
+    aiGatewayStatus.dataset.state = type
+  }
+
+  const updateAiControls = () => {
+    if (!aiPrivateContent) return
+    aiPrivateContent.disabled = !aiEnabled?.checked
+    if (!aiEnabled?.checked) aiPrivateContent.checked = false
+  }
+
+  const loadAiSettings = async () => {
+    if (!client || !currentUser || !aiSettingsForm) return
+    const result = await client
+      .from("ai_preferences")
+      .select("enabled,allow_private_content,monthly_budget_cents,grounding_mode")
+      .eq("owner_id", currentUser.id)
+      .maybeSingle()
+    if (result.error) {
+      setAiStatus(
+        "AI 设置尚未启用，请先在 Supabase 执行 20260716_ai_assistant_foundation.sql。",
+        "error",
+      )
+      if (aiSave) aiSave.disabled = true
+      return
+    }
+    if (aiEnabled) aiEnabled.checked = Boolean(result.data?.enabled)
+    if (aiPrivateContent) aiPrivateContent.checked = Boolean(result.data?.allow_private_content)
+    if (aiGroundingMode)
+      aiGroundingMode.value =
+        result.data?.grounding_mode === "knowledge_base" ? "knowledge_base" : "selected_only"
+    if (aiMonthlyBudget) aiMonthlyBudget.value = String(result.data?.monthly_budget_cents ?? 0)
+    updateAiControls()
+    if (aiSave) aiSave.disabled = false
+    setAiStatus(result.data ? "已读取你的 AI 设置。" : "当前使用安全默认设置：全部关闭。")
   }
 
   const safeProfileAvatarUrl = (value = "") => {
@@ -1102,21 +1156,19 @@ const init = async () => {
       if (revision) revision.value = String(result.data.revision)
     }
     if (result.data?.id && currentUser) {
-      await client
-        .from("document_versions")
-        .insert({
-          document_id: result.data.id,
-          owner_id: currentUser.id,
-          created_by: currentUser.id,
-          version_no: result.data.revision ?? 0,
-          snapshot: {
-            title: data.title,
-            body: data.body,
-            topic: data.topic,
-            maturity: data.maturity,
-            visibility: payload.visibility,
-          },
-        })
+      await client.from("document_versions").insert({
+        document_id: result.data.id,
+        owner_id: currentUser.id,
+        created_by: currentUser.id,
+        version_no: result.data.revision ?? 0,
+        snapshot: {
+          title: data.title,
+          body: data.body,
+          topic: data.topic,
+          maturity: data.maturity,
+          visibility: payload.visibility,
+        },
+      })
       await saveTags(result.data.id, knowledgeBaseId!, data.tags ?? "")
       await saveLinks(result.data.id, data.prerequisites ?? "", "prerequisite")
       await saveLinks(result.data.id, data.related ?? "", "related")
@@ -1180,6 +1232,7 @@ const init = async () => {
       if (library) library.hidden = !currentUser
       if (writeLauncher) writeLauncher.hidden = !currentUser
       if (profileSettings) profileSettings.hidden = !currentUser
+      if (aiSettings) aiSettings.hidden = !currentUser
       if (!currentUser)
         siteOwnerNavItems.forEach((item) => {
           item.hidden = true
@@ -1195,6 +1248,7 @@ const init = async () => {
         await loadLinkOptions()
         await loadTagOptions()
         if (workspaceSection === "settings") await loadProfileSettings()
+        if (workspaceSection === "ai-settings") await loadAiSettings()
       }
     }
   }
@@ -1432,6 +1486,97 @@ const init = async () => {
       field?.addEventListener("input", updateProfilePreview)
     },
   )
+
+  aiEnabled?.addEventListener("change", updateAiControls)
+
+  aiSettingsForm?.addEventListener("submit", async (event) => {
+    event.preventDefault()
+    if (!client || !currentUser) {
+      setAiStatus("登录状态已失效，请重新登录。", "error")
+      return
+    }
+    const originalLabel = aiSave?.textContent ?? "保存 AI 设置"
+    if (aiSave) {
+      aiSave.disabled = true
+      aiSave.textContent = "正在保存…"
+    }
+    setAiStatus("正在保存你的 AI 使用边界…")
+    try {
+      const enabled = Boolean(aiEnabled?.checked)
+      const result = await client.from("ai_preferences").upsert(
+        {
+          owner_id: currentUser.id,
+          enabled,
+          allow_private_content: Boolean(enabled && aiPrivateContent?.checked),
+          monthly_budget_cents: Number(aiMonthlyBudget?.value ?? 0),
+          grounding_mode:
+            aiGroundingMode?.value === "knowledge_base" ? "knowledge_base" : "selected_only",
+          provider: "openai",
+          model: "unconfigured",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "owner_id" },
+      )
+      if (result.error) {
+        setAiStatus(
+          String(result.error.message ?? "")
+            .toLowerCase()
+            .includes("ai_preferences")
+            ? "AI 设置尚未启用，请先执行 20260716_ai_assistant_foundation.sql。"
+            : "AI 设置保存失败，请检查网络后重试。",
+          "error",
+        )
+        return
+      }
+      setAiStatus(
+        enabled ? "AI 设置已保存；真实模型仍未连接，不会产生费用。" : "AI 助手已保持关闭。",
+        "success",
+      )
+    } finally {
+      if (aiSave) {
+        aiSave.disabled = false
+        aiSave.textContent = originalLabel
+      }
+    }
+  })
+
+  aiTestGateway?.addEventListener("click", async () => {
+    if (!client || !currentUser) {
+      setAiGatewayStatus("请先登录，再测试安全网关。", "error")
+      return
+    }
+    const originalLabel = aiTestGateway.textContent ?? "测试安全网关"
+    aiTestGateway.disabled = true
+    aiTestGateway.textContent = "正在测试…"
+    setAiGatewayStatus("仅发送一段固定测试文字，不会读取你的笔记。")
+    try {
+      const result = await client.functions.invoke("ai-write", {
+        body: {
+          action: "summarize",
+          selection: "wouldkeep AI 安全网关连接测试",
+          context: "",
+          document_id: null,
+          base_version: 0,
+        },
+      })
+      if (result.error) {
+        setAiGatewayStatus(
+          "安全网关尚未部署或暂时不可用；请先部署 ai-write Edge Function。",
+          "error",
+        )
+        return
+      }
+      setAiGatewayStatus(
+        result.data?.mock === true
+          ? "连接成功；这是安全测试响应，没有调用真实模型，也不会产生费用。"
+          : "网关已响应，但返回格式与当前版本不一致，请暂勿启用。",
+        result.data?.mock === true ? "success" : "error",
+      )
+    } finally {
+      aiTestGateway.disabled = false
+      aiTestGateway.textContent = originalLabel
+    }
+  })
 
   profileSettingsForm?.addEventListener("submit", async (event) => {
     event.preventDefault()

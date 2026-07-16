@@ -3,6 +3,14 @@
 Generated from: `.design/ai-knowledge-assistant/DESIGN_BRIEF.md`
 Date: 2026-07-16
 
+## 当前进度（2026-07-16）
+
+- [x] 已完成默认关闭的 AI 设置页、个人空间入口与桌面/手机响应式验收。
+- [x] 已编写四张基础表、pgvector、所有者 RLS 与浏览器写权限收紧迁移。
+- [x] 已完成带 JWT、来源、动作和内容长度校验的无费用模拟网关。
+- [ ] 待站长在 Supabase 执行迁移并部署 `ai-write` 后，完成真实账户双用户 RLS 验收。
+- [ ] 在上述验收通过前，不连接真实模型，不配置模型密钥，也不发布 AI 功能到生产站点。
+
 ## Foundation
 
 - [ ] **AI 设置与明确同意**：在 `/workspace/settings/ai/` 建立默认关闭的 AI 设置页，说明第三方处理范围、私密内容开关和月度额度；保存后刷新仍一致。 _Modifies: `AccountPage`、个人空间导航和现有设置样式；creates: AI settings route/component._

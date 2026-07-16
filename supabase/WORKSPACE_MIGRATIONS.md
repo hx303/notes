@@ -11,6 +11,7 @@
 7. `migrations/20260714_site_owner_permissions.sql`：受保护的站长身份、角色管理安全加固、公开内容下架与审计。普通用户的私人正文 RLS 不会因此放开。
 8. `migrations/20260715_profile_avatars.sql`：建立公开头像存储桶，并限制登录用户只能上传或更新自己目录下的头像。文件大小上限为 2 MB，仅允许 JPG、PNG 与 WebP；不会删除现有账户或业务数据。
 9. `migrations/20260716_profile_personalization.sql`：为个人资料增加个性签名、个人简介、所在地与个人链接，并添加长度约束。所有字段均为选填，不会改变现有账户数据和 RLS。
+10. `migrations/20260716_ai_assistant_foundation.sql`：增加默认关闭的 AI 设置、费用上限、运行审计、建议记录与知识分块，并启用所有者 RLS。此迁移不会连接模型，也不会产生费用。
 
 ## 将“夔嵬知识库”迁入站长账户
 
@@ -52,5 +53,9 @@
 如果个人设置页提示“头像存储还没有启用”，请运行 `20260715_profile_avatars.sql`。执行成功后无需重新注册或重新登录，刷新页面即可上传头像。
 
 如果个人设置页提示“扩展个人资料尚未启用”，请运行 `20260716_profile_personalization.sql`。这些字段属于用户主动公开的信息，登录邮箱不会因此公开。
+
+如果 AI 设置页提示“AI 设置尚未启用”，请运行 `20260716_ai_assistant_foundation.sql`。运行成功后刷新 `/workspace/settings/ai/`；默认开关与费用均为关闭或 0。
+
+如果“测试安全网关”提示尚未部署，请在安装并登录 Supabase CLI 后运行 `supabase functions deploy ai-write`。第一阶段的函数只返回模拟结果，不需要模型 API Key，也不会读取真实笔记。
 
 前端 TypeScript 和 Quartz 构建通过，并不能替代数据库迁移和 RLS 验收。
