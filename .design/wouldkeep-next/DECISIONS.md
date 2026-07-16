@@ -70,3 +70,14 @@ Append new entries; never rewrite prior decisions. Each reversal must cite new e
 - Reason: independent review showed that UUID-shape validation and a caller-declared `public` label could otherwise borrow another owner's quota or bypass the private-content gate; missing usage could otherwise release a paid request as zero-cost success.
 - Impact: the dormant guard accepts authorization plus route document identity, not owner/scope/prompt assertions. Production still requires a real Supabase authority, service-role-only atomic quota RPC, a versioned worst-case rate card, and database/RLS/failure evidence.
 - Re-evaluate when: a provider offers an independently verified zero-retention contract or a separately approved private-data processing agreement changes the eligible content scope.
+
+## D-008 — Prepare the production A20 boundary without authorizing rollout
+
+- Date: 2026-07-17.
+- Question: May the real Supabase quota, audit, authority, and pricing boundary be implemented before a DeepSeek key or live route is authorized?
+- Decision: yes, as dormant code only. Add a forward migration, service-role-only atomic reserve/finalize RPCs, default-off runtime config, owner-RLS publication authority, owner-scoped HMAC identifiers, and a versioned worst-case DeepSeek CNY rate card; do not load a key, change `ai-write`, deploy, enable the flag, raise a budget, or make a real request.
+- Reason: the security controls can be reviewed and tested offline without exposing private content or creating cost, while deployment and live-call authority remain separate explicit gates.
+- Security decision: publication reads use the same user JWT and publishable key after JWT verification so owner RLS is not bypassed; the service secret is used only for quota/audit RPCs. Credential-bearing fetches reject redirects. Provider/model/rate identities are snapshotted and every successful response must explicitly match the reserved model.
+- Evidence: implementation `b86376b3`; independent verdict no remaining P0/P1; focused 42/42, full 187/187, TypeScript, diff-check, and static build passed with only injected fake fetches.
+- Impact: A20 production-boundary code is locally complete but not production-proven. Non-production migration/RLS/two-session concurrency evidence and an operation record are mandatory before any deployment proposal.
+- Re-evaluate when: staging evidence is complete and the site owner separately approves deployment, secret configuration, runtime hookup, feature-flag enablement, budget, and a real call.

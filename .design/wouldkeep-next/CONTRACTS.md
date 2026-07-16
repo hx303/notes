@@ -1,6 +1,6 @@
 # wouldkeep Cross-Worktree Contracts
 
-State: PR #11 merged baseline plus commander-approved DeepSeek provider-preparation slice. Contract changes require a logged request, commander approval, synchronized migrations/types/fixtures/tests, and notification to dependent agents.
+State: PR #11 merged baseline plus the commander-approved, dormant DeepSeek/A20 production-boundary candidate. Contract changes require a logged request, commander approval, synchronized migrations/types/fixtures/tests, and notification to dependent agents.
 
 ## Ownership and visibility
 
@@ -53,7 +53,11 @@ State: PR #11 merged baseline plus commander-approved DeepSeek provider-preparat
 - Site live state, user opt-in, monthly budget, daily limit, concurrency limit, reservation, and final audit state belong to an authoritative server boundary, not the browser or provider adapter.
 - Audit records contain owner/run identifiers, stable capability/provider/model/prompt-version IDs, input hash, token/cache counts, reserved/actual cost, latency, stable error code, and timestamps only. They do not contain authorization values, document bodies, prompts, outputs, or raw upstream errors.
 - Missing provider usage, invalid cost, actual cost above reservation, or audit-finalization failure cannot return a successful model result. The reservation or known actual cost is retained conservatively.
-- The included in-memory boundary is an offline single-process reference and test double. Production must replace it with browser-inaccessible, service-role-only atomic reserve/finalize database operations plus a versioned worst-case rate card.
+- The in-memory boundary remains an offline single-process reference and test double. The production candidate uses browser-inaccessible, service-role-only atomic reserve/finalize database operations, a default-off singleton runtime config, two-minute reservation leases, UTC quota windows, and a versioned worst-case rate card.
+- Publication context reads use the publishable key plus the same verified user JWT so owner RLS remains authoritative. The service secret is confined to quota/audit RPC calls. All credential-bearing requests reject redirects.
+- The input audit identifier is an owner-scoped HMAC-SHA256 over the versioned request controls. The HMAC key, authorization, prompts, document bodies, outputs, and raw upstream errors are never sent to the audit RPC or stored in `ai_runs`.
+- Provider, model, private-content capability, rate-card version, reservation, response model, and actual usage must remain mutually consistent. Missing or mismatched identity/usage fails closed and retains the reserved or known actual charge conservatively.
+- These database/runtime contracts are candidates until the forward migration and rollback-only verification script pass on non-production Supabase, including owner/other/anonymous RLS and two-session concurrency evidence.
 - This contract does not authorize a migration, secret, feature flag, `ai-write` hookup, deployment, or paid request.
 
 ## Routes and shared hooks

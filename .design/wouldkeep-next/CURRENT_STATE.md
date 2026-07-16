@@ -1,6 +1,6 @@
 # wouldkeep Current State
 
-Last reconciled: 2026-07-16 (Asia/Shanghai)
+Last reconciled: 2026-07-17 (Asia/Shanghai)
 
 Working baseline: merged `main` at `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`
 
@@ -18,8 +18,8 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 | Account and private workspace | partial | Password auth, account/workspace routes, private knowledge bases/documents, editor, tags, links, sources, versions, publication snapshot UI and admin shell exist. A multi-agent hotfix now covers stable auth loading, retry after SDK/network failure, duplicate-submit protection, SPA cleanup, and responsive account/workspace layouts. The 39 unchecked account tasks are stale as a source of truth; Wave 1 must test remaining flows and fix gaps rather than rebuild them. |
 | Publication and public snapshot | partial | `document_publications`, `publish_document`, `unpublish_document`, `read_published_document`, and `list_public_documents` exist in migrations. Idempotent job/retry/last-success failure semantics still require P01/P02 reconciliation and production verification. |
 | AI consent and data foundation | complete | Default-off settings, zero budget, four AI tables with owner RLS, browser write restrictions, and authenticated mock `ai-write` code exist. Migration deployment, unauthenticated `401`, four real-account RLS assertions, and the signed-in no-model/no-cost response have all been accepted. |
-| AI provider preparation | complete locally; not deployed | `90d8a7af` adds a server-only provider boundary and dormant DeepSeek adapter. `b93d1a3a` + `8260d96d` add a fail-closed A20 control-plane reference. Independent review found and resolved two pre-hookup P1s; the final verdict is no P0/P1. No key, runtime hookup, function deployment, or real/paid request exists. |
-| AI paid/model features | not started | No model key, paid provider call, editor rewrite, indexing worker, hybrid retrieval, organize inbox, or grounded chat exists. A20 is partial: the offline guard contract is complete, while the real Supabase authority, service-role atomic RPC, rate card, migration/RLS proof, feature-flag storage, and deployment verification remain required. |
+| AI provider preparation | complete locally; not deployed | `b86376b3` adds the dormant production-boundary candidate on top of the provider adapter and fail-closed guard: user-JWT/RLS publication authority, HMAC input identifiers, versioned DeepSeek rate card, default-off config, and service-role reserve/finalize RPCs. Independent final review found no remaining P0/P1. No key, runtime hookup, function deployment, or real/paid request exists. |
+| AI paid/model features | not started | No model key, paid provider call, editor rewrite, indexing worker, hybrid retrieval, organize inbox, or grounded chat exists. A20 code is prepared locally, but staging migration/RLS/two-session concurrency evidence, an operation record, deployment verification, secret configuration, and a separately approved live hookup remain required. |
 | PR #11 | complete | All three Vercel checks passed; the site owner explicitly approved the merge; GitHub merged it to `main` as `72ea5f96` at 2026-07-16T15:05:24Z. |
 | Vercel preview | complete | The signed-in mock result was explicitly confirmed by the site owner before merge. |
 | Cloudflare/production site | unverified online | Repository contains `cf_project.json` with project `notes-website` and production branch `main`; no fresh deployment/runtime proof has been collected in this Wave 0 pass. |
@@ -58,7 +58,10 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - DeepSeek rejects private, unknown, malformed, unlisted, draft, free-input, or otherwise unverified scopes before provider execution. Missing usage, invalid cost, cost above reservation, and audit-finalization failure are accounting failures rather than zero-cost success.
 - The in-memory boundary covers site/user opt-in, monthly budget, daily requests, concurrency, conservative reservations, and sanitized success/failed/blocked audits, but is explicitly a single-process test reference rather than a production quota store.
 - Independent focused verification passed 27/27; commander full suite passed 172/172; TypeScript and static build passed with 284 inputs and 1046 outputs. The first sandboxed build attempt hit a filesystem permission boundary; the identical build passed outside that sandbox. Existing content-date and LaTeX warnings remain non-blocking.
-- Remaining P2/production gates: HMAC audit hashes or explicit privacy acceptance; real Supabase context authority; service-role-only atomic reserve/finalize RPC; versioned worst-case rate card; database/RLS/failure-injection evidence; feature-flag and secret operation records; separate live-call approval.
+- Production-boundary candidate: `b86376b3`. It adds an owner-RLS-preserving Supabase authority, owner-scoped HMAC-SHA256 audit identifiers, provider/model-bound DeepSeek CNY pricing, default-off service configuration, and service-role-only atomic reserve/finalize RPCs with UTC windows and two-minute leases.
+- The final identity/privacy review requires credential-bearing fetches to reject redirects, DeepSeek responses to state the exact reserved model, and the guard to snapshot provider/model/private-content/rate identities before asynchronous work. Final independent verdict: no remaining P0/P1.
+- Final local evidence: focused 42/42, full Quartz 187/187, TypeScript, diff-check, and static build passed (284 inputs, 1046 outputs). All provider and Supabase fetches in tests are injected fakes; no real provider call occurred.
+- Remaining production gates: execute the migration and rollback-only verification script on non-production Supabase, prove RLS plus two-session concurrency/lease behavior, record the operation and forward-fix plan, then obtain separate approvals for deployment, secret configuration, `ai-write` hookup, feature-flag enablement, budget, and any paid call.
 
 ## Git and worktree reality
 
@@ -82,4 +85,4 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 
 1. Finish N04 only when the full integration/reference/platform/workspace/public worktree set is needed; the DeepSeek implementation/review worktrees already use the merged baseline and do not disturb occupied worktrees.
 2. Complete fresh Cloudflare/production behavior checks and a production operation record before any migration, Edge Function replacement, secret configuration, feature-flag enablement, or paid call.
-3. Complete the production half of A20 (Supabase authority, atomic RPC, rate card, RLS/failure evidence, and site-owner feature-flag storage) before wiring the prepared DeepSeek adapter into runtime.
+3. Validate the prepared A20 migration/RPC/authority boundary on non-production Supabase, including owner/other/anonymous RLS and two-session concurrency, before any runtime hookup.
