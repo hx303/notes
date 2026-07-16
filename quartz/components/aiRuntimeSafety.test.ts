@@ -4,6 +4,7 @@ import {
   AiProviderError,
   type AiProvider,
   type AiProviderCapabilities,
+  type AiProviderIdentity,
   type AiProviderRequest,
   type AiProviderResult,
 } from "../../supabase/functions/_shared/ai-provider"
@@ -12,12 +13,14 @@ import {
   GuardedAiProvider,
   InMemoryAiQuotaAuditBoundary,
   type AiRuntimePolicy,
+  type AiRateCard,
   type AiQuotaAuditBoundary,
   type AiFinalizeRequest,
   type AiRuntimeContextAuthority,
   type AiVerifiedRuntimeContext,
   type GuardedAiRequest,
 } from "../../supabase/functions/_shared/ai-runtime-safety"
+import { WebCryptoHmacAiInputHasher } from "../../supabase/functions/_shared/ai-request-hmac"
 
 const OWNER_ID = "11111111-1111-4111-8111-111111111111"
 const DOCUMENT_ID = "22222222-2222-4222-8222-222222222222"
@@ -46,6 +49,7 @@ const result = (text = "safe result"): AiProviderResult => ({
 })
 
 class FakeProvider implements AiProvider {
+  readonly identity: AiProviderIdentity
   readonly capabilities: AiProviderCapabilities
   calls = 0
   private readonly generate: (request: AiProviderRequest) => Promise<AiProviderResult>
@@ -53,8 +57,10 @@ class FakeProvider implements AiProvider {
   constructor(
     generate: (request: AiProviderRequest) => Promise<AiProviderResult>,
     allowsPrivateContent = false,
+    model = "deepseek-v4-flash",
   ) {
     this.generate = generate
+    this.identity = Object.freeze({ provider: "deepseek", model })
     this.capabilities = {
       provider: "deepseek",
       supportsStreaming: false,
@@ -70,6 +76,18 @@ class FakeProvider implements AiProvider {
     return this.generate(request)
   }
 }
+
+const testRateCard = (
+  calculateCostCents: (value: AiProviderResult) => number = () => 1,
+  estimateCostCents: (request: AiProviderRequest) => number = () => 1,
+  model = "deepseek-v4-flash",
+): AiRateCard => ({
+  provider: "deepseek",
+  model,
+  version: "deepseek-cny-2026-07-17",
+  calculateCostCents,
+  estimateCostCents,
+})
 
 const guardedRequest = (overrides: Partial<GuardedAiRequest> = {}): GuardedAiRequest => ({
   authorization: "Bearer verified-test-token",
@@ -97,25 +115,87 @@ const setup = (
   policy: AiRuntimePolicy,
   provider = new FakeProvider(async () => result()),
   calculateCostCents: (value: AiProviderResult) => number = () => 1,
-  estimateCostCents: (request: {
-    model: string
-    providerRequest: AiProviderRequest
-  }) => number = () => 1,
+  estimateCostCents: (request: AiProviderRequest) => number = () => 1,
   contextAuthority: AiRuntimeContextAuthority = authorityFor(),
 ) => {
   const boundary = new InMemoryAiQuotaAuditBoundary({ policyForOwner: () => policy })
   const guarded = new GuardedAiProvider({
     provider,
+    rateCard: testRateCard(calculateCostCents, estimateCostCents),
     quotaAudit: boundary,
     contextAuthority,
     capability: "rewrite",
-    model: "deepseek-v4-flash",
     promptVersion: "v1",
-    calculateCostCents,
-    estimateCostCents,
+    inputHasher: new WebCryptoHmacAiInputHasher("test-hmac-secret-with-at-least-32-bytes"),
   })
   return { boundary, guarded, provider }
 }
+
+test("provider model and rate-card identity mismatch is rejected before invocation", () => {
+  const provider = new FakeProvider(async () => result(), false, "deepseek-v4-pro")
+  assert.throws(
+    () =>
+      new GuardedAiProvider({
+        provider,
+        rateCard: testRateCard(),
+        quotaAudit: new InMemoryAiQuotaAuditBoundary({ policyForOwner: openPolicy }),
+        contextAuthority: authorityFor(),
+        capability: "rewrite",
+        promptVersion: "v1",
+        inputHasher: new WebCryptoHmacAiInputHasher("test-hmac-secret-with-at-least-32-bytes"),
+      }),
+    /identities do not match/u,
+  )
+  assert.equal(provider.calls, 0)
+})
+
+test("guard snapshots trusted provider identity before asynchronous work", async () => {
+  const provider = new FakeProvider(async () => result())
+  const { boundary, guarded } = setup(openPolicy(), provider)
+  Object.defineProperty(provider, "identity", {
+    value: { provider: "deepseek", model: "deepseek-v4-pro" },
+  })
+  await guarded.generateText(guardedRequest())
+  assert.equal(provider.calls, 1)
+  assert.equal(boundary.getAuditRecords()[0]?.model, "deepseek-v4-flash")
+})
+
+test("guard snapshots private-content capability before asynchronous work", async () => {
+  const provider = new FakeProvider(async () => result())
+  const authority = authorityFor(() =>
+    verifiedContext({ contentScope: "private", publicSource: null }),
+  )
+  const { guarded } = setup(openPolicy(), provider, undefined, undefined, authority)
+  Object.defineProperty(provider, "capabilities", {
+    value: { ...provider.capabilities, allowsPrivateContent: true },
+  })
+  await assert.rejects(
+    guarded.generateText(guardedRequest()),
+    (error: unknown) =>
+      error instanceof AiRuntimeBlockedError &&
+      error.code === "provider_private_content_not_allowed",
+  )
+  assert.equal(provider.calls, 0)
+})
+
+test("guard rejects a response model that differs from its provider snapshot", async () => {
+  const provider = new FakeProvider(async () => ({ ...result(), model: "deepseek-v4-pro" }))
+  const { boundary, guarded } = setup(
+    openPolicy(),
+    provider,
+    () => 1,
+    () => 5,
+  )
+  await assert.rejects(
+    guarded.generateText(guardedRequest()),
+    (error: unknown) =>
+      error instanceof Error &&
+      error.name === "AiRuntimeAccountingError" &&
+      (error as { code?: unknown }).code === "cost_calculation_failed",
+  )
+  assert.equal(provider.calls, 1)
+  assert.equal(boundary.getAuditRecords()[0]?.costBasis, "reserved")
+})
 
 test("AI runtime is fail-closed when the site flag is off and budget is zero", async () => {
   const policy: AiRuntimePolicy = {
@@ -234,13 +314,12 @@ test("policy lookup failure is audited fail-closed after authority verification"
   })
   const brokenPolicyRoute = new GuardedAiProvider({
     provider,
+    rateCard: testRateCard(),
     quotaAudit: brokenBoundary,
     contextAuthority: authorityFor(),
     capability: "rewrite",
-    model: "deepseek-v4-flash",
     promptVersion: "v1",
-    calculateCostCents: () => 1,
-    estimateCostCents: () => 1,
+    inputHasher: new WebCryptoHmacAiInputHasher("test-hmac-secret-with-at-least-32-bytes"),
   })
   await assert.rejects(
     brokenPolicyRoute.generateText(guardedRequest()),
@@ -352,7 +431,7 @@ test("trusted estimator controls reservation and invalid estimates are audited b
     openPolicy(),
     undefined,
     () => 1,
-    ({ providerRequest }) => {
+    (providerRequest) => {
       estimatorCalls += 1
       return providerRequest.maxTokens === 100 ? 4 : Number.NaN
     },
@@ -524,13 +603,15 @@ test("a false success-finalize cannot reverse a completed success to failed", as
   const provider = new FakeProvider(async () => result())
   const guarded = new GuardedAiProvider({
     provider,
+    rateCard: testRateCard(
+      () => 3,
+      () => 5,
+    ),
     quotaAudit: boundary,
     contextAuthority: authorityFor(),
     capability: "rewrite",
-    model: "deepseek-v4-flash",
     promptVersion: "v1",
-    calculateCostCents: () => 3,
-    estimateCostCents: () => 5,
+    inputHasher: new WebCryptoHmacAiInputHasher("test-hmac-secret-with-at-least-32-bytes"),
   })
 
   await assert.rejects(

@@ -23,6 +23,7 @@ export interface AiReservationRequest {
   provider: string
   model: string
   promptVersion: string
+  rateCardVersion: string
   inputHash: string
   contentScope: AiContentScope
   providerAllowsPrivateContent: boolean
@@ -42,6 +43,8 @@ export interface AiFinalizeRequest {
   cacheHitTokens: number | null
   cacheMissTokens: number | null
   costCents: number
+  costBasis: "actual" | "reserved"
+  rateCardVersion: string
   latencyMs: number
   errorCode: string | null
 }
@@ -53,6 +56,7 @@ export interface AiAuditRecord {
   provider: string
   model: string
   promptVersion: string
+  rateCardVersion: string
   inputHash: string
   status: AiRunStatus
   reservedCostCents: number
@@ -61,6 +65,7 @@ export interface AiAuditRecord {
   cacheHitTokens: number | null
   cacheMissTokens: number | null
   costCents: number | null
+  costBasis: "actual" | "reserved" | "none"
   latencyMs: number | null
   errorCode: string | null
   createdAt: string
@@ -70,6 +75,18 @@ export interface AiAuditRecord {
 export interface AiQuotaAuditBoundary {
   reserve(request: AiReservationRequest): Promise<AiReservationDecision>
   finalize(request: AiFinalizeRequest): Promise<boolean>
+}
+
+export interface AiInputHasher {
+  hash(ownerId: string, request: AiProviderRequest): Promise<string>
+}
+
+export interface AiRateCard {
+  readonly provider: string
+  readonly model: string
+  readonly version: string
+  estimateCostCents(request: AiProviderRequest): number
+  calculateCostCents(result: AiProviderResult): number
 }
 
 export type AiBlockedCode =
@@ -83,6 +100,8 @@ export type AiBlockedCode =
   | "concurrent_request_limit_reached"
   | "invalid_runtime_policy"
   | "cost_estimation_failed"
+  | "rate_card_mismatch"
+  | "provider_consent_required"
 
 export class AiRuntimeBlockedError extends Error {
   readonly runId: string
@@ -260,6 +279,7 @@ export class InMemoryAiQuotaAuditBoundary implements AiQuotaAuditBoundary {
         provider: request.provider,
         model: request.model,
         promptVersion: request.promptVersion,
+        rateCardVersion: request.rateCardVersion,
         inputHash: request.inputHash,
         status: blockedCode ? "blocked" : "running",
         reservedCostCents: blockedCode ? 0 : request.estimatedCostCents,
@@ -268,6 +288,7 @@ export class InMemoryAiQuotaAuditBoundary implements AiQuotaAuditBoundary {
         cacheHitTokens: null,
         cacheMissTokens: null,
         costCents: blockedCode ? 0 : null,
+        costBasis: "none",
         latencyMs: blockedCode ? 0 : null,
         errorCode: blockedCode,
         createdAt: now.toISOString(),
@@ -299,6 +320,8 @@ export class InMemoryAiQuotaAuditBoundary implements AiQuotaAuditBoundary {
         (candidate) => candidate.runId === request.runId && candidate.ownerId === request.ownerId,
       )
       if (!record) return false
+      if (record.rateCardVersion !== request.rateCardVersion) return false
+      if (request.status === "succeeded" && request.costBasis !== "actual") return false
       if (record.status !== "running") return record.status === request.status
 
       record.status = request.status
@@ -308,6 +331,7 @@ export class InMemoryAiQuotaAuditBoundary implements AiQuotaAuditBoundary {
       record.cacheHitTokens = request.cacheHitTokens
       record.cacheMissTokens = request.cacheMissTokens
       record.costCents = request.costCents
+      record.costBasis = request.costBasis
       record.latencyMs = request.latencyMs
       record.errorCode =
         request.status === "failed" ? (request.errorCode ?? "provider_failure") : null
@@ -349,26 +373,13 @@ export interface AiRuntimeContextAuthority {
 
 interface GuardedAiProviderOptions {
   provider: AiProvider
+  rateCard: AiRateCard
   quotaAudit: AiQuotaAuditBoundary
   contextAuthority: AiRuntimeContextAuthority
   capability: string
-  model: string
   promptVersion: string
-  calculateCostCents: (result: AiProviderResult) => number
-  estimateCostCents: (request: { model: string; providerRequest: AiProviderRequest }) => number
+  inputHasher: AiInputHasher
   nowMs?: () => number
-}
-
-const hashProviderRequest = async (request: AiProviderRequest) => {
-  const bytes = new TextEncoder().encode(
-    JSON.stringify({
-      messages: request.messages,
-      maxTokens: request.maxTokens ?? null,
-      temperature: request.temperature ?? null,
-    }),
-  )
-  const digest = await crypto.subtle.digest("SHA-256", bytes)
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
 const safeProviderErrorCode = (error: unknown) =>
@@ -376,16 +387,17 @@ const safeProviderErrorCode = (error: unknown) =>
 
 export class GuardedAiProvider {
   private readonly provider: AiProvider
+  private readonly providerName: string
+  private readonly model: string
+  private readonly providerAllowsPrivateContent: boolean
+  private readonly rateCardVersion: string
+  private readonly estimateCostCents: (request: AiProviderRequest) => number
+  private readonly calculateCostCents: (result: AiProviderResult) => number
   private readonly quotaAudit: AiQuotaAuditBoundary
   private readonly contextAuthority: AiRuntimeContextAuthority
   private readonly capability: string
-  private readonly model: string
   private readonly promptVersion: string
-  private readonly calculateCostCents: (result: AiProviderResult) => number
-  private readonly estimateCostCents: (request: {
-    model: string
-    providerRequest: AiProviderRequest
-  }) => number
+  private readonly inputHasher: AiInputHasher
   private readonly nowMs: () => number
 
   constructor(options: GuardedAiProviderOptions) {
@@ -395,17 +407,34 @@ export class GuardedAiProvider {
     if (!/^[a-z0-9_-]{1,60}$/u.test(options.capability)) {
       throw new Error("AI capability must be a stable server-side identifier.")
     }
-    if (!/^[a-zA-Z0-9._-]{1,120}$/u.test(options.model)) {
-      throw new Error("AI model must be a stable server-side identifier.")
-    }
     if (!/^[a-zA-Z0-9._-]{1,40}$/u.test(options.promptVersion)) {
       throw new Error("AI promptVersion must be a stable server-side identifier.")
     }
+    if (
+      !/^[a-z0-9_-]{1,40}$/u.test(options.provider.identity.provider) ||
+      !/^[a-zA-Z0-9._-]{1,120}$/u.test(options.provider.identity.model) ||
+      options.provider.identity.provider !== options.provider.capabilities.provider
+    ) {
+      throw new Error("AI provider identity is invalid.")
+    }
+    if (!/^[a-zA-Z0-9._-]{1,80}$/u.test(options.rateCard.version)) {
+      throw new Error("AI rateCardVersion must be a stable server-side identifier.")
+    }
+    if (
+      options.rateCard.provider !== options.provider.identity.provider ||
+      options.rateCard.model !== options.provider.identity.model
+    ) {
+      throw new Error("AI provider and rate-card identities do not match.")
+    }
+    this.providerName = options.provider.identity.provider
+    this.model = options.provider.identity.model
+    this.providerAllowsPrivateContent = options.provider.capabilities.allowsPrivateContent
+    this.rateCardVersion = options.rateCard.version
+    this.estimateCostCents = options.rateCard.estimateCostCents.bind(options.rateCard)
+    this.calculateCostCents = options.rateCard.calculateCostCents.bind(options.rateCard)
     this.capability = options.capability
-    this.model = options.model
     this.promptVersion = options.promptVersion
-    this.calculateCostCents = options.calculateCostCents
-    this.estimateCostCents = options.estimateCostCents
+    this.inputHasher = options.inputHasher
     this.nowMs = options.nowMs ?? (() => Date.now())
   }
 
@@ -427,14 +456,12 @@ export class GuardedAiProvider {
       throw new AiRuntimeAuthorityError()
     }
 
-    const inputHash = await hashProviderRequest(context.providerRequest)
+    const inputHash = await this.inputHasher.hash(context.ownerId, context.providerRequest)
+    if (!/^[a-f0-9]{64}$/u.test(inputHash)) throw new AiRuntimeAuthorityError()
     let preflightBlockCode: "cost_estimation_failed" | undefined
     let estimatedCostCents = 1
     try {
-      const estimate = this.estimateCostCents({
-        model: this.model,
-        providerRequest: context.providerRequest,
-      })
+      const estimate = this.estimateCostCents(context.providerRequest)
       if (!Number.isInteger(estimate) || estimate <= 0)
         preflightBlockCode = "cost_estimation_failed"
       else estimatedCostCents = estimate
@@ -444,12 +471,13 @@ export class GuardedAiProvider {
     const reservation = await this.quotaAudit.reserve({
       ownerId: context.ownerId,
       capability: this.capability,
-      provider: this.provider.capabilities.provider,
+      provider: this.providerName,
       model: this.model,
       promptVersion: this.promptVersion,
+      rateCardVersion: this.rateCardVersion,
       inputHash,
       contentScope: context.contentScope,
-      providerAllowsPrivateContent: this.provider.capabilities.allowsPrivateContent,
+      providerAllowsPrivateContent: this.providerAllowsPrivateContent,
       estimatedCostCents,
       preflightBlockCode,
     })
@@ -471,6 +499,8 @@ export class GuardedAiProvider {
         cacheHitTokens: null,
         cacheMissTokens: null,
         costCents: estimatedCostCents,
+        costBasis: "reserved",
+        rateCardVersion: this.rateCardVersion,
         latencyMs: Math.max(0, Math.round(this.nowMs() - startedAt)),
         errorCode: safeProviderErrorCode(error),
       })
@@ -488,6 +518,8 @@ export class GuardedAiProvider {
         cacheHitTokens: null,
         cacheMissTokens: null,
         costCents: estimatedCostCents,
+        costBasis: "reserved",
+        rateCardVersion: this.rateCardVersion,
         latencyMs: Math.max(0, Math.round(this.nowMs() - startedAt)),
         errorCode: "usage_missing",
       })
@@ -497,6 +529,7 @@ export class GuardedAiProvider {
 
     let costCents: number
     try {
+      if (result.model !== this.model) throw new Error("response model mismatch")
       costCents = this.calculateCostCents(result)
       if (!Number.isInteger(costCents) || costCents < 0) throw new Error("invalid cost")
     } catch {
@@ -509,6 +542,8 @@ export class GuardedAiProvider {
         cacheHitTokens: result.usage?.cacheHitTokens ?? null,
         cacheMissTokens: result.usage?.cacheMissTokens ?? null,
         costCents: estimatedCostCents,
+        costBasis: "reserved",
+        rateCardVersion: this.rateCardVersion,
         latencyMs: Math.max(0, Math.round(this.nowMs() - startedAt)),
         errorCode: "cost_calculation_failed",
       })
@@ -526,6 +561,8 @@ export class GuardedAiProvider {
         cacheHitTokens: result.usage?.cacheHitTokens ?? null,
         cacheMissTokens: result.usage?.cacheMissTokens ?? null,
         costCents,
+        costBasis: "actual",
+        rateCardVersion: this.rateCardVersion,
         latencyMs: Math.max(0, Math.round(this.nowMs() - startedAt)),
         errorCode: "cost_exceeded_reservation",
       })
@@ -542,6 +579,8 @@ export class GuardedAiProvider {
       cacheHitTokens: result.usage?.cacheHitTokens ?? null,
       cacheMissTokens: result.usage?.cacheMissTokens ?? null,
       costCents,
+      costBasis: "actual",
+      rateCardVersion: this.rateCardVersion,
       latencyMs: Math.max(0, Math.round(this.nowMs() - startedAt)),
       errorCode: null,
     })
@@ -555,6 +594,8 @@ export class GuardedAiProvider {
         cacheHitTokens: result.usage?.cacheHitTokens ?? null,
         cacheMissTokens: result.usage?.cacheMissTokens ?? null,
         costCents: estimatedCostCents,
+        costBasis: "reserved",
+        rateCardVersion: this.rateCardVersion,
         latencyMs: Math.max(0, Math.round(this.nowMs() - startedAt)),
         errorCode: "audit_finalize_failed",
       })

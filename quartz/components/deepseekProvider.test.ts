@@ -38,6 +38,7 @@ test("DeepSeek adapter sends the current non-streaming writing contract without 
 
   assert.equal(requestUrl, "https://api.deepseek.com/chat/completions")
   assert.equal(requestInit?.method, "POST")
+  assert.equal(requestInit?.redirect, "error")
   assert.equal((requestInit?.headers as Record<string, string>).Authorization, "Bearer test-key")
   const body = JSON.parse(String(requestInit?.body)) as Record<string, unknown>
   assert.equal(body.model, deepSeekDefaults.model)
@@ -63,7 +64,16 @@ test("DeepSeek adapter sends the current non-streaming writing contract without 
 })
 
 test("DeepSeek adapter declares its privacy and first-slice capabilities", () => {
-  const provider = new DeepSeekProvider({ apiKey: "test-key", fetch: async () => Response.json({}) })
+  const provider = new DeepSeekProvider({
+    apiKey: "test-key",
+    fetch: async () => Response.json({}),
+  })
+  assert.deepEqual(provider.identity, { provider: "deepseek", model: "deepseek-v4-flash" })
+  assert.equal(
+    Reflect.set(provider, "identity", { provider: "deepseek", model: "deepseek-v4-pro" }),
+    false,
+  )
+  assert.equal(provider.identity.model, "deepseek-v4-flash")
   assert.deepEqual(provider.capabilities, {
     provider: "deepseek",
     supportsStreaming: false,
@@ -110,7 +120,9 @@ test("DeepSeek adapter converts an aborted timeout into a retryable timeout erro
     timeoutMs: 5,
     fetch: (_input, init) =>
       new Promise((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))
+        init?.signal?.addEventListener("abort", () =>
+          reject(new DOMException("aborted", "AbortError")),
+        )
       }),
   })
 
@@ -131,7 +143,9 @@ test("DeepSeek adapter distinguishes caller cancellation from its timeout", asyn
     apiKey: "test-key",
     fetch: (_input, init) =>
       new Promise((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))
+        init?.signal?.addEventListener("abort", () =>
+          reject(new DOMException("aborted", "AbortError")),
+        )
       }),
   })
   const result = provider.generateText({
@@ -159,6 +173,23 @@ test("DeepSeek adapter rejects an invalid successful response", async () => {
   )
 })
 
+test("DeepSeek adapter requires an explicit matching response model", async () => {
+  for (const model of [undefined, "deepseek-v4-pro"] as const) {
+    const provider = new DeepSeekProvider({
+      apiKey: "test-key",
+      fetch: async () =>
+        Response.json({
+          model,
+          choices: [{ message: { content: "result" }, finish_reason: "stop" }],
+        }),
+    })
+    await assert.rejects(
+      provider.generateText({ messages: [{ role: "user", content: "hello" }] }),
+      (error: unknown) => error instanceof AiProviderError && error.code === "invalid_response",
+    )
+  }
+})
+
 test("DeepSeek adapter rejects blank and truncated output", async () => {
   for (const [content, finishReason, code] of [
     ["   ", "stop", "empty_output"],
@@ -167,7 +198,10 @@ test("DeepSeek adapter rejects blank and truncated output", async () => {
     const provider = new DeepSeekProvider({
       apiKey: "test-key",
       fetch: async () =>
-        Response.json({ choices: [{ message: { content }, finish_reason: finishReason }] }),
+        Response.json({
+          model: "deepseek-v4-flash",
+          choices: [{ message: { content }, finish_reason: finishReason }],
+        }),
     })
     await assert.rejects(
       provider.generateText({ messages: [{ role: "user", content: "hello" }] }),

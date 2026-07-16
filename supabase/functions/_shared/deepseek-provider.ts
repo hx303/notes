@@ -3,6 +3,7 @@ import {
   type AiProvider,
   type AiProviderCapabilities,
   type AiProviderErrorCode,
+  type AiProviderIdentity,
   type AiProviderRequest,
   type AiProviderResult,
 } from "./ai-provider"
@@ -73,6 +74,7 @@ const optionalInteger = (value: unknown) =>
   typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null
 
 export class DeepSeekProvider implements AiProvider {
+  readonly identity!: AiProviderIdentity
   readonly capabilities: AiProviderCapabilities = Object.freeze({
     provider: PROVIDER,
     supportsStreaming: false,
@@ -84,7 +86,7 @@ export class DeepSeekProvider implements AiProvider {
 
   private readonly apiKey: string
   private readonly fetch: Fetch
-  private readonly model: DeepSeekModel
+  #model: DeepSeekModel
   private readonly timeoutMs: number
 
   constructor(options: DeepSeekProviderOptions) {
@@ -98,12 +100,21 @@ export class DeepSeekProvider implements AiProvider {
 
     this.apiKey = options.apiKey.trim()
     this.fetch = options.fetch ?? globalThis.fetch.bind(globalThis)
-    this.model = model
+    this.#model = model
+    Object.defineProperty(this, "identity", {
+      value: Object.freeze({ provider: PROVIDER, model }),
+      writable: false,
+      configurable: false,
+      enumerable: true,
+    })
     this.timeoutMs = timeoutMs
   }
 
   async generateText(request: AiProviderRequest): Promise<AiProviderResult> {
-    if (request.messages.length === 0 || request.messages.some((message) => !message.content.trim())) {
+    if (
+      request.messages.length === 0 ||
+      request.messages.some((message) => !message.content.trim())
+    ) {
       throw new AiProviderError({
         provider: PROVIDER,
         code: "invalid_request",
@@ -143,7 +154,7 @@ export class DeepSeekProvider implements AiProvider {
 
     try {
       const body: Record<string, unknown> = {
-        model: this.model,
+        model: this.#model,
         messages: request.messages,
         stream: false,
         thinking: { type: "disabled" },
@@ -153,6 +164,7 @@ export class DeepSeekProvider implements AiProvider {
 
       const response = await this.fetch(DEFAULT_ENDPOINT, {
         method: "POST",
+        redirect: "error",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
@@ -206,6 +218,14 @@ export class DeepSeekProvider implements AiProvider {
           retryable: true,
         })
       }
+      if (typeof data?.model !== "string" || data.model !== this.#model) {
+        throw new AiProviderError({
+          provider: PROVIDER,
+          code: "invalid_response",
+          message: "DeepSeek returned an unverified response model.",
+          status: response.status,
+        })
+      }
       const text = choice?.message?.content
       if (typeof text !== "string" || !text.trim()) {
         throw new AiProviderError({
@@ -232,7 +252,7 @@ export class DeepSeekProvider implements AiProvider {
       return {
         id: typeof data?.id === "string" ? data.id : null,
         text,
-        model: typeof data?.model === "string" ? data.model : this.model,
+        model: this.#model,
         finishReason: typeof choice?.finish_reason === "string" ? choice.finish_reason : null,
         usage,
       }

@@ -37,6 +37,11 @@ export interface AiProviderCapabilities {
   retention: "zero_retention" | "provider_managed_or_unknown"
 }
 
+export interface AiProviderIdentity {
+  readonly provider: string
+  readonly model: string
+}
+
 export type AiProviderErrorCode =
   | "invalid_request"
   | "authentication_failed"
@@ -79,6 +84,7 @@ export class AiProviderError extends Error {
 }
 
 export interface AiProvider {
+  readonly identity: AiProviderIdentity
   readonly capabilities: AiProviderCapabilities
   generateText(request: AiProviderRequest): Promise<AiProviderResult>
 }
