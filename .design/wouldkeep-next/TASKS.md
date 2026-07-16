@@ -53,10 +53,11 @@ Date: 2026-07-16
 - [ ] **C20 — 全内容 dry-run 清单**：为全部公开 Markdown 输出日期、成熟度、主题、标签、摘要、来源、许可、canonical 和 aliases 建议，不直接写正文。 _Agent: content; creates: migration utility/report; reuses: knowledge metadata helpers._
 - [ ] **C21 — 优先内容人工策展**：先处理首页、主题和学习路径使用的数学、物理、化学、材料、模拟、研究、历史与成长内容，低置信项保留人工决定。 _Agent: content; modifies: approved content only. Depends on: C20._
 - [ ] **C22 — 永久 URL 与索引传播**：在合并重复目录/标签前建立 aliases/canonical 映射，并验证搜索、地图、反链、RSS、sitemap、评论与引用。 _Agent: content; modifies: approved content and canonical consumers. Depends on: C21._
-- [ ] **Q20 — 跨页面浏览器回归**：在生产构建覆盖公开发现、搜索、地图、账户、导入、保存、组织、预览、发布和旧 URL 的桌面/移动关键路径。 _Agent: QA; creates: browser regression suite; reuses: existing tests._
-- [ ] **Q21 — WCAG 2.2 AA 与失败状态**：覆盖键盘、焦点、屏幕阅读器播报、44px、对比度、200% 缩放、reduced motion、离线、超时和冲突。 _Agent: QA; modifies: only clearly owned small fixes; reports cross-module issues. Depends on: Q20._
-- [ ] **Q22 — 性能预算与静态优先验证**：记录 JS/CSS/图片/字体/地图与 Core Web Vitals；普通文章不得加载编辑器、完整地图或 AI 包。 _Agent: QA; creates: performance report and thresholds._
+- [ ] **Q20 — UI 优先的跨页面视觉回归**：在生产构建为公开发现、账户、个人空间、写作台、知识库、设置、AI、Admin、文章、地图、路径和旧 URL 建立经人工审阅的桌面/手机视觉基线；禁止无人审查自动重录。 _Agent: UI-QA (`gpt-5.4/high`); creates: browser and screenshot regression suite; reuses: `.better-web-ui.md`._
+- [ ] **Q21 — UI 状态、响应式与视觉一致性验收**：覆盖 320/375/800/1024/1200/1536px、浅色/深色、200% 缩放，以及 default/hover/focus/active/disabled/loading/error/success/empty/offline/conflict；记录截断、重叠、横向滚动、图片/字体、间距和层级问题。 _Agent: UI-QA; creates: screenshot evidence and P0–P3 UI ledger. Depends on: Q20._
+- [ ] **Q22 — WCAG 2.2 AA 与失败恢复**：自动扫描之外，人工完成键盘遍历、焦点进入/返回、屏幕阅读器冒烟、44px、对比度、reduced motion；错误必须保留上下文并提供恢复动作。 _Agent: UI-QA; modifies: only clearly owned small fixes; reports cross-module issues. Depends on: Q20._
 - [ ] **Q23 — AI 中文评估集**：建立至少 50 条可重复评估，覆盖引用、拒答、标签、链接、重复、跨账户和提示注入。 _Agent: QA with AI agent; creates: eval fixtures/command. Depends on: A23–A24._
+- [ ] **Q24 — 性能预算与静态优先验证**：记录 JS/CSS/图片/字体/地图与 Core Web Vitals；普通文章不得加载编辑器、完整地图或 AI 包，同时检查布局偏移和图片加载造成的视觉抖动。 _Agent: UI-QA; creates: performance report and thresholds._
 
 ## Review and Release / Wave 3
 
