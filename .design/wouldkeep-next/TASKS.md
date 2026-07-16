@@ -6,9 +6,9 @@ Date: 2026-07-16
 
 ## Foundation / Wave 0
 
-- [ ] **N00 — 完成 AI 安全地基最终验收**：登录站长账户测试 `ai-write`，确认只发送固定测试文字、返回 `mock: true`、不产生模型费用，并把证据写回 AI TASKS。 _Modifies: AI task status only; reuses: deployed Edge Function and RLS tests._
-- [ ] **N01 — 合并并固定新基线**：确认 PR #11 全绿后合并到 `main`，抓取 `origin/main` 并记录基线 SHA。 _Modifies: Git history; reuses: current AI foundation branch._
-- [ ] **N02 — 建立现实状态清单**：逐项对账代码、Supabase、Edge Functions、Vercel/Cloudflare、三份旧 TASKS 与线上行为，标记完成/部分/未部署/过期。 _Creates: `CURRENT_STATE.md`; reuses: existing design artifacts and deployed project._
+- [x] **N00 — 完成 AI 安全地基最终验收**：登录站长账户测试 `ai-write`，确认只发送固定测试文字、返回 `mock: true`、不产生模型费用，并把证据写回 AI TASKS。 _Completed 2026-07-16: site owner explicitly confirmed the signed-in safety-gateway result; no model call or cost._
+- [x] **N01 — 合并并固定新基线**：确认 PR #11 全绿后合并到 `main`，抓取 `origin/main` 并记录基线 SHA。 _Completed 2026-07-16: PR #11 merged; new `main` is `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`._
+- [x] **N02 — 建立现实状态清单**：逐项对账代码、Supabase、Edge Functions、Vercel/Cloudflare、三份旧 TASKS 与线上行为，标记完成/部分/未部署/过期。 _Completed and kept current in `.design/wouldkeep-next/CURRENT_STATE.md`._
 - [x] **N03 — 建立持续协作规则**：在根目录写入构建、测试、安全、文件所有权、迁移和交接约束，确保后续代理不重复开发或越界部署。 _Creates: `AGENTS.md`; reuses: this orchestration plan._
 - [ ] **N04 — 建立第一波 Worktrees**：从新基线创建 integration、reference-research、platform、workspace、public Worktree，确认每个目录干净且分支不重名；同时运行时保持“总指挥 + 研究 + 最多两个实施”。 _Creates: Git worktrees/branches; modifies no product code._
 - [ ] **N05 — 启动 5.6 Sol 总指挥制度**：根任务固定使用 `gpt-5.6-sol/xhigh`，由其维护状态、派工、研究裁决、文件所有权、集成和生产权限清单。 _Modifies: orchestration state only; reuses: this plan._
@@ -50,7 +50,7 @@ Date: 2026-07-16
 
 ## Wave 2 / AI, Content, Quality
 
-- [ ] **A20 — AI 用量与预算保护**：为成功/失败调用写审计，实施并发、日限额、月预算和站长 feature flag；真实密钥只在 Function Secret。 _Agent: AI; modifies: AI migrations/functions/settings; reuses: mock gateway._
+- [ ] **A20 — AI 用量与预算保护**：为成功/失败调用写审计，实施并发、日限额、月预算和站长 feature flag；真实密钥只在 Function Secret。 _Progress: dormant fail-closed guard and offline atomic reference complete; production Supabase authority, service-role RPC, rate card, RLS/failure evidence, config storage, and deployment remain. Agent: AI; modifies: AI migrations/functions/settings; reuses: mock gateway._
 - [ ] **A21 — 选区改写与版本回退**：选中文字后生成独立预览，支持接受、插入、拒绝、重新生成和回退；版本冲突不得应用旧结果。 _Agent: AI; creates: focused AI UI components; reuses: editor version API. Depends on: A20 and P05._
 - [ ] **A22 — 增量索引与混合检索**：实现分块、内容哈希、队列、pgvector、PostgreSQL 全文搜索与 RRF；RLS 限制到当前用户和知识库。 _Agent: AI; creates: index worker/RPC/tests. Depends on: A20._
 - [ ] **A23 — 整理建议收件箱**：提供标签、分类、关系、重复候选的理由/证据/置信度与变更清单，逐条或安全批量接受。 _Agent: AI; creates: `/workspace/organize/`; reuses: tags/links/versions. Depends on: A22 and P06._

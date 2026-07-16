@@ -9,15 +9,18 @@ Date: 2026-07-16
 - [x] 已编写四张基础表、pgvector、所有者 RLS 与浏览器写权限收紧迁移。
 - [x] 已完成带 JWT、来源、动作和内容长度校验的无费用模拟网关。
 - [x] 站长已在 Supabase 执行迁移，`ai-write` 已部署，未登录请求返回 `401`。
-- [x] TypeScript、AI 专项测试、140 项全量测试与 Quartz 静态构建均通过。
+- [x] TypeScript、AI 专项测试、145 项全量测试与 Quartz 静态构建均通过。
 - [x] 已运行 `supabase/tests/20260716_ai_assistant_rls.sql`；四项真实账户 RLS 断言全部通过：所有者可管理偏好、跨账户不可读写、浏览器不可写审计记录。
-- [ ] 在登录状态下的模拟网关验收通过前，不连接真实模型，不配置模型密钥，也不发布 AI 功能到生产站点。
+- [x] 站长已在登录状态下确认模拟网关只返回固定安全响应、`mock: true` 且没有产生模型费用；PR #11 已获明确授权并合并到 `main`。
+- [x] DeepSeek provider 适配器已作为服务端、默认关闭的准备切片完成；无密钥、无运行接线、无真实调用、无部署，现有 mock 网关未改变。
+- [x] A20 离线控制层已完成：服务端权威上下文契约、私密/未知范围拒绝、预算/日限额/并发参考实现和无正文审计已通过独立复审；它仍未接入运行时。
+- [ ] 在 A20 预算/审计保护、私密内容路由强制拒绝和单独启用授权完成前，不配置密钥、不调用真实模型、不部署替换现有 mock 网关。
 
 ## Foundation
 
-- [ ] **AI 设置与明确同意**：在 `/workspace/settings/ai/` 建立默认关闭的 AI 设置页，说明第三方处理范围、私密内容开关和月度额度；保存后刷新仍一致。 _Modifies: `AccountPage`、个人空间导航和现有设置样式；creates: AI settings route/component._
-- [ ] **AI 数据表与所有者 RLS**：新增 `ai_preferences`、`document_chunks`、`ai_runs`、`ai_suggestions` 和 pgvector 迁移，并以两个测试账户证明任何跨账户读写均失败。 _Reuses: 现有 `owner_id`、知识库/文档外键和 RLS 命名模式；creates: migration and SQL policy tests._
-- [ ] **安全 AI 网关最小切片**：建立带 JWT 验证、动作白名单、输入上限、`store:false`、超时和统一错误码的 `ai-write` Edge Function；只返回固定的测试摘要，不接编辑器。 _Reuses: Supabase Auth/RLS；creates: Edge Function, provider adapter, secret configuration guide._
+- [x] **AI 设置与明确同意**：在 `/workspace/settings/ai/` 建立默认关闭的 AI 设置页，说明第三方处理范围、私密内容开关和月度额度；保存后刷新仍一致。 _Verified locally and in the merged PR #11 preview._
+- [x] **AI 数据表与所有者 RLS**：新增 `ai_preferences`、`document_chunks`、`ai_runs`、`ai_suggestions` 和 pgvector 迁移，并以两个测试账户证明任何跨账户读写均失败。 _Migration deployed; four real-account RLS assertions passed._
+- [x] **安全 AI 网关最小切片**：已建立 JWT/来源/动作/输入边界、固定 mock 响应、provider 接口、DeepSeek 超时与统一错误码、Secret 配置指南。供应商未提供 `store:false` 时不得虚构零留存；DeepSeek capability 明确为 `supportsZeroRetention=false`、`allowsPrivateContent=false`。 _No live hookup or deployment in the provider slice._
 - [ ] **用量和预算保护**：让每次成功或失败调用都写入 `ai_runs`，实施每用户并发、日限额和月预算阻断，并在设置页展示可理解的剩余额度。 _Depends on: 安全 AI 网关；creates: usage service and quota states._
 
 ## Writing Assistant

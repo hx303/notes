@@ -1,6 +1,6 @@
 # wouldkeep Cross-Worktree Contracts
 
-State: Wave 0 baseline, frozen for the first implementation briefs after PR #11 merges. Contract changes require a logged request, commander approval, synchronized migrations/types/fixtures/tests, and notification to dependent agents.
+State: PR #11 merged baseline plus the commander-approved, dormant DeepSeek/A20 production-boundary candidate. Contract changes require a logged request, commander approval, synchronized migrations/types/fixtures/tests, and notification to dependent agents.
 
 ## Ownership and visibility
 
@@ -35,6 +35,30 @@ State: Wave 0 baseline, frozen for the first implementation briefs after PR #11 
 - Mock success: HTTP 200 with `mock=true`, `status=gateway_ready`, `run_id`, echoed preview, scope counts, `model=null`, and the explicit no-cost message.
 - Errors currently include `origin_not_allowed` (403), `authentication_required` (401), `method_not_allowed` (405), `request_too_large`/`content_scope_too_large` (413), `invalid_json`, `unsupported_action`, `selection_required`, and `invalid_base_version` (400).
 - Real model connectivity, provider secrets, quotas, audit writes, and paid calls are outside this frozen foundation contract.
+
+### Provider preparation contract
+
+- Provider implementations are server-only and use an injected `fetch`; Quartz/browser code never receives provider credentials.
+- The initial DeepSeek adapter targets `POST https://api.deepseek.com/chat/completions` with Bearer authentication and defaults to `deepseek-v4-flash`; `deepseek-v4-pro` is an explicit server-side option.
+- Ordinary writing requests explicitly disable thinking mode for predictable latency/cost. The first slice is non-streaming and does not expose tool calls.
+- The adapter normalizes invalid request/authentication/balance/parameter/rate-limit/server-overload, timeout, caller abort, network, malformed-response, empty-output, truncated-output, content-filter, and insufficient-resource failures without retaining upstream error details, secrets, or raw private content.
+- Provider usage exposes prompt/completion/total tokens plus optional DeepSeek disk-cache hit/miss tokens for later A20 accounting. This is metadata only; `ai_runs` is not written in this slice.
+- DeepSeek currently declares `supportsZeroRetention=false`; private content is not eligible for this provider until a separately approved privacy contract exists.
+- This preparation slice does not read `DEEPSEEK_API_KEY` from the browser, wire the adapter into `ai-write`, change the accepted mock response, deploy an Edge Function, or make a real request. Runtime enablement depends on A20 and separate user approval.
+
+### Runtime-safety preparation contract
+
+- `GuardedAiProvider` receives only authorization and a route document ID. An injected server authority verifies JWT, owner, document access, and source, then constructs the provider request; request-body owner, scope, or prompt assertions are not authoritative.
+- `public` requires proof that the provider input came from the whitelisted public publication snapshot. Private or unlisted drafts, free input, unknown sources, malformed scope, and any unverified content remain ineligible for DeepSeek.
+- Site live state, user opt-in, monthly budget, daily limit, concurrency limit, reservation, and final audit state belong to an authoritative server boundary, not the browser or provider adapter.
+- Audit records contain owner/run identifiers, stable capability/provider/model/prompt-version IDs, input hash, token/cache counts, reserved/actual cost, latency, stable error code, and timestamps only. They do not contain authorization values, document bodies, prompts, outputs, or raw upstream errors.
+- Missing provider usage, invalid cost, actual cost above reservation, or audit-finalization failure cannot return a successful model result. The reservation or known actual cost is retained conservatively.
+- The in-memory boundary remains an offline single-process reference and test double. The production candidate uses browser-inaccessible, service-role-only atomic reserve/finalize database operations, a default-off singleton runtime config, two-minute reservation leases, UTC quota windows, and a versioned worst-case rate card.
+- Publication context reads use the publishable key plus the same verified user JWT so owner RLS remains authoritative. The service secret is confined to quota/audit RPC calls. All credential-bearing requests reject redirects.
+- The input audit identifier is an owner-scoped HMAC-SHA256 over the versioned request controls. The HMAC key, authorization, prompts, document bodies, outputs, and raw upstream errors are never sent to the audit RPC or stored in `ai_runs`.
+- Provider, model, private-content capability, rate-card version, reservation, response model, and actual usage must remain mutually consistent. Missing or mismatched identity/usage fails closed and retains the reserved or known actual charge conservatively.
+- These database/runtime contracts are candidates until the forward migration and rollback-only verification script pass on non-production Supabase, including owner/other/anonymous RLS and two-session concurrency evidence.
+- This contract does not authorize a migration, secret, feature flag, `ai-write` hookup, deployment, or paid request.
 
 ## Routes and shared hooks
 
