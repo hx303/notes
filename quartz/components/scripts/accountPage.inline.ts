@@ -6,18 +6,30 @@ const loadExternalScript = (src: string, globalName: string) => {
   if (globalWindow[globalName]) return Promise.resolve(globalWindow[globalName])
   globalWindow.__wouldkeepScriptLoads ??= {}
   if (globalWindow.__wouldkeepScriptLoads[src]) return globalWindow.__wouldkeepScriptLoads[src]
-  globalWindow.__wouldkeepScriptLoads[src] = new Promise((resolve, reject) => {
+  const request = new Promise((resolve, reject) => {
     const script = document.createElement("script")
     script.src = src
     script.async = true
-    script.onload = () =>
-      globalWindow[globalName]
-        ? resolve(globalWindow[globalName])
-        : reject(new Error(`missing ${globalName}`))
-    script.onerror = () => reject(new Error(`failed ${src}`))
+    script.onload = () => {
+      if (globalWindow[globalName]) resolve(globalWindow[globalName])
+      else {
+        delete globalWindow.__wouldkeepScriptLoads[src]
+        script.remove()
+        reject(new Error(`missing ${globalName}`))
+      }
+    }
+    script.onerror = () => {
+      delete globalWindow.__wouldkeepScriptLoads[src]
+      script.remove()
+      reject(new Error(`failed ${src}`))
+    }
     document.head.appendChild(script)
   })
-  return globalWindow.__wouldkeepScriptLoads[src]
+  globalWindow.__wouldkeepScriptLoads[src] = request
+  return request.catch((error) => {
+    delete globalWindow.__wouldkeepScriptLoads[src]
+    throw error
+  })
 }
 
 const loadExternalStyle = (href: string) => {
@@ -72,19 +84,17 @@ const renderMarkdownInto = async (target: HTMLElement, markdown: string) => {
 type ImportedDraft = { title: string; body: string; imageCount: number; notes: string[] }
 
 const loadClient = async (url: string, key: string) => {
-  if ((window as any).__supabaseClient) return (window as any).__supabaseClient
-  await new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script")
-    script.src =
-      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error("auth sdk"))
-    document.head.appendChild(script)
-  })
-  const factory = (window as any).supabase
+  const globalWindow = window as any
+  if (globalWindow.__supabaseClient) return globalWindow.__supabaseClient
+  const factory =
+    globalWindow.supabase ??
+    (await loadExternalScript(
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js",
+      "supabase",
+    ))
   if (!factory) return null
   const client = factory.createClient(url, key)
-  ;(window as any).__supabaseClient = client
+  globalWindow.__supabaseClient = client
   return client
 }
 
@@ -239,10 +249,49 @@ const init = async () => {
   let profileCroppedBlob: Blob | null = null
   let profileCropper: any = null
   let profilePersonalizationAvailable = true
+  let authSubscription: { unsubscribe?: () => void } | null = null
+  let onlineHandler: (() => void) | null = null
+  let disposed = false
+
+  window.addCleanup(() => {
+    disposed = true
+    if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    authSubscription?.unsubscribe?.()
+    if (onlineHandler) window.removeEventListener("online", onlineHandler)
+    profileCropper?.destroy?.()
+    if (profilePreviewObjectUrl) URL.revokeObjectURL(profilePreviewObjectUrl)
+    if (profileCropSourceUrl) URL.revokeObjectURL(profileCropSourceUrl)
+  })
+
+  const resolveAuthState = () => {
+    if (disposed) return
+    root.dataset.authState = "ready"
+    authPanel?.setAttribute("aria-busy", "false")
+  }
 
   const setStatus = (message: string, type: "info" | "error" | "success" = "info") => {
     if (status) status.textContent = message
     if (status) status.dataset.state = message ? type : ""
+    if (status) status.setAttribute("role", type === "error" ? "alert" : "status")
+    if (status) status.setAttribute("aria-live", type === "error" ? "assertive" : "polite")
+  }
+
+  const ensureClient = async (announce = false) => {
+    if (client) return client
+    if (announce) setStatus("正在重新连接登录服务…")
+    try {
+      const connected = await Promise.race([
+        loadClient(root.dataset.supabaseUrl ?? "", root.dataset.supabaseAnonKey ?? ""),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+      ])
+      if (disposed) return null
+      client = connected
+    } catch {
+      client = null
+    }
+    if (!client && announce)
+      setStatus("登录服务仍未连接；输入内容已经保留，请检查网络后再次提交。", "error")
+    return client
   }
 
   const setProfileStatus = (message: string, type: "" | "error" | "success" = "") => {
@@ -418,21 +467,22 @@ const init = async () => {
     const value = String(data.get("email") ?? "")
     const password = String(data.get("password") ?? "")
     const mode = String(data.get("mode") ?? "signin")
-    if (!client) {
-      setStatus("登录服务仍在连接，请稍候再试。", "error")
-      return
-    }
     if (password.length < 8) {
       setStatus("密码至少需要 8 个字符。", "error")
       return
     }
     const submit = login.querySelector<HTMLButtonElement>("[data-account-submit]")
     const originalLabel = submit?.textContent ?? "继续"
+    if (login.dataset.submitting === "true") return
+    login.dataset.submitting = "true"
+    login.setAttribute("aria-busy", "true")
     if (submit) {
       submit.disabled = true
       submit.textContent = mode === "signup" ? "正在创建…" : "正在登录…"
     }
     try {
+      if (!(await ensureClient(true))) return
+      watchAuthState()
       const result =
         mode === "signup"
           ? await client.auth.signUp({
@@ -457,7 +507,11 @@ const init = async () => {
         return
       }
       location.assign("/workspace/")
+    } catch {
+      setStatus("网络连接中断，输入内容仍然保留；请检查网络后重试。", "error")
     } finally {
+      delete login.dataset.submitting
+      login.setAttribute("aria-busy", "false")
       if (submit) {
         submit.disabled = false
         submit.textContent = originalLabel
@@ -1222,51 +1276,71 @@ const init = async () => {
   }
 
   const sync = async () => {
-    currentUser = client ? ((await client.auth.getUser()).data?.user ?? null) : null
-    if (session) session.hidden = !currentUser || (accountMode !== "signin" && !workspace)
-    if (login) login.hidden = Boolean(currentUser)
-    if (email) email.textContent = currentUser?.email ?? ""
-    if (workspace) {
-      if (authPanel) authPanel.hidden = Boolean(currentUser)
-      if (workspaceOverview) workspaceOverview.hidden = !currentUser
-      if (library) library.hidden = !currentUser
-      if (writeLauncher) writeLauncher.hidden = !currentUser
-      if (profileSettings) profileSettings.hidden = !currentUser
-      if (aiSettings) aiSettings.hidden = !currentUser
-      if (!currentUser)
-        siteOwnerNavItems.forEach((item) => {
-          item.hidden = true
-        })
-      if (editor) editor.hidden = true
-      if (flatWorkbench) flatWorkbench.hidden = true
-      if (currentUser) {
-        await loadCapabilities()
-        const knowledgeBaseId = await ensureKnowledgeBase()
-        if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
-        await loadDocuments()
-        restoreLocalBackup()
-        await loadLinkOptions()
-        await loadTagOptions()
-        if (workspaceSection === "settings") await loadProfileSettings()
-        if (workspaceSection === "ai-settings") await loadAiSettings()
+    if (disposed) return
+    try {
+      try {
+        currentUser = client ? ((await client.auth.getUser()).data?.user ?? null) : null
+      } catch {
+        currentUser = null
+        setStatus("登录状态暂时无法确认；输入入口和内容都已保留，请检查网络后重试。", "error")
+        return
       }
+      if (disposed) return
+      if (session) session.hidden = !currentUser || (accountMode !== "signin" && !workspace)
+      if (login) login.hidden = Boolean(currentUser)
+      if (email) email.textContent = currentUser?.email ?? ""
+      if (workspace) {
+        if (authPanel) authPanel.hidden = Boolean(currentUser)
+        if (workspaceOverview) workspaceOverview.hidden = !currentUser
+        if (library) library.hidden = !currentUser
+        if (writeLauncher) writeLauncher.hidden = !currentUser
+        if (profileSettings) profileSettings.hidden = !currentUser
+        if (aiSettings) aiSettings.hidden = !currentUser
+        if (!currentUser)
+          siteOwnerNavItems.forEach((item) => {
+            item.hidden = true
+          })
+        if (editor) editor.hidden = true
+        if (flatWorkbench) flatWorkbench.hidden = true
+        if (currentUser) {
+          try {
+            await loadCapabilities()
+            const knowledgeBaseId = await ensureKnowledgeBase()
+            if (!knowledgeBaseId)
+              setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
+            await loadDocuments()
+            restoreLocalBackup()
+            await loadLinkOptions()
+            await loadTagOptions()
+            if (workspaceSection === "settings") await loadProfileSettings()
+            if (workspaceSection === "ai-settings") await loadAiSettings()
+          } catch {
+            setStatus("登录已确认，但工作区数据暂时无法加载；请检查网络后刷新重试。", "error")
+          }
+        }
+      }
+    } finally {
+      resolveAuthState()
     }
   }
 
-  try {
-    client = await Promise.race([
-      loadClient(root.dataset.supabaseUrl ?? "", root.dataset.supabaseAnonKey ?? ""),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
-    ])
-  } catch {
-    client = null
+  await ensureClient()
+  if (disposed) return
+  if (!client) {
+    setStatus("登录服务暂时无法加载；请检查网络后重试。", "error")
+    resolveAuthState()
   }
-  if (!client) setStatus("登录服务暂时无法加载；请检查网络后重试。", "error")
   else await sync()
+  if (disposed) return
 
-  client?.auth.onAuthStateChange((event: string) => {
-    if (event === "SIGNED_IN" && workspace) void sync()
-  })
+  function watchAuthState() {
+    if (!client || authSubscription) return
+    const listener = client.auth.onAuthStateChange((event: string) => {
+      if (event === "SIGNED_IN" && workspace) void sync()
+    })
+    authSubscription = listener?.data?.subscription ?? null
+  }
+  watchAuthState()
 
   recovery?.addEventListener("submit", async (event) => {
     event.preventDefault()
@@ -1282,48 +1356,76 @@ const init = async () => {
       return
     }
     const submit = recovery.querySelector<HTMLButtonElement>("[type=submit]")
+    if (recovery.dataset.submitting === "true") return
+    recovery.dataset.submitting = "true"
+    recovery.setAttribute("aria-busy", "true")
     if (submit) {
       submit.disabled = true
       submit.textContent = "正在更新…"
     }
-    const result = await client?.auth.updateUser({ password })
-    if (submit) {
-      submit.disabled = false
-      submit.textContent = "更新密码"
+    try {
+      if (!(await ensureClient(true))) return
+      watchAuthState()
+      const result = await client.auth.updateUser({ password })
+      if (result.error) {
+        setStatus("重置链接可能已失效，请重新发送密码邮件。", "error")
+        return
+      }
+      await client.auth.signOut()
+      recovery.hidden = true
+      if (recoverySuccess) recoverySuccess.hidden = false
+      setStatus("")
+    } catch {
+      setStatus("网络连接中断，新密码输入仍然保留；请检查网络后重试。", "error")
+    } finally {
+      delete recovery.dataset.submitting
+      recovery.setAttribute("aria-busy", "false")
+      if (submit) {
+        submit.disabled = false
+        submit.textContent = "更新密码"
+      }
     }
-    if (result?.error) {
-      setStatus("重置链接可能已失效，请重新发送密码邮件。", "error")
-      return
-    }
-    await client?.auth.signOut()
-    recovery.hidden = true
-    if (recoverySuccess) recoverySuccess.hidden = false
-    setStatus("")
   })
 
   forgotForm?.addEventListener("submit", async (event) => {
     event.preventDefault()
     const value = String(new FormData(forgotForm).get("email") ?? "").trim()
-    if (!client || !value) {
+    if (!value) {
       setStatus("请填写注册邮箱。", "error")
       return
     }
     const submit = forgotForm.querySelector<HTMLButtonElement>("[data-account-forgot-submit]")
+    if (forgotForm.dataset.submitting === "true") return
+    forgotForm.dataset.submitting = "true"
+    forgotForm.setAttribute("aria-busy", "true")
     if (submit) {
       submit.disabled = true
       submit.textContent = "正在发送…"
     }
-    await client.auth.resetPasswordForEmail(value, {
-      redirectTo: `${location.origin}/account/recover/`,
-    })
-    if (submit) {
-      submit.disabled = false
-      submit.textContent = "发送重置邮件"
+    try {
+      if (!(await ensureClient(true))) return
+      watchAuthState()
+      const result = await client.auth.resetPasswordForEmail(value, {
+        redirectTo: `${location.origin}/account/recover/`,
+      })
+      if (result.error) {
+        setStatus(friendlyAuthError(result.error.message), "error")
+        return
+      }
+      forgotForm.hidden = true
+      if (forgotEmail) forgotEmail.textContent = value
+      if (emailSent) emailSent.hidden = false
+      setStatus("")
+    } catch {
+      setStatus("网络连接中断，邮箱仍然保留；请检查网络后重试。", "error")
+    } finally {
+      delete forgotForm.dataset.submitting
+      forgotForm.setAttribute("aria-busy", "false")
+      if (submit) {
+        submit.disabled = false
+        submit.textContent = "发送重置邮件"
+      }
     }
-    forgotForm.hidden = true
-    if (forgotEmail) forgotEmail.textContent = value
-    if (emailSent) emailSent.hidden = false
-    setStatus("")
   })
 
   root.querySelectorAll<HTMLButtonElement>("[data-password-toggle]").forEach((button) => {
@@ -2432,11 +2534,21 @@ const init = async () => {
     }
   }
 
-  window.addEventListener("online", async () => {
-    if (!currentUser || !client || !form) return
+  onlineHandler = async () => {
+    if (!client) {
+      if (!(await ensureClient(true))) return
+      watchAuthState()
+      await sync()
+      if (!currentUser || !form) {
+        setStatus("登录服务已恢复，可以继续。", "success")
+        return
+      }
+    }
+    if (!currentUser || !form) return
     setStatus("网络已恢复，正在同步本地备份…")
     if (await saveDocument()) setStatus("本地备份已同步到云端。")
-  })
+  }
+  window.addEventListener("online", onlineHandler)
 }
 
 document.addEventListener("nav", init)
