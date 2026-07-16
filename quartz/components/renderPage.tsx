@@ -127,9 +127,15 @@ function renderTranscludes(
               {
                 type: "element",
                 tagName: "a",
-                properties: { href: inner.properties?.href, class: ["internal", "transclude-src"] },
+                properties: {
+                  href: inner.properties?.href,
+                  class: ["internal", "transclude-src"],
+                },
                 children: [
-                  { type: "text", value: i18n(cfg.locale).components.transcludes.linkToOriginal },
+                  {
+                    type: "text",
+                    value: i18n(cfg.locale).components.transcludes.linkToOriginal,
+                  },
                 ],
               },
             ]
@@ -170,9 +176,15 @@ function renderTranscludes(
             {
               type: "element",
               tagName: "a",
-              properties: { href: inner.properties?.href, class: ["internal", "transclude-src"] },
+              properties: {
+                href: inner.properties?.href,
+                class: ["internal", "transclude-src"],
+              },
               children: [
-                { type: "text", value: i18n(cfg.locale).components.transcludes.linkToOriginal },
+                {
+                  type: "text",
+                  value: i18n(cfg.locale).components.transcludes.linkToOriginal,
+                },
               ],
             },
           ]
@@ -200,9 +212,15 @@ function renderTranscludes(
             {
               type: "element",
               tagName: "a",
-              properties: { href: inner.properties?.href, class: ["internal", "transclude-src"] },
+              properties: {
+                href: inner.properties?.href,
+                class: ["internal", "transclude-src"],
+              },
               children: [
-                { type: "text", value: i18n(cfg.locale).components.transcludes.linkToOriginal },
+                {
+                  type: "text",
+                  value: i18n(cfg.locale).components.transcludes.linkToOriginal,
+                },
               ],
             },
           ]
@@ -241,20 +259,28 @@ export function renderPage(
   const Header = HeaderConstructor()
   const Body = BodyConstructor()
 
+  const SiteHeader = (
+    <Header {...componentData}>
+      {header.map((HeaderComponent) => (
+        <HeaderComponent {...componentData} />
+      ))}
+    </Header>
+  )
+
   const LeftComponent = (
-    <div class="left sidebar">
+    <aside class="left sidebar" aria-label="站点导航与阅读工具">
       {left.map((BodyComponent) => (
         <BodyComponent {...componentData} />
       ))}
-    </div>
+    </aside>
   )
 
   const RightComponent = (
-    <div class="right sidebar">
+    <aside class="right sidebar" aria-label="当前页面的补充信息">
       {right.map((BodyComponent) => (
         <BodyComponent {...componentData} />
       ))}
-    </div>
+    </aside>
   )
 
   const lang = componentData.fileData.frontmatter?.lang ?? cfg.locale?.split("-")[0] ?? "en"
@@ -265,14 +291,10 @@ export function renderPage(
       <body data-slug={slug}>
         <div id="quartz-root" class="page">
           <Body {...componentData}>
+            {SiteHeader}
             {LeftComponent}
-            <div class="center">
+            <main id="main-content" class="center" tabIndex={-1}>
               <div class="page-header">
-                <Header {...componentData}>
-                  {header.map((HeaderComponent) => (
-                    <HeaderComponent {...componentData} />
-                  ))}
-                </Header>
                 <div class="popover-hint">
                   {beforeBody.map((BodyComponent) => (
                     <BodyComponent {...componentData} />
@@ -286,7 +308,7 @@ export function renderPage(
                   <BodyComponent {...componentData} />
                 ))}
               </div>
-            </div>
+            </main>
             {RightComponent}
             <Footer {...componentData} />
           </Body>

@@ -1,0 +1,11 @@
+{
+  "borderColor": "rgb(201, 169, 110)",
+  "height": 52.34375,
+  "name": "password",
+  "outline": "rgb(140, 199, 255) solid 2.66667px",
+  "outlineOffset": "2px",
+  "tag": "INPUT",
+  "theme": "dark",
+  "type": "password",
+  "width": 337.875
+}

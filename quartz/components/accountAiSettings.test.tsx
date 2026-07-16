@@ -1,0 +1,52 @@
+import assert from "node:assert"
+import { readFileSync } from "node:fs"
+import test from "node:test"
+
+test("AI settings are consent-first and default to no paid calls", () => {
+  const component = readFileSync(new URL("./AccountPage.tsx", import.meta.url), "utf8")
+  const script = readFileSync(new URL("./scripts/accountPage.inline.ts", import.meta.url), "utf8")
+  const folderPage = readFileSync(new URL("./pages/FolderContent.tsx", import.meta.url), "utf8")
+
+  assert.match(component, /workspace\/settings\/ai/)
+  assert.match(component, /data-ai-settings-form/)
+  assert.match(component, /data-ai-enabled/)
+  assert.match(component, /data-ai-private-content/)
+  assert.match(component, /不开启付费调用（推荐）/)
+  assert.match(component, /AI 只能提出建议/)
+  assert.match(script, /from\("ai_preferences"\)\.upsert/)
+  assert.match(script, /enabled && aiPrivateContent\?\.checked/)
+  assert.match(script, /functions\.invoke\("ai-write"/)
+  assert.match(folderPage, /settings\(\?:\\\/ai\)\?/)
+})
+
+test("AI database foundation applies owner RLS and prevents direct audit writes", () => {
+  const migration = readFileSync(
+    new URL("../../supabase/migrations/20260716_ai_assistant_foundation.sql", import.meta.url),
+    "utf8",
+  )
+
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.ai_preferences/)
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.document_chunks/)
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.ai_runs/)
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.ai_suggestions/)
+  assert.match(migration, /ALTER TABLE public\.ai_preferences ENABLE ROW LEVEL SECURITY/)
+  assert.match(migration, /USING \(auth\.uid\(\) = owner_id\)/)
+  assert.match(migration, /GRANT SELECT ON public\.ai_runs TO authenticated/)
+  assert.doesNotMatch(migration, /GRANT INSERT[^;]*public\.ai_runs TO authenticated/)
+})
+
+test("AI write gateway is an authenticated mock without a model key", () => {
+  const gateway = readFileSync(
+    new URL("../../supabase/functions/ai-write/index.ts", import.meta.url),
+    "utf8",
+  )
+
+  assert.match(gateway, /authorization/)
+  assert.match(gateway, /mock: true/)
+  assert.match(gateway, /selection\.length > 12000/)
+  assert.match(gateway, /hostname\.startsWith\("notes-"\)/)
+  assert.match(gateway, /hostname\.endsWith\("-wld-s-projects\.vercel\.app"\)/)
+  assert.match(gateway, /真实模型尚未启用/)
+  assert.doesNotMatch(gateway, /OPENAI_API_KEY/)
+  assert.doesNotMatch(gateway, /api\.openai\.com/)
+})

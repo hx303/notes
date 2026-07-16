@@ -1,0 +1,190 @@
+.revision-history {
+  margin-block: var(--space-8) 0;
+  padding-block: var(--space-7);
+  border-block: var(--article-rule);
+  color: var(--color-text-primary);
+}
+
+.provenance-eyebrow {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.12em;
+}
+
+.revision-history-heading {
+  max-inline-size: 42rem;
+
+  h2 {
+    margin: var(--space-1) 0 var(--space-2);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-xl);
+  }
+
+  > p:last-child {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+    line-height: 1.65;
+  }
+}
+
+.provenance-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: var(--space-7) 0 0;
+  border-block: var(--article-rule);
+
+  div {
+    padding: var(--space-4) var(--space-5);
+    border-inline-end: var(--article-rule);
+
+    &:first-child {
+      padding-inline-start: 0;
+    }
+    &:last-child {
+      border-inline-end: 0;
+    }
+  }
+
+  dt {
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-xs);
+  }
+
+  dd {
+    margin: var(--space-1) 0 0;
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+.provenance-section {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.3fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  padding-block: var(--space-6);
+  border-block-end: var(--article-rule);
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+  }
+}
+
+.sources-list,
+.revision-timeline {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sources-list {
+  counter-reset: source;
+
+  li {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: var(--space-3);
+    counter-increment: source;
+  }
+
+  a,
+  .source-title {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  p {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-xs);
+    line-height: 1.55;
+  }
+}
+
+.source-number::before {
+  content: counter(source, decimal-leading-zero);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+}
+
+.external-mark {
+  margin-inline-start: var(--space-1);
+}
+
+.revision-timeline {
+  li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-block-end: var(--space-4);
+    border-block-end: var(--article-rule);
+  }
+
+  time {
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+  }
+
+  strong {
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+  }
+
+  p {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-secondary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-xs);
+    line-height: 1.55;
+  }
+}
+
+.provenance-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-sm);
+  line-height: 1.65;
+}
+
+@media all and (max-width: 799px) {
+  .provenance-facts {
+    grid-template-columns: 1fr;
+  }
+  .provenance-facts div {
+    padding-inline: 0;
+    border-inline-end: 0;
+    border-block-end: var(--article-rule);
+    &:last-child {
+      border-block-end: 0;
+    }
+  }
+  .provenance-section {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .sources-list a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--touch-target-min);
+  }
+  .revision-timeline li {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}

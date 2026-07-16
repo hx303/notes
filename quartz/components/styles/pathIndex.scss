@@ -1,0 +1,97 @@
+.path-index {
+  container-type: inline-size;
+  margin-block-end: var(--space-10);
+}
+
+.path-index-intro {
+  max-inline-size: 52rem;
+  padding-block: var(--space-4) var(--space-8);
+  border-block-end: var(--article-rule);
+
+  h2 {
+    margin: var(--space-3) 0 0;
+    font-family: var(--font-family-display);
+    font-size: clamp(var(--font-size-2xl), 5vw, 3rem);
+    line-height: 1.2;
+  }
+
+  > p:last-child {
+    margin: var(--space-4) 0 0;
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+  }
+}
+
+.path-index-kicker,
+.path-index-status {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.path-index-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    gap: var(--space-6);
+    padding-block: var(--space-7);
+    border-block-end: var(--article-rule);
+  }
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-xl);
+    line-height: 1.4;
+  }
+
+  h3 a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--touch-target-min);
+    color: var(--color-text-link);
+  }
+
+  > li > div:last-child > p {
+    max-inline-size: 50rem;
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+  }
+
+  dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-7);
+    margin: var(--space-4) 0 0;
+  }
+
+  dt {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+  }
+
+  dd {
+    margin: var(--space-1) 0 0;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+  }
+}
+
+.path-index-empty {
+  padding-block: var(--space-8);
+  color: var(--color-text-secondary);
+}
+
+@container (max-width: 36rem) {
+  .path-index-list > li {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+}

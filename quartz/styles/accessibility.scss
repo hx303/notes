@@ -1,0 +1,97 @@
+// Cross-page accessibility contracts for the wouldkeep shell.
+
+.skip-link {
+  position: fixed;
+  inset-block-start: max(var(--space-4), env(safe-area-inset-top));
+  inset-inline-start: max(var(--space-4), env(safe-area-inset-left));
+  z-index: var(--z-toast);
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--touch-target-min);
+  padding-inline: var(--control-inline-padding);
+  border: var(--border-width-emphasis) solid var(--color-border-focus);
+  border-radius: var(--border-radius-sm);
+  background: var(--color-bg-surface-raised);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-family-ui);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(-100% - var(--space-8)));
+  transition:
+    transform var(--duration-fast) var(--easing-out),
+    opacity var(--duration-fast) var(--easing-out);
+}
+
+.skip-link:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+// Component styles may remove legacy :focus outlines. This contract always wins.
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-border-focus) !important;
+  outline-offset: var(--focus-ring-offset) !important;
+}
+
+#main-content {
+  min-width: 0;
+  overflow-x: clip;
+  scroll-margin-block-start: var(--space-6);
+}
+
+button,
+[role="button"],
+summary,
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+select,
+textarea,
+.back-to-top {
+  min-block-size: var(--touch-target-min);
+}
+
+button,
+[role="button"],
+.back-to-top {
+  min-inline-size: var(--touch-target-min);
+}
+
+.clipboard-button:focus-visible,
+.expand-button:focus-visible {
+  opacity: 1;
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight !important;
+  }
+
+  .skip-link {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  body::before {
+    display: none !important;
+  }
+}

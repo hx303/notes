@@ -3,12 +3,28 @@ import * as Component from "./quartz/components"
 
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
-  header: [],
-  afterBody: [],
+  header: [
+    Component.Masthead(),
+    Component.PrimaryNav(),
+    Component.Search(),
+    Component.AccountMenu(),
+  ],
+  afterBody: [
+    Component.RevisionHistory(),
+    Component.CitationActions(),
+    Component.RelatedKnowledge(),
+    Component.CorrectionAction(),
+    Component.SupabaseComments({
+      supabaseUrl: "https://agocyybolrisqujvjqdj.supabase.co",
+      supabaseAnonKey: "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc",
+    }),
+    Component.BackToTop(),
+    Component.MobileReadingTools(),
+  ],
   footer: Component.Footer({
     links: {
-      "🌐 GitHub": "https://github.com/wld030303/notes",
-      "✍️ 由 Quartz 驱动": "https://quartz.jzhao.xyz",
+      GitHub: "https://github.com/hx303/notes",
+      Quartz: "https://quartz.jzhao.xyz",
     },
   }),
 }
@@ -20,70 +36,65 @@ export const defaultContentPageLayout: PageLayout = {
       condition: (page) => page.fileData.slug !== "index",
     }),
     Component.ArticleTitle(),
+    Component.KnowledgeMeta(),
     Component.ContentMeta(),
     Component.TagList(),
+    Component.PrerequisiteBlock(),
+    Component.TableOfContents({ display: "inline" }),
   ],
   left: [
-    Component.PageTitle(),
-    Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-        { Component: Component.ReaderMode() },
-      ],
-    }),
-    Component.Explorer({
-      filterFn: (node) => {
-        if (node.slugSegment === "tags") return false
-        if (node.displayName === "attachments") return false
-        if (node.displayName.endsWith("_图片")) return false
-        return true
-      },
-    }),
+    Component.ReadingTools(),
+    Component.DesktopOnly(
+      Component.Explorer({
+        title: "知识目录",
+        folderDefaultState: "collapsed",
+      }),
+    ),
   ],
-  right: [
-    Component.DesktopOnly(Component.TableOfContents()),
-    Component.Backlinks(),
-    Component.Graph(),
-  ],
+  right: [Component.DesktopOnly(Component.TableOfContents()), Component.Backlinks()],
 }
+
+const outsideAccountSurface = (slug = "") =>
+  !/^(account(?:\/|$)|workspace(?:\/|$)|knowledge(?:\/|$))/.test(slug)
 
 export const defaultListPageLayout: PageLayout = {
   beforeBody: [
-    Component.Breadcrumbs(),
-    Component.ArticleTitle(),
-    Component.ContentMeta(),
+    Component.ConditionalRender({
+      component: Component.Breadcrumbs(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
+    Component.ConditionalRender({
+      component: Component.ArticleTitle(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
+    Component.ConditionalRender({
+      component: Component.ContentMeta(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
   ],
   left: [
-    Component.PageTitle(),
-    Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-      ],
+    Component.ConditionalRender({
+      component: Component.ReadingTools(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
     }),
-    Component.Explorer({
-      filterFn: (node) => {
-        if (node.slugSegment === "tags") return false
-        if (node.displayName === "attachments") return false
-        if (node.displayName.endsWith("_图片")) return false
-        return true
-      },
+    Component.ConditionalRender({
+      component: Component.DesktopOnly(
+        Component.Explorer({
+          title: "知识目录",
+          folderDefaultState: "collapsed",
+        }),
+      ),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
     }),
   ],
   right: [
-    Component.RecentNotes({
-      title: "🕐 最近更新",
-      limit: 8,
-      showTags: false,
+    Component.ConditionalRender({
+      component: Component.RecentNotes({
+        title: "🕐 最近更新",
+        limit: 8,
+        showTags: false,
+      }),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
     }),
   ],
 }

@@ -1,0 +1,83 @@
+{
+  "account": {
+    "display": "grid",
+    "gridTemplateColumns": "305.333px",
+    "height": 958.9479370117188,
+    "hidden": false,
+    "width": 337.3333435058594,
+    "x": 16,
+    "y": 67
+  },
+  "authState": "ready",
+  "bodyGrid": {
+    "display": "grid",
+    "gridTemplateColumns": "337.333px",
+    "height": 1334.9896240234375,
+    "hidden": false,
+    "width": 369.3333435058594,
+    "x": 0,
+    "y": 0
+  },
+  "center": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 958.9479370117188,
+    "hidden": false,
+    "width": 337.3333435058594,
+    "x": 16,
+    "y": 67
+  },
+  "hero": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 323.38543701171875,
+    "hidden": false,
+    "width": 305.3333435058594,
+    "x": 32,
+    "y": 99
+  },
+  "left": {
+    "display": "none",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "hidden": false,
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "mobileTools": {
+    "display": "grid",
+    "gridTemplateColumns": "repeat(2, minmax(0px, 1fr))",
+    "height": 0,
+    "hidden": false,
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "panel": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 507.5625,
+    "hidden": false,
+    "width": 305.3333435058594,
+    "x": 32,
+    "y": 454.3854370117187
+  },
+  "right": {
+    "display": "none",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "hidden": false,
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "scroll": {
+    "height": 1335,
+    "width": 369
+  },
+  "viewport": {
+    "height": 812,
+    "width": 375
+  }
+}

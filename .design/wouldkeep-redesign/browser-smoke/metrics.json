@@ -1,0 +1,50 @@
+{
+  "page": "/topics",
+  "representativeRecord": "/notes/rcwa-from-zero",
+  "capturedAt": "2026-07-11",
+  "viewports": [
+    {
+      "width": 375,
+      "height": 900,
+      "scrollWidth": 369,
+      "overflowX": false,
+      "mainCount": 1,
+      "h1Count": 1,
+      "navigation": "compact-dialog"
+    },
+    {
+      "width": 800,
+      "height": 900,
+      "scrollWidth": 794,
+      "overflowX": false,
+      "mainCount": 1,
+      "h1Count": 1,
+      "navigation": "compact-dialog"
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1434,
+      "overflowX": false,
+      "mainCount": 1,
+      "h1Count": 1,
+      "navigation": "desktop-links"
+    }
+  ],
+  "representativeRecordChecks": {
+    "width": 375,
+    "mainCount": 1,
+    "h1Count": 1,
+    "skipTarget": "#main-content",
+    "mainTabIndex": "-1",
+    "recordHeaderVisible": true,
+    "maturity": "growing",
+    "overflowX": false
+  },
+  "compactNavigationChecks": {
+    "opens": true,
+    "initialFocus": "关闭主要导航",
+    "escapeCloses": true,
+    "focusReturnsTo": "打开主要导航"
+  }
+}

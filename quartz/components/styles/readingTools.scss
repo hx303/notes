@@ -1,0 +1,96 @@
+.reading-tools {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-ui);
+}
+.reading-tools-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+}
+.reading-tools-heading h2 {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+}
+.reading-tools-eyebrow {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.12em;
+}
+.reading-tools-reset {
+  min-block-size: var(--touch-target-min);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.reading-tools-list {
+  overflow: hidden;
+  border: var(--border-width-hairline) solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  background: var(--color-bg-surface-raised);
+}
+.reading-tool {
+  display: grid;
+  grid-template-columns: var(--touch-target-min) 1fr auto;
+  align-items: center;
+  inline-size: 100%;
+  min-block-size: var(--touch-target-min);
+  padding: 0 var(--space-4) 0 0;
+  border: 0;
+  border-block-end: var(--border-width-hairline) solid var(--color-border-secondary);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.reading-tool:hover {
+  background: var(--color-bg-surface-subtle);
+}
+.reading-tool-icon {
+  display: grid;
+  place-items: center;
+}
+.reading-tool-icon svg {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+.reading-tool-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+.reading-tool-value {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+.fontsize {
+  border-block-end: var(--border-width-hairline) solid var(--color-border-secondary);
+}
+.reading-tools-status {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media all and (max-width: 799px) {
+  .reading-tools-sidebar {
+    display: none;
+  }
+}

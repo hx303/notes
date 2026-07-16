@@ -1,0 +1,4 @@
+project_id = "wouldkeep"
+
+[functions.ai-write]
+verify_jwt = true

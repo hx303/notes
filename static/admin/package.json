@@ -1,0 +1,18 @@
+{
+  "name": "wouldkeep-api",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker API Proxy for wouldkeep.com admin panel — JWT validation, permission check, GitHub API proxy, edit logs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "jose": "^5.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

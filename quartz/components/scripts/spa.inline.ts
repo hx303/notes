@@ -24,6 +24,26 @@ const isSamePage = (url: URL): boolean => {
   return sameOrigin && samePath
 }
 
+const focusRouteTarget = (url: URL) => {
+  let target: HTMLElement | null = null
+
+  if (url.hash) {
+    try {
+      target = document.getElementById(decodeURIComponent(url.hash.substring(1)))
+    } catch {
+      target = null
+    }
+  }
+
+  target ??= document.getElementById("main-content")
+  if (!target) return
+
+  if (!target.hasAttribute("tabindex") && !target.matches("a, button, input, select, textarea")) {
+    target.setAttribute("tabindex", "-1")
+  }
+  target.focus({ preventScroll: true })
+}
+
 const getOpts = ({ target }: Event): { url: URL; scroll?: boolean } | undefined => {
   if (!isElement(target)) return
   if (target.attributes.getNamedItem("target")?.value === "_blank") return
@@ -104,6 +124,9 @@ async function _navigate(url: URL, isBack: boolean = false) {
   // morph body
   await micromorph(document.body, html.body)
 
+  // SPA route changes need the same orientation reset as full-page navigation.
+  focusRouteTarget(url)
+
   // scroll into place and add history
   if (!isBack) {
     if (url.hash) {
@@ -155,6 +178,7 @@ function createRouter() {
 
       if (isSamePage(url) && url.hash) {
         const el = document.getElementById(decodeURIComponent(url.hash.substring(1)))
+        focusRouteTarget(url)
         el?.scrollIntoView()
         history.pushState({}, "", url)
         return

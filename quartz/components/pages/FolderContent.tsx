@@ -9,6 +9,29 @@ import { QuartzPluginData } from "../../plugins/vfile"
 import { ComponentChildren } from "preact"
 import { concatenateResources } from "../../util/resources"
 import { trieFromAllFiles } from "../../util/ctx"
+import TopicIndexConstructor from "../TopicIndex"
+import TopicPageConstructor from "../TopicPage"
+import SearchPageConstructor from "../SearchPage"
+import LearningPathConstructor from "../LearningPath"
+import PathIndexConstructor from "../PathIndex"
+import MapPageConstructor from "../MapPage"
+import RecentGrowthConstructor from "../RecentGrowth"
+import DiscoverHomeConstructor from "../DiscoverHome"
+import CapturePageConstructor from "../CapturePage"
+import AccountPageConstructor from "../AccountPage"
+import PublicKnowledgeConstructor from "../PublicKnowledge"
+
+const TopicIndex = TopicIndexConstructor()
+const TopicPage = TopicPageConstructor()
+const SearchPage = SearchPageConstructor()
+const LearningPath = LearningPathConstructor()
+const PathIndex = PathIndexConstructor()
+const MapPage = MapPageConstructor()
+const RecentGrowth = RecentGrowthConstructor()
+const DiscoverHome = DiscoverHomeConstructor()
+const CapturePage = CapturePageConstructor()
+const AccountPage = AccountPageConstructor()
+const PublicKnowledge = PublicKnowledgeConstructor()
 
 interface FolderContentOptions {
   /**
@@ -29,6 +52,53 @@ export default ((opts?: Partial<FolderContentOptions>) => {
 
   const FolderContent: QuartzComponent = (props: QuartzComponentProps) => {
     const { tree, fileData, allFiles, cfg } = props
+
+    if (fileData.slug === "index") {
+      return <DiscoverHome {...props} />
+    }
+
+    if (fileData.slug === "capture" || fileData.slug === "capture/index") {
+      return <CapturePage {...props} />
+    }
+
+    if (
+      /^account(?:\/(?:signup|forgot|recover))?\/index$/.test(fileData.slug ?? "") ||
+      /^workspace(?:\/(?:knowledge|write|settings(?:\/ai)?))?\/index$/.test(fileData.slug ?? "")
+    ) {
+      return <AccountPage {...props} />
+    }
+
+    if (fileData.slug === "knowledge" || fileData.slug === "knowledge/index") {
+      return <PublicKnowledge {...props} />
+    }
+
+    if (fileData.slug === "topics/index") {
+      return <TopicIndex {...props} />
+    }
+
+    if (/^topics\/[^/]+\/index$/.test(fileData.slug ?? "")) {
+      return <TopicPage {...props} />
+    }
+
+    if (fileData.slug === "search/index") {
+      return <SearchPage {...props} />
+    }
+
+    if (fileData.slug === "paths" || fileData.slug === "paths/index") {
+      return <PathIndex {...props} />
+    }
+
+    if (fileData.slug === "map" || fileData.slug === "map/index") {
+      return <MapPage {...props} />
+    }
+
+    if (fileData.slug === "changes" || fileData.slug === "changes/index") {
+      return <RecentGrowth {...props} />
+    }
+
+    if (/^paths\/[^/]+\/index$/.test(fileData.slug ?? "")) {
+      return <LearningPath {...props} />
+    }
 
     const trie = (props.ctx.trie ??= trieFromAllFiles(allFiles))
     const folder = trie.findNode(fileData.slug!.split("/"))
@@ -121,6 +191,26 @@ export default ((opts?: Partial<FolderContentOptions>) => {
     )
   }
 
-  FolderContent.css = concatenateResources(style, PageList.css)
+  FolderContent.css = concatenateResources(
+    style,
+    PageList.css,
+    TopicIndex.css,
+    TopicPage.css,
+    SearchPage.css,
+    PathIndex.css,
+    MapPage.css,
+    RecentGrowth.css,
+    DiscoverHome.css,
+    CapturePage.css,
+    AccountPage.css,
+    PublicKnowledge.css,
+    LearningPath.css,
+  )
+  FolderContent.afterDOMLoaded = concatenateResources(
+    TopicPage.afterDOMLoaded,
+    SearchPage.afterDOMLoaded,
+    AccountPage.afterDOMLoaded,
+    PublicKnowledge.afterDOMLoaded,
+  )
   return FolderContent
 }) satisfies QuartzComponentConstructor

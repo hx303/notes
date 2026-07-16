@@ -10,18 +10,22 @@ $OBSIDIAN_VAULT = "D:\Obsidian\notes\覆水知识库\notes"
 $CONTENT_DIR = "$root\content"
 
 # ============================================================
-# Step 0: Sync content from Obsidian vault
 # ============================================================
+# Step 0: Sync content from Obsidian vault  [已禁用 — 2026-05-30]
+# ============================================================
+# 已切换为 Web→Obsidian 单向同步，不再从 Obsidian 覆盖内容。
+# 从这里写笔记: https://wouldkeep.com/admin
+# 修改后同步回本机: python C:\Users\23012\Desktop\wouldkeep\web_to_obsidian.py
+<#
 Write-Host "=== 0/5 Syncing from Obsidian vault ===" -ForegroundColor Cyan
 if (Test-Path $OBSIDIAN_VAULT) {
-    # Mirror .md files from Obsidian to content/
-    # Exclude: _backups, _backup, .obsidian, templates, private
     robocopy $OBSIDIAN_VAULT $CONTENT_DIR *.md /MIR /NJH /NJS /NP /NDL /XF *.mp4 *.webm *.mov *.avi /XD "_backups" "_backup" ".obsidian" "templates" "private"
     if ($LASTEXITCODE -ge 8) { throw "Robocopy failed (exit code: $LASTEXITCODE)" }
     Write-Host "  Synced .md files from Obsidian vault." -ForegroundColor Green
 } else {
     Write-Host "  WARNING: Obsidian vault not found at $OBSIDIAN_VAULT - skipping sync" -ForegroundColor Yellow
 }
+#>
 
 # ============================================================
 # Step 0.5: Remove video files from content

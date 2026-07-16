@@ -1,4 +1,7 @@
 @use "./base.scss";
+@use "./tokens.scss";
+@use "./accessibility.scss";
+@use "./reading.scss";
 
 // ========================
 // 🎨 大幅美化 — 让网站脱胎换骨
@@ -7,6 +10,7 @@
 // --- 全局 ---
 :root {
   --max-width: 780px;
+  --paper-width: 840px;
   --outer-bar-height: 3.5rem;
   --sidebar-width: 280px;
 }
@@ -14,6 +18,8 @@
 html {
   scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
+  overflow-x: clip;
+  width: 100%;
 }
 
 body {
@@ -21,16 +27,100 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+// Force horizontal scrollbar when content overflows (e.g. zoomed)
+.center {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+// ========================
+// 📖 论文阅读增强 — 宽版排版 + 进度条
+// ========================
+
+// A. 论文级排版增强（cssclasses: paper → 渲染为 article.paper）
+article.paper {
+  max-width: var(--paper-width);
+}
+
+article.paper > p {
+  font-size: 1.05em;
+  line-height: 1.95;
+  margin-bottom: 1.1em;
+  text-align: justify;
+  hyphens: auto;
+}
+
+// C. 阅读进度条（scroll-driven animation, 现代浏览器原生支持）
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--tertiary), #7c3aed);
+  z-index: 9999;
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: read-progress linear;
+  animation-timeline: scroll();
+}
+
+@keyframes read-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+// 返回顶部 — 右下角浮动按钮
+.back-to-top {
+  position: fixed;
+  bottom: max(var(--space-7), env(safe-area-inset-bottom));
+  right: max(var(--space-7), env(safe-area-inset-right));
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  border-radius: var(--border-radius-full);
+  background: var(--color-accent-primary);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-toast);
+  transition:
+    background-color var(--duration-fast) var(--easing-out),
+    box-shadow var(--duration-fast) var(--easing-out),
+    opacity var(--duration-fast) var(--easing-out),
+    transform var(--duration-fast) var(--easing-out);
+  opacity: 0.86;
+  font-weight: var(--font-weight-bold);
+}
+
+.back-to-top:hover {
+  opacity: 1;
+  transform: translateY(calc(-1 * var(--motion-distance-sm)));
+  box-shadow: var(--shadow-lg);
+  background: var(--color-accent-primary-hover);
+  text-decoration: none;
+}
+
+.back-to-top:active {
+  background: var(--color-accent-primary-active);
+  transform: translateY(0);
+}
+
+// 暗色模式返回顶部
+:root[saved-theme="dark"] .back-to-top {
+  background: var(--color-accent-primary);
+  box-shadow: var(--shadow-md);
+}
+
 // --- 顶部导航栏 ---
 .page-header {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(253, 246, 238, 0.85);
+  background: var(--light);
   border-bottom: 1px solid var(--lightgray);
   padding: 0.5rem 1.5rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
 
   .left, .right {
     display: flex;
@@ -463,7 +553,7 @@ footer {
 // --- 暗色模式特殊处理 ---
 :root[saved-theme="dark"] {
   .page-header {
-    background: rgba(26, 24, 20, 0.85);
+    background: var(--color-bg-canvas);
   }
 
   .callout:hover {
@@ -498,6 +588,615 @@ footer {
   }
 }
 
+// ========================
+// 🏷️ B. 论文元数据卡片
+// ========================
+
+.paper-meta {
+  border-left: 4px solid var(--tertiary);
+  background: linear-gradient(135deg, rgba(90,125,99,0.06), rgba(90,125,99,0.02));
+  border-radius: 10px;
+  padding: 1em 1.3em;
+  margin: 1.2em 0 2em;
+  font-size: 0.93em;
+  line-height: 1.8;
+
+  .paper-title {
+    font-size: 1.2em;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.3em;
+    color: var(--darkgray);
+  }
+
+  .paper-authors {
+    color: var(--secondary);
+    display: block;
+  }
+
+  .paper-journal {
+    font-style: italic;
+    color: var(--gray);
+    display: block;
+  }
+
+  .paper-doi {
+    display: inline-block;
+    margin-top: 0.3em;
+    padding: 0.15em 0.6em;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: monospace;
+    background: var(--highlight);
+    color: var(--secondary);
+  }
+
+  .paper-tags {
+    display: flex;
+    gap: 0.4em;
+    margin-top: 0.5em;
+    flex-wrap: wrap;
+
+    .paper-tag {
+      display: inline-block;
+      padding: 0.1em 0.55em;
+      border-radius: 12px;
+      font-size: 0.78em;
+      font-weight: 600;
+      background: rgba(90,125,99,0.12);
+      color: var(--secondary);
+    }
+  }
+}
+
+// 暗色模式
+:root[saved-theme="dark"] .paper-meta {
+  background: rgba(90,125,99,0.1);
+
+  .paper-doi {
+    background: rgba(255,255,255,0.08);
+  }
+}
+
+// ========================
+// 🎯 D. 摘要/核心发现 Callout
+// ========================
+
+.callout[data-callout="abstract"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>');
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(37, 99, 235, 0.02));
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  font-size: 0.95em;
+  line-height: 1.75;
+
+  .callout-title {
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: 1.05em;
+  }
+}
+
+.callout[data-callout="key-finding"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>');
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.06), rgba(220, 38, 38, 0.02));
+  border-left: 4px solid #dc2626;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #b91c1c;
+    font-weight: 700;
+    font-size: 1.05em;
+  }
+}
+
+// D-dark
+:root[saved-theme="dark"] {
+  .callout[data-callout="abstract"] {
+    background: rgba(37, 99, 235, 0.12);
+    border-left-color: #3b82f6;
+    .callout-title { color: #60a5fa; }
+  }
+  .callout[data-callout="key-finding"] {
+    background: rgba(220, 38, 38, 0.12);
+    border-left-color: #ef4444;
+    .callout-title { color: #f87171; }
+  }
+}
+
+// --- 定理 (Theorem) — 蓝紫色边框，学术权威感 ---
+.callout[data-callout="theorem"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%237c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>');
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(124, 58, 237, 0.02));
+  border-left: 4px solid #7c3aed;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #6d28d9;
+  }
+}
+
+// --- 定义 (Definition) — 绿色边框，清晰明确 ---
+.callout[data-callout="definition"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>');
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.06), rgba(5, 150, 105, 0.02));
+  border-left: 4px solid #059669;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #047857;
+  }
+}
+
+// --- 证明 (Proof) — 灰色边框，低调严谨 ---
+.callout[data-callout="proof"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%236b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.05), rgba(107, 114, 128, 0.01));
+  border-left: 4px solid #6b7280;
+  border-radius: 8px;
+  font-style: italic;
+
+  .callout-title {
+    color: #4b5563;
+  }
+
+  // Proof end marker (∎)
+  & > .callout-content > :last-child::after {
+    content: " ∎";
+    font-style: normal;
+    float: right;
+    color: #6b7280;
+    font-size: 1.2em;
+  }
+}
+
+// --- 引理 (Lemma) — 青色边框，辅助定理 ---
+.callout[data-callout="lemma"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%230895b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>');
+  background: linear-gradient(135deg, rgba(8, 149, 178, 0.05), rgba(8, 149, 178, 0.02));
+  border-left: 4px solid #0895b2;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #0e7490;
+  }
+}
+
+// --- 推论 (Corollary) — 靛蓝色边框，从定理推导 ---
+.callout[data-callout="corollary"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%234f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>');
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(79, 70, 229, 0.02));
+  border-left: 4px solid #4f46e5;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #4338ca;
+  }
+}
+
+// --- 公理 (Axiom) — 金色边框，基础假设 ---
+.callout[data-callout="axiom"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>');
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.06), rgba(217, 119, 6, 0.02));
+  border-left: 4px solid #d97706;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #b45309;
+  }
+}
+
+// --- 命题 (Proposition) — 玫瑰色边框，待证明陈述 ---
+.callout[data-callout="proposition"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>');
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.05), rgba(225, 29, 72, 0.02));
+  border-left: 4px solid #e11d48;
+  border-radius: 8px;
+
+  .callout-title {
+    color: #be123c;
+  }
+}
+
+// --- 注记 (Remark) — 琥珀色边框，补充说明 ---
+.callout[data-callout="remark"] {
+  --callout-icon: url('data:image/svg+xml; utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>');
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.04), rgba(217, 119, 6, 0.01));
+  border-left: 3px solid #d97706;
+  border-radius: 8px;
+  font-size: 0.95em;
+
+  .callout-title {
+    color: #b45309;
+  }
+}
+
+// --- 例题 (Example) — 已有 example 类型，增强样式 ---
+.callout[data-callout="example"] {
+  background: linear-gradient(135deg, rgba(122, 67, 181, 0.05), rgba(122, 67, 181, 0.02));
+  border-left: 4px solid #7a43b5;
+  border-radius: 8px;
+}
+
+// --- 暗色模式适配 ---
+:root[saved-theme="dark"] {
+  .callout[data-callout="theorem"] {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0.04));
+    border-left-color: #8b5cf6;
+
+    .callout-title { color: #a78bfa; }
+  }
+
+  .callout[data-callout="definition"] {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(5, 150, 105, 0.04));
+    border-left-color: #10b981;
+
+    .callout-title { color: #34d399; }
+  }
+
+  .callout[data-callout="proof"] {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.12), rgba(107, 114, 128, 0.04));
+    border-left-color: #9ca3af;
+
+    .callout-title { color: #d1d5db; }
+  }
+
+  .callout[data-callout="lemma"] {
+    background: linear-gradient(135deg, rgba(8, 149, 178, 0.12), rgba(8, 149, 178, 0.04));
+    border-left-color: #06b6d4;
+
+    .callout-title { color: #22d3ee; }
+  }
+
+  .callout[data-callout="corollary"] {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(79, 70, 229, 0.04));
+    border-left-color: #6366f1;
+
+    .callout-title { color: #818cf8; }
+  }
+
+  .callout[data-callout="axiom"] {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.12), rgba(217, 119, 6, 0.04));
+    border-left-color: #f59e0b;
+
+    .callout-title { color: #fbbf24; }
+  }
+
+  .callout[data-callout="proposition"] {
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.12), rgba(225, 29, 72, 0.04));
+    border-left-color: #f43f5e;
+
+    .callout-title { color: #fb7185; }
+  }
+
+  .callout[data-callout="remark"] {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1), rgba(217, 119, 6, 0.03));
+    border-left-color: #f59e0b;
+
+    .callout-title { color: #fbbf24; }
+  }
+
+  .callout[data-callout="example"] {
+    background: linear-gradient(135deg, rgba(122, 67, 181, 0.12), rgba(122, 67, 181, 0.04));
+    border-left-color: #a78bfa;
+  }
+}
+
+// ========================
+// 🃏 概念闪卡 — Phase 4 学科能力增强
+// ========================
+
+details.flashcard {
+  border: 1.5px solid var(--lightgray);
+  border-radius: 12px;
+  margin: 0.8em 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--light);
+
+  &[open] {
+    border-color: var(--tertiary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, var(--light), rgba(90, 125, 99, 0.03));
+  }
+
+  &:hover {
+    border-color: var(--gray);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  & > summary {
+    padding: 0.9em 1.2em;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.02em;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    user-select: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::marker {
+      display: none;
+    }
+
+    &::before {
+      content: "▸";
+      display: inline-block;
+      font-size: 0.85em;
+      color: var(--tertiary);
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+  }
+
+  &[open] > summary::before {
+    transform: rotate(90deg);
+    color: var(--secondary);
+  }
+
+  &[open] > summary {
+    border-bottom: 1px solid var(--lightgray);
+    background: rgba(90, 125, 99, 0.06);
+  }
+
+  & > .flashcard-answer,
+  & > :not(summary) {
+    padding: 0.9em 1.2em 1.1em;
+    line-height: 1.75;
+  }
+}
+
+// Flashcard difficulty badges
+.flashcard-tag {
+  display: inline-block;
+  padding: 0.12em 0.5em;
+  border-radius: 10px;
+  font-size: 0.72em;
+  font-weight: 700;
+  margin-left: auto;
+  letter-spacing: 0.03em;
+
+  &.easy { background: rgba(5, 150, 105, 0.12); color: #059669; }
+  &.medium { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+  &.hard { background: rgba(225, 29, 72, 0.12); color: #e11d48; }
+}
+
+// --- 暗色模式闪卡 ---
+:root[saved-theme="dark"] {
+  details.flashcard {
+    background: rgba(255, 255, 255, 0.03);
+
+    &[open] {
+      border-color: var(--tertiary);
+      background: rgba(90, 125, 99, 0.08);
+    }
+
+    &:hover {
+      border-color: var(--gray);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &[open] > summary {
+      background: rgba(90, 125, 99, 0.1);
+    }
+  }
+}
+
+// ========================
+// 📝 自测题 — Phase 4 学科能力增强
+// ========================
+
+.quiz-container {
+  border: 1.5px solid var(--lightgray);
+  border-radius: 12px;
+  padding: 1.3em;
+  margin: 1.2em 0;
+  background: var(--light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+
+  .quiz-question {
+    font-weight: 650;
+    font-size: 1.05em;
+    margin-bottom: 0.8em;
+    color: var(--darkgray);
+  }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    margin-bottom: 1em;
+  }
+
+  .quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.5em 0.8em;
+    border-radius: 8px;
+    border: 1.5px solid var(--lightgray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95em;
+
+    &:hover {
+      background: var(--highlight);
+      border-color: var(--gray);
+    }
+
+    input[type="radio"] {
+      accent-color: var(--tertiary);
+      cursor: pointer;
+    }
+  }
+
+  // Label-based reveal (no JS needed)
+  .quiz-reveal {
+    display: none;
+    margin-top: 0.8em;
+    padding: 0.8em 1em;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.92em;
+
+    &.correct {
+      background: rgba(5, 150, 105, 0.1);
+      color: #059669;
+      border: 1px solid rgba(5, 150, 105, 0.3);
+    }
+
+    &.incorrect {
+      background: rgba(225, 29, 72, 0.1);
+      color: #e11d48;
+      border: 1px solid rgba(225, 29, 72, 0.3);
+    }
+  }
+}
+
+// Simple reveal quiz (details-based, always works)
+details.quiz-check {
+  margin-top: 0.6em;
+  border-top: 1px dashed var(--lightgray);
+  padding-top: 0.6em;
+
+  & > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--secondary);
+    font-size: 0.92em;
+    list-style: none;
+
+    &::-webkit-details-marker { display: none; }
+    &::marker { display: none; }
+
+    &::before {
+      content: "🔍 ";
+    }
+  }
+
+  &[open] > summary::before {
+    content: "✅ ";
+  }
+
+  & > .quiz-answer {
+    margin-top: 0.5em;
+    padding: 0.7em 1em;
+    border-radius: 8px;
+    background: rgba(90, 125, 99, 0.08);
+    border-left: 4px solid var(--tertiary);
+    font-size: 0.95em;
+    line-height: 1.7;
+  }
+}
+
+// --- 暗色模式自测 ---
+:root[saved-theme="dark"] {
+  .quiz-container {
+    background: rgba(255, 255, 255, 0.03);
+
+    .quiz-option:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .quiz-reveal {
+      &.correct { background: rgba(5, 150, 105, 0.15); }
+      &.incorrect { background: rgba(225, 29, 72, 0.15); }
+    }
+  }
+}
+
+// ========================
+// 🌐 量子力学笔记 — 自定义术语悬浮翻译 (Floating Translation Tooltip)
+// 替代原生 <abbr title> 解决浏览器 tooltip 截断问题
+// ========================
+
+.qtip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1.5px dashed var(--tertiary);
+  text-decoration: none !important;
+  display: inline;
+}
+
+.qtip::after {
+  content: attr(data-cn);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 8px);
+  background: #1e1e2e;
+  color: #f8f8f2;
+  padding: 8px 14px;
+  border-radius: 8px;
+  white-space: normal;
+  max-width: 380px;
+  min-width: 60px;
+  width: max-content;
+  font-size: 0.88em;
+  line-height: 1.55;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.qtip:hover::after,
+.qtip:focus::after,
+.qtip:active::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+// 小箭头指示器
+.qtip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 1px);
+  border: 6px solid transparent;
+  border-top-color: #1e1e2e;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.qtip:hover::before,
+.qtip:focus::before,
+.qtip:active::before {
+  opacity: 1;
+}
+
+// 暗色模式适配
+:root[saved-theme="dark"] {
+  .qtip::after {
+    background: #2d2d3f;
+    color: #e8e8ed;
+  }
+  .qtip::before {
+    border-top-color: #2d2d3f;
+  }
+}
+
+// 移动端：点击显示（hover 不可用）
+@media (hover: none) and (pointer: coarse) {
+  .qtip {
+    border-bottom-style: solid;
+    border-bottom-width: 2px;
+  }
+}
+
 // --- 移动端 ---
 @media (max-width: 600px) {
   h1 { font-size: 1.6rem; }
@@ -510,5 +1209,87 @@ footer {
 
   blockquote::before {
     font-size: 2em;
+  }
+}
+
+// ========================
+// 🖼️ E. 论文学术图片系统 — CSS 自动编号 + 图题 + 暗色模式
+// ========================
+
+// 图片容器：居中 + 自适应宽度
+article img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.8em auto 0.2em;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--lightgray);
+  background: #fff;  // 白底图片在透明背景页面上需要白色底色
+}
+
+// 图片 hover 微放大
+article img:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+  transform: scale(1.01);
+  transition: all 0.3s ease;
+}
+
+// 图题 — 使用 CSS counter 自动编号 + alt 文本显示
+// 给包含图片的段落之后的元素样式化为图题
+article figure,
+article p:has(> img) {
+  counter-increment: fig-num;
+  text-align: center;
+
+  // 图题：图1 · 描述文字
+  &::after {
+    content: "图" counter(fig-num) " · " attr(data-caption);
+    display: block;
+    text-align: center;
+    font-size: 0.88em;
+    color: var(--gray);
+    margin: 0.4em 0 1.5em;
+    font-weight: 500;
+  }
+
+  // 如果图片有 alt 文本，用 alt 作为图题
+  &:has(img[alt]):has(img[alt]:not([alt=""]))::after {
+    content: "图" counter(fig-num) " · " attr(data-caption);
+  }
+}
+
+// 重置计数器在每个 article 中
+article {
+  counter-reset: fig-num;
+}
+
+// 图表引用链接 (如 "见图1")
+a[href^="#fig"], a[href^="#figure"] {
+  font-weight: 600;
+  color: var(--tertiary);
+}
+
+// 暗色模式：给白底图加柔和边框
+:root[saved-theme="dark"] article img {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.95);  // 保持图片白底
+}
+
+// 暗色模式图片 hover
+:root[saved-theme="dark"] article img:hover {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+// --- 移动端图片 ---
+@media (max-width: 600px) {
+  article img {
+    margin: 1.2em auto 0.2em;
+    border-radius: 6px;
+  }
+
+  body::before {
+    height: 2px;  // 移动端进度条更细
   }
 }
