@@ -107,6 +107,41 @@ git -C $repo worktree add -b agent/next-qa "$workRoot\qa" agent/next-integration
 - 不允许执行代理直接合并 `main`、部署生产、写入生产密钥或执行破坏性 SQL。
 - 数据库迁移只新增文件，命名使用真实日期和明确主题；已在生产执行的迁移不得重写。
 
+### 4.4 总指挥治理制度
+
+为避免多代理在长周期中反复改方向、破坏接口或带着未说明风险合并，总指挥必须维护以下五项制度：
+
+#### 决策日志
+
+- 在 `.design/wouldkeep-next/DECISIONS.md` 记录每项重要选择：日期、问题、可选方案、最终决定、理由、影响范围和重新评估条件。
+- 已批准的设计方向、数据边界、URL 策略和模型安全规则不能由子 Agent 静默推翻。
+- 新证据允许重新讨论，但必须新增一条决策记录，不覆盖旧记录。
+
+#### 接口契约
+
+- 在 `.design/wouldkeep-next/CONTRACTS.md` 记录跨 Worktree 共用的数据库字段、RPC/Edge Function 请求响应、错误码、路由、事件和关键组件输入输出。
+- 并行任务开始前冻结本轮契约；子 Agent 若需修改，先提交“契约变更请求”，由总指挥判断影响并通知所有依赖代理。
+- 数据库迁移、前端类型和测试夹具必须同时反映契约，不能只改其中一层。
+
+#### 串行合并队列
+
+- 在 `.design/wouldkeep-next/MERGE_QUEUE.md` 维护等待审查、验证中、已合并、退回修改四种状态。
+- 同一时间只能有一个功能分支进入集成分支；前一个合并后的类型检查、相关测试和构建未完成前，不合并下一个。
+- 高风险顺序优先为：安全/数据契约 → 编辑/保存 → 发布 → AI → UI 与内容；纯研究文档可独立合并。
+
+#### 阶段汇报与交接
+
+- 每个子 Agent 在完成一个垂直切片或连续工作约 60–90 分钟后提交检查点，不等待整个大模块结束。
+- 检查点写入 `.design/wouldkeep-next/handoffs/<branch>.md`，包含基线 SHA、当前提交、完成项、修改文件、测试/UI 证据、风险、阻塞、契约变化和下一步。
+- 总指挥发现越界修改、测试无证据、方向偏离或长时间无有效产出时，应暂停并重新切小任务，而不是继续消耗上下文。
+
+#### 生产前快照与恢复证据
+
+- 在任何 Supabase 迁移、Edge Function 替换、批量内容写入或正式发布前，建立 `.design/wouldkeep-next/PRODUCTION_SAFETY.md` 记录执行者、时间、Git SHA、迁移/函数版本、关键表行数、最后成功部署、备份位置、验证查询和前滚修复方案。
+- 生产数据库迁移优先使用可重复前滚修复；回滚涉及数据删除时不得自动执行。
+- 执行后立即对比快照并记录真实结果；“SQL Success”不能单独证明数据和 RLS 正确。
+- 缺少快照、恢复路径、用户确认或验证查询时，生产变更必须停止。
+
 ## 5. 文件所有权与冲突隔离
 
 | 文件/区域 | 唯一主要负责人 | 规则 |
@@ -260,6 +295,8 @@ Worktree：<绝对路径>
 必跑验证：<命令>
 交付：提交 SHA、变更摘要、测试证据、迁移/部署步骤、风险与未完成项
 研究依据：<已批准的 reference-research 简报；没有则说明为什么该任务无需外部范例>
+决策/契约影响：<DECISIONS/CONTRACTS 条目或“无”>
+检查点文件：<.design/wouldkeep-next/handoffs/<branch>.md>
 ```
 
 执行代理结束时必须交付：
@@ -278,11 +315,13 @@ Worktree：<绝对路径>
 总控对每个分支执行：
 
 1. `git status -sb`，确认没有未归属修改。
-2. `git diff agent/next-integration...agent/next-<领域> --stat` 和逐文件审查。
-3. 拒绝越界修改、真实密钥、service-role key、跳过 RLS、破坏性 SQL 和无测试的大批量内容修改。
-4. 先把集成分支最新变化合入功能分支并由原代理解决本领域冲突。
-5. 功能测试通过后，`git merge --no-ff agent/next-<领域>`。
-6. 每合并一个分支运行 TypeScript 和相关测试；每一波结束运行全量测试与构建。
+2. 检查 `MERGE_QUEUE.md`，确认当前分支是唯一处于“验证中”的功能分支。
+3. 对照 `DECISIONS.md` 与 `CONTRACTS.md` 检查是否存在未批准的方向或接口变化。
+4. `git diff agent/next-integration...agent/next-<领域> --stat` 和逐文件审查。
+5. 拒绝越界修改、真实密钥、service-role key、跳过 RLS、破坏性 SQL 和无测试的大批量内容修改。
+6. 先把集成分支最新变化合入功能分支并由原代理解决本领域冲突。
+7. 功能测试通过后，`git merge --no-ff agent/next-<领域>`。
+8. 每合并一个分支运行 TypeScript、相关测试和构建；每一波结束运行全量测试、UI 回归与生产构建。
 
 建议基线命令（若本机全局 npm 仍损坏，继续使用项目已有 `node_modules` 和 Codex bundled Node）：
 
@@ -316,7 +355,7 @@ $node = 'C:\Users\23012\.cache\codex-runtimes\codex-primary-runtime\dependencies
 4. .design/account-knowledge-system/DESIGN_BRIEF.md
 5. .design/ai-knowledge-assistant/DESIGN_BRIEF.md
 
-你担任 wouldkeep 总指挥，必须使用 GPT-5.6 Sol（xhigh）。先验证 PR #11 与登录态 AI 模拟网关的最终状态，完成 Wave 0 现实对账；不要根据旧 TASKS 重复开发。随后优先启动“优秀范例侦察 Agent”（GPT-5.6 Terra/high，独立 research Worktree，只写研究简报），再按方案启动最多两个并行实施 Agent。侦察 Agent 需要领先实施半个阶段，实施任务应引用总指挥已批准的范例简报。检验代理必须作为 UI 质量负责人，重点查看实际渲染、截图、排版、响应式、交互状态和跨页一致性，不能只看自动化测试是否通过。所有代理必须遵守文件所有权、提交独立分支并提供测试证据。总指挥负责审查、集成、终止越界工作，并向我集中提出必须由我执行的 Supabase/生产操作。
+你担任 wouldkeep 总指挥，必须使用 GPT-5.6 Sol（xhigh）。先验证 PR #11 与登录态 AI 模拟网关的最终状态，完成 Wave 0 现实对账；不要根据旧 TASKS 重复开发。随后建立 DECISIONS.md、CONTRACTS.md、MERGE_QUEUE.md、handoffs/ 与 PRODUCTION_SAFETY.md，再优先启动“优秀范例侦察 Agent”（GPT-5.6 Terra/high，独立 research Worktree，只写研究简报），并按方案启动最多两个并行实施 Agent。侦察 Agent 需要领先实施半个阶段，实施任务应引用总指挥已批准的范例简报。检验代理必须作为 UI 质量负责人，重点查看实际渲染、截图、排版、响应式、交互状态和跨页一致性，不能只看自动化测试是否通过。所有代理必须遵守文件所有权、提交独立分支、每个垂直切片或 60–90 分钟提交检查点，并提供测试证据。总指挥负责串行合并、审查、集成、终止越界工作，并向我集中提出必须由我执行的 Supabase/生产操作；没有生产快照和恢复证据时不得部署。
 ```
 
 ## 11. 官方模型参考
