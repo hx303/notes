@@ -44,6 +44,8 @@ test("AI write gateway is an authenticated mock without a model key", () => {
   assert.match(gateway, /authorization/)
   assert.match(gateway, /mock: true/)
   assert.match(gateway, /selection\.length > 12000/)
+  assert.match(gateway, /hostname\.startsWith\("notes-"\)/)
+  assert.match(gateway, /hostname\.endsWith\("-wld-s-projects\.vercel\.app"\)/)
   assert.match(gateway, /真实模型尚未启用/)
   assert.doesNotMatch(gateway, /OPENAI_API_KEY/)
   assert.doesNotMatch(gateway, /api\.openai\.com/)

@@ -17,6 +17,11 @@ const allowedOrigin = (origin: string | null) => {
   if (origin === "https://wouldkeep.com" || origin === "https://www.wouldkeep.com") return origin
   try {
     const url = new URL(origin)
+    const isWouldkeepPreview =
+      url.protocol === "https:" &&
+      url.hostname.startsWith("notes-") &&
+      url.hostname.endsWith("-wld-s-projects.vercel.app")
+    if (isWouldkeepPreview) return origin
     if (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname)) {
       return origin
     }
