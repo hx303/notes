@@ -4,7 +4,8 @@ Last reconciled: 2026-07-16 (Asia/Shanghai)
 
 Working baseline: merged `main` at `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`
 
-Target PR: [#11](https://github.com/hx303/notes/pull/11)
+Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)  
+Active provider PR: [#12](https://github.com/hx303/notes/pull/12) (Draft)
 
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
