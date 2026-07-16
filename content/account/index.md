@@ -1,5 +1,7 @@
 ---
-title: 我的账户
+title: 登录
+description: 登录 wouldkeep，继续整理你的个人知识库。
+comments: false
 ---
 
-登录后管理你的知识、草稿和分享设置。
+登录后继续整理、连接与分享知识。
