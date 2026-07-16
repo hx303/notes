@@ -10,6 +10,7 @@ No production change is authorized by this file. Create a completed operation re
 - Committed evidence says the AI migration and `ai-write` mock function are deployed, unauthenticated calls return 401, and four real-account RLS assertions passed.
 - The site owner explicitly confirmed the signed-in mock gateway returned the expected no-model/no-cost result.
 - No model API key is configured or authorized for deployment; paid AI budget remains zero. The DeepSeek provider slice is code preparation only and must not replace the deployed mock function.
+- PR #12 now also contains a dormant, offline-tested A20 safety boundary. It is not a production quota system: no real Supabase context authority, service-role atomic reserve/finalize RPC, versioned rate card, site-live configuration, HMAC audit hash, database verification, or deployment evidence exists yet.
 - Fresh database row counts, backup location, production deployment SHA, and Cloudflare state are not yet recorded. Therefore migrations, function replacement, secrets, feature flags, and paid calls remain stopped.
 
 ## Operation record template

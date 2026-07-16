@@ -5,7 +5,7 @@
 - Worktree: `C:/Users/23012/Documents/Codex/2026-07-16/c-users-23012-desktop-wouldkeep/worktrees-next/ai-deepseek-provider`
 - Branch: `agent/ai-deepseek-provider`
 - Baseline SHA: `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`
-- Current SHA: recorded after commit in commander handoff
+- Implementation SHA: `8260d96dfceeac464c4c03addd745753800feca5`; independent review integrated at `214ea59e`
 - Demonstrable slice: pluggable AI provider contract and fully offline-tested DeepSeek adapter, with no runtime hookup or paid call
 - Approved research brief (or why none is needed): commander supplied the reviewed current DeepSeek endpoint, model, error, retention, and thinking contracts for this bounded adapter slice.
 
@@ -32,7 +32,7 @@
 
 ## Evidence
 
-- Commands run and raw result summary: bundled Node `tsc --noEmit` passed; post-review A20 focused tests passed 18/18. Before this follow-up, DeepSeek focused tests passed 9/9, full Quartz suite passed 170/170, and `git diff --check` passed; root owns the next full-suite run.
+- Commands run and raw result summary: bundled Node `tsc --noEmit` passed; post-review A20 focused tests passed 18/18; independent combined focused tests passed 27/27; commander full Quartz suite passed 172/172; `git diff --check` passed.
 - Static build: final A20 candidate passed with 284 Markdown inputs and 1046 emitted files. Existing untracked-date, LaTeX Unicode, and Node deprecation warnings remain non-blocking.
 - UI evidence (viewport, theme, state, screenshot path/diff): not applicable; no UI was changed.
 - Security evidence (owner / other user / anonymous): all tests are offline. Provider tests use injected fake fetch. A20 tests prove default-off/zero-budget, authority/JWT-context failure, ignored body owner/scope fields, publication-snapshot proof, private/unknown rejection before invocation, atomic concurrency, daily/monthly gates, trusted cost estimation, missing-usage/conservative accounting, all terminal audit states, and absence of raw input/output/error content from audit records.

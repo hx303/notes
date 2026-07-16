@@ -50,7 +50,7 @@ Date: 2026-07-16
 
 ## Wave 2 / AI, Content, Quality
 
-- [ ] **A20 — AI 用量与预算保护**：为成功/失败调用写审计，实施并发、日限额、月预算和站长 feature flag；真实密钥只在 Function Secret。 _Agent: AI; modifies: AI migrations/functions/settings; reuses: mock gateway._
+- [ ] **A20 — AI 用量与预算保护**：为成功/失败调用写审计，实施并发、日限额、月预算和站长 feature flag；真实密钥只在 Function Secret。 _Progress: dormant fail-closed guard and offline atomic reference complete; production Supabase authority, service-role RPC, rate card, RLS/failure evidence, config storage, and deployment remain. Agent: AI; modifies: AI migrations/functions/settings; reuses: mock gateway._
 - [ ] **A21 — 选区改写与版本回退**：选中文字后生成独立预览，支持接受、插入、拒绝、重新生成和回退；版本冲突不得应用旧结果。 _Agent: AI; creates: focused AI UI components; reuses: editor version API. Depends on: A20 and P05._
 - [ ] **A22 — 增量索引与混合检索**：实现分块、内容哈希、队列、pgvector、PostgreSQL 全文搜索与 RRF；RLS 限制到当前用户和知识库。 _Agent: AI; creates: index worker/RPC/tests. Depends on: A20._
 - [ ] **A23 — 整理建议收件箱**：提供标签、分类、关系、重复候选的理由/证据/置信度与变更清单，逐条或安全批量接受。 _Agent: AI; creates: `/workspace/organize/`; reuses: tags/links/versions. Depends on: A22 and P06._

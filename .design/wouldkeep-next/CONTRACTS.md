@@ -46,6 +46,16 @@ State: PR #11 merged baseline plus commander-approved DeepSeek provider-preparat
 - DeepSeek currently declares `supportsZeroRetention=false`; private content is not eligible for this provider until a separately approved privacy contract exists.
 - This preparation slice does not read `DEEPSEEK_API_KEY` from the browser, wire the adapter into `ai-write`, change the accepted mock response, deploy an Edge Function, or make a real request. Runtime enablement depends on A20 and separate user approval.
 
+### Runtime-safety preparation contract
+
+- `GuardedAiProvider` receives only authorization and a route document ID. An injected server authority verifies JWT, owner, document access, and source, then constructs the provider request; request-body owner, scope, or prompt assertions are not authoritative.
+- `public` requires proof that the provider input came from the whitelisted public publication snapshot. Private or unlisted drafts, free input, unknown sources, malformed scope, and any unverified content remain ineligible for DeepSeek.
+- Site live state, user opt-in, monthly budget, daily limit, concurrency limit, reservation, and final audit state belong to an authoritative server boundary, not the browser or provider adapter.
+- Audit records contain owner/run identifiers, stable capability/provider/model/prompt-version IDs, input hash, token/cache counts, reserved/actual cost, latency, stable error code, and timestamps only. They do not contain authorization values, document bodies, prompts, outputs, or raw upstream errors.
+- Missing provider usage, invalid cost, actual cost above reservation, or audit-finalization failure cannot return a successful model result. The reservation or known actual cost is retained conservatively.
+- The included in-memory boundary is an offline single-process reference and test double. Production must replace it with browser-inaccessible, service-role-only atomic reserve/finalize database operations plus a versioned worst-case rate card.
+- This contract does not authorize a migration, secret, feature flag, `ai-write` hookup, deployment, or paid request.
+
 ## Routes and shared hooks
 
 - `/workspace/`, `/workspace/knowledge/`, `/workspace/write/`, `/workspace/settings/`, `/workspace/settings/ai/` remain stable.

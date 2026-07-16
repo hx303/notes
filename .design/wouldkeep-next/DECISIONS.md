@@ -61,3 +61,12 @@ Append new entries; never rewrite prior decisions. Each reversal must cite new e
 - Impact: provider code must be fetch-injected and testable without network access, normalize provider errors, enforce timeout/abort, and never expose a secret to Quartz/browser code, logs, or responses. Existing mock response and API contract remain unchanged.
 - Re-evaluate when: A20 is complete, a production operation record exists, the site owner supplies the key through a Function Secret, and a separate live-call/deployment approval is granted.
 - Official sources checked: [API quick start](https://api-docs.deepseek.com/), [Chat Completions reference](https://api-docs.deepseek.com/api/create-chat-completion/), [error codes](https://api-docs.deepseek.com/quick_start/error_codes/), [context caching](https://api-docs.deepseek.com/guides/kv_cache), and [privacy policy](https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html?locale=en_US).
+
+## D-007 — Server-authoritative AI context and conservative accounting
+
+- Date: 2026-07-17.
+- Question: May a future AI route trust caller-supplied owner IDs, visibility labels, prompts, or incomplete provider usage when enforcing privacy and budget controls?
+- Decision: no. A server authority must verify the JWT, ownership, source, and publication snapshot, then construct the provider request. Only a verified public publication snapshot may be sent to the current DeepSeek adapter. Missing usage or accounting inconsistencies fail closed and conservatively consume the reserved cost.
+- Reason: independent review showed that UUID-shape validation and a caller-declared `public` label could otherwise borrow another owner's quota or bypass the private-content gate; missing usage could otherwise release a paid request as zero-cost success.
+- Impact: the dormant guard accepts authorization plus route document identity, not owner/scope/prompt assertions. Production still requires a real Supabase authority, service-role-only atomic quota RPC, a versioned worst-case rate card, and database/RLS/failure evidence.
+- Re-evaluate when: a provider offers an independently verified zero-retention contract or a separately approved private-data processing agreement changes the eligible content scope.
