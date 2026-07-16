@@ -1,0 +1,110 @@
+{
+  "account": {
+    "display": "grid",
+    "gridTemplateColumns": "250px",
+    "height": 966,
+    "width": 282,
+    "x": 16,
+    "y": 72.66667175292969
+  },
+  "bodyGrid": {
+    "display": "grid",
+    "gridTemplateColumns": "282px",
+    "height": 1417.7083740234375,
+    "width": 314,
+    "x": 0,
+    "y": 0
+  },
+  "center": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 1031.666748046875,
+    "width": 282,
+    "x": 16,
+    "y": 72
+  },
+  "controls": [
+    {
+      "height": 0,
+      "tag": "INPUT",
+      "text": "",
+      "width": 0
+    },
+    {
+      "height": 52.34375,
+      "tag": "INPUT",
+      "text": "",
+      "width": 203.875
+    },
+    {
+      "height": 52.34375,
+      "tag": "INPUT",
+      "text": "",
+      "width": 203.875
+    },
+    {
+      "height": 44.34375,
+      "tag": "BUTTON",
+      "text": "显示",
+      "width": 54.39583587646485
+    },
+    {
+      "height": 52.67708587646485,
+      "tag": "BUTTON",
+      "text": "登录",
+      "width": 203.875
+    },
+    {
+      "height": 25.447917938232425,
+      "tag": "A",
+      "text": "创建新账户",
+      "width": 68.80208587646484
+    },
+    {
+      "height": 25.447917938232425,
+      "tag": "A",
+      "text": "忘记密码",
+      "width": 55.04166793823242
+    }
+  ],
+  "hero": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 348.9895935058594,
+    "width": 250,
+    "x": 32,
+    "y": 104.66667175292967
+  },
+  "left": {
+    "display": "none",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "panel": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 489.0104370117187,
+    "width": 250,
+    "x": 32,
+    "y": 485.65625
+  },
+  "right": {
+    "display": "flex",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "width": 282,
+    "x": 16,
+    "y": 1108.666748046875
+  },
+  "scroll": {
+    "height": 1474,
+    "width": 314
+  },
+  "viewport": {
+    "height": 740,
+    "width": 320
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "signin": {
+    "forms": [
+      {
+        "fields": [
+          {
+            "autocomplete": "off",
+            "name": "q",
+            "type": "search"
+          }
+        ],
+        "hidden": false
+      },
+      {
+        "fields": [
+          {
+            "autocomplete": "",
+            "name": "mode",
+            "type": "hidden"
+          },
+          {
+            "autocomplete": "email",
+            "name": "email",
+            "type": "email"
+          },
+          {
+            "autocomplete": "current-password",
+            "name": "password",
+            "type": "password"
+          }
+        ],
+        "hidden": false
+      }
+    ],
+    "status": 21.59375,
+    "title": "登录"
+  },
+  "signup": {
+    "forms": [
+      {
+        "fields": [
+          {
+            "autocomplete": "off",
+            "name": "q",
+            "type": "search"
+          }
+        ],
+        "hidden": false
+      },
+      {
+        "fields": [
+          {
+            "autocomplete": "",
+            "name": "mode",
+            "type": "hidden"
+          },
+          {
+            "autocomplete": "email",
+            "name": "email",
+            "type": "email"
+          },
+          {
+            "autocomplete": "new-password",
+            "name": "password",
+            "type": "password"
+          }
+        ],
+        "hidden": false
+      }
+    ],
+    "status": 21.59375,
+    "title": "创建账户"
+  },
+  "forgot": {
+    "forms": [
+      {
+        "fields": [
+          {
+            "autocomplete": "off",
+            "name": "q",
+            "type": "search"
+          }
+        ],
+        "hidden": false
+      },
+      {
+        "fields": [
+          {
+            "autocomplete": "email",
+            "name": "email",
+            "type": "email"
+          }
+        ],
+        "hidden": false
+      }
+    ],
+    "status": 21.59375,
+    "title": "忘记密码"
+  },
+  "recover": {
+    "forms": [
+      {
+        "fields": [
+          {
+            "autocomplete": "off",
+            "name": "q",
+            "type": "search"
+          }
+        ],
+        "hidden": false
+      },
+      {
+        "fields": [
+          {
+            "autocomplete": "new-password",
+            "name": "new-password",
+            "type": "password"
+          },
+          {
+            "autocomplete": "new-password",
+            "name": "confirm-password",
+            "type": "password"
+          }
+        ],
+        "hidden": false
+      }
+    ],
+    "status": 21.59375,
+    "title": "设置新密码"
+  }
+}

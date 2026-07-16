@@ -1,0 +1,22 @@
+{
+  "account": {
+    "width": 730,
+    "x": 16
+  },
+  "body": {
+    "width": 762,
+    "x": 0
+  },
+  "panel": {
+    "width": 560,
+    "x": 46.71875
+  },
+  "scroll": {
+    "height": 1486,
+    "width": 762
+  },
+  "viewport": {
+    "height": 900,
+    "width": 768
+  }
+}

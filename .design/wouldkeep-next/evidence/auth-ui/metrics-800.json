@@ -1,0 +1,66 @@
+{
+  "account": {
+    "display": "grid",
+    "gridTemplateColumns": "373px",
+    "height": 1010.03125,
+    "width": 437,
+    "x": 341,
+    "y": 218.71875
+  },
+  "bodyGrid": {
+    "display": "grid",
+    "gridTemplateColumns": "320px 437px",
+    "height": 1570.1875,
+    "width": 794,
+    "x": 0,
+    "y": 0
+  },
+  "center": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 1187.697998046875,
+    "width": 437,
+    "x": 341,
+    "y": 106.05208587646484
+  },
+  "hero": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 326.84375,
+    "width": 373,
+    "x": 373,
+    "y": 266.71875
+  },
+  "left": {
+    "display": "flex",
+    "gridTemplateColumns": "none",
+    "height": 900,
+    "width": 320,
+    "x": 16,
+    "y": 0
+  },
+  "panel": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 475.1875,
+    "width": 373,
+    "x": 373,
+    "y": 657.5625
+  },
+  "right": {
+    "display": "flex",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "width": 437,
+    "x": 341,
+    "y": 1298.75
+  },
+  "scroll": {
+    "height": 1570,
+    "width": 794
+  },
+  "viewport": {
+    "height": 900,
+    "width": 800
+  }
+}
