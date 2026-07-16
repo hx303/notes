@@ -9,14 +9,14 @@ Date: 2026-07-16
 - [ ] **N00 — 完成 AI 安全地基最终验收**：登录站长账户测试 `ai-write`，确认只发送固定测试文字、返回 `mock: true`、不产生模型费用，并把证据写回 AI TASKS。 _Modifies: AI task status only; reuses: deployed Edge Function and RLS tests._
 - [ ] **N01 — 合并并固定新基线**：确认 PR #11 全绿后合并到 `main`，抓取 `origin/main` 并记录基线 SHA。 _Modifies: Git history; reuses: current AI foundation branch._
 - [ ] **N02 — 建立现实状态清单**：逐项对账代码、Supabase、Edge Functions、Vercel/Cloudflare、三份旧 TASKS 与线上行为，标记完成/部分/未部署/过期。 _Creates: `CURRENT_STATE.md`; reuses: existing design artifacts and deployed project._
-- [ ] **N03 — 建立持续协作规则**：在根目录写入构建、测试、安全、文件所有权、迁移和交接约束，确保后续代理不重复开发或越界部署。 _Creates: `AGENTS.md`; reuses: this orchestration plan._
+- [x] **N03 — 建立持续协作规则**：在根目录写入构建、测试、安全、文件所有权、迁移和交接约束，确保后续代理不重复开发或越界部署。 _Creates: `AGENTS.md`; reuses: this orchestration plan._
 - [ ] **N04 — 建立第一波 Worktrees**：从新基线创建 integration、reference-research、platform、workspace、public Worktree，确认每个目录干净且分支不重名；同时运行时保持“总指挥 + 研究 + 最多两个实施”。 _Creates: Git worktrees/branches; modifies no product code._
 - [ ] **N05 — 启动 5.6 Sol 总指挥制度**：根任务固定使用 `gpt-5.6-sol/xhigh`，由其维护状态、派工、研究裁决、文件所有权、集成和生产权限清单。 _Modifies: orchestration state only; reuses: this plan._
-- [ ] **N06 — 建立决策日志**：记录重要方案的备选项、决定、理由、影响和重新评估条件；新证据通过新增记录修订，不静默覆盖旧决定。 _Creates: `.design/wouldkeep-next/DECISIONS.md`; owned by: commander._
-- [ ] **N07 — 冻结跨代理接口契约**：记录数据库、RPC/函数、错误码、路由、事件和组件接口；契约变更必须先评估依赖并同步类型与测试。 _Creates: `.design/wouldkeep-next/CONTRACTS.md`; owned by: commander; reuses: current Supabase and component contracts._
-- [ ] **N08 — 建立串行合并队列**：同一时间只验证和合并一个功能分支，每次合并后先跑类型检查、相关测试和构建，再处理下一项。 _Creates: `.design/wouldkeep-next/MERGE_QUEUE.md`; owned by: commander._
-- [ ] **N09 — 建立子 Agent 检查点制度**：每个垂直切片或 60–90 分钟提交 SHA、文件、证据、风险、阻塞、契约变化和下一步，避免大模块失联式开发。 _Creates: `.design/wouldkeep-next/handoffs/TEMPLATE.md`; reused by: every agent._
-- [ ] **N10 — 建立生产安全快照**：在迁移、函数替换、批量内容写入或正式发布前记录 Git/数据库/函数/部署基线、备份、验证查询和前滚修复；缺项则停止。 _Creates: `.design/wouldkeep-next/PRODUCTION_SAFETY.md`; owned by: commander/platform; requires user confirmation before production changes._
+- [x] **N06 — 建立决策日志**：记录重要方案的备选项、决定、理由、影响和重新评估条件；新证据通过新增记录修订，不静默覆盖旧决定。 _Creates: `.design/wouldkeep-next/DECISIONS.md`; owned by: commander._
+- [x] **N07 — 冻结跨代理接口契约**：记录数据库、RPC/函数、错误码、路由、事件和组件接口；契约变更必须先评估依赖并同步类型与测试。 _Creates: `.design/wouldkeep-next/CONTRACTS.md`; owned by: commander; reuses: current Supabase and component contracts._
+- [x] **N08 — 建立串行合并队列**：同一时间只验证和合并一个功能分支，每次合并后先跑类型检查、相关测试和构建，再处理下一项。 _Creates: `.design/wouldkeep-next/MERGE_QUEUE.md`; owned by: commander._
+- [x] **N09 — 建立子 Agent 检查点制度**：每个垂直切片或 60–90 分钟提交 SHA、文件、证据、风险、阻塞、契约变化和下一步，避免大模块失联式开发。 _Creates: `.design/wouldkeep-next/handoffs/TEMPLATE.md`; reused by: every agent._
+- [x] **N10 — 建立生产安全快照**：在迁移、函数替换、批量内容写入或正式发布前记录 Git/数据库/函数/部署基线、备份、验证查询和前滚修复；缺项则停止。 _Creates: `.design/wouldkeep-next/PRODUCTION_SAFETY.md`; owned by: commander/platform; requires user confirmation before production changes._
 
 ## Reference Research / 常设优秀范例侦察
 
