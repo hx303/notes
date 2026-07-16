@@ -20,6 +20,22 @@ supabase functions deploy ai-write
 
 能力声明是供后续服务端路由执行策略的机器可读信号；本切片尚未创建真实调用路由，因此它本身不是私密内容过滤器。后续接线必须在调用 provider 之前根据内容分类拒绝私密正文，不能只依赖调用方自觉。
 
+## A20 服务端安全控制边界
+
+`_shared/ai-runtime-safety.ts` 提供尚未接入运行时的 fail-closed 控制层：
+
+- `GuardedAiProvider` 只在原子 reservation 成功后调用 provider；DeepSeek 的 `allowsPrivateContent=false` 会让 `private` 和任何未知/非法内容分类在调用前被拒绝；
+- `AiQuotaAuditBoundary` 把 reservation/finalization 定义为权威服务端原子操作，覆盖站点 live flag、用户 `enabled`、私密内容同意、月预算、每日请求和并发上限；
+- `InMemoryAiQuotaAuditBoundary` 是完全离线的参考实现与测试替身，不是生产多实例配额存储；生产接线前必须用 `service_role` 可执行、浏览器不可执行的数据库原子 RPC 替换；
+- 成功、失败和 blocked 都产生终态审计；审计只含 SHA-256 输入哈希、能力/provider/model、token/cache、cost、latency、稳定错误码和时间，不含正文、提示词、模型输出或上游原始错误；
+- policy 缺失、异常、`NaN`、负数或非整数均拒绝；成本估算失败、实际成本超过 reservation、审计 finalize 失败也不会静默成功。
+
+调用方不能提交自己的费用估算。构造控制层时注入的 estimator 必须是受版本控制的服务端 rate card，并以模型、最大输入 token 和 `maxTokens` 计算最坏情况费用上界。若实际费用超过 reservation，本次调用记为 accounting failure，但审计仍记录完整实际费用，避免后续错误放行。
+
+`ownerId` 必须来自已验证 JWT，`contentScope` 必须来自服务端查询得到的文档可见性；两者都不能取自请求 body。控制层会拒绝非 UUID owner 且不写入污染审计，但生产路由仍必须先完成身份与所有权验证。
+
+这仍是准备代码：没有读取配置表或 Secret，没有连接 `ai-write`，也没有任何网络调用。生产原子 RPC、rate card、站点配置存储和部署验证仍是后续 A20 切片。
+
 后续获批接入时，密钥只能保存为 Supabase Function Secret：
 
 ```bash

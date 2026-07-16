@@ -18,30 +18,33 @@
 - Normalized documented HTTP errors, timeout, caller cancellation, network failure, empty/truncated/filtered output, and resource exhaustion.
 - Exposed response ID and prompt/completion/cache token usage for later budget/audit work.
 - Preserved `ai-write` exactly as the authenticated fixed mock; no provider hookup, secret read, deployment, or real request was made.
+- Added the dormant A20 `AiQuotaAuditBoundary` and `GuardedAiProvider` control plane with an atomic in-memory reference implementation.
+- Enforced site/user opt-in, private/unknown scope rejection, zero/monthly budget, daily request, concurrency, conservative reservation, and accounting-finalization gates before provider execution.
+- Ensured success, failure, and blocked audit records contain hashes and bounded metadata only, never prompts, bodies, outputs, or raw upstream errors.
 
 ## Changed files and scope
 
-- Allowed paths changed: `supabase/functions/_shared/ai-provider.ts`, `supabase/functions/_shared/deepseek-provider.ts`, `supabase/functions/README.md`, `quartz/components/deepseekProvider.test.ts`, and this handoff.
+- Allowed paths changed: `supabase/functions/_shared/ai-provider.ts`, `supabase/functions/_shared/deepseek-provider.ts`, `supabase/functions/_shared/ai-runtime-safety.ts`, `supabase/functions/README.md`, `quartz/components/deepseekProvider.test.ts`, `quartz/components/aiRuntimeSafety.test.ts`, and this handoff.
 - Non-authorized paths touched: none by this agent. Commander-owned design documents were concurrently modified in this worktree and are intentionally excluded from this slice's commit.
 - Commander-owned hookup requested: none. A later approved server router must enforce content classification, consent, feature flag, zero-budget release, audit, concurrency, and quota gates before invoking this adapter.
 
 ## Evidence
 
-- Commands run and raw result summary: bundled Node `tsc --noEmit` passed; DeepSeek focused tests passed 9/9; full Quartz tests passed 154/154; `git diff --check` passed.
-- Static build: passed with 284 Markdown inputs and 1046 emitted files. Existing untracked-date, LaTeX Unicode, and Node deprecation warnings remain non-blocking.
+- Commands run and raw result summary: bundled Node `tsc --noEmit` passed; A20 focused tests passed 16/16; DeepSeek focused tests passed 9/9; final full Quartz suite passed 170/170; `git diff --check` passed.
+- Static build: final A20 candidate passed with 284 Markdown inputs and 1046 emitted files. Existing untracked-date, LaTeX Unicode, and Node deprecation warnings remain non-blocking.
 - UI evidence (viewport, theme, state, screenshot path/diff): not applicable; no UI was changed.
-- Security evidence (owner / other user / anonymous): provider tests are fully offline with injected fake fetch. Tests prove fixed endpoint, Bearer shape, absent `store`/`user_id`, capability `supportsZeroRetention=false` / `allowsPrivateContent=false`, normalized errors without raw provider detail, and timeout/abort behavior.
+- Security evidence (owner / other user / anonymous): all tests are offline. Provider tests use injected fake fetch. A20 tests prove default-off/zero-budget, malformed-policy fail-closed, private/unknown rejection before invocation, atomic concurrency, daily/monthly gates, trusted cost estimation, conservative accounting, all terminal audit states, and absence of raw input/output/error content from audit records.
 - Migration or Edge Function deployed to production: **No**.
 
 ## Decisions and contracts
 
 - Decision entries affected: implements a dormant provider seam under D-005 without enabling paid/model behavior.
-- Contract changes requested: later integration contract should require a server-side private-content rejection gate; capability metadata alone does not filter content.
+- Contract changes requested: production integration must replace the in-memory reference with a service-role-only atomic reserve/finalize RPC and a version-controlled worst-case rate card. Capability metadata is enforced by the dormant guard, but no live route uses it yet.
 - Types, fixtures, and tests synchronized: provider types and 9 fake-fetch tests are included; no database fixture or migration was needed.
 
 ## Risk and recovery
 
-- Known risks: DeepSeek has no documented API zero-retention guarantee and its context cache is on by default. The adapter must not receive private note bodies. Capability metadata is declarative, so the future router must actively enforce it.
+- Known risks: DeepSeek has no documented API zero-retention guarantee and its context cache is on by default. The in-memory boundary is not safe for production multi-instance quotas. Database RPC, rate card, config storage, RLS verification, and deployment evidence remain outstanding.
 - Rollback or forward-fix path: revert the single slice commit; the deployed mock gateway is unaffected. Forward integration should add budget/audit/consent/privacy gates before any secret loader or provider invocation.
 - Blockers: real invocation remains deliberately blocked by missing secret, default-off feature flag, zero budget, absent audit/quota/router gates, and required privacy approval.
 - Next task prerequisites: commander review and integration; later explicit user approval for key configuration and a separately reviewed real-call slice.
