@@ -1,0 +1,58 @@
+{
+  "account": {
+    "display": "grid",
+    "gridTemplateColumns": "250px",
+    "height": 984.5521240234376,
+    "width": 282,
+    "x": 16,
+    "y": 67
+  },
+  "bodyGrid": {
+    "display": "grid",
+    "gridTemplateColumns": "282px",
+    "height": 1360.59375,
+    "width": 314,
+    "x": 0,
+    "y": 0
+  },
+  "hero": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 348.9895935058594,
+    "width": 250,
+    "x": 32,
+    "y": 99
+  },
+  "mobileTools": {
+    "display": "grid",
+    "gridTemplateColumns": "repeat(2, minmax(0px, 1fr))",
+    "height": 0,
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "panel": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 507.5625,
+    "width": 250,
+    "x": 32,
+    "y": 479.9895935058594
+  },
+  "scroll": {
+    "height": 1361,
+    "width": 314
+  },
+  "siteHeader": {
+    "display": "flex",
+    "gridTemplateColumns": "none",
+    "height": 62,
+    "width": 282,
+    "x": 16,
+    "y": 0
+  },
+  "viewport": {
+    "height": 740,
+    "width": 320
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "account": {
+    "display": "grid",
+    "gridTemplateColumns": "608px 416px",
+    "height": 760,
+    "hidden": false,
+    "width": 1240,
+    "x": 145,
+    "y": 112.71875
+  },
+  "authState": "ready",
+  "bodyGrid": {
+    "display": "grid",
+    "gridTemplateColumns": "1500px",
+    "height": 1144.15625,
+    "hidden": false,
+    "width": 1500,
+    "x": 15,
+    "y": 0
+  },
+  "center": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 760,
+    "hidden": false,
+    "width": 1500,
+    "x": 15,
+    "y": 112.71875
+  },
+  "footer": {
+    "display": "grid",
+    "gridTemplateColumns": "1362.9px 113.104px",
+    "height": 149.95834350585938,
+    "hidden": false,
+    "width": 1500,
+    "x": 15,
+    "y": 930.1979370117188
+  },
+  "hero": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 351.2708435058594,
+    "hidden": false,
+    "width": 608,
+    "x": 193,
+    "y": 313.0833435058594
+  },
+  "left": {
+    "display": "none",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "hidden": false,
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "panel": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 499.8125,
+    "hidden": false,
+    "width": 416,
+    "x": 921,
+    "y": 238.8125
+  },
+  "right": {
+    "display": "none",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "hidden": false,
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "scroll": {
+    "height": 1144,
+    "width": 1530
+  },
+  "siteHeader": {
+    "display": "flex",
+    "gridTemplateColumns": "none",
+    "height": 83.71875,
+    "hidden": false,
+    "width": 1240,
+    "x": 145,
+    "y": 24
+  },
+  "viewport": {
+    "height": 1000,
+    "width": 1536
+  }
+}

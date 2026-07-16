@@ -1,0 +1,143 @@
+{
+  "account": {
+    "display": "grid",
+    "gridTemplateColumns": "305.333px",
+    "height": 940.3958740234376,
+    "hidden": false,
+    "overflowX": "visible",
+    "width": 337.3333435058594,
+    "x": 16,
+    "y": 72.66667175292969
+  },
+  "bodyGrid": {
+    "display": "grid",
+    "gridTemplateColumns": "337.333px",
+    "height": 1392.104248046875,
+    "hidden": false,
+    "overflowX": "visible",
+    "width": 369.3333435058594,
+    "x": 0,
+    "y": 0
+  },
+  "center": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 1006.0625,
+    "hidden": false,
+    "overflowX": "clip",
+    "width": 337.3333435058594,
+    "x": 16,
+    "y": 72
+  },
+  "controls": [
+    {
+      "height": 0,
+      "tag": "INPUT",
+      "text": "",
+      "type": "hidden",
+      "width": 0
+    },
+    {
+      "height": 52.34375,
+      "tag": "INPUT",
+      "text": "",
+      "type": "email",
+      "width": 259.2083435058594
+    },
+    {
+      "height": 52.34375,
+      "tag": "INPUT",
+      "text": "",
+      "type": "password",
+      "width": 259.2083435058594
+    },
+    {
+      "height": 44.34375,
+      "tag": "BUTTON",
+      "text": "显示",
+      "type": "button",
+      "width": 54.39583587646485
+    },
+    {
+      "height": 52.67708587646485,
+      "tag": "BUTTON",
+      "text": "登录",
+      "type": "submit",
+      "width": 259.2083435058594
+    },
+    {
+      "height": 25.447917938232425,
+      "tag": "A",
+      "text": "创建新账户",
+      "type": null,
+      "width": 68.80208587646484
+    },
+    {
+      "height": 25.447917938232425,
+      "tag": "A",
+      "text": "忘记密码",
+      "type": null,
+      "width": 55.04166793823242
+    }
+  ],
+  "hero": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 323.38543701171875,
+    "hidden": false,
+    "overflowX": "visible",
+    "width": 305.3333435058594,
+    "x": 32,
+    "y": 104.66667175292967
+  },
+  "left": {
+    "display": "none",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "hidden": false,
+    "overflowX": "visible",
+    "width": 0,
+    "x": 0,
+    "y": 0
+  },
+  "panel": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 489.0104370117187,
+    "hidden": false,
+    "overflowX": "visible",
+    "width": 305.3333435058594,
+    "x": 32,
+    "y": 460.0520935058594
+  },
+  "ready": "true",
+  "right": {
+    "display": "flex",
+    "gridTemplateColumns": "none",
+    "height": 0,
+    "hidden": false,
+    "overflowX": "visible",
+    "width": 337.3333435058594,
+    "x": 16,
+    "y": 1083.0625
+  },
+  "scroll": {
+    "height": 1448,
+    "width": 369
+  },
+  "status": {
+    "display": "block",
+    "gridTemplateColumns": "none",
+    "height": 21.59375,
+    "hidden": false,
+    "overflowX": "visible",
+    "width": 259.2083435058594,
+    "x": 55.0625,
+    "y": 904.40625
+  },
+  "theme": "light",
+  "viewport": {
+    "height": 812,
+    "width": 375
+  }
+}
