@@ -72,6 +72,7 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
       class={workspace ? "account-page workspace-page" : "account-page auth-page"}
       data-account-page
       data-account-mode={mode}
+      data-auth-state="loading"
       data-workspace-section={workspace ? workspaceView : undefined}
       data-supabase-url={supabaseUrl}
       data-supabase-anon-key={supabaseAnonKey}
@@ -172,7 +173,12 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
         )}
       </header>
 
-      <section class="account-panel" data-auth-panel aria-labelledby="account-panel-title">
+      <section
+        class="account-panel"
+        data-auth-panel
+        aria-labelledby="account-panel-title"
+        aria-busy="true"
+      >
         <div class="account-panel-heading">
           <p class="account-kicker">{workspace ? "ACCESS" : authView.toUpperCase()}</p>
           <h2 id="account-panel-title">
@@ -186,6 +192,14 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                     ? "设置新密码"
                     : "登录"}
           </h2>
+        </div>
+
+        <div class="account-auth-loading" data-auth-loading role="status" aria-live="polite">
+          <span class="account-auth-loading-mark" aria-hidden="true" />
+          <p>
+            <strong>正在确认登录状态</strong>
+            <span>登录、注册和找回入口会在连接完成后保持在原位。</span>
+          </p>
         </div>
 
         {(workspace || authView === "signin") && (
