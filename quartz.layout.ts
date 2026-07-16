@@ -1,9 +1,14 @@
-import { PageLayout, SharedLayout } from "./quartz/cfg";
-import * as Component from "./quartz/components";
+import { PageLayout, SharedLayout } from "./quartz/cfg"
+import * as Component from "./quartz/components"
 
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
-  header: [Component.Masthead(), Component.PrimaryNav(), Component.Search()],
+  header: [
+    Component.Masthead(),
+    Component.PrimaryNav(),
+    Component.Search(),
+    Component.AccountMenu(),
+  ],
   afterBody: [
     Component.RevisionHistory(),
     Component.CitationActions(),
@@ -22,7 +27,7 @@ export const sharedPageComponents: SharedLayout = {
       Quartz: "https://quartz.jzhao.xyz",
     },
   }),
-};
+}
 
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
@@ -46,32 +51,50 @@ export const defaultContentPageLayout: PageLayout = {
       }),
     ),
   ],
-  right: [
-    Component.DesktopOnly(Component.TableOfContents()),
-    Component.Backlinks(),
-  ],
-};
+  right: [Component.DesktopOnly(Component.TableOfContents()), Component.Backlinks()],
+}
+
+const outsideAccountSurface = (slug = "") =>
+  !/^(account(?:\/|$)|workspace(?:\/|$)|knowledge(?:\/|$))/.test(slug)
 
 export const defaultListPageLayout: PageLayout = {
   beforeBody: [
-    Component.Breadcrumbs(),
-    Component.ArticleTitle(),
-    Component.ContentMeta(),
-  ],
-  left: [
-    Component.ReadingTools(),
-    Component.DesktopOnly(
-      Component.Explorer({
-        title: "知识目录",
-        folderDefaultState: "collapsed",
-      }),
-    ),
-  ],
-  right: [
-    Component.RecentNotes({
-      title: "🕐 最近更新",
-      limit: 8,
-      showTags: false,
+    Component.ConditionalRender({
+      component: Component.Breadcrumbs(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
+    Component.ConditionalRender({
+      component: Component.ArticleTitle(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
+    Component.ConditionalRender({
+      component: Component.ContentMeta(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
     }),
   ],
-};
+  left: [
+    Component.ConditionalRender({
+      component: Component.ReadingTools(),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
+    Component.ConditionalRender({
+      component: Component.DesktopOnly(
+        Component.Explorer({
+          title: "知识目录",
+          folderDefaultState: "collapsed",
+        }),
+      ),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
+  ],
+  right: [
+    Component.ConditionalRender({
+      component: Component.RecentNotes({
+        title: "🕐 最近更新",
+        limit: 8,
+        showTags: false,
+      }),
+      condition: (page) => outsideAccountSurface(page.fileData.slug),
+    }),
+  ],
+}

@@ -14,6 +14,10 @@
   gap: var(--space-7);
   align-items: start;
 
+  > * {
+    min-inline-size: 0;
+  }
+
   h2 {
     margin: var(--space-1) 0 var(--space-2);
     font-family: var(--font-family-display);
@@ -37,6 +41,7 @@
 
 .correction-disclosure {
   border-block-start: var(--article-rule);
+  min-inline-size: 0;
 
   summary {
     display: flex;
@@ -47,6 +52,9 @@
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
     list-style: none;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
 
     &::-webkit-details-marker {
       display: none;

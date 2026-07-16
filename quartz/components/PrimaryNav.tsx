@@ -6,6 +6,7 @@ import style from "./styles/primaryNav.scss"
 import script from "./scripts/primaryNav.inline"
 
 const navItems = [
+  { label: "公开知识", slug: "knowledge" },
   { label: "主题", slug: "topics" },
   { label: "学习路径", slug: "paths" },
   { label: "知识地图", slug: "map" },
@@ -71,7 +72,7 @@ const PrimaryNav: QuartzComponent = ({ fileData, displayClass }: QuartzComponent
           </button>
         </div>
         <NavLinks currentSlug={currentSlug} compact />
-        <p class="primary-nav-dialog-note">从主题进入一片知识，或沿一条路径继续学习。</p>
+        <p class="primary-nav-dialog-note">浏览他人主动分享的知识，或从主题和路径继续探索。</p>
       </dialog>
     </nav>
   )
