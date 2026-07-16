@@ -21,6 +21,8 @@
 - Added the dormant A20 `AiQuotaAuditBoundary` and `GuardedAiProvider` control plane with an atomic in-memory reference implementation.
 - Enforced site/user opt-in, private/unknown scope rejection, zero/monthly budget, daily request, concurrency, conservative reservation, and accounting-finalization gates before provider execution.
 - Ensured success, failure, and blocked audit records contain hashes and bounded metadata only, never prompts, bodies, outputs, or raw upstream errors.
+- Replaced caller-supplied owner/scope/provider input with an injected server authority that verifies context and constructs the provider request; only a proven public publication snapshot is eligible for DeepSeek.
+- Made missing provider token usage a conservative `usage_missing` accounting failure charged at the reserved estimate.
 
 ## Changed files and scope
 
@@ -30,16 +32,16 @@
 
 ## Evidence
 
-- Commands run and raw result summary: bundled Node `tsc --noEmit` passed; A20 focused tests passed 16/16; DeepSeek focused tests passed 9/9; final full Quartz suite passed 170/170; `git diff --check` passed.
+- Commands run and raw result summary: bundled Node `tsc --noEmit` passed; post-review A20 focused tests passed 18/18. Before this follow-up, DeepSeek focused tests passed 9/9, full Quartz suite passed 170/170, and `git diff --check` passed; root owns the next full-suite run.
 - Static build: final A20 candidate passed with 284 Markdown inputs and 1046 emitted files. Existing untracked-date, LaTeX Unicode, and Node deprecation warnings remain non-blocking.
 - UI evidence (viewport, theme, state, screenshot path/diff): not applicable; no UI was changed.
-- Security evidence (owner / other user / anonymous): all tests are offline. Provider tests use injected fake fetch. A20 tests prove default-off/zero-budget, malformed-policy fail-closed, private/unknown rejection before invocation, atomic concurrency, daily/monthly gates, trusted cost estimation, conservative accounting, all terminal audit states, and absence of raw input/output/error content from audit records.
+- Security evidence (owner / other user / anonymous): all tests are offline. Provider tests use injected fake fetch. A20 tests prove default-off/zero-budget, authority/JWT-context failure, ignored body owner/scope fields, publication-snapshot proof, private/unknown rejection before invocation, atomic concurrency, daily/monthly gates, trusted cost estimation, missing-usage/conservative accounting, all terminal audit states, and absence of raw input/output/error content from audit records.
 - Migration or Edge Function deployed to production: **No**.
 
 ## Decisions and contracts
 
 - Decision entries affected: implements a dormant provider seam under D-005 without enabling paid/model behavior.
-- Contract changes requested: production integration must replace the in-memory reference with a service-role-only atomic reserve/finalize RPC and a version-controlled worst-case rate card. Capability metadata is enforced by the dormant guard, but no live route uses it yet.
+- Contract changes requested: production integration must implement `AiRuntimeContextAuthority` using verified JWT + ownership + publication snapshot reads, replace the in-memory reference with a service-role-only atomic reserve/finalize RPC, and add a version-controlled worst-case rate card. No live route uses these controls yet.
 - Types, fixtures, and tests synchronized: provider types and 9 fake-fetch tests are included; no database fixture or migration was needed.
 
 ## Risk and recovery

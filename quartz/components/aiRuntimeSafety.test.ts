@@ -14,8 +14,13 @@ import {
   type AiRuntimePolicy,
   type AiQuotaAuditBoundary,
   type AiFinalizeRequest,
+  type AiRuntimeContextAuthority,
+  type AiVerifiedRuntimeContext,
   type GuardedAiRequest,
 } from "../../supabase/functions/_shared/ai-runtime-safety"
+
+const OWNER_ID = "11111111-1111-4111-8111-111111111111"
+const DOCUMENT_ID = "22222222-2222-4222-8222-222222222222"
 
 const openPolicy = (): AiRuntimePolicy => ({
   siteLive: true,
@@ -67,10 +72,25 @@ class FakeProvider implements AiProvider {
 }
 
 const guardedRequest = (overrides: Partial<GuardedAiRequest> = {}): GuardedAiRequest => ({
-  ownerId: "11111111-1111-4111-8111-111111111111",
-  contentScope: "public",
-  providerRequest: { messages: [{ role: "user", content: "public input" }] },
+  authorization: "Bearer verified-test-token",
+  documentId: DOCUMENT_ID,
   ...overrides,
+})
+
+const verifiedContext = (
+  overrides: Partial<AiVerifiedRuntimeContext> = {},
+): AiVerifiedRuntimeContext => ({
+  ownerId: OWNER_ID,
+  contentScope: "public",
+  publicSource: "publication_snapshot",
+  providerRequest: { messages: [{ role: "user", content: "public snapshot input" }] },
+  ...overrides,
+})
+
+const authorityFor = (
+  resolve: () => AiVerifiedRuntimeContext = () => verifiedContext(),
+): AiRuntimeContextAuthority => ({
+  resolve: async () => resolve(),
 })
 
 const setup = (
@@ -81,11 +101,13 @@ const setup = (
     model: string
     providerRequest: AiProviderRequest
   }) => number = () => 1,
+  contextAuthority: AiRuntimeContextAuthority = authorityFor(),
 ) => {
   const boundary = new InMemoryAiQuotaAuditBoundary({ policyForOwner: () => policy })
   const guarded = new GuardedAiProvider({
     provider,
     quotaAudit: boundary,
+    contextAuthority,
     capability: "rewrite",
     model: "deepseek-v4-flash",
     promptVersion: "v1",
@@ -115,14 +137,62 @@ test("AI runtime is fail-closed when the site flag is off and budget is zero", a
   assert.equal(boundary.getAuditRecords()[0]?.status, "blocked")
 })
 
-test("unverified owner identity is rejected without polluting audit storage", async () => {
-  const { boundary, guarded, provider } = setup(openPolicy())
+test("authority failure or invalid verified identity is rejected without audit pollution", async () => {
+  for (const authority of [
+    authorityFor(() => {
+      throw new Error("JWT verification failed")
+    }),
+    authorityFor(() => verifiedContext({ ownerId: "attacker-body-owner" })),
+    authorityFor(() => verifiedContext({ contentScope: "unclassified" as "unknown" })),
+    authorityFor(() => verifiedContext({ publicSource: null })),
+  ]) {
+    const { boundary, guarded, provider } = setup(
+      openPolicy(),
+      undefined,
+      undefined,
+      undefined,
+      authority,
+    )
+    await assert.rejects(
+      guarded.generateText(guardedRequest()),
+      (error: unknown) => error instanceof Error && error.name === "AiRuntimeAuthorityError",
+    )
+    assert.equal(provider.calls, 0)
+    assert.equal(boundary.getAuditRecords().length, 0)
+  }
+})
+
+test("body-like owner and scope fields are ignored in favor of authority context", async () => {
+  let authorityInput: GuardedAiRequest | null = null
+  const authority: AiRuntimeContextAuthority = {
+    resolve: async (request) => {
+      authorityInput = request
+      return verifiedContext({ contentScope: "private", publicSource: null })
+    },
+  }
+  const { boundary, guarded, provider } = setup(
+    openPolicy(),
+    undefined,
+    undefined,
+    undefined,
+    authority,
+  )
+  const pollutedRuntimeObject = {
+    ...guardedRequest(),
+    ownerId: "33333333-3333-4333-8333-333333333333",
+    contentScope: "public",
+  } as GuardedAiRequest
+
   await assert.rejects(
-    guarded.generateText(guardedRequest({ ownerId: "request-body-owner" })),
-    (error: unknown) => error instanceof Error && error.name === "AiRuntimeIdentityError",
+    guarded.generateText(pollutedRuntimeObject),
+    (error: unknown) =>
+      error instanceof AiRuntimeBlockedError &&
+      error.code === "provider_private_content_not_allowed",
   )
   assert.equal(provider.calls, 0)
-  assert.equal(boundary.getAuditRecords().length, 0)
+  assert.deepEqual(authorityInput, guardedRequest())
+  assert.equal(boundary.getAuditRecords()[0]?.ownerId, OWNER_ID)
+  assert.equal(boundary.getAuditRecords()[0]?.status, "blocked")
 })
 
 test("AI runtime independently enforces user opt-in and zero monthly budget", async () => {
@@ -155,7 +225,7 @@ test("malformed runtime policy values fail closed instead of bypassing quota che
   }
 })
 
-test("policy lookup failure and invalid runtime content scope are audited fail-closed", async () => {
+test("policy lookup failure is audited fail-closed after authority verification", async () => {
   const provider = new FakeProvider(async () => result())
   const brokenBoundary = new InMemoryAiQuotaAuditBoundary({
     policyForOwner: () => {
@@ -165,6 +235,7 @@ test("policy lookup failure and invalid runtime content scope are audited fail-c
   const brokenPolicyRoute = new GuardedAiProvider({
     provider,
     quotaAudit: brokenBoundary,
+    contextAuthority: authorityFor(),
     capability: "rewrite",
     model: "deepseek-v4-flash",
     promptVersion: "v1",
@@ -176,26 +247,29 @@ test("policy lookup failure and invalid runtime content scope are audited fail-c
     (error: unknown) =>
       error instanceof AiRuntimeBlockedError && error.code === "invalid_runtime_policy",
   )
-
-  const { boundary, guarded } = setup(openPolicy(), provider)
-  await assert.rejects(
-    guarded.generateText(guardedRequest({ contentScope: "unclassified" as "unknown" })),
-    (error: unknown) =>
-      error instanceof AiRuntimeBlockedError && error.code === "content_scope_unknown",
-  )
   assert.equal(provider.calls, 0)
   assert.equal(brokenBoundary.getAuditRecords()[0]?.status, "blocked")
-  assert.equal(boundary.getAuditRecords()[0]?.status, "blocked")
 })
 
 test("DeepSeek route rejects private and unknown scope before provider execution", async () => {
-  const { boundary, guarded, provider } = setup(openPolicy())
+  let resolvedScope: "private" | "unknown" = "private"
+  const authority = authorityFor(() =>
+    verifiedContext({ contentScope: resolvedScope, publicSource: null }),
+  )
+  const { boundary, guarded, provider } = setup(
+    openPolicy(),
+    undefined,
+    undefined,
+    undefined,
+    authority,
+  )
   for (const [contentScope, code] of [
     ["private", "provider_private_content_not_allowed"],
     ["unknown", "content_scope_unknown"],
   ] as const) {
+    resolvedScope = contentScope
     await assert.rejects(
-      guarded.generateText(guardedRequest({ contentScope })),
+      guarded.generateText(guardedRequest()),
       (error: unknown) => error instanceof AiRuntimeBlockedError && error.code === code,
     )
   }
@@ -270,6 +344,10 @@ test("monthly budget includes committed cost before another reservation", async 
 
 test("trusted estimator controls reservation and invalid estimates are audited blocked", async () => {
   let estimatorCalls = 0
+  let authorizedProviderRequest: AiProviderRequest = {
+    messages: [{ role: "user", content: "snapshot input" }],
+    maxTokens: 100,
+  }
   const { boundary, guarded, provider } = setup(
     openPolicy(),
     undefined,
@@ -278,12 +356,10 @@ test("trusted estimator controls reservation and invalid estimates are audited b
       estimatorCalls += 1
       return providerRequest.maxTokens === 100 ? 4 : Number.NaN
     },
+    authorityFor(() => verifiedContext({ providerRequest: authorizedProviderRequest })),
   )
-  await guarded.generateText(
-    guardedRequest({
-      providerRequest: { messages: [{ role: "user", content: "input" }], maxTokens: 100 },
-    }),
-  )
+  await guarded.generateText(guardedRequest())
+  authorizedProviderRequest = { messages: [{ role: "user", content: "snapshot input" }] }
   await assert.rejects(
     guarded.generateText(guardedRequest()),
     (error: unknown) =>
@@ -295,17 +371,21 @@ test("trusted estimator controls reservation and invalid estimates are audited b
 })
 
 test("input hash covers generation controls without storing their content", async () => {
-  const { boundary, guarded } = setup(openPolicy())
-  await guarded.generateText(
-    guardedRequest({
-      providerRequest: { messages: [{ role: "user", content: "same" }], maxTokens: 10 },
-    }),
+  let maxTokens = 10
+  const { boundary, guarded } = setup(
+    openPolicy(),
+    undefined,
+    undefined,
+    undefined,
+    authorityFor(() =>
+      verifiedContext({
+        providerRequest: { messages: [{ role: "user", content: "same" }], maxTokens },
+      }),
+    ),
   )
-  await guarded.generateText(
-    guardedRequest({
-      providerRequest: { messages: [{ role: "user", content: "same" }], maxTokens: 20 },
-    }),
-  )
+  await guarded.generateText(guardedRequest())
+  maxTokens = 20
+  await guarded.generateText(guardedRequest())
   const [first, second] = boundary.getAuditRecords()
   assert.notEqual(first?.inputHash, second?.inputHash)
 })
@@ -319,10 +399,18 @@ test("success, failure and blocked requests all finish with sanitized audit meta
     if (attempt === 2) throw new Error(sensitiveError)
     return result("PRIVATE-OUTPUT-DO-NOT-STORE")
   })
-  const { boundary, guarded } = setup({ ...openPolicy(), dailyRequestLimit: 2 }, provider)
-  const request = guardedRequest({
-    providerRequest: { messages: [{ role: "user", content: sensitiveInput }] },
-  })
+  const { boundary, guarded } = setup(
+    { ...openPolicy(), dailyRequestLimit: 2 },
+    provider,
+    undefined,
+    undefined,
+    authorityFor(() =>
+      verifiedContext({
+        providerRequest: { messages: [{ role: "user", content: sensitiveInput }] },
+      }),
+    ),
+  )
+  const request = guardedRequest()
 
   await guarded.generateText(request)
   await assert.rejects(guarded.generateText(request), /PRIVATE-PROVIDER-DETAIL/)
@@ -361,6 +449,28 @@ test("normalized provider failures retain only stable error codes", async () => 
   const record = boundary.getAuditRecords()[0]
   assert.equal(record?.status, "failed")
   assert.equal(record?.errorCode, "rate_limited")
+})
+
+test("missing provider usage fails accounting and conservatively charges reservation", async () => {
+  const provider = new FakeProvider(async () => ({ ...result(), usage: null }))
+  const { boundary, guarded } = setup(
+    openPolicy(),
+    provider,
+    () => 0,
+    () => 7,
+  )
+  await assert.rejects(
+    guarded.generateText(guardedRequest()),
+    (error: unknown) =>
+      error instanceof Error &&
+      error.name === "AiRuntimeAccountingError" &&
+      (error as { code?: unknown }).code === "usage_missing",
+  )
+  assert.equal(provider.calls, 1)
+  const record = boundary.getAuditRecords()[0]
+  assert.equal(record?.status, "failed")
+  assert.equal(record?.costCents, 7)
+  assert.equal(record?.errorCode, "usage_missing")
 })
 
 test("cost calculation failure conservatively charges the reservation", async () => {
@@ -415,6 +525,7 @@ test("a false success-finalize cannot reverse a completed success to failed", as
   const guarded = new GuardedAiProvider({
     provider,
     quotaAudit: boundary,
+    contextAuthority: authorityFor(),
     capability: "rewrite",
     model: "deepseek-v4-flash",
     promptVersion: "v1",

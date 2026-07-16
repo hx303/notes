@@ -32,7 +32,11 @@ supabase functions deploy ai-write
 
 调用方不能提交自己的费用估算。构造控制层时注入的 estimator 必须是受版本控制的服务端 rate card，并以模型、最大输入 token 和 `maxTokens` 计算最坏情况费用上界。若实际费用超过 reservation，本次调用记为 accounting failure，但审计仍记录完整实际费用，避免后续错误放行。
 
-`ownerId` 必须来自已验证 JWT，`contentScope` 必须来自服务端查询得到的文档可见性；两者都不能取自请求 body。控制层会拒绝非 UUID owner 且不写入污染审计，但生产路由仍必须先完成身份与所有权验证。
+`GuardedAiProvider` 不接受调用方提供的 `ownerId`、`contentScope` 或原始 provider prompt。它只把 HTTP Authorization header 与 route `documentId` 交给注入的 `AiRuntimeContextAuthority`；生产 authority 必须验证 JWT、用户身份、文档所有权和内容来源，并用服务端读取的数据构造 provider request。请求 body 中伪造的 owner、visibility 或 `public` 标签没有决定权。
+
+只有服务端读取并确认的当前公开 publication snapshot 可以返回 `contentScope=public` 与 `publicSource=publication_snapshot`。private/unlisted draft、自由输入、无法证明来自该 snapshot 的 selection/context 一律解析为 `private` 或 `unknown`，DeepSeek 会在 provider 调用前阻断。authority 异常、非法 owner、非法 scope 或缺少 snapshot 证明时，不调用 provider，也不写入可能被污染的审计。
+
+Provider 成功响应如果缺少 token usage，同样不会按零成本放行：控制层按 reservation 保守记为 failed/`usage_missing` 并抛出 accounting error。
 
 这仍是准备代码：没有读取配置表或 Secret，没有连接 `ai-write`，也没有任何网络调用。生产原子 RPC、rate card、站点配置存储和部署验证仍是后续 A20 切片。
 

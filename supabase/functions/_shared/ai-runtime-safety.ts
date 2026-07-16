@@ -97,10 +97,18 @@ export class AiRuntimeBlockedError extends Error {
 }
 
 export class AiRuntimeAccountingError extends Error {
-  readonly code: "cost_calculation_failed" | "cost_exceeded_reservation" | "audit_finalize_failed"
+  readonly code:
+    | "cost_calculation_failed"
+    | "cost_exceeded_reservation"
+    | "usage_missing"
+    | "audit_finalize_failed"
 
   constructor(
-    code: "cost_calculation_failed" | "cost_exceeded_reservation" | "audit_finalize_failed",
+    code:
+      | "cost_calculation_failed"
+      | "cost_exceeded_reservation"
+      | "usage_missing"
+      | "audit_finalize_failed",
   ) {
     super("The AI request could not complete its server-side accounting safely.")
     this.name = "AiRuntimeAccountingError"
@@ -112,6 +120,13 @@ export class AiRuntimeIdentityError extends Error {
   constructor() {
     super("The AI request did not have a verified owner identity.")
     this.name = "AiRuntimeIdentityError"
+  }
+}
+
+export class AiRuntimeAuthorityError extends Error {
+  constructor() {
+    super("The AI request could not establish an authoritative server-side content context.")
+    this.name = "AiRuntimeAuthorityError"
   }
 }
 
@@ -317,14 +332,25 @@ export class InMemoryAiQuotaAuditBoundary implements AiQuotaAuditBoundary {
 }
 
 export interface GuardedAiRequest {
+  authorization: string
+  documentId: string | null
+}
+
+export interface AiVerifiedRuntimeContext {
   ownerId: string
   contentScope: AiContentScope
+  publicSource: "publication_snapshot" | null
   providerRequest: AiProviderRequest
+}
+
+export interface AiRuntimeContextAuthority {
+  resolve(request: GuardedAiRequest): Promise<AiVerifiedRuntimeContext>
 }
 
 interface GuardedAiProviderOptions {
   provider: AiProvider
   quotaAudit: AiQuotaAuditBoundary
+  contextAuthority: AiRuntimeContextAuthority
   capability: string
   model: string
   promptVersion: string
@@ -351,6 +377,7 @@ const safeProviderErrorCode = (error: unknown) =>
 export class GuardedAiProvider {
   private readonly provider: AiProvider
   private readonly quotaAudit: AiQuotaAuditBoundary
+  private readonly contextAuthority: AiRuntimeContextAuthority
   private readonly capability: string
   private readonly model: string
   private readonly promptVersion: string
@@ -364,6 +391,7 @@ export class GuardedAiProvider {
   constructor(options: GuardedAiProviderOptions) {
     this.provider = options.provider
     this.quotaAudit = options.quotaAudit
+    this.contextAuthority = options.contextAuthority
     if (!/^[a-z0-9_-]{1,60}$/u.test(options.capability)) {
       throw new Error("AI capability must be a stable server-side identifier.")
     }
@@ -382,14 +410,30 @@ export class GuardedAiProvider {
   }
 
   async generateText(request: GuardedAiRequest): Promise<AiProviderResult> {
-    if (!isUuid(request.ownerId)) throw new AiRuntimeIdentityError()
-    const inputHash = await hashProviderRequest(request.providerRequest)
+    let context: AiVerifiedRuntimeContext
+    try {
+      context = await this.contextAuthority.resolve({
+        authorization: request.authorization,
+        documentId: request.documentId,
+      })
+    } catch {
+      throw new AiRuntimeAuthorityError()
+    }
+    if (!isUuid(context.ownerId)) throw new AiRuntimeAuthorityError()
+    if (!(["public", "private", "unknown"] as readonly unknown[]).includes(context.contentScope)) {
+      throw new AiRuntimeAuthorityError()
+    }
+    if (context.contentScope === "public" && context.publicSource !== "publication_snapshot") {
+      throw new AiRuntimeAuthorityError()
+    }
+
+    const inputHash = await hashProviderRequest(context.providerRequest)
     let preflightBlockCode: "cost_estimation_failed" | undefined
     let estimatedCostCents = 1
     try {
       const estimate = this.estimateCostCents({
         model: this.model,
-        providerRequest: request.providerRequest,
+        providerRequest: context.providerRequest,
       })
       if (!Number.isInteger(estimate) || estimate <= 0)
         preflightBlockCode = "cost_estimation_failed"
@@ -398,13 +442,13 @@ export class GuardedAiProvider {
       preflightBlockCode = "cost_estimation_failed"
     }
     const reservation = await this.quotaAudit.reserve({
-      ownerId: request.ownerId,
+      ownerId: context.ownerId,
       capability: this.capability,
       provider: this.provider.capabilities.provider,
       model: this.model,
       promptVersion: this.promptVersion,
       inputHash,
-      contentScope: request.contentScope,
+      contentScope: context.contentScope,
       providerAllowsPrivateContent: this.provider.capabilities.allowsPrivateContent,
       estimatedCostCents,
       preflightBlockCode,
@@ -416,11 +460,11 @@ export class GuardedAiProvider {
     const startedAt = this.nowMs()
     let result: AiProviderResult
     try {
-      result = await this.provider.generateText(request.providerRequest)
+      result = await this.provider.generateText(context.providerRequest)
     } catch (error) {
       const finalized = await this.safeFinalize({
         runId: reservation.runId,
-        ownerId: request.ownerId,
+        ownerId: context.ownerId,
         status: "failed",
         inputTokens: null,
         outputTokens: null,
@@ -434,6 +478,23 @@ export class GuardedAiProvider {
       throw error
     }
 
+    if (!result.usage) {
+      const finalized = await this.safeFinalize({
+        runId: reservation.runId,
+        ownerId: context.ownerId,
+        status: "failed",
+        inputTokens: null,
+        outputTokens: null,
+        cacheHitTokens: null,
+        cacheMissTokens: null,
+        costCents: estimatedCostCents,
+        latencyMs: Math.max(0, Math.round(this.nowMs() - startedAt)),
+        errorCode: "usage_missing",
+      })
+      if (!finalized) throw new AiRuntimeAccountingError("audit_finalize_failed")
+      throw new AiRuntimeAccountingError("usage_missing")
+    }
+
     let costCents: number
     try {
       costCents = this.calculateCostCents(result)
@@ -441,7 +502,7 @@ export class GuardedAiProvider {
     } catch {
       const finalized = await this.safeFinalize({
         runId: reservation.runId,
-        ownerId: request.ownerId,
+        ownerId: context.ownerId,
         status: "failed",
         inputTokens: result.usage?.promptTokens ?? null,
         outputTokens: result.usage?.completionTokens ?? null,
@@ -458,7 +519,7 @@ export class GuardedAiProvider {
     if (costCents > estimatedCostCents) {
       const finalized = await this.safeFinalize({
         runId: reservation.runId,
-        ownerId: request.ownerId,
+        ownerId: context.ownerId,
         status: "failed",
         inputTokens: result.usage?.promptTokens ?? null,
         outputTokens: result.usage?.completionTokens ?? null,
@@ -474,7 +535,7 @@ export class GuardedAiProvider {
 
     const finalized = await this.safeFinalize({
       runId: reservation.runId,
-      ownerId: request.ownerId,
+      ownerId: context.ownerId,
       status: "succeeded",
       inputTokens: result.usage?.promptTokens ?? null,
       outputTokens: result.usage?.completionTokens ?? null,
@@ -487,7 +548,7 @@ export class GuardedAiProvider {
     if (!finalized) {
       await this.safeFinalize({
         runId: reservation.runId,
-        ownerId: request.ownerId,
+        ownerId: context.ownerId,
         status: "failed",
         inputTokens: result.usage?.promptTokens ?? null,
         outputTokens: result.usage?.completionTokens ?? null,
