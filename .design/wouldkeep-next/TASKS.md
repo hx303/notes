@@ -10,7 +10,19 @@ Date: 2026-07-16
 - [ ] **N01 — 合并并固定新基线**：确认 PR #11 全绿后合并到 `main`，抓取 `origin/main` 并记录基线 SHA。 _Modifies: Git history; reuses: current AI foundation branch._
 - [ ] **N02 — 建立现实状态清单**：逐项对账代码、Supabase、Edge Functions、Vercel/Cloudflare、三份旧 TASKS 与线上行为，标记完成/部分/未部署/过期。 _Creates: `CURRENT_STATE.md`; reuses: existing design artifacts and deployed project._
 - [ ] **N03 — 建立持续协作规则**：在根目录写入构建、测试、安全、文件所有权、迁移和交接约束，确保后续代理不重复开发或越界部署。 _Creates: `AGENTS.md`; reuses: this orchestration plan._
-- [ ] **N04 — 建立第一波 Worktrees**：从新基线创建 integration、platform、workspace、public 四个 Worktree，确认每个目录干净且分支不重名。 _Creates: Git worktrees/branches; modifies no product code._
+- [ ] **N04 — 建立第一波 Worktrees**：从新基线创建 integration、reference-research、platform、workspace、public Worktree，确认每个目录干净且分支不重名；同时运行时保持“总指挥 + 研究 + 最多两个实施”。 _Creates: Git worktrees/branches; modifies no product code._
+- [ ] **N05 — 启动 5.6 Sol 总指挥制度**：根任务固定使用 `gpt-5.6-sol/xhigh`，由其维护状态、派工、研究裁决、文件所有权、集成和生产权限清单。 _Modifies: orchestration state only; reuses: this plan._
+
+## Reference Research / 常设优秀范例侦察
+
+- [ ] **E00 — 建立范例评估模板**：统一记录来源、访问日期、功能闭环、UI 模式、移动端、无障碍、隐私、许可、适合/不适合 wouldkeep 的部分。 _Agent: reference-research (`gpt-5.6-terra/high`); creates: `.design/reference-research/TEMPLATE.md`._
+- [ ] **E01 — 账户与新手流程范例简报**：对比至少 5 个成熟注册、验证、找回、个人资料和首次建库流程，给出一个主模式和两个辅助模式。 _Agent: reference-research; creates: `auth-onboarding.md`; informs: P03._
+- [ ] **E02 — 编辑器、DOCX/Markdown 导入与恢复范例简报**：研究导入预览、图片处理、自动保存、离线、冲突和版本恢复，核对可复用代码许可证。 _Agent: reference-research; creates: `editor-import-recovery.md`; informs: P04–P05._
+- [ ] **E03 — 标签、分类、链接与来源范例简报**：研究无代码知识组织、双向链接、来源编辑和可解释分类，避免要求用户输入内部标识。 _Agent: reference-research; creates: `knowledge-organization.md`; informs: P06/A23._
+- [ ] **E04 — 公开知识发现与建库方法范例简报**：研究数字花园、主题/路径、知识地图、最近生长、作者主页与模板教学。 _Agent: reference-research; creates: `public-discovery.md`; informs: P07–P09._
+- [ ] **E05 — AI 写作、RAG 与引用范例简报**：研究选区改写预览、整理收件箱、范围选择、引用核验、拒答、预算和隐私同意。 _Agent: reference-research; creates: `ai-assistance.md`; informs: A20–A24._
+- [ ] **E06 — Admin、发布与运行健康范例简报**：研究内容治理、成员角色、发布队列、构建失败恢复、审计和成本健康页。 _Agent: reference-research; creates: `admin-publishing-operations.md`; informs: P01–P02/R32._
+- [ ] **E07 — 总指挥范例裁决**：5.6 Sol 总指挥审查每份简报，只批准可追溯、适配且许可清楚的建议，并把选择写入对应实施任务。 _Agent: commander; modifies: task briefs, not product code. Depends on: E01–E06._
 
 ## Wave 1 / Core Product
 

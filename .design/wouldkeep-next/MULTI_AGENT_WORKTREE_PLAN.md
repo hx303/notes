@@ -2,7 +2,7 @@
 
 更新时间：2026-07-16  
 适用仓库：`https://github.com/hx303/notes`  
-目标：让新对话可以在不破坏现有成果的前提下，用一个总控代理和最多三个并行执行代理持续推进 wouldkeep。
+目标：让新对话可以在不破坏现有成果的前提下，由一个 `gpt-5.6-sol` 总指挥统筹，并让优秀范例侦察 Agent 与最多两个实施 Agent 并行推进 wouldkeep；范例调研阶段结束后可释放席位给第三个实施 Agent。
 
 ## 1. 交接时的真实状态
 
@@ -16,25 +16,31 @@
 
 ## 2. 总体组织方式
 
-采用“1 个总控 + 最多 3 个同时运行的独立代理”。每个执行代理独占一个 Git Worktree 和一个功能分支；总控代理只在集成 Worktree 合并、解决冲突、运行总验收和维护任务状态。
+采用“1 个总指挥 + 1 个优秀范例侦察 Agent + 最多 2 个同时运行的实施 Agent”。总指挥使用 `gpt-5.6-sol`，常驻根任务，负责战略、派工、取舍、集成和最终裁决。侦察 Agent 与每个实施 Agent 都独占 Git Worktree 和分支；侦察 Agent 只写研究简报，不直接修改产品代码。
 
 ```text
-总控 / 集成代理
-├── 执行代理 A：平台、安全、发布
-├── 执行代理 B：个人空间、编辑器、导入
-└── 执行代理 C：公开发现、内容与方法页
+总指挥：gpt-5.6-sol / xhigh
+├── 常设子 Agent R：优秀范例侦察与证据整理
+├── 轮值实施 Agent A：平台、安全、发布
+└── 轮值实施 Agent B：个人空间、编辑器、导入
 
-第一波合并后，再替换为：
-├── 执行代理 D：AI 写作、整理与知识问答
+第一组实施完成后，保留侦察 Agent，轮换为：
+├── 子 Agent R：为下一模块提前准备范例简报
+├── 轮值实施 Agent C：公开发现、内容与方法页
+└── 轮值实施 Agent D：AI 写作、整理与知识问答
+
+范例研究阶段结束并释放席位后，可同时运行：
 ├── 执行代理 E：内容迁移、永久 URL 与公开索引
-└── 执行代理 F：测试、无障碍、性能与发布演练
+├── 执行代理 F：测试、无障碍、性能与发布演练
+└── 独立终审 Agent（只审查，不实现）
 ```
 
-### 为什么不同时启动六个代理
+### 为什么采用轮值而不是同时启动全部代理
 
-- 当前协作环境通常只有四个并发席位，总控占一个，执行代理最多三个。
+- 当前协作环境通常只有四个并发席位：总指挥占一个，优秀范例侦察占一个，同时最多再运行两个实施 Agent。
 - `AccountPage.tsx`、`accountPage.inline.ts`、`accountPage.scss`、`FolderContent.tsx`、`quartz.layout.ts` 等文件是高冲突热点。
 - 第二波依赖第一波稳定的数据、编辑器和发布接口；过早并行只会制造返工。
+- 侦察 Agent 必须领先实施半个阶段产出研究简报；实施 Agent 不需要各自重复上网搜索同一批案例。
 
 ## 3. 职务与模型分工
 
@@ -42,7 +48,8 @@
 
 | 职务 | 首选模型与推理强度 | 主要职责 | 不负责 |
 | --- | --- | --- | --- |
-| 总控、架构与发布经理 | `gpt-5.6-sol`，`xhigh` | 现实对账、拆任务、分派、冲突决策、跨模块架构、安全门槛、最终合并 | 大批量机械改文件 |
+| 总指挥、架构与发布经理 | `gpt-5.6-sol`，`xhigh` | 常驻根任务；现实对账、拆任务、分派、研究结论裁决、冲突决策、跨模块架构、安全门槛、最终合并 | 大批量机械改文件；把自身实现交给自身终审 |
+| 优秀范例侦察与证据研究员 | `gpt-5.6-terra`，`high`；大批量初筛可用 `gpt-5.4-mini` | 搜集账户、编辑器、导入、知识组织、AI、公开发现、Admin/发布的成熟案例，核对官方文档与开源许可，产出可借鉴/不可照搬清单 | 直接修改产品代码；只凭截图下结论；复制无许可实现 |
 | 平台、安全与发布工程师 | `gpt-5.3-codex`，`xhigh` | Supabase schema/RLS/RPC/Edge Functions、发布任务、审计、预算与密钥边界 | 重新设计个人空间 UI |
 | 个人空间与编辑器工程师 | `gpt-5.4`，`high` | 小白工作流、编辑器、DOCX/Markdown 导入、图片、自动保存、冲突与移动端 | 修改生产密钥和跨账户策略 |
 | 公开发现与内容产品工程师 | `gpt-5.6-terra`，`high` | 首页、主题、路径、地图、最近生长、建库方法、公开主页与文案 | 数据库高权限操作 |
@@ -73,6 +80,7 @@ $workRoot = 'C:\Users\23012\Documents\Codex\2026-07-10\c-users-23012-desktop-wou
 
 git -C $repo fetch origin --prune
 git -C $repo worktree add -b agent/next-integration "$workRoot\integration" origin/main
+git -C $repo worktree add -b agent/next-reference-research "$workRoot\reference-research" agent/next-integration
 git -C $repo worktree add -b agent/next-platform "$workRoot\platform" agent/next-integration
 git -C $repo worktree add -b agent/next-workspace "$workRoot\workspace" agent/next-integration
 git -C $repo worktree add -b agent/next-public "$workRoot\public" agent/next-integration
@@ -92,6 +100,7 @@ git -C $repo worktree add -b agent/next-qa "$workRoot\qa" agent/next-integration
 
 - 集成分支：`agent/next-integration`。
 - 功能分支：`agent/next-<领域>`。
+- 范例研究分支：`agent/next-reference-research`，只允许修改 `.design/reference-research/**`。
 - 一个代理只写自己的 Worktree；不得跨 Worktree 修改文件。
 - 每个提交只表达一个可验收垂直切片，例如 `feat: add conflict-safe autosave`。
 - 执行代理先推送自己的分支并提交交接报告；总控代理审查后以 `--no-ff` 合并到集成分支。
@@ -102,6 +111,7 @@ git -C $repo worktree add -b agent/next-qa "$workRoot\qa" agent/next-integration
 
 | 文件/区域 | 唯一主要负责人 | 规则 |
 | --- | --- | --- |
+| `.design/reference-research/**` | 优秀范例侦察 Agent | 每份简报必须包含来源、访问日期、适配判断、风险、许可和明确建议；不存入来源网页的长篇复制内容 |
 | `supabase/migrations/**`、`supabase/functions/**` | 平台代理；第二波转交 AI 代理的 AI 专用文件 | 不修改已执行迁移；每项 RLS 必须有 owner/other/anonymous 测试 |
 | `AccountPage.tsx`、`accountPage.inline.ts`、`accountPage.scss` | 第一波仅个人空间代理 | 其他代理先建立新组件/API，不碰这三个热点 |
 | `content/workspace/**` | 个人空间代理；第二波 AI 代理只新增 `/organize/`、`/ask/` | 不同时编辑同一路由 |
@@ -123,6 +133,30 @@ git -C $repo worktree add -b agent/next-qa "$workRoot\qa" agent/next-integration
 - PR #11 合并到 `main`。
 - 根目录新增 `AGENTS.md`，写明构建/测试命令、文件所有权、安全边界和交接格式。
 - 形成新基线，任何代理都不再依据旧复选框重复开发。
+
+## 常设研究线：优秀范例侦察 Agent
+
+侦察 Agent 在第一批实施开始时同步启动，并始终领先实施任务半个阶段。每个研究主题输出到 `.design/reference-research/<topic>.md`，由总指挥批准后才能成为实施依据。
+
+优先研究顺序：
+
+1. 邮箱注册、验证、找回密码、个人资料和新手引导。
+2. Notion、Outline、Obsidian、AFFiNE、AppFlowy 等编辑/知识产品的工作区、导入、自动保存和冲突恢复模式。
+3. 标签、自动分类、双向链接、来源、版本和知识图谱。
+4. AI 写作预览、知识整理收件箱、RAG 范围选择、引用和拒答。
+5. 数字花园、公开知识库、作者主页、主题/路径、最近生长和知识地图。
+6. Admin、内容治理、发布队列、运行健康、预算和审计。
+
+每份研究简报至少包含：
+
+- 5–8 个强相关案例，其中至少 2 个来自产品官方文档或可运行产品。
+- 页面/仓库链接、访问日期、核心交互、移动端和无障碍表现。
+- “适合 wouldkeep 的部分”“不应照搬的部分”“适配后的具体建议”。
+- 如果建议复用代码：GitHub 仓库、许可证、维护活跃度、依赖体积和安全风险；许可不明则只借鉴思路。
+- 不以视觉相似度作为唯一标准；优先验证功能闭环、失败恢复、隐私边界和小白可理解性。
+- 一页结论矩阵，由总指挥选择 1 个主参考模式和最多 2 个辅助模式，避免把多个产品拼成杂乱界面。
+
+侦察 Agent 不拥有生产权限，也不直接提交 UI、数据库或依赖变更。若案例需要登录、付费或授权才能核实，应明确标注证据边界，不得猜测隐藏行为。
 
 ## Wave 1：三个可独立演示的核心切片
 
@@ -214,6 +248,7 @@ Worktree：<绝对路径>
 完成标准：<用户行为 + 技术断言>
 必跑验证：<命令>
 交付：提交 SHA、变更摘要、测试证据、迁移/部署步骤、风险与未完成项
+研究依据：<已批准的 reference-research 简报；没有则说明为什么该任务无需外部范例>
 ```
 
 执行代理结束时必须交付：
@@ -269,7 +304,7 @@ $node = 'C:\Users\23012\.cache\codex-runtimes\codex-primary-runtime\dependencies
 4. .design/account-knowledge-system/DESIGN_BRIEF.md
 5. .design/ai-knowledge-assistant/DESIGN_BRIEF.md
 
-你担任总控/集成代理。先验证 PR #11 与登录态 AI 模拟网关的最终状态，完成 Wave 0 现实对账；不要根据旧 TASKS 重复开发。随后按方案创建独立 Git Worktree，一次最多启动三个执行代理。每个代理必须使用指定模型档位、遵守文件所有权、提交独立分支并提供测试证据。你负责审查、集成与向我集中提出必须由我执行的 Supabase/生产操作。
+你担任 wouldkeep 总指挥，必须使用 GPT-5.6 Sol（xhigh）。先验证 PR #11 与登录态 AI 模拟网关的最终状态，完成 Wave 0 现实对账；不要根据旧 TASKS 重复开发。随后优先启动“优秀范例侦察 Agent”（GPT-5.6 Terra/high，独立 research Worktree，只写研究简报），再按方案启动最多两个并行实施 Agent。侦察 Agent 需要领先实施半个阶段，实施任务应引用总指挥已批准的范例简报。所有代理必须遵守文件所有权、提交独立分支并提供测试证据。总指挥负责审查、集成、终止越界工作，并向我集中提出必须由我执行的 Supabase/生产操作。
 ```
 
 ## 11. 官方模型参考
