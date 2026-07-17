@@ -81,3 +81,13 @@ Append new entries; never rewrite prior decisions. Each reversal must cite new e
 - Evidence: implementation `b86376b3`; independent verdict no remaining P0/P1; focused 42/42, full 187/187, TypeScript, diff-check, and static build passed with only injected fake fetches.
 - Impact: A20 production-boundary code is locally complete but not production-proven. Non-production migration/RLS/two-session concurrency evidence and an operation record are mandatory before any deployment proposal.
 - Re-evaluate when: staging evidence is complete and the site owner separately approves deployment, secret configuration, runtime hookup, feature-flag enablement, budget, and a real call.
+
+## D-009 — Limit the first live DeepSeek path to an owner public-snapshot canary
+
+- Date: 2026-07-17.
+- Question: After A20 local database validation and explicit deployment/paid-call approval, what is the smallest safe live route?
+- Decision: connect only `rewrite` for a JWT-authenticated owner's verified `public` publication snapshot. Keep both the Edge Function environment switch and authoritative database switch off by default. Ignore caller selection/context and never route private, unlisted, draft, free-input, unknown, or other-user content to DeepSeek.
+- Reason: DeepSeek does not declare zero retention, while the publication snapshot is already the reviewed public data boundary. The narrow route exercises identity, RLS, quota, audit, price, provider, and model controls without widening private-data processing.
+- Evidence: focused and full tests, TypeScript, diff-check, static build, and independent P0/P1 review passed on `agent/ai-live-canary`.
+- Impact: this is a site-owner, single-request, low-budget canary only. The UI does not yet offer DeepSeek consent, `base_version` is not bound to publication `source_revision`, and the live result must not be wired into selection replacement or automatic writeback.
+- Re-evaluate when: production Supabase migration history/backup is captured, the migration and function are deployed with live flags off, secret configuration succeeds, and the canary operation record is complete.

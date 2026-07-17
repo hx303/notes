@@ -2,11 +2,11 @@
 
 Last reconciled: 2026-07-17 (Asia/Shanghai)
 
-Working baseline: merged `main` at `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`
+Working baseline: merged `main` at `f09eeea5a9ae687bea7c62144b59fcaca47874ff`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
-Active provider PR: [#12](https://github.com/hx303/notes/pull/12) (Draft)
+Merged provider PR: [#12](https://github.com/hx303/notes/pull/12)
 
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
@@ -18,9 +18,10 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 | Account and private workspace | partial | Password auth, account/workspace routes, private knowledge bases/documents, editor, tags, links, sources, versions, publication snapshot UI and admin shell exist. A multi-agent hotfix now covers stable auth loading, retry after SDK/network failure, duplicate-submit protection, SPA cleanup, and responsive account/workspace layouts. The 39 unchecked account tasks are stale as a source of truth; Wave 1 must test remaining flows and fix gaps rather than rebuild them. |
 | Publication and public snapshot | partial | `document_publications`, `publish_document`, `unpublish_document`, `read_published_document`, and `list_public_documents` exist in migrations. Idempotent job/retry/last-success failure semantics still require P01/P02 reconciliation and production verification. |
 | AI consent and data foundation | complete | Default-off settings, zero budget, four AI tables with owner RLS, browser write restrictions, and authenticated mock `ai-write` code exist. Migration deployment, unauthenticated `401`, four real-account RLS assertions, and the signed-in no-model/no-cost response have all been accepted. |
-| AI provider preparation | complete locally; not deployed | `b86376b3` adds the dormant production-boundary candidate on top of the provider adapter and fail-closed guard: user-JWT/RLS publication authority, HMAC input identifiers, versioned DeepSeek rate card, default-off config, and service-role reserve/finalize RPCs. Independent final review found no remaining P0/P1. No key, runtime hookup, function deployment, or real/paid request exists. |
-| AI paid/model features | not started | No model key, paid provider call, editor rewrite, indexing worker, hybrid retrieval, organize inbox, or grounded chat exists. A20 code is prepared locally, but staging migration/RLS/two-session concurrency evidence, an operation record, deployment verification, secret configuration, and a separately approved live hookup remain required. |
+| AI provider preparation | complete; not deployed | PR #12 merged the dormant production boundary. Local PostgreSQL migration/RLS and true two-session concurrency validation passed; no production migration, secret, function deployment, or paid request exists. |
+| AI paid/model features | narrow canary prepared locally; not deployed | `agent/ai-live-canary` connects `ai-write` to the guarded DeepSeek path only for an authenticated owner's verified public publication snapshot and only when both environment and database flags allow it. Client selection/context is never sent. Independent review found no P0/P1 for a site-owner, single-request, low-budget canary; broad rollout remains no-ship. |
 | PR #11 | complete | All three Vercel checks passed; the site owner explicitly approved the merge; GitHub merged it to `main` as `72ea5f96` at 2026-07-16T15:05:24Z. |
+| PR #12 | complete | The site owner explicitly approved the merge; GitHub merged it to `main` as `f09eeea5` at 2026-07-16T23:46:41Z. |
 | Vercel preview | complete | The signed-in mock result was explicitly confirmed by the site owner before merge. |
 | Cloudflare/production site | unverified online | Repository contains `cf_project.json` with project `notes-website` and production branch `main`; no fresh deployment/runtime proof has been collected in this Wave 0 pass. |
 
@@ -62,6 +63,13 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - The final identity/privacy review requires credential-bearing fetches to reject redirects, DeepSeek responses to state the exact reserved model, and the guard to snapshot provider/model/private-content/rate identities before asynchronous work. Final independent verdict: no remaining P0/P1.
 - Final local evidence: focused 42/42, full Quartz 187/187, TypeScript, diff-check, and static build passed (284 inputs, 1046 outputs). All provider and Supabase fetches in tests are injected fakes; no real provider call occurred.
 - Remaining production gates: execute the migration and rollback-only verification script on non-production Supabase, prove RLS plus two-session concurrency/lease behavior, record the operation and forward-fix plan, then obtain separate approvals for deployment, secret configuration, `ai-write` hookup, feature-flag enablement, budget, and any paid call.
+
+## DeepSeek live-canary preparation on 2026-07-17
+
+- `agent/ai-live-canary` keeps live mode off unless `AI_LIVE_ENABLED=true`; the database singleton flag, user opt-in, budget, provider/model consent, rate-card version, daily limit, concurrency limit, JWT identity, owner RLS, and public publication snapshot remain authoritative.
+- The first live capability is deliberately only whole-publication `rewrite`. The caller's selection/context is ignored and never reaches DeepSeek; private, unlisted, free-input, missing, malformed, or other-user sources are blocked first.
+- Focused tests, the full 192-test Quartz suite, TypeScript, diff-check, and the 284-input/1046-output static build passed. Independent review found no P0/P1 for a site-owner, one-request, low-budget canary and explicitly rejected broad rollout.
+- Production remains blocked because the local Supabase CLI has no authenticated profile and GitHub Actions has no Supabase deployment secrets. The DeepSeek key file has not been read or imported.
 
 ## Git and worktree reality
 

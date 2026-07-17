@@ -34,7 +34,7 @@ State: PR #11 merged baseline plus the commander-approved, dormant DeepSeek/A20 
 - Size limits: selection 12,000 characters; context 36,000; declared request body 65,536 bytes.
 - Mock success: HTTP 200 with `mock=true`, `status=gateway_ready`, `run_id`, echoed preview, scope counts, `model=null`, and the explicit no-cost message.
 - Errors currently include `origin_not_allowed` (403), `authentication_required` (401), `method_not_allowed` (405), `request_too_large`/`content_scope_too_large` (413), `invalid_json`, `unsupported_action`, `selection_required`, and `invalid_base_version` (400).
-- Real model connectivity, provider secrets, quotas, audit writes, and paid calls are outside this frozen foundation contract.
+- The accepted mock contract remains the default. A separately guarded live-canary response may be returned only under the runtime contract below.
 
 ### Provider preparation contract
 
@@ -59,6 +59,14 @@ State: PR #11 merged baseline plus the commander-approved, dormant DeepSeek/A20 
 - Provider, model, private-content capability, rate-card version, reservation, response model, and actual usage must remain mutually consistent. Missing or mismatched identity/usage fails closed and retains the reserved or known actual charge conservatively.
 - These database/runtime contracts are candidates until the forward migration and rollback-only verification script pass on non-production Supabase, including owner/other/anonymous RLS and two-session concurrency evidence.
 - This contract does not authorize a migration, secret, feature flag, `ai-write` hookup, deployment, or paid request.
+
+### Live-canary contract
+
+- `AI_LIVE_ENABLED` must equal `true` before the live runtime is constructed; missing, false, malformed, or incomplete configuration preserves mock/default-off behavior or returns a stable configuration error without calling a provider.
+- The first live action is only `rewrite` with a valid route `document_id`. Server authority verifies the JWT and owner RLS, then reads exactly one owner `public` publication snapshot. Only whitelisted `title` and `body` fields form the prompt.
+- Caller-provided `selection`, `context`, owner, visibility, and prompt assertions are never forwarded to DeepSeek. Private, unlisted, free-input, unknown, missing, malformed, or other-user content remains ineligible.
+- The environment switch is not sufficient: database live state, user enabled state, positive budget, provider/model consent, rate-card identity, daily limit, concurrency limit, reservation, and final audit must all succeed.
+- The live output is a suggestion only. It cannot publish, overwrite, or write back. `base_version` is currently response metadata and must not be treated as authoritative until bound to the publication `source_revision` in a separately reviewed contract.
 
 ## Routes and shared hooks
 

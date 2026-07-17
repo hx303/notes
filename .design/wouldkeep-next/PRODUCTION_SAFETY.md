@@ -2,15 +2,16 @@
 
 No production change is authorized by this file. Create a completed operation record and obtain explicit user approval before running a production migration, replacing an Edge Function, bulk-writing content, enabling a feature flag, raising AI budget, or publishing a release.
 
-## Current observed baseline — 2026-07-16
+## Current observed baseline — 2026-07-17
 
-- Git baseline: `main` at `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`.
+- Git baseline: `main` at `f09eeea5a9ae687bea7c62144b59fcaca47874ff` after the explicitly approved PR #12 merge.
 - PR #11: all checks passed; the site owner explicitly authorized merge; merged at 2026-07-16T15:05:24Z.
 - Supabase project: `agocyybolrisqujvjqdj` (public project identifier only).
 - Committed evidence says the AI migration and `ai-write` mock function are deployed, unauthenticated calls return 401, and four real-account RLS assertions passed.
 - The site owner explicitly confirmed the signed-in mock gateway returned the expected no-model/no-cost result.
-- No model API key is configured or authorized for deployment; paid AI budget remains zero. The DeepSeek provider slice is code preparation only and must not replace the deployed mock function.
-- PR #12 now contains a dormant A20 production-boundary candidate: owner-RLS publication authority, service-role atomic reserve/finalize RPCs, versioned rate card, default-off site-live configuration, and HMAC audit identifiers. It is still **not deployed or production-proven**: the migration/RPCs have not run on staging, two-session concurrency and RLS evidence is absent, and no secret or runtime hookup exists.
+- The site owner explicitly authorized configuration, deployment, and a real DeepSeek test call on 2026-07-17, subject to completing the recorded prerequisites. The key file exists but has not been read, imported, logged, or committed.
+- PR #12's A20 migration/RPCs passed local PostgreSQL migration, RLS, rollback-only SQL, and true two-session concurrency validation. `agent/ai-live-canary` adds a separately reviewed default-off public-snapshot-only runtime hookup; P0/P1 review, full tests, TypeScript, and build passed.
+- Production execution is still stopped: the Supabase CLI has no authenticated profile, GitHub Actions exposes no Supabase deployment secrets, remote migration history and a backup cannot yet be captured, and therefore the migration/function/secret/live flag/paid canary have not run.
 - Fresh database row counts, backup location, production deployment SHA, and Cloudflare state are not yet recorded. Therefore migrations, function replacement, secrets, feature flags, and paid calls remain stopped.
 
 ## Operation record template
