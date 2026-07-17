@@ -1,6 +1,6 @@
 # wouldkeep Cross-Worktree Contracts
 
-State: PR #11 merged baseline plus the commander-approved, dormant DeepSeek/A20 production-boundary candidate. Contract changes require a logged request, commander approval, synchronized migrations/types/fixtures/tests, and notification to dependent agents.
+State: PR #16 merged baseline with the reviewed DeepSeek/A20 production boundary deployed default-off. Contract changes require a logged request, commander approval, synchronized migrations/types/fixtures/tests, and notification to dependent agents.
 
 ## Ownership and visibility
 
@@ -44,7 +44,7 @@ State: PR #11 merged baseline plus the commander-approved, dormant DeepSeek/A20 
 - The adapter normalizes invalid request/authentication/balance/parameter/rate-limit/server-overload, timeout, caller abort, network, malformed-response, empty-output, truncated-output, content-filter, and insufficient-resource failures without retaining upstream error details, secrets, or raw private content.
 - Provider usage exposes prompt/completion/total tokens plus optional DeepSeek disk-cache hit/miss tokens for later A20 accounting. This is metadata only; `ai_runs` is not written in this slice.
 - DeepSeek currently declares `supportsZeroRetention=false`; private content is not eligible for this provider until a separately approved privacy contract exists.
-- This preparation slice does not read `DEEPSEEK_API_KEY` from the browser, wire the adapter into `ai-write`, change the accepted mock response, deploy an Edge Function, or make a real request. Runtime enablement depends on A20 and separate user approval.
+- The deployed adapter reads `DEEPSEEK_API_KEY` only from the Edge Function Secret and is wired into `ai-write` behind both live gates. The browser never receives the key. The accepted mock response remains the default while either gate is off; any production paid request still needs separate user approval.
 
 ### Runtime-safety preparation contract
 
@@ -57,8 +57,8 @@ State: PR #11 merged baseline plus the commander-approved, dormant DeepSeek/A20 
 - Publication context reads use the publishable key plus the same verified user JWT so owner RLS remains authoritative. The service secret is confined to quota/audit RPC calls. All credential-bearing requests reject redirects.
 - The input audit identifier is an owner-scoped HMAC-SHA256 over the versioned request controls. The HMAC key, authorization, prompts, document bodies, outputs, and raw upstream errors are never sent to the audit RPC or stored in `ai_runs`.
 - Provider, model, private-content capability, rate-card version, reservation, response model, and actual usage must remain mutually consistent. Missing or mismatched identity/usage fails closed and retains the reserved or known actual charge conservatively.
-- These database/runtime contracts are candidates until the forward migration and rollback-only verification script pass on non-production Supabase, including owner/other/anonymous RLS and two-session concurrency evidence.
-- This contract does not authorize a migration, secret, feature flag, `ai-write` hookup, deployment, or paid request.
+- These database/runtime contracts passed non-production owner/other/anonymous RLS and two-session concurrency evidence and are deployed default-off. That deployment evidence does not prove later migrations or broader content scopes safe.
+- This contract records current state; it does not authorize another migration, Secret change, feature-flag change, `ai-write` replacement, deployment, or paid request.
 
 ### Live-canary contract
 

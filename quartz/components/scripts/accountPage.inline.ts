@@ -369,7 +369,7 @@ const init = async () => {
       if (draft) applyAiSettingsDraft(draft)
       setAiStatus(
         missingSchema
-          ? "AI 设置尚未启用，请先在 Supabase 执行 20260716_ai_assistant_foundation.sql。"
+          ? "AI 设置尚未启用，请先在 Supabase 执行 20260718000900_ai_assistant_foundation.sql。"
           : draft
             ? "云端设置暂时无法读取，已恢复本机未保存的设置。"
             : "云端设置暂时无法读取，请检查网络后重试。",
@@ -860,7 +860,7 @@ const init = async () => {
       sourcesMigrationAvailable = false
       if (sourceStatus)
         sourceStatus.textContent =
-          "正文已保存，但来源尚未同步。请在 Supabase 执行 20260714_document_sources.sql。"
+          "正文已保存，但来源尚未同步。请在 Supabase 执行 20260718000400_document_sources.sql。"
       setStatus("正文已保存；结构化来源迁移尚未启用，本地备份仍然保留。", "error")
       return false
     }
@@ -1148,7 +1148,7 @@ const init = async () => {
       currentPublication = null
       if (publicationStatus)
         publicationStatus.textContent =
-          "正式发布功能尚未启用；请执行 20260714_publication_flow.sql。"
+          "正式发布功能尚未启用；请执行 20260718000500_publication_flow.sql。"
       return
     }
     updatePublicationUI(result.data as PublicationState | null, revision)
@@ -1189,7 +1189,7 @@ const init = async () => {
       if (result.error || !result.data) {
         if (publicationStatus)
           publicationStatus.textContent = result.error?.message?.includes("does not exist")
-            ? "发布迁移尚未执行；请运行 20260714_publication_flow.sql。"
+            ? "发布迁移尚未执行；请运行 20260718000500_publication_flow.sql。"
             : "发布失败，私人草稿仍已安全保存。请稍后重试。"
         return
       }
@@ -1723,7 +1723,7 @@ const init = async () => {
           String(result.error.message ?? "")
             .toLowerCase()
             .includes("ai_preferences")
-            ? "AI 设置尚未启用，请先执行 20260716_ai_assistant_foundation.sql。"
+            ? "AI 设置尚未启用，请先执行 20260718000900_ai_assistant_foundation.sql。"
             : "AI 设置保存失败，请检查网络后重试。",
           "error",
         )
@@ -1823,7 +1823,7 @@ const init = async () => {
     }
     if (!profilePersonalizationAvailable) {
       setProfileStatus(
-        "请先在 Supabase 执行 20260716_profile_personalization.sql，再保存扩展个人资料。",
+        "请先在 Supabase 执行 20260718000800_profile_personalization.sql，再保存扩展个人资料。",
         "error",
       )
       return

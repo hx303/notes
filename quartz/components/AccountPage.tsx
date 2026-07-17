@@ -762,7 +762,9 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                   <option value="1000">不超过 ¥10</option>
                   <option value="2000">不超过 ¥20</option>
                 </select>
-                <small>达到上限后自动停止。第一阶段不会产生任何模型费用。</small>
+                <small>
+                  达到上限后自动停止。设置额度不会立即产生费用；只有站点实时开关和你的个人开关同时开启后，才允许付费调用。
+                </small>
               </label>
 
               <div class="ai-settings-actions">
@@ -782,15 +784,16 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
             </form>
 
             <aside class="ai-stage-card" aria-labelledby="ai-stage-title">
-              <span class="ai-stage-badge">安全骨架 · 未连接付费模型</span>
+              <span class="ai-stage-badge">DeepSeek 已配置 · 实时调用默认关闭</span>
               <h3 id="ai-stage-title">当前阶段</h3>
               <p>
-                现在只搭建设置、权限和调用入口。测试按钮只验证安全网关，不会发送你的笔记，也不会产生费用。
+                服务端已配置 DeepSeek
+                适配器，但站点实时开关仍保持关闭。关闭时，测试按钮只验证登录、权限和安全网关，不会发送你的笔记，也不会产生模型费用。
               </p>
               <ol class="ai-stage-list">
-                <li>保存个人开关与额度</li>
-                <li>验证登录身份和请求格式</li>
-                <li>下一阶段再由站长配置模型密钥</li>
+                <li>你的 AI 开关、数据范围和额度分别保存</li>
+                <li>付费调用还必须通过站点实时开关、身份、权限和预算检查</li>
+                <li>当前不会把私人笔记发送给 DeepSeek</li>
               </ol>
               <button type="button" class="account-secondary" data-ai-test-gateway>
                 测试安全网关

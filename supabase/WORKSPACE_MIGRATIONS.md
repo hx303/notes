@@ -1,17 +1,20 @@
 # wouldkeep 账户工作区迁移顺序
 
-账户工作区的前端代码已经准备好，但首次验收前必须在 Supabase SQL Editor 中按顺序执行以下文件：
+账户工作区的前端代码已经准备好。以下顺序只用于全新空项目或首次安装；**wouldkeep 现有生产项目不得在 SQL Editor 中手工重跑这十份迁移**。生产历史只能在对象级只读核验、专项审批后按 `MIGRATION_HISTORY_NORMALIZATION.md` 执行 ledger-only repair，不能执行这些 SQL。
+
+全新空项目首次验收前，在 Supabase SQL Editor 中按顺序执行以下文件：
 
 1. `schema.sql`：现有账户、评论和角色基础表。如果这些表已经存在，不要重复执行此文件。
-2. `migrations/20260712_knowledge_workspace_foundation.sql`：个人知识库、文档草稿与所有者 RLS。
-3. `migrations/20260712_document_versions.sql`：版本号、版本快照与冲突保护。
-4. `migrations/20260712_document_organization.sql`：标签、知识关系与所有者 RLS。
-5. `migrations/20260714_document_sources.sql`：多来源卡片、原子替换函数与所有者 RLS。
-6. `migrations/20260714_publication_flow.sql`：只读发布快照、稳定阅读链接、撤回发布与公开发现接口。
-7. `migrations/20260714_site_owner_permissions.sql`：受保护的站长身份、角色管理安全加固、公开内容下架与审计。普通用户的私人正文 RLS 不会因此放开。
-8. `migrations/20260715_profile_avatars.sql`：建立公开头像存储桶，并限制登录用户只能上传或更新自己目录下的头像。文件大小上限为 2 MB，仅允许 JPG、PNG 与 WebP；不会删除现有账户或业务数据。
-9. `migrations/20260716_profile_personalization.sql`：为个人资料增加个性签名、个人简介、所在地与个人链接，并添加长度约束。所有字段均为选填，不会改变现有账户数据和 RLS。
-10. `migrations/20260716_ai_assistant_foundation.sql`：增加默认关闭的 AI 设置、费用上限、运行审计、建议记录与知识分块，并启用所有者 RLS。此迁移不会连接模型，也不会产生费用。
+2. `migrations/20260718000100_knowledge_workspace_foundation.sql`：个人知识库、文档草稿与所有者 RLS。
+3. `migrations/20260718000200_document_versions.sql`：版本号、版本快照与冲突保护。
+4. `migrations/20260718000300_document_organization.sql`：标签、知识关系与所有者 RLS。
+5. `migrations/20260718000400_document_sources.sql`：多来源卡片、原子替换函数与所有者 RLS。
+6. `migrations/20260718000500_publication_flow.sql`：只读发布快照、稳定阅读链接、撤回发布与公开发现接口。
+7. `migrations/20260718000600_site_owner_permissions.sql`：受保护的站长身份、角色管理安全加固、公开内容下架与审计。普通用户的私人正文 RLS 不会因此放开。
+8. `migrations/20260718000700_profile_avatars.sql`：建立公开头像存储桶，并限制登录用户只能上传或更新自己目录下的头像。文件大小上限为 2 MB，仅允许 JPG、PNG 与 WebP；不会删除现有账户或业务数据。
+9. `migrations/20260718000800_profile_personalization.sql`：为个人资料增加个性签名、个人简介、所在地与个人链接，并添加长度约束。所有字段均为选填，不会改变现有账户数据和 RLS。
+10. `migrations/20260718000900_ai_assistant_foundation.sql`：增加默认关闭的 AI 设置、费用上限、运行审计、建议记录与知识分块，并启用所有者 RLS。此迁移不会连接模型，也不会产生费用。
+11. `migrations/20260718001000_ai_runtime_safety.sql`：增加默认关闭的生产运行配置、预算预留/结算 RPC 与审计约束；不会自行打开实时调用。
 
 ## 将“夔嵬知识库”迁入站长账户
 
@@ -48,13 +51,13 @@
 
 如果页面提示“工作区迁移尚未执行”，通常表示第一份工作区迁移没有成功；先检查 `knowledge_bases` 和 `documents` 表是否存在，再重新运行对应文件。
 
-如果正文能保存，但来源提示“尚未同步”，请运行 `20260714_document_sources.sql`。如果正式发布不可用，请运行 `20260714_publication_flow.sql`。
+如果正文能保存，但来源提示“尚未同步”，请运行 `20260718000400_document_sources.sql`。如果正式发布不可用，请运行 `20260718000500_publication_flow.sql`。
 
-如果个人设置页提示“头像存储还没有启用”，请运行 `20260715_profile_avatars.sql`。执行成功后无需重新注册或重新登录，刷新页面即可上传头像。
+如果个人设置页提示“头像存储还没有启用”，请运行 `20260718000700_profile_avatars.sql`。执行成功后无需重新注册或重新登录，刷新页面即可上传头像。
 
-如果个人设置页提示“扩展个人资料尚未启用”，请运行 `20260716_profile_personalization.sql`。这些字段属于用户主动公开的信息，登录邮箱不会因此公开。
+如果个人设置页提示“扩展个人资料尚未启用”，请运行 `20260718000800_profile_personalization.sql`。这些字段属于用户主动公开的信息，登录邮箱不会因此公开。
 
-如果 AI 设置页提示“AI 设置尚未启用”，请运行 `20260716_ai_assistant_foundation.sql`。运行成功后刷新 `/workspace/settings/ai/`；默认开关与费用均为关闭或 0。
+如果 AI 设置页提示“AI 设置尚未启用”，请运行 `20260718000900_ai_assistant_foundation.sql`。运行成功后刷新 `/workspace/settings/ai/`；默认开关与费用均为关闭或 0。
 
 如果“测试安全网关”提示尚未部署，请在安装并登录 Supabase CLI 后运行 `supabase functions deploy ai-write`。第一阶段的函数只返回模拟结果，不需要模型 API Key，也不会读取真实笔记。
 

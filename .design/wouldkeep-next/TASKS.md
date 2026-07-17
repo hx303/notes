@@ -4,6 +4,21 @@ Generated from: `.design/wouldkeep-redesign/DESIGN_BRIEF.md`、`.design/account-
 Orchestration: `.design/wouldkeep-next/MULTI_AGENT_WORKTREE_PLAN.md`  
 Date: 2026-07-16
 
+## Current execution wave — reconciled 2026-07-17
+
+- [x] **W2-00 — Align the real baseline**: fetch merged `main` at `24536ab5`, create `agent/wave2-orchestration`, and confirm the worktree is clean.
+- [x] **W2-01 — Revalidate the baseline**: TypeScript passes, 197/197 tests pass, and the production build emits 1,046 files from 284 Markdown inputs.
+- [x] **W2-02 — Run parallel command, acceptance, and reference audits**: use the four available execution slots with isolated ownership; only the integrator edits orchestration files.
+- [x] **W2-03 — Reconcile stale status and merge order**: record PR #13 and PR #16 as merged, production AI as deployed-default-off, and the duplicate migration-version blocker.
+- [ ] **W2-10 — Normalize Supabase migration versions forward-only**: preserve already-applied SQL and the production ledger; prove a clean project and linked dry-run before requesting production execution approval.
+- [ ] **W2-11 — Add publication boundary and recovery evidence**: owner/other/anonymous, private/unlisted/public, soft delete, revision conflict, idempotent retry, and last-success behavior.
+- [ ] **W2-12 — Add real-browser novice/settings acceptance**: registration/login/recovery/return URL/first private note plus AI/profile settings navigation, refresh, server readback, failure rollback, desktop, and mobile.
+- [ ] **W2-13 — Harden import and editor recovery**: DOCX/Markdown fixtures, image/error retention, persistent offline queue, reconnect, two-tab conflict comparison, and restore-as-new-version.
+- [ ] **W2-14 — Build AI selection suggestions only after W2-13**: diff preview, `base_version` and source-hash validation, accept/insert/reject/regenerate, snapshot, and undo; never overwrite the document while streaming.
+- [ ] **W2-15 — Reconcile public discovery and trust pages**: task-based online acceptance for discovery, build guidance, About, Privacy, License, 404, responsive behavior, and accessibility.
+
+Current scheduling rule: `AccountPage.tsx`, `accountPage.inline.ts`, and `accountPage.scss` have one exclusive owner at a time. Migration/publication work and browser acceptance may be developed in parallel, but functional PRs are verified and merged serially. Every merge, production mutation, paid request, feature-flag change, or private-content provider access requires fresh explicit user authorization.
+
 ## Foundation / Wave 0
 
 - [x] **N00 — 完成 AI 安全地基最终验收**：登录站长账户测试 `ai-write`，确认只发送固定测试文字、返回 `mock: true`、不产生模型费用，并把证据写回 AI TASKS。 _Completed 2026-07-16: site owner explicitly confirmed the signed-in safety-gateway result; no model call or cost._
@@ -50,7 +65,7 @@ Date: 2026-07-16
 
 ## Wave 2 / AI, Content, Quality
 
-- [ ] **A20 — AI 用量与预算保护**：为成功/失败调用写审计，实施并发、日限额、月预算和站长 feature flag；真实密钥只在 Function Secret。 _Progress: dormant fail-closed guard and offline atomic reference complete; production Supabase authority, service-role RPC, rate card, RLS/failure evidence, config storage, and deployment remain. Agent: AI; modifies: AI migrations/functions/settings; reuses: mock gateway._
+- [x] **A20 — AI 用量与预算保护**：为成功/失败调用写审计，实施并发、日限额、月预算和站长 feature flag；真实密钥只在 Function Secret。 _Completed 2026-07-17: production Supabase authority, service-role RPC, versioned rate card, RLS/failure evidence, configuration, Secrets, and `ai-write` v4 are deployed with both live gates off; no production paid call has run._
 - [ ] **A21 — 选区改写与版本回退**：选中文字后生成独立预览，支持接受、插入、拒绝、重新生成和回退；版本冲突不得应用旧结果。 _Agent: AI; creates: focused AI UI components; reuses: editor version API. Depends on: A20 and P05._
 - [ ] **A22 — 增量索引与混合检索**：实现分块、内容哈希、队列、pgvector、PostgreSQL 全文搜索与 RRF；RLS 限制到当前用户和知识库。 _Agent: AI; creates: index worker/RPC/tests. Depends on: A20._
 - [ ] **A23 — 整理建议收件箱**：提供标签、分类、关系、重复候选的理由/证据/置信度与变更清单，逐条或安全批量接受。 _Agent: AI; creates: `/workspace/organize/`; reuses: tags/links/versions. Depends on: A22 and P06._

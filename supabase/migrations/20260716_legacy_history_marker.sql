@@ -1,0 +1,3 @@
+-- Production migration history already contains version 20260716.
+-- W2-10 keeps that identity as a comment-only compatibility marker.
+-- The original SQL files were renamed to unique 14-digit versions and must not be replayed in production.

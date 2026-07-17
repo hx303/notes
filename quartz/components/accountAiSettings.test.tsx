@@ -13,6 +13,10 @@ test("AI settings are consent-first and default to no paid calls", () => {
   assert.match(component, /data-ai-private-content/)
   assert.match(component, /不开启付费调用（推荐）/)
   assert.match(component, /AI 只能提出建议/)
+  assert.match(component, /DeepSeek 已配置 · 实时调用默认关闭/)
+  assert.match(component, /站点实时开关和你的个人开关同时开启/)
+  assert.match(component, /当前不会把私人笔记发送给 DeepSeek/)
+  assert.doesNotMatch(component, /未连接付费模型|下一阶段再由站长配置模型密钥/)
   assert.match(script, /from\("ai_preferences"\)[\s\S]*?\.upsert/)
   assert.match(script, /writeAiSettingsDraft\(sessionStorage/)
   assert.match(script, /readAiSettingsDraft\(sessionStorage/)
@@ -30,7 +34,10 @@ test("AI settings are consent-first and default to no paid calls", () => {
 
 test("AI database foundation applies owner RLS and prevents direct audit writes", () => {
   const migration = readFileSync(
-    new URL("../../supabase/migrations/20260716_ai_assistant_foundation.sql", import.meta.url),
+    new URL(
+      "../../supabase/migrations/20260718000900_ai_assistant_foundation.sql",
+      import.meta.url,
+    ),
     "utf8",
   )
 

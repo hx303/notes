@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "remoteLedger": [
+    {
+      "version": "20260712",
+      "name": "document_organization",
+      "statementCount": 16,
+      "statementsMd5": "0caa5b560df3fa7a3668331d12b31d09"
+    },
+    {
+      "version": "20260714",
+      "name": "document_sources",
+      "statementCount": 20,
+      "statementsMd5": "c90822da8a6b62cb2917942932720bb5"
+    },
+    {
+      "version": "20260715",
+      "name": "profile_avatars",
+      "statementCount": 9,
+      "statementsMd5": "66ee0e5a88692bc5b5a10aaec2599be8"
+    },
+    {
+      "version": "20260716",
+      "name": "ai_assistant_foundation",
+      "statementCount": 39,
+      "statementsMd5": "8832e5993fa2ba7b090bcfe7f607bc16"
+    },
+    {
+      "version": "20260717",
+      "name": "ai_runtime_safety",
+      "statementCount": 42,
+      "statementsMd5": "654c9001d56b3842471c5259a2be0190"
+    }
+  ],
+  "entries": [
+    {
+      "legacyVersion": "20260712",
+      "version": "20260718000100",
+      "file": "20260718000100_knowledge_workspace_foundation.sql",
+      "sha256": "e7187c4450af165eed9e86dab66241b8b09ed7cbdcdb2b98b0b62bb9cd548bdc"
+    },
+    {
+      "legacyVersion": "20260712",
+      "version": "20260718000200",
+      "file": "20260718000200_document_versions.sql",
+      "sha256": "bc83babf35d00886c46e92fd6b7efd1a936078f3765ea63cdcc370cd34cc601b"
+    },
+    {
+      "legacyVersion": "20260712",
+      "version": "20260718000300",
+      "file": "20260718000300_document_organization.sql",
+      "sha256": "4aab2396effb8fef4b27eefda84cf768c385a7e5f38642cdd074be0fd1d4138e"
+    },
+    {
+      "legacyVersion": "20260714",
+      "version": "20260718000400",
+      "file": "20260718000400_document_sources.sql",
+      "sha256": "57d84e7c157c35f561ff47f04bbffbd7e809a083cf7c826b5743a39a6e68b785"
+    },
+    {
+      "legacyVersion": "20260714",
+      "version": "20260718000500",
+      "file": "20260718000500_publication_flow.sql",
+      "sha256": "97ce26ae5403e9774bbcedc7dbeca044f50c7fe8ae8762fc3e365c1dfcde0618"
+    },
+    {
+      "legacyVersion": "20260714",
+      "version": "20260718000600",
+      "file": "20260718000600_site_owner_permissions.sql",
+      "sha256": "50d8bd9fe45f1775f2c94590181744de5627df09a579821f5eb65b61f90cc980"
+    },
+    {
+      "legacyVersion": "20260715",
+      "version": "20260718000700",
+      "file": "20260718000700_profile_avatars.sql",
+      "sha256": "7c1b15d20f736548306a4e9dabb9372ab31053167089e23e2b328ccaaab13b29"
+    },
+    {
+      "legacyVersion": "20260716",
+      "version": "20260718000800",
+      "file": "20260718000800_profile_personalization.sql",
+      "sha256": "1d37af3e7550cbd818cfaebafd58b39dd6a9e273c54c27a0e87c935b4cd7b641"
+    },
+    {
+      "legacyVersion": "20260716",
+      "version": "20260718000900",
+      "file": "20260718000900_ai_assistant_foundation.sql",
+      "sha256": "47ff35c88b9eeee209a112332c1d7bfcfbf158150892f2d179cf32811e1e74e4"
+    },
+    {
+      "legacyVersion": "20260717",
+      "version": "20260718001000",
+      "file": "20260718001000_ai_runtime_safety.sql",
+      "sha256": "347031d0f3191a676f0da6dab3c81985c820b08ac516ee095a8a97c52a9c3b0a"
+    }
+  ]
+}
