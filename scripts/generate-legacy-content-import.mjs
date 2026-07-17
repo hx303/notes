@@ -335,7 +335,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM public.site_owners owner WHERE owner.user_id = v_owner
   ) THEN
-    RAISE EXCEPTION 'Run 20260714_site_owner_permissions.sql first';
+    RAISE EXCEPTION 'Run 20260718000600_site_owner_permissions.sql first';
   END IF;
 
   INSERT INTO public.documents (
@@ -359,7 +359,7 @@ $legacy_batch_${number}$;
 mkdirSync(outputRoot, { recursive: true })
 
 const foundation = `-- Generated wouldkeep legacy knowledge ownership foundation.
--- Apply after 20260714_site_owner_permissions.sql and 20260714_document_sources.sql.
+-- Apply after 20260718000600_site_owner_permissions.sql and 20260718000400_document_sources.sql.
 
 CREATE TABLE IF NOT EXISTS public.legacy_content_imports (
   document_id UUID PRIMARY KEY REFERENCES public.documents(id) ON DELETE CASCADE,
@@ -392,7 +392,7 @@ BEGIN
   END IF;
 
   IF NOT public.is_site_owner(v_owner) THEN
-    RAISE EXCEPTION 'Run 20260714_site_owner_permissions.sql first';
+    RAISE EXCEPTION 'Run 20260718000600_site_owner_permissions.sql first';
   END IF;
 
   INSERT INTO public.knowledge_bases (

@@ -286,7 +286,10 @@ const initPublicKnowledge = async () => {
         p_share_token: shareToken || null,
       })
       if (result.error) {
-        showError("公开阅读功能尚未启用", "请先执行 20260714_publication_flow.sql，或稍后再试。")
+        showError(
+          "公开阅读功能尚未启用",
+          "请先执行 20260718000500_publication_flow.sql，或稍后再试。",
+        )
         return
       }
       if (!result.data) {
@@ -299,7 +302,10 @@ const initPublicKnowledge = async () => {
 
     const result = await client.rpc("list_public_documents", { p_limit: 24, p_offset: 0 })
     if (result.error) {
-      showError("公开发现功能尚未启用", "请先执行 20260714_publication_flow.sql，或稍后再试。")
+      showError(
+        "公开发现功能尚未启用",
+        "请先执行 20260718000500_publication_flow.sql，或稍后再试。",
+      )
       return
     }
     discoveryItems = Array.isArray(result.data) ? (result.data as DiscoveryItem[]) : []

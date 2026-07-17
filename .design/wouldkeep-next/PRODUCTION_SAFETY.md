@@ -4,7 +4,7 @@ No production change is authorized by this file. Create a completed operation re
 
 ## Current observed baseline — 2026-07-17
 
-- Git baseline: `main` at `f09eeea5a9ae687bea7c62144b59fcaca47874ff` after the explicitly approved PR #12 merge.
+- Git baseline: `main` at `24536ab5802e315654d3810da334fcd19b804eaf` after the explicitly approved PR #16 merge. Local orchestration evidence is committed as `12852207`; migration normalization remains an unmerged local branch.
 - PR #11: all checks passed; the site owner explicitly authorized merge; merged at 2026-07-16T15:05:24Z.
 - Supabase project: `agocyybolrisqujvjqdj` (public project identifier only).
 - Committed evidence says the AI migration and `ai-write` mock function are deployed, unauthenticated calls return 401, and four real-account RLS assertions passed.

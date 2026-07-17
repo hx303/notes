@@ -34,7 +34,10 @@ test("AI settings are consent-first and default to no paid calls", () => {
 
 test("AI database foundation applies owner RLS and prevents direct audit writes", () => {
   const migration = readFileSync(
-    new URL("../../supabase/migrations/20260716_ai_assistant_foundation.sql", import.meta.url),
+    new URL(
+      "../../supabase/migrations/20260718000900_ai_assistant_foundation.sql",
+      import.meta.url,
+    ),
     "utf8",
   )
 

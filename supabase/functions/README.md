@@ -16,17 +16,17 @@ supabase functions deploy ai-write
 - 不发送 `store` 或 `user_id`；
 - 明确声明 `supportsZeroRetention=false`、`allowsPrivateContent=false`，保留策略为 `provider_managed_or_unknown`。
 
-适配器目前只是经过离线 fake-fetch 测试的代码能力，**没有接入 `ai-write`，没有启用、部署或调用真实模型**。DeepSeek 当前没有公开明确的 API 零保留承诺，API context cache 默认开启；在预算、审计、feature flag、内容同意与隐私门槛完成前，不得把私密笔记正文交给该适配器。
+适配器已接入生产 `ai-write` v4，但部署后保持双重 live gate 关闭。DeepSeek 当前没有公开明确的 API 零保留承诺，API context cache 默认开启；私密、未公开或无法验证来源的正文始终不得交给该适配器。一次仅含合成公开文本的本地调用已经完成，生产尚未发起付费调用。
 
-能力声明是供后续服务端路由执行策略的机器可读信号；本切片尚未创建真实调用路由，因此它本身不是私密内容过滤器。后续接线必须在调用 provider 之前根据内容分类拒绝私密正文，不能只依赖调用方自觉。
+能力声明是服务端路由执行策略的机器可读信号，但它本身不是私密内容过滤器。当前 `ai-write` v4 会在调用 provider 之前根据服务端验证的公开 publication snapshot 拒绝私密、未公开或未知正文，不能只依赖调用方声明。
 
 ## A20 服务端安全控制边界
 
-`_shared/ai-runtime-safety.ts` 提供尚未接入运行时的 fail-closed 控制层：
+`_shared/ai-runtime-safety.ts` 提供已接入 `ai-write` v4、默认关闭的 fail-closed 控制层：
 
 - `GuardedAiProvider` 只在原子 reservation 成功后调用 provider；DeepSeek 的 `allowsPrivateContent=false` 会让 `private` 和任何未知/非法内容分类在调用前被拒绝；
 - `AiQuotaAuditBoundary` 把 reservation/finalization 定义为权威服务端原子操作，覆盖站点 live flag、用户 `enabled`、私密内容同意、月预算、每日请求和并发上限；
-- `InMemoryAiQuotaAuditBoundary` 是完全离线的参考实现与测试替身，不是生产多实例配额存储；`20260717_ai_runtime_safety.sql` 提供了生产候选的 `service_role` 原子 reserve/finalize RPC；
+- `InMemoryAiQuotaAuditBoundary` 是完全离线的参考实现与测试替身，不是生产多实例配额存储；`20260718001000_ai_runtime_safety.sql` 提供了生产候选的 `service_role` 原子 reserve/finalize RPC；
 - 成功、失败和 blocked 都产生终态审计；审计只含带所有者与生成控制的 HMAC-SHA256、能力/provider/model、rate-card 版本、token/cache、cost、cost basis、latency、稳定错误码和时间，不含正文、提示词、模型输出或上游原始错误；
 - policy 缺失、异常、`NaN`、负数或非整数均拒绝；成本估算失败、实际成本超过 reservation、审计 finalize 失败也不会静默成功。
 
@@ -38,16 +38,16 @@ supabase functions deploy ai-write
 
 Provider 成功响应如果缺少 token usage，同样不会按零成本放行：控制层按 reservation 保守记为 failed/`usage_missing` 并抛出 accounting error。
 
-本切片增加了尚未部署的生产候选边界：
+当前生产已部署以下边界，并保持默认关闭：
 
 - `SupabaseAiRuntimeContextAuthority` 用 publishable key + 用户 session JWT 查询 `/auth/v1/user` 和当前公开 publication snapshot，让 authenticated owner RLS 强制隔离；自由输入、private/unlisted 内容和无法验证的 selection/context 不会进入 DeepSeek；
 - `SupabaseAiQuotaAuditBoundary` 只通过服务端 Secret 调用 reserve/finalize RPC。`sb_secret_` 仅作为 `apikey`，只有旧式 service-role JWT 才同时使用 Bearer；
 - `deepseek-cny-2026-07-17` rate card 以人民币“分”为 `costCents` 的单位，用完整 wire JSON UTF-8 字节、固定/per-message framing 余量、全 cache-miss 和 `maxTokens` 做保守预占；provider、实际 model 与 rate card 是同一不可漂移身份，实际结算还要求总 token 和 cache hit/miss 完整一致；
-- migration `20260717_ai_runtime_safety.sql` 默认保持 `live_enabled=false`，浏览器不能读取/写入运行配置，也不能写审计或执行 RPC；`supabase/tests/20260717_ai_runtime_safety.sql` 必须先在非生产 Supabase 执行并留存结果。
+- migration `20260718001000_ai_runtime_safety.sql` 默认保持 `live_enabled=false`，浏览器不能读取/写入运行配置，也不能写审计或执行 RPC；`supabase/tests/20260717_ai_runtime_safety.sql` 必须先在非生产 Supabase 执行并留存结果。
 
 即使站点开关已启用，用户偏好中的 provider/model 也必须与本次请求和站点 active config 完全一致；旧的 `openai/unconfigured` 行会以 `provider_consent_required` 阻断，不能被批量静默改成 DeepSeek 同意。所有携带 Supabase 或 DeepSeek 凭据的请求都拒绝 HTTP redirect，避免凭据随 30x 转发。
 
-这些仍是准备代码：没有读取环境变量或 Secret，没有连接 `ai-write`，没有部署迁移，也没有任何真实网络/付费模型调用。启用前仍需独立审查、非生产 SQL 验证、部署记录和新的明确批准。
+生产已配置服务端 Secret、A20 迁移与 `ai-write` v4，但数据库和函数 live gate 均为 false；浏览器仍无法读取 Secret。任何生产 paid canary、预算提升、开关变更或函数替换仍需新的明确批准。
 
 后续获批接入时，密钥只能保存为 Supabase Function Secret：
 

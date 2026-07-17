@@ -14,9 +14,10 @@
   "scripts": {
     "quartz": "./quartz/bootstrap-cli.mjs",
     "docs": "npx quartz build --serve -d docs",
-    "check": "tsc --noEmit && npx prettier . --check",
+    "check": "npm run check:migrations && tsc --noEmit && npx prettier . --check",
     "format": "npx prettier . --write",
     "test": "tsx --import ./quartz/testing/register-assets.mjs --test \"quartz/**/*.test.ts\" \"quartz/**/*.test.tsx\"",
+    "check:migrations": "tsx quartz/scripts/check-supabase-migrations.ts",
     "audit:urls": "tsx quartz/scripts/audit-urls.ts",
     "profile": "0x -D prof ./quartz/bootstrap-cli.mjs build --concurrency=1"
   },

@@ -380,7 +380,7 @@ test("Supabase legacy service JWT is bearer-compatible and upstream errors never
 
 test("A20 migration and verification script keep RPCs service-only and leased", () => {
   const migration = readFileSync(
-    new URL("../../supabase/migrations/20260717_ai_runtime_safety.sql", import.meta.url),
+    new URL("../../supabase/migrations/20260718001000_ai_runtime_safety.sql", import.meta.url),
     "utf8",
   )
   const verification = readFileSync(
