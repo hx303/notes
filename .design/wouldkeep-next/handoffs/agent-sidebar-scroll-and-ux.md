@@ -37,7 +37,11 @@
 - UI evidence:
   - Production admin at 1050×707, DPR 1.875: `body` and `#mainUI2` fixed to the viewport with hidden overflow; `#sidebarFiles` measured about 292×532 with `scrollHeight=13743`, `clientHeight=532`, and wheel input working only while the pointer stayed inside the pane.
   - Production workspace at 1050×707: no horizontal overflow and normal page scrolling, but the static workspace navigation measured 929×347 and consumed about 49% of the viewport before the primary task.
-  - Two delegated browser sessions were interrupted by the platform's selected-model capacity limit after returning the evidence above; final preview regression remains a PR gate.
+  - PR #22 preview at 1050×707: no horizontal overflow; workspace navigation measured 928×96 (down from 929×347 in production), with a 658px visible horizontal link strip and 906px scroll width.
+  - PR #22 preview at 375×812: no horizontal overflow; navigation is one 305px column, the redundant heading is hidden, and the 305px primary-link strip scrolls across 1,010px of links.
+  - PR #22 preview at 1440×900: no horizontal overflow; the 232px navigation remains sticky, is bounded by an 852px max-height, and exposes vertical scrolling when needed.
+  - Production AI settings read-only round trip: before and after navigating through `/workspace/`, auth state remained `ready`, the enabled switch remained false, and the safe-default status copy remained unchanged. No browser console errors were recorded.
+  - Two delegated browser sessions were interrupted by the platform's selected-model capacity limit after returning the initial production evidence; the main agent completed the preview and settings regression through the same Chrome extension.
 - Security evidence: no production data, account role, AI preference, budget, Secret, or publication was changed by browser acceptance.
 - Migration or Edge Function deployed to production: **No**. Migration `20260718001200` remains not deployed.
 
@@ -49,7 +53,7 @@
 
 ## Risk and recovery
 
-- Known risks: final visual behavior must still be confirmed on a deployment/preview because production does not yet contain this branch.
+- Known risks: the authenticated admin content pane cannot be exercised on the Vercel origin without a separate preview-origin login; production reproduction plus static/runtime regression tests cover the sidebar fix, but an authenticated admin preview smoke remains desirable before merge.
 - Rollback or forward-fix path: revert the UI slice or adjust the forward CSS/DOM behavior; no data rollback is involved.
 - Blockers: none for PR creation; merge still requires explicit user authorization.
-- Next task prerequisites: publish a PR, wait for preview checks, run browser regression against the preview, then request merge approval. Production deployment of `20260718001200` remains a separate authorization gate.
+- Next task prerequisites: request review/merge approval for PR #22. Production deployment of `20260718001200` remains a separate authorization gate.
