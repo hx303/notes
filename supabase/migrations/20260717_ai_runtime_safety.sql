@@ -1,6 +1,8 @@
 -- wouldkeep A20 production runtime safety controls.
 -- Forward-only: does not enable live AI, configure a key, or call a provider.
 
+BEGIN;
+
 ALTER TABLE public.ai_preferences
   ADD COLUMN IF NOT EXISTS daily_request_limit INTEGER NOT NULL DEFAULT 20;
 ALTER TABLE public.ai_preferences
@@ -416,3 +418,5 @@ COMMENT ON FUNCTION public.reserve_ai_run(
 COMMENT ON FUNCTION public.finalize_ai_run(
   UUID, UUID, TEXT, INTEGER, INTEGER, INTEGER, INTEGER, INTEGER, TEXT, TEXT, INTEGER, TEXT
 ) IS 'Idempotently finalizes one leased AI run with bounded usage/cost/error metadata.';
+
+COMMIT;

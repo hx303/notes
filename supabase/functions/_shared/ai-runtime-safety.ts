@@ -3,7 +3,7 @@ import {
   type AiProvider,
   type AiProviderRequest,
   type AiProviderResult,
-} from "./ai-provider"
+} from "./ai-provider.ts"
 
 export type AiContentScope = "public" | "private" | "unknown"
 export type AiRunStatus = "running" | "succeeded" | "failed" | "blocked"

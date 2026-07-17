@@ -6,7 +6,7 @@ import {
   type AiProviderIdentity,
   type AiProviderRequest,
   type AiProviderResult,
-} from "./ai-provider"
+} from "./ai-provider.ts"
 
 const PROVIDER = "deepseek"
 const DEFAULT_ENDPOINT = "https://api.deepseek.com/chat/completions"

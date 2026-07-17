@@ -35,17 +35,24 @@ test("AI database foundation applies owner RLS and prevents direct audit writes"
   assert.doesNotMatch(migration, /GRANT INSERT[^;]*public\.ai_runs TO authenticated/)
 })
 
-test("AI write gateway is an authenticated mock without a model key", () => {
-  const gateway = readFileSync(
+test("AI write gateway remains default-off while keeping credentials server-only", () => {
+  const entrypoint = readFileSync(
     new URL("../../supabase/functions/ai-write/index.ts", import.meta.url),
+    "utf8",
+  )
+  const gateway = readFileSync(
+    new URL("../../supabase/functions/ai-write/handler.ts", import.meta.url),
     "utf8",
   )
 
   assert.match(gateway, /authorization/)
   assert.match(gateway, /mock: true/)
-  assert.match(gateway, /selection\.length > 12000/)
+  assert.match(gateway, /selection\.length > 12_000/)
   assert.match(gateway, /hostname\.startsWith\("notes-"\)/)
   assert.match(gateway, /hostname\.endsWith\("-wld-s-projects\.vercel\.app"\)/)
+  assert.match(gateway, /AI_LIVE_ENABLED/)
+  assert.match(gateway, /DEEPSEEK_API_KEY/)
+  assert.match(entrypoint, /Deno\.env\.get/)
   assert.match(gateway, /真实模型尚未启用/)
   assert.doesNotMatch(gateway, /OPENAI_API_KEY/)
   assert.doesNotMatch(gateway, /api\.openai\.com/)
