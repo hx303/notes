@@ -1,5 +1,5 @@
-import type { AiProviderRequest } from "./ai-provider"
-import type { AiInputHasher } from "./ai-runtime-safety"
+import type { AiProviderRequest } from "./ai-provider.ts"
+import type { AiInputHasher } from "./ai-runtime-safety.ts"
 
 const serializeRequest = (ownerId: string, request: AiProviderRequest) =>
   JSON.stringify({

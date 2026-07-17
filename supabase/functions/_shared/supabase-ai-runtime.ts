@@ -1,4 +1,4 @@
-import type { AiMessage } from "./ai-provider"
+import type { AiMessage } from "./ai-provider.ts"
 import {
   type AiBlockedCode,
   type AiFinalizeRequest,
@@ -8,7 +8,7 @@ import {
   type AiRuntimeContextAuthority,
   type AiVerifiedRuntimeContext,
   type GuardedAiRequest,
-} from "./ai-runtime-safety"
+} from "./ai-runtime-safety.ts"
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 type Snapshot = Readonly<Record<string, unknown>>

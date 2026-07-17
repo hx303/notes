@@ -1,20 +1,20 @@
-import { WebCryptoHmacAiInputHasher } from "../_shared/ai-request-hmac"
+import { WebCryptoHmacAiInputHasher } from "../_shared/ai-request-hmac.ts"
 import {
   AiRuntimeAccountingError,
   AiRuntimeAuthorityError,
   AiRuntimeBlockedError,
   GuardedAiProvider,
-} from "../_shared/ai-runtime-safety"
+} from "../_shared/ai-runtime-safety.ts"
 import {
   createDeepSeekCnyRateCard,
   DEEPSEEK_CNY_RATE_CARD_VERSION,
-} from "../_shared/deepseek-rate-card"
-import { DeepSeekProvider, type DeepSeekModel } from "../_shared/deepseek-provider"
-import { AiProviderError, type AiProviderResult } from "../_shared/ai-provider"
+} from "../_shared/deepseek-rate-card.ts"
+import { DeepSeekProvider, type DeepSeekModel } from "../_shared/deepseek-provider.ts"
+import { AiProviderError, type AiProviderResult } from "../_shared/ai-provider.ts"
 import {
   SupabaseAiQuotaAuditBoundary,
   SupabaseAiRuntimeContextAuthority,
-} from "../_shared/supabase-ai-runtime"
+} from "../_shared/supabase-ai-runtime.ts"
 
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 

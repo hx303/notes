@@ -1,6 +1,6 @@
-import type { AiProviderRequest, AiProviderResult, AiProviderUsage } from "./ai-provider"
-import type { DeepSeekModel } from "./deepseek-provider"
-import type { AiRateCard } from "./ai-runtime-safety"
+import type { AiProviderRequest, AiProviderResult, AiProviderUsage } from "./ai-provider.ts"
+import type { DeepSeekModel } from "./deepseek-provider.ts"
+import type { AiRateCard } from "./ai-runtime-safety.ts"
 
 export const DEEPSEEK_CNY_RATE_CARD_VERSION = "deepseek-cny-2026-07-17"
 const PROMPT_TOKEN_OVERHEAD = 1024n

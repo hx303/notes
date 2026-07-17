@@ -1,4 +1,4 @@
-import { createAiWriteHandler, createAiWriteRuntimeFromEnv } from "./handler"
+import { createAiWriteHandler, createAiWriteRuntimeFromEnv } from "./handler.ts"
 
 declare const Deno: {
   env: { get(name: string): string | undefined }
