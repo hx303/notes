@@ -9,9 +9,10 @@ No production change is authorized by this file. Create a completed operation re
 - Supabase project: `agocyybolrisqujvjqdj` (public project identifier only).
 - Committed evidence says the AI migration and `ai-write` mock function are deployed, unauthenticated calls return 401, and four real-account RLS assertions passed.
 - The site owner explicitly confirmed the signed-in mock gateway returned the expected no-model/no-cost result.
-- The site owner explicitly authorized configuration, deployment, and a real DeepSeek test call on 2026-07-17, subject to completing the recorded prerequisites. The key file exists but has not been read, imported, logged, or committed.
+- The site owner explicitly authorized configuration, deployment, and a real DeepSeek test call on 2026-07-17, subject to completing the recorded prerequisites. After local checks and independent review, the key was validated and used transiently for one guarded synthetic-public provider canary; it was not printed, persisted, committed, or imported into Supabase.
 - PR #12's A20 migration/RPCs passed local PostgreSQL migration, RLS, rollback-only SQL, and true two-session concurrency validation. `agent/ai-live-canary` adds a separately reviewed default-off public-snapshot-only runtime hookup; P0/P1 review, full tests, TypeScript, and build passed.
 - Production execution is still stopped: the Supabase CLI has no authenticated profile, GitHub Actions exposes no Supabase deployment secrets, remote migration history and a backup cannot yet be captured, and therefore the migration/function/secret/live flag/paid canary have not run.
+- Local provider-canary result: `deepseek-v4-flash`, success/stop, 13 prompt tokens, 2 completion tokens, 15 total tokens, zero cache-hit tokens, 13 cache-miss tokens, and 1 CNY fen actual audited cost. The prompt contained only fixed synthetic public text; no note or account data was read.
 - Fresh database row counts, backup location, production deployment SHA, and Cloudflare state are not yet recorded. Therefore migrations, function replacement, secrets, feature flags, and paid calls remain stopped.
 
 ## Operation record template

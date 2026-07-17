@@ -69,7 +69,7 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - `agent/ai-live-canary` keeps live mode off unless `AI_LIVE_ENABLED=true`; the database singleton flag, user opt-in, budget, provider/model consent, rate-card version, daily limit, concurrency limit, JWT identity, owner RLS, and public publication snapshot remain authoritative.
 - The first live capability is deliberately only whole-publication `rewrite`. The caller's selection/context is ignored and never reaches DeepSeek; private, unlisted, free-input, missing, malformed, or other-user sources are blocked first.
 - Focused tests, the full 192-test Quartz suite, TypeScript, diff-check, and the 284-input/1046-output static build passed. Independent review found no P0/P1 for a site-owner, one-request, low-budget canary and explicitly rejected broad rollout.
-- Production remains blocked because the local Supabase CLI has no authenticated profile and GitHub Actions has no Supabase deployment secrets. The DeepSeek key file has not been read or imported.
+- After the independent review, one local guarded synthetic-public canary used the key transiently and succeeded on `deepseek-v4-flash` with 13 prompt tokens, 2 completion tokens, and an audited actual cost of 1 CNY fen. No note content was used and the key was not printed, persisted, committed, or imported into Supabase. Production remains blocked because the local Supabase CLI has no authenticated profile and GitHub Actions has no Supabase deployment secrets.
 
 ## Git and worktree reality
 
