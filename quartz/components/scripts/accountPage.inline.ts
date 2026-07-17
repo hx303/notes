@@ -1,3 +1,10 @@
+import {
+  createAuthGenerationGuard,
+  loadSharedSupabaseClient,
+  watchSupabaseAuth,
+  type AuthGenerationSnapshot,
+} from "./supabaseClient"
+
 const localDraftKey = (userId: string, documentId = "new") =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
 
@@ -82,21 +89,6 @@ const renderMarkdownInto = async (target: HTMLElement, markdown: string) => {
 }
 
 type ImportedDraft = { title: string; body: string; imageCount: number; notes: string[] }
-
-const loadClient = async (url: string, key: string) => {
-  const globalWindow = window as any
-  if (globalWindow.__supabaseClient) return globalWindow.__supabaseClient
-  const factory =
-    globalWindow.supabase ??
-    (await loadExternalScript(
-      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js",
-      "supabase",
-    ))
-  if (!factory) return null
-  const client = factory.createClient(url, key)
-  globalWindow.__supabaseClient = client
-  return client
-}
 
 type WorkspaceDocument = {
   id: string
@@ -252,9 +244,11 @@ const init = async () => {
   let authSubscription: { unsubscribe?: () => void } | null = null
   let onlineHandler: (() => void) | null = null
   let disposed = false
+  const authGeneration = createAuthGenerationGuard()
 
   window.addCleanup(() => {
     disposed = true
+    authGeneration.invalidate()
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     authSubscription?.unsubscribe?.()
     if (onlineHandler) window.removeEventListener("online", onlineHandler)
@@ -281,7 +275,10 @@ const init = async () => {
     if (announce) setStatus("正在重新连接登录服务…")
     try {
       const connected = await Promise.race([
-        loadClient(root.dataset.supabaseUrl ?? "", root.dataset.supabaseAnonKey ?? ""),
+        loadSharedSupabaseClient(
+          root.dataset.supabaseUrl ?? "",
+          root.dataset.supabaseAnonKey ?? "",
+        ),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
       ])
       if (disposed) return null
@@ -293,6 +290,121 @@ const init = async () => {
       setStatus("登录服务仍未连接；输入内容已经保留，请检查网络后再次提交。", "error")
     return client
   }
+
+  const clearPrivateWorkspace = (message = "") => {
+    authGeneration.invalidate()
+    currentUser = null
+    workspaceDocuments = []
+    currentPublication = null
+    importedDraft = null
+    currentProfileAvatarUrl = ""
+    profileCroppedBlob = null
+    if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    autosaveTimer = undefined
+
+    if (email) email.textContent = ""
+    if (profileEmail) profileEmail.textContent = "—"
+    if (session) session.hidden = true
+    if (login) login.hidden = false
+    if (authPanel) authPanel.hidden = false
+    ;[
+      workspaceOverview,
+      library,
+      writeLauncher,
+      profileSettings,
+      aiSettings,
+      editor,
+      flatWorkbench,
+    ].forEach((surface) => {
+      if (surface) surface.hidden = true
+    })
+    siteOwnerNavItems.forEach((item) => {
+      item.hidden = true
+    })
+
+    form?.reset()
+    flatForm?.reset()
+    profileSettingsForm?.reset()
+    aiSettingsForm?.reset()
+    libraryList?.replaceChildren()
+    historyList?.replaceChildren()
+    sourceList?.replaceChildren()
+    root
+      .querySelectorAll<HTMLElement>(
+        "[data-import-result-title], [data-import-title], [data-import-size], [data-import-images]",
+      )
+      .forEach((node) => {
+        node.textContent = ""
+      })
+    root.querySelector<HTMLElement>("[data-import-note-list]")?.replaceChildren()
+    const importNotes = root.querySelector<HTMLElement>("[data-import-notes]")
+    if (importNotes) importNotes.hidden = true
+    if (importFile) importFile.value = ""
+    importDropzone?.classList.remove("is-busy", "is-dragging")
+    if (importResult) importResult.hidden = true
+    if (importConfirm) importConfirm.disabled = true
+    if (importStatus) {
+      importStatus.textContent = ""
+      importStatus.dataset.state = ""
+    }
+    ;[
+      flatStatus,
+      aiSettingsStatus,
+      aiGatewayStatus,
+      profileSettingsStatus,
+      sourceStatus,
+      state,
+    ].forEach((node) => {
+      if (node) {
+        node.textContent = ""
+        node.dataset.state = ""
+      }
+    })
+    root.querySelector<HTMLElement>("[data-knowledge-link-options]")?.replaceChildren()
+    root.querySelector<HTMLElement>("[data-tag-options]")?.replaceChildren()
+    root.querySelector<HTMLElement>("[data-preview-body]")?.replaceChildren()
+    root.querySelector<HTMLElement>("[data-preview-sources]")?.replaceChildren()
+    root
+      .querySelectorAll<HTMLElement>("[data-preview-title], [data-preview-visibility]")
+      .forEach((node) => {
+        node.textContent = ""
+      })
+    if (publicationStatus) publicationStatus.textContent = ""
+    if (publicationLink) {
+      publicationLink.hidden = true
+      publicationLink.removeAttribute("href")
+    }
+    if (profileAvatarPreview) {
+      profileAvatarPreview.hidden = true
+      profileAvatarPreview.removeAttribute("src")
+    }
+    if (profileCardAvatar) {
+      profileCardAvatar.hidden = true
+      profileCardAvatar.removeAttribute("src")
+    }
+    if (profileCardName) profileCardName.textContent = ""
+    if (profileCardSignature) profileCardSignature.textContent = ""
+    if (profileCardBio) profileCardBio.textContent = ""
+    if (profileCardLocation) profileCardLocation.textContent = ""
+    if (profileCardWebsite) {
+      profileCardWebsite.textContent = ""
+      profileCardWebsite.removeAttribute("href")
+    }
+    if (profileCardLocationRow) profileCardLocationRow.hidden = true
+    if (profileCardWebsiteRow) profileCardWebsiteRow.hidden = true
+    if (profilePreviewObjectUrl) URL.revokeObjectURL(profilePreviewObjectUrl)
+    profilePreviewObjectUrl = ""
+    if (profileCropSourceUrl) URL.revokeObjectURL(profileCropSourceUrl)
+    profileCropSourceUrl = ""
+    profileCropper?.destroy?.()
+    profileCropper = null
+    if (avatarCropDialog?.open) avatarCropDialog.close()
+    if (importDialog?.open) importDialog.close()
+    if (message) setStatus(message, "error")
+  }
+
+  const isAuthCurrent = (snapshot: AuthGenerationSnapshot) =>
+    !disposed && currentUser?.id === snapshot.userId && authGeneration.isCurrent(snapshot)
 
   const setProfileStatus = (message: string, type: "" | "error" | "success" = "") => {
     if (!profileSettingsStatus) return
@@ -318,13 +430,14 @@ const init = async () => {
     if (!aiEnabled?.checked) aiPrivateContent.checked = false
   }
 
-  const loadAiSettings = async () => {
-    if (!client || !currentUser || !aiSettingsForm) return
+  const loadAiSettings = async (snapshot: AuthGenerationSnapshot) => {
+    if (!client || !aiSettingsForm || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("ai_preferences")
       .select("enabled,allow_private_content,monthly_budget_cents,grounding_mode")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .maybeSingle()
+    if (!isAuthCurrent(snapshot)) return
     if (result.error) {
       setAiStatus(
         "AI 设置尚未启用，请先在 Supabase 执行 20260716_ai_assistant_foundation.sql。",
@@ -412,33 +525,35 @@ const init = async () => {
     renderProfileAvatar(profilePreviewObjectUrl || currentProfileAvatarUrl, displayName)
   }
 
-  const loadProfileSettings = async () => {
-    if (!client || !currentUser || !profileSettingsForm) return
+  const loadProfileSettings = async (snapshot: AuthGenerationSnapshot) => {
+    if (!client || !currentUser || !profileSettingsForm || !isAuthCurrent(snapshot)) return
+    const userEmail = currentUser.email ?? ""
     let result = await client
       .from("profiles")
       .select("display_name,avatar_url,signature,bio,location,website_url")
-      .eq("id", currentUser.id)
+      .eq("id", snapshot.userId)
       .maybeSingle()
+    if (!isAuthCurrent(snapshot)) return
     profilePersonalizationAvailable = !result.error
     if (result.error)
       result = await client
         .from("profiles")
         .select("display_name,avatar_url")
-        .eq("id", currentUser.id)
+        .eq("id", snapshot.userId)
         .maybeSingle()
+    if (!isAuthCurrent(snapshot)) return
     if (result.error) {
       setProfileStatus("暂时无法读取个人资料，请刷新后重试。", "error")
       return
     }
-    const displayName =
-      result.data?.display_name?.trim() || currentUser.email?.split("@")[0] || "我的账户"
+    const displayName = result.data?.display_name?.trim() || userEmail.split("@")[0] || "我的账户"
     currentProfileAvatarUrl = result.data?.avatar_url ?? ""
     if (profileDisplayName) profileDisplayName.value = displayName
     if (profileSignature) profileSignature.value = result.data?.signature ?? ""
     if (profileBio) profileBio.value = result.data?.bio ?? ""
     if (profileLocation) profileLocation.value = result.data?.location ?? ""
     if (profileWebsite) profileWebsite.value = result.data?.website_url ?? ""
-    if (profileEmail) profileEmail.textContent = currentUser.email ?? "—"
+    if (profileEmail) profileEmail.textContent = userEmail || "—"
     updateProfilePreview()
     setProfileStatus(
       profilePersonalizationAvailable
@@ -566,15 +681,16 @@ const init = async () => {
     })
   }
 
-  const loadVersions = async (documentId: string) => {
-    if (!client || !currentUser || !history || !historyList) return
+  const loadVersions = async (documentId: string, snapshot: AuthGenerationSnapshot) => {
+    if (!client || !history || !historyList || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("document_versions")
       .select("version_no,snapshot,created_at")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .order("version_no", { ascending: false })
       .limit(10)
+    if (!isAuthCurrent(snapshot)) return
     if (result.error || !result.data?.length) {
       history.hidden = true
       return
@@ -588,6 +704,7 @@ const init = async () => {
         button.className = "editor-history-item"
         button.textContent = `版本 ${version.version_no} · ${formatDate(version.created_at)}`
         button.addEventListener("click", () => {
+          if (!isAuthCurrent(snapshot)) return
           fillForm(version.snapshot)
           if (state) state.textContent = `已载入版本 ${version.version_no}，保存后会生成新版本`
         })
@@ -596,31 +713,34 @@ const init = async () => {
     )
   }
 
-  const ensureKnowledgeBase = async () => {
-    if (!client || !currentUser) return null
+  const ensureKnowledgeBase = async (snapshot: AuthGenerationSnapshot) => {
+    if (!client || !isAuthCurrent(snapshot)) return null
     const existing = await client
       .from("knowledge_bases")
       .select("id")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle()
+    if (!isAuthCurrent(snapshot)) return null
     if (existing.data?.id) return existing.data.id
     const created = await client
       .from("knowledge_bases")
-      .insert({ owner_id: currentUser.id, name: "我的知识库", default_visibility: "private" })
+      .insert({ owner_id: snapshot.userId, name: "我的知识库", default_visibility: "private" })
       .select("id")
       .single()
+    if (!isAuthCurrent(snapshot)) return null
     return created.data?.id ?? null
   }
 
-  const loadDocuments = async () => {
-    if (!client || !currentUser || !workspace) return
+  const loadDocuments = async (snapshot: AuthGenerationSnapshot) => {
+    if (!client || !workspace || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("documents")
       .select("id,title,topic,status,visibility,maturity,revision,updated_at,deleted_at")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .order("updated_at", { ascending: false })
+    if (!isAuthCurrent(snapshot)) return
     if (result.error) {
       setStatus("云端知识库还没有准备好；请先在 Supabase 执行工作区迁移。")
       return
@@ -628,9 +748,10 @@ const init = async () => {
     renderDocuments((result.data ?? []) as WorkspaceDocument[])
   }
 
-  const loadCapabilities = async () => {
-    if (!client || !currentUser || !workspace) return
+  const loadCapabilities = async (snapshot: AuthGenerationSnapshot) => {
+    if (!client || !workspace || !isAuthCurrent(snapshot)) return
     const result = await client.rpc("current_account_capabilities")
+    if (!isAuthCurrent(snapshot)) return
     const capabilities = result.data as { is_site_owner?: boolean; role?: string } | null
     const isSiteOwner = !result.error && capabilities?.is_site_owner === true
     siteOwnerNavItems.forEach((item) => {
@@ -747,14 +868,15 @@ const init = async () => {
     return true
   }
 
-  const loadDocumentSources = async (documentId: string) => {
-    if (!client || !currentUser) return
+  const loadDocumentSources = async (documentId: string, snapshot: AuthGenerationSnapshot) => {
+    if (!client || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("document_sources")
       .select("kind,url,title,author,note")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .order("sort_order", { ascending: true })
+    if (!isAuthCurrent(snapshot)) return
     if (result.error) {
       sourcesMigrationAvailable = false
       renderSources()
@@ -764,7 +886,8 @@ const init = async () => {
     renderSources((result.data ?? []) as WorkspaceSource[])
   }
 
-  const saveDocumentSources = async (documentId: string) => {
+  const saveDocumentSources = async (documentId: string, snapshot: AuthGenerationSnapshot) => {
+    if (!isAuthCurrent(snapshot)) return false
     const sources = collectSources()
     if (!sources.length && sourcesMigrationAvailable !== true) return true
     if (!validateSources()) return false
@@ -772,6 +895,7 @@ const init = async () => {
       p_document_id: documentId,
       p_sources: sources,
     })
+    if (!isAuthCurrent(snapshot)) return false
     if (result.error) {
       sourcesMigrationAvailable = false
       if (sourceStatus)
@@ -853,8 +977,13 @@ const init = async () => {
     }
   }
 
-  const saveTags = async (documentId: string, knowledgeBaseId: string, rawTags: string) => {
-    if (!client || !currentUser) return
+  const saveTags = async (
+    documentId: string,
+    knowledgeBaseId: string,
+    rawTags: string,
+    snapshot: AuthGenerationSnapshot,
+  ) => {
+    if (!client || !isAuthCurrent(snapshot)) return
     const names = [
       ...new Set(
         rawTags
@@ -867,15 +996,16 @@ const init = async () => {
       .from("document_tags")
       .delete()
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
     for (const name of names) {
+      if (!isAuthCurrent(snapshot)) return
       const normalizedName = name.normalize("NFKC").toLocaleLowerCase()
       const tag = await client
         .from("tags")
         .upsert(
           {
             knowledge_base_id: knowledgeBaseId,
-            owner_id: currentUser.id,
+            owner_id: snapshot.userId,
             name,
             normalized_name: normalizedName,
           },
@@ -886,21 +1016,22 @@ const init = async () => {
       if (tag.data?.id)
         await client
           .from("document_tags")
-          .upsert({ document_id: documentId, tag_id: tag.data.id, owner_id: currentUser.id })
+          .upsert({ document_id: documentId, tag_id: tag.data.id, owner_id: snapshot.userId })
     }
   }
 
-  const loadLinkOptions = async (currentDocumentId = "") => {
+  const loadLinkOptions = async (snapshot: AuthGenerationSnapshot, currentDocumentId = "") => {
     const datalist = root.querySelector<HTMLElement>("[data-knowledge-link-options]")
-    if (!client || !currentUser || !datalist) return
+    if (!client || !datalist || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("documents")
       .select("id,title")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .neq("id", currentDocumentId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(30)
+    if (!isAuthCurrent(snapshot)) return
     datalist.replaceChildren()
     ;(result.data ?? []).forEach((item: { id: string; title: string }) => {
       const option = globalThis.document.createElement("option")
@@ -910,15 +1041,16 @@ const init = async () => {
     })
   }
 
-  const loadTagOptions = async () => {
+  const loadTagOptions = async (snapshot: AuthGenerationSnapshot) => {
     const datalist = root.querySelector<HTMLElement>("[data-tag-options]")
-    if (!client || !currentUser || !datalist) return
+    if (!client || !datalist || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("tags")
       .select("name")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .order("name", { ascending: true })
       .limit(100)
+    if (!isAuthCurrent(snapshot)) return
     datalist.replaceChildren()
     ;(result.data ?? []).forEach((item: { name: string }) => {
       const option = globalThis.document.createElement("option")
@@ -927,13 +1059,14 @@ const init = async () => {
     })
   }
 
-  const loadDocumentTags = async (documentId: string) => {
-    if (!client || !currentUser || !form) return
+  const loadDocumentTags = async (documentId: string, snapshot: AuthGenerationSnapshot) => {
+    if (!client || !form || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("document_tags")
       .select("tags(name)")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
+    if (!isAuthCurrent(snapshot)) return
     const names = (result.data ?? [])
       .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
       .filter(Boolean)
@@ -945,8 +1078,9 @@ const init = async () => {
     documentId: string,
     rawTitles: string,
     relationType: "prerequisite" | "related",
+    snapshot: AuthGenerationSnapshot,
   ) => {
-    if (!client || !currentUser) return
+    if (!client || !isAuthCurrent(snapshot)) return
     const titles = [
       ...new Set(
         rawTitles
@@ -959,13 +1093,14 @@ const init = async () => {
       .from("document_links")
       .delete()
       .eq("from_document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .eq("relation_type", relationType)
     if (!titles.length) return
+    if (!isAuthCurrent(snapshot)) return
     const targets = await client
       .from("documents")
       .select("id,title")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .in("title", titles)
       .is("deleted_at", null)
     const titleMap = new Map(
@@ -980,19 +1115,20 @@ const init = async () => {
       .map((toDocumentId) => ({
         from_document_id: documentId,
         to_document_id: toDocumentId,
-        owner_id: currentUser.id,
+        owner_id: snapshot.userId,
         relation_type: relationType,
       }))
-    if (rows.length) await client.from("document_links").upsert(rows)
+    if (rows.length && isAuthCurrent(snapshot)) await client.from("document_links").upsert(rows)
   }
 
-  const loadDocumentLinks = async (documentId: string) => {
-    if (!client || !currentUser || !form) return
+  const loadDocumentLinks = async (documentId: string, snapshot: AuthGenerationSnapshot) => {
+    if (!client || !form || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("document_links")
       .select("relation_type,to_document_id,documents!document_links_to_document_id_fkey(title)")
       .eq("from_document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
+    if (!isAuthCurrent(snapshot)) return
     const groups: Record<string, string[]> = { prerequisite: [], related: [] }
     ;(result.data ?? []).forEach(
       (item: { relation_type: string; documents?: { title?: string } | null }) => {
@@ -1052,14 +1188,19 @@ const init = async () => {
     if (saveButton) saveButton.textContent = "保存修改（不会自动更新公开页）"
   }
 
-  const loadPublication = async (documentId: string, revision: number) => {
-    if (!client || !currentUser) return
+  const loadPublication = async (
+    documentId: string,
+    revision: number,
+    snapshot: AuthGenerationSnapshot,
+  ) => {
+    if (!client || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("document_publications")
       .select("document_id,audience,share_token,source_revision,published_at")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .maybeSingle()
+    if (!isAuthCurrent(snapshot)) return
     if (result.error) {
       currentPublication = null
       if (publicationStatus)
@@ -1071,7 +1212,8 @@ const init = async () => {
   }
 
   const publishCurrentDocument = async () => {
-    if (!client || !currentUser || !form) return
+    const snapshot = authGeneration.current()
+    if (!client || !form || !snapshot || !isAuthCurrent(snapshot)) return
     const beforeSave = readForm()
     if (!beforeSave.title.trim() || !beforeSave.body.trim()) {
       if (publicationStatus) publicationStatus.textContent = "发布前需要填写标题和正文。"
@@ -1102,6 +1244,7 @@ const init = async () => {
         p_document_id: data.documentId,
         p_audience: audience,
       })
+      if (!isAuthCurrent(snapshot)) return
       if (result.error || !result.data) {
         if (publicationStatus)
           publicationStatus.textContent = result.error?.message?.includes("does not exist")
@@ -1113,9 +1256,9 @@ const init = async () => {
       if (statusField) statusField.value = "published"
       updatePublicationUI(result.data as PublicationState, data.revision)
       setStatus(audience === "public" ? "已公开到知识网络。" : "持链接阅读版本已生成。", "success")
-      await loadDocuments()
+      await loadDocuments(snapshot)
     } finally {
-      if (publishButton) {
+      if (publishButton && isAuthCurrent(snapshot)) {
         publishButton.disabled = false
         const pending =
           currentPublication && readForm().revision > Number(currentPublication.source_revision)
@@ -1129,7 +1272,8 @@ const init = async () => {
   }
 
   const unpublishCurrentDocument = async () => {
-    if (!client || !currentUser || !form || !currentPublication) return
+    const snapshot = authGeneration.current()
+    if (!client || !form || !currentPublication || !snapshot || !isAuthCurrent(snapshot)) return
     if (
       !window.confirm(
         "撤回后，当前公开页或分享链接会立即失效。私人草稿和历史版本仍会保留。确定撤回吗？",
@@ -1142,6 +1286,7 @@ const init = async () => {
     }
     const documentId = readForm().documentId
     const result = await client.rpc("unpublish_document", { p_document_id: documentId })
+    if (!isAuthCurrent(snapshot)) return
     if (unpublishButton) {
       unpublishButton.disabled = false
       unpublishButton.textContent = "撤回发布"
@@ -1157,14 +1302,15 @@ const init = async () => {
     if (privateOption) privateOption.checked = true
     updatePublicationUI(null)
     setStatus("发布已撤回；私人草稿仍然保留。", "success")
-    await loadDocuments()
+    await loadDocuments(snapshot)
   }
 
   const saveDocument = async () => {
-    if (!form || !currentUser || !client) return false
+    const snapshot = authGeneration.current()
+    if (!form || !client || !snapshot || !isAuthCurrent(snapshot)) return false
     const data = readForm()
-    const knowledgeBaseId = await ensureKnowledgeBase()
-    if (!knowledgeBaseId) return false
+    const knowledgeBaseId = await ensureKnowledgeBase(snapshot)
+    if (!knowledgeBaseId || !isAuthCurrent(snapshot)) return false
     const visibility =
       data.visibility === "public" ||
       data.visibility === "unlisted" ||
@@ -1177,7 +1323,7 @@ const init = async () => {
       body: data.body,
       topic: data.topic,
       maturity: data.maturity,
-      owner_id: currentUser.id,
+      owner_id: snapshot.userId,
       knowledge_base_id: knowledgeBaseId,
       status: documentStatus,
       visibility,
@@ -1187,11 +1333,12 @@ const init = async () => {
           .from("documents")
           .update({ ...payload, revision: data.revision + 1 })
           .eq("id", data.documentId)
-          .eq("owner_id", currentUser.id)
+          .eq("owner_id", snapshot.userId)
           .eq("revision", data.revision)
           .select("id,revision")
           .maybeSingle()
       : await client.from("documents").insert(payload).select("id,revision").single()
+    if (!isAuthCurrent(snapshot)) return false
     if (result.error) {
       setStatus("云端保存失败，已保留本地备份；请检查工作区迁移是否已执行。")
       return false
@@ -1209,11 +1356,11 @@ const init = async () => {
       const revision = form.elements.namedItem("revision") as HTMLInputElement | null
       if (revision) revision.value = String(result.data.revision)
     }
-    if (result.data?.id && currentUser) {
+    if (result.data?.id) {
       await client.from("document_versions").insert({
         document_id: result.data.id,
-        owner_id: currentUser.id,
-        created_by: currentUser.id,
+        owner_id: snapshot.userId,
+        created_by: snapshot.userId,
         version_no: result.data.revision ?? 0,
         snapshot: {
           title: data.title,
@@ -1223,19 +1370,25 @@ const init = async () => {
           visibility: payload.visibility,
         },
       })
-      await saveTags(result.data.id, knowledgeBaseId!, data.tags ?? "")
-      await saveLinks(result.data.id, data.prerequisites ?? "", "prerequisite")
-      await saveLinks(result.data.id, data.related ?? "", "related")
-      if (!(await saveDocumentSources(result.data.id))) {
-        await loadDocuments()
+      if (!isAuthCurrent(snapshot)) return false
+      await saveTags(result.data.id, knowledgeBaseId, data.tags ?? "", snapshot)
+      if (!isAuthCurrent(snapshot)) return false
+      await saveLinks(result.data.id, data.prerequisites ?? "", "prerequisite", snapshot)
+      if (!isAuthCurrent(snapshot)) return false
+      await saveLinks(result.data.id, data.related ?? "", "related", snapshot)
+      if (!isAuthCurrent(snapshot)) return false
+      if (!(await saveDocumentSources(result.data.id, snapshot))) {
+        if (!isAuthCurrent(snapshot)) return false
+        await loadDocuments(snapshot)
         if (state) state.textContent = "正文已保存，来源待同步"
         return false
       }
     }
-    localStorage.removeItem(localDraftKey(currentUser.id, data.documentId || "new"))
+    if (!isAuthCurrent(snapshot)) return false
+    localStorage.removeItem(localDraftKey(snapshot.userId, data.documentId || "new"))
     updatePublicationUI(currentPublication, Number(result.data?.revision ?? data.revision))
-    await loadDocuments()
-    return true
+    await loadDocuments(snapshot)
+    return isAuthCurrent(snapshot)
   }
 
   const queueAutosave = () => {
@@ -1250,13 +1403,15 @@ const init = async () => {
   }
 
   const openDocument = async (documentId: string) => {
-    if (!client || !currentUser || !form) return
+    const snapshot = authGeneration.current()
+    if (!client || !form || !snapshot || !isAuthCurrent(snapshot)) return
     const result = await client
       .from("documents")
       .select("id,title,body,topic,maturity,status,visibility,revision")
       .eq("id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", snapshot.userId)
       .single()
+    if (!isAuthCurrent(snapshot)) return
     if (result.error) {
       setStatus("这条知识暂时无法打开，请刷新后重试。")
       return
@@ -1266,26 +1421,31 @@ const init = async () => {
     if (flatWorkbench) flatWorkbench.hidden = true
     if (editor) editor.hidden = false
     if (state) state.textContent = "已加载云端草稿"
-    await loadVersions(documentId)
-    await loadLinkOptions(documentId)
-    await loadDocumentTags(documentId)
-    await loadDocumentLinks(documentId)
-    await loadDocumentSources(documentId)
-    await loadPublication(documentId, Number(result.data?.revision ?? 0))
-    editor?.scrollIntoView({ behavior: "smooth", block: "start" })
+    await loadVersions(documentId, snapshot)
+    await loadLinkOptions(snapshot, documentId)
+    await loadDocumentTags(documentId, snapshot)
+    await loadDocumentLinks(documentId, snapshot)
+    await loadDocumentSources(documentId, snapshot)
+    await loadPublication(documentId, Number(result.data?.revision ?? 0), snapshot)
+    if (isAuthCurrent(snapshot)) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
-  const sync = async () => {
-    if (disposed) return
+  const sync = async (revision: number) => {
+    if (disposed || !authGeneration.isRevisionCurrent(revision)) return
     try {
+      let snapshot: AuthGenerationSnapshot | null = null
       try {
-        currentUser = client ? ((await client.auth.getUser()).data?.user ?? null) : null
+        const user = client ? ((await client.auth.getUser()).data?.user ?? null) : null
+        if (disposed || !authGeneration.isRevisionCurrent(revision)) return
+        snapshot = user ? authGeneration.bind(revision, user.id) : null
+        if (user && !snapshot) return
+        currentUser = user
       } catch {
-        currentUser = null
+        if (disposed || !authGeneration.isRevisionCurrent(revision)) return
         setStatus("登录状态暂时无法确认；输入入口和内容都已保留，请检查网络后重试。", "error")
         return
       }
-      if (disposed) return
+      if (disposed || !authGeneration.isRevisionCurrent(revision)) return
       if (session) session.hidden = !currentUser || (accountMode !== "signin" && !workspace)
       if (login) login.hidden = Boolean(currentUser)
       if (email) email.textContent = currentUser?.email ?? ""
@@ -1302,26 +1462,36 @@ const init = async () => {
           })
         if (editor) editor.hidden = true
         if (flatWorkbench) flatWorkbench.hidden = true
-        if (currentUser) {
+        if (currentUser && snapshot) {
           try {
-            await loadCapabilities()
-            const knowledgeBaseId = await ensureKnowledgeBase()
-            if (!knowledgeBaseId)
-              setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
-            await loadDocuments()
+            await loadCapabilities(snapshot)
+            if (!isAuthCurrent(snapshot)) return
+            const knowledgeBaseId = await ensureKnowledgeBase(snapshot)
+            if (!isAuthCurrent(snapshot)) return
+            if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
+            await loadDocuments(snapshot)
+            if (!isAuthCurrent(snapshot)) return
             restoreLocalBackup()
-            await loadLinkOptions()
-            await loadTagOptions()
-            if (workspaceSection === "settings") await loadProfileSettings()
-            if (workspaceSection === "ai-settings") await loadAiSettings()
+            await loadLinkOptions(snapshot)
+            if (!isAuthCurrent(snapshot)) return
+            await loadTagOptions(snapshot)
+            if (!isAuthCurrent(snapshot)) return
+            if (workspaceSection === "settings") await loadProfileSettings(snapshot)
+            if (workspaceSection === "ai-settings") await loadAiSettings(snapshot)
           } catch {
-            setStatus("登录已确认，但工作区数据暂时无法加载；请检查网络后刷新重试。", "error")
+            if (isAuthCurrent(snapshot))
+              setStatus("登录已确认，但工作区数据暂时无法加载；请检查网络后刷新重试。", "error")
           }
         }
       }
     } finally {
-      resolveAuthState()
+      if (authGeneration.isRevisionCurrent(revision)) resolveAuthState()
     }
+  }
+
+  const queueSync = () => {
+    const revision = authGeneration.start()
+    return sync(revision)
   }
 
   await ensureClient()
@@ -1329,16 +1499,20 @@ const init = async () => {
   if (!client) {
     setStatus("登录服务暂时无法加载；请检查网络后重试。", "error")
     resolveAuthState()
-  }
-  else await sync()
+  } else await queueSync()
   if (disposed) return
 
   function watchAuthState() {
     if (!client || authSubscription) return
-    const listener = client.auth.onAuthStateChange((event: string) => {
-      if (event === "SIGNED_IN" && workspace) void sync()
+    authSubscription = watchSupabaseAuth(client, {
+      onSignedOut: () => {
+        clearPrivateWorkspace("登录状态已经结束，请重新登录。")
+        resolveAuthState()
+      },
+      onSessionChanged: () => {
+        void queueSync()
+      },
     })
-    authSubscription = listener?.data?.subscription ?? null
   }
   watchAuthState()
 
@@ -1551,6 +1725,8 @@ const init = async () => {
   root
     .querySelector<HTMLButtonElement>("[data-avatar-crop-confirm]")
     ?.addEventListener("click", async () => {
+      const snapshot = authGeneration.current()
+      if (!snapshot || !isAuthCurrent(snapshot)) return
       if (!profileCropper) {
         if (avatarCropStatus) avatarCropStatus.textContent = "图片还没有准备好，请稍候。"
         return
@@ -1571,6 +1747,7 @@ const init = async () => {
           0.9,
         )
       })
+      if (!isAuthCurrent(snapshot)) return
       if (!blob) {
         if (avatarCropStatus) avatarCropStatus.textContent = "无法生成头像，请换一张图片重试。"
         return
@@ -1593,7 +1770,8 @@ const init = async () => {
 
   aiSettingsForm?.addEventListener("submit", async (event) => {
     event.preventDefault()
-    if (!client || !currentUser) {
+    const snapshot = authGeneration.current()
+    if (!client || !snapshot || !isAuthCurrent(snapshot)) {
       setAiStatus("登录状态已失效，请重新登录。", "error")
       return
     }
@@ -1607,7 +1785,7 @@ const init = async () => {
       const enabled = Boolean(aiEnabled?.checked)
       const result = await client.from("ai_preferences").upsert(
         {
-          owner_id: currentUser.id,
+          owner_id: snapshot.userId,
           enabled,
           allow_private_content: Boolean(enabled && aiPrivateContent?.checked),
           monthly_budget_cents: Number(aiMonthlyBudget?.value ?? 0),
@@ -1619,6 +1797,7 @@ const init = async () => {
         },
         { onConflict: "owner_id" },
       )
+      if (!isAuthCurrent(snapshot)) return
       if (result.error) {
         setAiStatus(
           String(result.error.message ?? "")
@@ -1635,7 +1814,7 @@ const init = async () => {
         "success",
       )
     } finally {
-      if (aiSave) {
+      if (aiSave && isAuthCurrent(snapshot)) {
         aiSave.disabled = false
         aiSave.textContent = originalLabel
       }
@@ -1643,7 +1822,8 @@ const init = async () => {
   })
 
   aiTestGateway?.addEventListener("click", async () => {
-    if (!client || !currentUser) {
+    const snapshot = authGeneration.current()
+    if (!client || !snapshot || !isAuthCurrent(snapshot)) {
       setAiGatewayStatus("请先登录，再测试安全网关。", "error")
       return
     }
@@ -1661,6 +1841,7 @@ const init = async () => {
           base_version: 0,
         },
       })
+      if (!isAuthCurrent(snapshot)) return
       if (result.error) {
         setAiGatewayStatus(
           "安全网关尚未部署或暂时不可用；请先部署 ai-write Edge Function。",
@@ -1675,14 +1856,17 @@ const init = async () => {
         result.data?.mock === true ? "success" : "error",
       )
     } finally {
-      aiTestGateway.disabled = false
-      aiTestGateway.textContent = originalLabel
+      if (isAuthCurrent(snapshot)) {
+        aiTestGateway.disabled = false
+        aiTestGateway.textContent = originalLabel
+      }
     }
   })
 
   profileSettingsForm?.addEventListener("submit", async (event) => {
     event.preventDefault()
-    if (!client || !currentUser || !profileDisplayName) {
+    const snapshot = authGeneration.current()
+    if (!client || !snapshot || !isAuthCurrent(snapshot) || !profileDisplayName) {
       setProfileStatus("登录状态已失效，请重新登录。", "error")
       return
     }
@@ -1719,12 +1903,13 @@ const init = async () => {
     let avatarUrl = currentProfileAvatarUrl
     try {
       if (profileCroppedBlob) {
-        const avatarPath = `${currentUser.id}/avatar`
+        const avatarPath = `${snapshot.userId}/avatar`
         const upload = await client.storage.from("avatars").upload(avatarPath, profileCroppedBlob, {
           upsert: true,
           contentType: profileCroppedBlob.type || "image/webp",
           cacheControl: "3600",
         })
+        if (!isAuthCurrent(snapshot)) return
         if (upload.error) {
           const message = String(upload.error.message ?? "")
           setProfileStatus(
@@ -1751,7 +1936,8 @@ const init = async () => {
           website_url: websiteUrl || null,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", currentUser.id)
+        .eq("id", snapshot.userId)
+      if (!isAuthCurrent(snapshot)) return
       if (update.error) {
         const message = String(update.error.message ?? "").toLowerCase()
         setProfileStatus(
@@ -1776,13 +1962,13 @@ const init = async () => {
             display_name: displayName,
             avatar_url: avatarUrl,
             signature,
-            email: currentUser.email ?? "",
+            email: currentUser?.id === snapshot.userId ? (currentUser.email ?? "") : "",
           },
         }),
       )
       setProfileStatus("个人资料已保存，右上角头像和个人卡片已经同步。", "success")
     } finally {
-      if (profileSave) {
+      if (profileSave && isAuthCurrent(snapshot)) {
         profileSave.disabled = false
         profileSave.textContent = originalLabel
       }
@@ -1866,7 +2052,8 @@ const init = async () => {
         )
     return { title: title || titleFromFilename(filename), body: body.trim() }
   }
-  const showImportedDraft = (draft: ImportedDraft) => {
+  const showImportedDraft = (draft: ImportedDraft, snapshot: AuthGenerationSnapshot) => {
+    if (!isAuthCurrent(snapshot)) return
     importedDraft = draft
     const resultTitle = root.querySelector<HTMLElement>("[data-import-result-title]")
     const title = root.querySelector<HTMLElement>("[data-import-title]")
@@ -1893,7 +2080,8 @@ const init = async () => {
     }
     if (importConfirm) importConfirm.disabled = false
   }
-  const processImportFile = async (file: File) => {
+  const processImportFile = async (file: File, snapshot: AuthGenerationSnapshot) => {
+    if (!isAuthCurrent(snapshot)) return
     resetImportDialog()
     if (file.size > 10 * 1024 * 1024) {
       if (importStatus) {
@@ -1926,11 +2114,14 @@ const init = async () => {
       if (extension === "md" || extension === "markdown") {
         const prepared = prepareMarkdown(await file.text(), file.name)
         if (!prepared.body) throw new Error("empty-content")
-        showImportedDraft({
-          ...prepared,
-          imageCount: (prepared.body.match(/!\[[^\]]*\]\([^)]*\)/g) ?? []).length,
-          notes: [],
-        })
+        showImportedDraft(
+          {
+            ...prepared,
+            imageCount: (prepared.body.match(/!\[[^\]]*\]\([^)]*\)/g) ?? []).length,
+            notes: [],
+          },
+          snapshot,
+        )
         return
       }
       const [mammoth, TurndownService] = (await Promise.all([
@@ -1984,8 +2175,9 @@ const init = async () => {
             notes.push(String(message.message || "部分 Word 格式已简化。")),
           )
       }
-      showImportedDraft({ title, body, imageCount, notes })
+      showImportedDraft({ title, body, imageCount, notes }, snapshot)
     } catch (error) {
+      if (!isAuthCurrent(snapshot)) return
       const message = error instanceof Error ? error.message : ""
       const friendly = message.includes("too-many-images")
         ? "文档包含超过 30 张图片，请拆分后导入。"
@@ -2003,7 +2195,7 @@ const init = async () => {
         importStatus.dataset.state = "error"
       }
     } finally {
-      importDropzone?.classList.remove("is-busy")
+      if (isAuthCurrent(snapshot)) importDropzone?.classList.remove("is-busy")
     }
   }
 
@@ -2028,7 +2220,8 @@ const init = async () => {
   })
   importFile?.addEventListener("change", () => {
     const file = importFile.files?.[0]
-    if (file) void processImportFile(file)
+    const snapshot = authGeneration.current()
+    if (file && snapshot) void processImportFile(file, snapshot)
   })
   ;["dragenter", "dragover"].forEach((name) =>
     importDropzone?.addEventListener(name, (event) => {
@@ -2044,7 +2237,8 @@ const init = async () => {
   )
   importDropzone?.addEventListener("drop", (event) => {
     const file = (event as DragEvent).dataTransfer?.files?.[0]
-    if (file) void processImportFile(file)
+    const snapshot = authGeneration.current()
+    if (file && snapshot) void processImportFile(file, snapshot)
   })
   importConfirm?.addEventListener("click", () => {
     if (!importedDraft || !form) return
@@ -2225,6 +2419,8 @@ const init = async () => {
     setFlatStatus("有未保存的内容。")
   })
   flatBody?.addEventListener("paste", (event) => {
+    const snapshot = authGeneration.current()
+    if (!snapshot || !isAuthCurrent(snapshot)) return
     const clipboard = event.clipboardData
     if (!clipboard) return
     event.preventDefault()
@@ -2237,6 +2433,7 @@ const init = async () => {
     setFlatStatus("正在识别粘贴内容…")
     void convertPastedContent(html, text, images)
       .then((result) => {
+        if (!isAuthCurrent(snapshot)) return
         if (!result.content) {
           setFlatStatus("剪贴板中没有可用文字或图片。", "error")
           return
@@ -2250,6 +2447,7 @@ const init = async () => {
         )
       })
       .catch((error) => {
+        if (!isAuthCurrent(snapshot)) return
         const message = error instanceof Error ? error.message : ""
         setFlatStatus(
           message.includes("too-many-images")
@@ -2265,6 +2463,7 @@ const init = async () => {
   })
   flatForm?.addEventListener("submit", async (event) => {
     event.preventDefault()
+    const snapshot = authGeneration.current()
     if (!flatTitle?.value.trim()) {
       setFlatStatus("请先填写标题。", "error")
       flatTitle?.focus()
@@ -2275,7 +2474,7 @@ const init = async () => {
       flatBody?.focus()
       return
     }
-    if (!currentUser || !client) {
+    if (!snapshot || !isAuthCurrent(snapshot) || !client) {
       setFlatStatus("登录状态已失效，请重新登录后保存。", "error")
       return
     }
@@ -2287,6 +2486,7 @@ const init = async () => {
     }
     setFlatStatus("正在保存到你的私密知识库…")
     const saved = await saveDocument()
+    if (!isAuthCurrent(snapshot)) return
     if (flatSave) {
       flatSave.disabled = false
       flatSave.textContent = "保存为私密草稿"
@@ -2325,11 +2525,14 @@ const init = async () => {
   publishButton?.addEventListener("click", () => void publishCurrentDocument())
   unpublishButton?.addEventListener("click", () => void unpublishCurrentDocument())
   copyPublicationLink?.addEventListener("click", async () => {
-    if (!currentPublication) return
+    const snapshot = authGeneration.current()
+    if (!currentPublication || !snapshot || !isAuthCurrent(snapshot)) return
     try {
       await navigator.clipboard.writeText(publicationUrl(currentPublication))
+      if (!isAuthCurrent(snapshot)) return
       if (publicationStatus) publicationStatus.textContent = "阅读链接已复制。"
     } catch {
+      if (!isAuthCurrent(snapshot)) return
       if (publicationStatus)
         publicationStatus.textContent =
           "浏览器没有允许自动复制；请点击“打开阅读页”后从地址栏复制链接。"
@@ -2339,6 +2542,8 @@ const init = async () => {
   if (form) {
     let pendingTopic = ""
     const showPreview = async () => {
+      const snapshot = authGeneration.current()
+      if (!snapshot || !isAuthCurrent(snapshot)) return
       const data = readForm()
       const preview = root.querySelector<HTMLElement>("[data-document-preview]")
       const title = root.querySelector<HTMLElement>("[data-preview-title]")
@@ -2349,7 +2554,10 @@ const init = async () => {
       if (!preview || !title || !body || !visibility || !sourceSection || !sourceItems) return
       title.textContent = data.title.trim() || "未命名知识"
       body.textContent = "正在生成排版预览…"
-      await renderMarkdownInto(body, data.body)
+      const renderedBody = document.createElement("div")
+      await renderMarkdownInto(renderedBody, data.body)
+      if (!isAuthCurrent(snapshot)) return
+      body.replaceChildren(...renderedBody.childNodes)
       const visibilityLabels: Record<string, string> = {
         private: "仅自己可见",
         unlisted: "持链接可见",
@@ -2538,7 +2746,7 @@ const init = async () => {
     if (!client) {
       if (!(await ensureClient(true))) return
       watchAuthState()
-      await sync()
+      await queueSync()
       if (!currentUser || !form) {
         setStatus("登录服务已恢复，可以继续。", "success")
         return
