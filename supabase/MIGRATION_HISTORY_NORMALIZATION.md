@@ -1,6 +1,6 @@
 # Supabase migration history normalization
 
-Status: local W2-10 implementation; **no production migration-history write is authorized or executed by this change**.
+Status: W2-10 merged in PR #18 and the separately authorized production ledger-only repair completed on 2026-07-17. No archived migration SQL was replayed.
 
 ## Why this is required
 
@@ -78,16 +78,14 @@ Before this branch can be proposed for merge:
 
 If a production object from any mapped SQL is missing, stop. That file must become a new forward-fix migration and must not be marked applied.
 
-## Separately authorized production operation
+## Completed production operation
 
-The following is a future operation outline, not authorization:
+The site owner separately authorized this operation. It completed on 2026-07-17 with the following controls:
 
-1. Reconfirm project ref, backup, schema dump, row counts, function version, and both AI live flags off.
-2. Export `supabase_migrations.schema_migrations` including version, name, and statements.
-3. Prove the schema fingerprint for every mapped file.
-4. With explicit user approval, mark each `20260718...` version applied in dependency order. Do not execute the ten SQL files, do not revert/delete the five legacy rows, and do not run `db push`.
-5. Read migration history after every small batch and stop on any discrepancy.
-6. Require linked `db push --dry-run` to report no pending migrations.
-7. Re-run read-only schema/RLS/live-flag verification and append the complete operation record to `PRODUCTION_SAFETY.md`.
+1. Project identity, scoped restore-tested backup, schema dump, business row counts, object fingerprints, and default-off AI state were recorded before the write.
+2. The five-row `remoteLedger` in `migration-history-map.json` remains the immutable pre-repair legacy baseline. Production now contains those unchanged five rows plus the ten exact normalized rows.
+3. The ten versions were marked applied in dependency order in four small batches; their archived SQL was not executed, the five legacy rows were not changed or deleted, and no real `db push` ran.
+4. Migration history was read back after every batch. Final linked `db push --dry-run` reported zero pending migrations.
+5. Schema, selected functions, RLS/policies, business row counts, AI live flags, budgets, provider/model configuration, and publication state were unchanged. The full evidence is recorded in `PRODUCTION_SAFETY.md`.
 
-Merging the PR and writing production migration history each require fresh explicit user authorization. This task does not authorize SQL execution, function deployment, Secret/flag/budget changes, paid calls, content publication, or destructive cleanup.
+This completed ledger repair did not authorize or perform SQL execution, function deployment, Secret/flag/budget changes, paid calls, content publication, or destructive cleanup. Future business migrations still require separate deployment approval.

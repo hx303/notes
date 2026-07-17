@@ -2,7 +2,7 @@
 
 Last reconciled: 2026-07-17 (Asia/Shanghai)
 
-Working baseline: merged `main` at `24536ab5802e315654d3810da334fcd19b804eaf`
+Working baseline: merged `main` at `13cbf2e630ef6845c7e741d434104b38e93d8c68`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
@@ -11,6 +11,8 @@ Merged provider PR: [#12](https://github.com/hx303/notes/pull/12)
 Merged production-canary PR: [#13](https://github.com/hx303/notes/pull/13)
 
 Merged settings-persistence PR: [#16](https://github.com/hx303/notes/pull/16)
+
+Merged Wave 2 / migration-normalization PR: [#18](https://github.com/hx303/notes/pull/18)
 
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
@@ -21,7 +23,7 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - Production Supabase contains the A20 runtime-safety migration, imported server-side secrets, and active `ai-write` v4. Database and function live flags remain false, and no paid production canary has run.
 - The current baseline passes TypeScript, 197/197 tests, and a production build with 284 Markdown inputs and 1,046 emitted files.
 - Existing account/workspace task checkboxes materially understate implemented import, autosave, version, organization, and publication foundations. Remaining work must begin with browser-level acceptance and gap repair, not wholesale reconstruction.
-- Normal `supabase db push` remains blocked: legacy migration filenames reuse date-only versions. A dedicated, reviewed forward-normalization change is required before routine migration deployment resumes.
+- PR #18 merged the reviewed migration namespace normalization. The separately authorized production ledger-only repair retained the five legacy rows, added the ten exact normalized rows without executing their SQL, and ended with 15 aligned versions and zero pending migrations.
 
 ## Executive status
 
@@ -106,4 +108,4 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 
 1. Finish N04 only when the full integration/reference/platform/workspace/public worktree set is needed; the DeepSeek implementation/review worktrees already use the merged baseline and do not disturb occupied worktrees.
 2. Complete fresh Cloudflare/production behavior checks and a production operation record before any further migration, Edge Function replacement, Secret change, feature-flag enablement, or paid call.
-3. Complete W2-10 migration-history normalization in an isolated environment before routine database deployment resumes; production ledger repair remains separately authorized.
+3. Treat the production migration ledger as normalized at 15 aligned versions. Any new business change must be a reviewed forward migration with a version greater than `20260718001000` and requires separate production deployment approval.

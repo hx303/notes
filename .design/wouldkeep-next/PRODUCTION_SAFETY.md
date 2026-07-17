@@ -4,7 +4,7 @@ No production change is authorized by this file. Create a completed operation re
 
 ## Current observed baseline — 2026-07-17
 
-- Git baseline: `main` at `24536ab5802e315654d3810da334fcd19b804eaf` after the explicitly approved PR #16 merge. Local orchestration evidence is committed as `12852207`; migration normalization remains an unmerged local branch.
+- Git baseline: `main` at merge commit `13cbf2e630ef6845c7e741d434104b38e93d8c68` after the explicitly approved PR #18 merge. PR #18 included orchestration commit `12852207` and migration-normalization commit `e9eeb477`.
 - PR #11: all checks passed; the site owner explicitly authorized merge; merged at 2026-07-16T15:05:24Z.
 - Supabase project: `agocyybolrisqujvjqdj` (public project identifier only).
 - Committed evidence says the AI migration and `ai-write` mock function are deployed, unauthenticated calls return 401, and four real-account RLS assertions passed.
@@ -50,3 +50,22 @@ No production change is authorized by this file. Create a completed operation re
 - Forward fix / follow-up: keep both live gates off; normalize duplicate migration IDs in a separate reviewed change; use an authenticated site-owner session and a public snapshot for at most one production paid canary, then immediately restore/verify both gates off.
 - Data-destructive rollback required: no.
 - Final status: default-off production deployment succeeded; paid production canary intentionally not run.
+
+## W2-10 production migration-ledger normalization - 2026-07-17
+
+- Operation window: 2026-07-17 19:43-20:11 CST (11:43-12:11 UTC).
+- Executor and authorization: Codex root agent; the site owner explicitly authorized pushing `e9eeb477`, creating and merging the W2-10 PR, and performing the production migration-ledger repair.
+- Git source: PR #18 merged to `main` as `13cbf2e630ef6845c7e741d434104b38e93d8c68` with tree `f05a7f8eb1328ce796213f5d051a1557c2ce84fa`. Supabase CLI `2.109.1` was used.
+- Target: Supabase project `agocyybolrisqujvjqdj`, region `ap-southeast-1`.
+- Backup state: managed physical backups were unavailable (`pitr_enabled=false`, `walg_enabled=true`, no listed backup). A scoped logical backup of `supabase_migrations.schema_migrations` was created outside the repository and successfully restored into a disposable PostgreSQL database before any write.
+- Backup artifacts: `schema_migrations_schema.sql`, SHA-256 `18B99FBBB3EC9FBB964BB255A56171329ACD99B6977ECE2ADDD89FDF5AA5105B`; `schema_migrations_data.sql`, SHA-256 `9B642294468C838A9686F9D726F4152492BB3CBF011E146E0DF434ABE2D91154`.
+- Preflight: the five legacy ledger rows matched the pinned version/name/statement-count/statement-array-MD5 tuples. A linked migration list and dry-run showed exactly the ten mapped `20260718000100` through `20260718001000` migrations pending. The database live flag was false, `AI_LIVE_ENABLED` remained false, daily limit was 20, concurrency limit was 1, provider was DeepSeek, user AI preference count and total budget were zero, and no paid call was made.
+- Write scope: four `migration repair --status applied` batches of 1/3/3/3 versions were executed in dependency order. No archived migration SQL, `db push`, schema/data write, Edge Function deployment, Secret update, live-flag update, budget/model change, or publication action was executed.
+- Post-repair ledger: exactly 15 rows and 15 unique versions; all five legacy tuples remained byte-for-byte unchanged and all ten normalized tuples matched their independently computed statement counts and MD5 sentinels. `migration list` aligned all local and remote versions, and linked `db push --dry-run` reported the remote database up to date with zero pending migrations.
+- Business-data invariants: `profiles=6`, `documents=260`, `document_publications=0`, `ai_preferences=0`, `ai_runs=0`, and `site_owners=1` before and after.
+- Object invariants: the normalized production schema dump SHA-256 was identical before and after (`1c064af3dd931035cfbf31be060bc0874d86e459b1c2899a2f12839da850c856`). Selected publication/AI function fingerprint remained `da1738e317e6f199b076937d5e5646ed`; public/storage policy fingerprint remained `e4f4b6ce6aac2b882d42b8b083d4da48`.
+- Credential hygiene: one CLI dry-run emitted a temporary auto-generated database login credential to the private execution channel. It was not copied into source, artifacts, or reports; a final read-only role query confirmed no matching temporary CLI login role remained.
+- Error or discrepancy: none. Each batch was read back before continuing, and all independent tuple/object/data/config checks matched.
+- Forward boundary: new business migrations must use versions greater than `20260718001000`. The publication soft-delete repair is a separate forward migration and is not authorized for production by this record.
+- Recovery: no destructive rollback is required. The exact pre-repair ledger backup is retained outside the repository and has passed restore validation.
+- Final status: production migration history normalized successfully; AI remains default-off with zero user budget and zero paid production calls.
