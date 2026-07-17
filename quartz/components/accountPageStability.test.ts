@@ -72,3 +72,27 @@ test("account routes reclaim empty Quartz side rails and adapt at content-driven
   assert.match(styles, /prefers-reduced-motion: reduce/)
   assert.match(styles, /account-auth-loading[\s\S]*min-height: 21rem/)
 })
+
+test("workspace navigation stays dense at medium desktop widths without stretching forms", () => {
+  assert.match(
+    styles,
+    /@media \(min-width: 901px\) and \(max-width: 1180px\)[\s\S]*\.workspace-nav-links[\s\S]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/,
+  )
+  assert.match(
+    styles,
+    /@media \(min-width: 901px\) and \(max-width: 1180px\)[\s\S]*\.workspace-nav-utility[\s\S]*grid-template-columns: repeat\(2, max-content\)/,
+  )
+  assert.match(
+    styles,
+    /\.workspace-page:not\(\[data-workspace-section="overview"\]\)[\s\S]*padding-top: 1\.5rem/,
+  )
+  assert.match(
+    styles,
+    /\.workspace-page:not\(\[data-workspace-section="overview"\]\) > \.account-hero[\s\S]*padding-bottom: 1rem/,
+  )
+  assert.match(
+    styles,
+    /\.profile-settings-form,[\s\S]*\.ai-settings-form[\s\S]*max-width: 46rem/,
+  )
+  assert.match(styles, /@media \(pointer: coarse\)[\s\S]*\.workspace-nav a[\s\S]*min-height: 44px/)
+})
