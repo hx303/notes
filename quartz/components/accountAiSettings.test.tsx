@@ -13,8 +13,17 @@ test("AI settings are consent-first and default to no paid calls", () => {
   assert.match(component, /data-ai-private-content/)
   assert.match(component, /不开启付费调用（推荐）/)
   assert.match(component, /AI 只能提出建议/)
-  assert.match(script, /from\("ai_preferences"\)\.upsert/)
-  assert.match(script, /enabled && aiPrivateContent\?\.checked/)
+  assert.match(script, /from\("ai_preferences"\)[\s\S]*?\.upsert/)
+  assert.match(script, /writeAiSettingsDraft\(sessionStorage/)
+  assert.match(script, /readAiSettingsDraft\(sessionStorage/)
+  assert.match(script, /clearAiSettingsDraft\(sessionStorage/)
+  assert.match(script, /provider: "deepseek"/)
+  assert.match(script, /model: "deepseek-v4-flash"/)
+  assert.match(
+    script,
+    /\.select\("enabled,allow_private_content,monthly_budget_cents,grounding_mode,updated_at"\)[\s\S]*?\.single\(\)/,
+  )
+  assert.match(script, /aiSettingsForm\.dataset\.saving === "true"/)
   assert.match(script, /functions\.invoke\("ai-write"/)
   assert.match(folderPage, /settings\(\?:\\\/ai\)\?/)
 })
