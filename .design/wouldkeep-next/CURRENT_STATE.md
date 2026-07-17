@@ -2,28 +2,41 @@
 
 Last reconciled: 2026-07-17 (Asia/Shanghai)
 
-Working baseline: merged `main` at `f09eeea5a9ae687bea7c62144b59fcaca47874ff`
+Working baseline: merged `main` at `24536ab5802e315654d3810da334fcd19b804eaf`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
 Merged provider PR: [#12](https://github.com/hx303/notes/pull/12)
 
+Merged production-canary PR: [#13](https://github.com/hx303/notes/pull/13)
+
+Merged settings-persistence PR: [#16](https://github.com/hx303/notes/pull/16)
+
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
+
+## 2026-07-17 reconciliation after PR #16
+
+- PR #13 merged the reviewed, public-publication-only DeepSeek canary boundary to `main` as `29b27b57`; production deployment completed with both live gates still off.
+- PR #16 merged account and AI settings persistence to `main` as `24536ab5`. AI and profile drafts are account-scoped, survive SPA navigation, reject stale responses, and clear only after a confirmed save.
+- Production Supabase contains the A20 runtime-safety migration, imported server-side secrets, and active `ai-write` v4. Database and function live flags remain false, and no paid production canary has run.
+- The current baseline passes TypeScript, 197/197 tests, and a production build with 284 Markdown inputs and 1,046 emitted files.
+- Existing account/workspace task checkboxes materially understate implemented import, autosave, version, organization, and publication foundations. Remaining work must begin with browser-level acceptance and gap repair, not wholesale reconstruction.
+- Normal `supabase db push` remains blocked: legacy migration filenames reuse date-only versions. A dedicated, reviewed forward-normalization change is required before routine migration deployment resumes.
 
 ## Executive status
 
-| Area | Status | Evidence and remaining gate |
-| --- | --- | --- |
-| Public discovery redesign | partial | `DiscoverHome`, `MapPage`, `RecentGrowth`, topic/path/search components and routes exist. Old redesign task checkboxes understate the implementation. Production behavior still needs Wave 0 online reconciliation. |
-| Account and private workspace | partial | Password auth, account/workspace routes, private knowledge bases/documents, editor, tags, links, sources, versions, publication snapshot UI and admin shell exist. A multi-agent hotfix now covers stable auth loading, retry after SDK/network failure, duplicate-submit protection, SPA cleanup, and responsive account/workspace layouts. The 39 unchecked account tasks are stale as a source of truth; Wave 1 must test remaining flows and fix gaps rather than rebuild them. |
-| Publication and public snapshot | partial | `document_publications`, `publish_document`, `unpublish_document`, `read_published_document`, and `list_public_documents` exist in migrations. Idempotent job/retry/last-success failure semantics still require P01/P02 reconciliation and production verification. |
-| AI consent and data foundation | complete | Default-off settings, zero budget, four AI tables with owner RLS, browser write restrictions, and authenticated mock `ai-write` code exist. Migration deployment, unauthenticated `401`, four real-account RLS assertions, and the signed-in no-model/no-cost response have all been accepted. |
-| AI provider preparation | complete; not deployed | PR #12 merged the dormant production boundary. Local PostgreSQL migration/RLS and true two-session concurrency validation passed; no production migration, secret, function deployment, or paid request exists. |
-| AI paid/model features | narrow canary prepared locally; not deployed | `agent/ai-live-canary` connects `ai-write` to the guarded DeepSeek path only for an authenticated owner's verified public publication snapshot and only when both environment and database flags allow it. Client selection/context is never sent. Independent review found no P0/P1 for a site-owner, single-request, low-budget canary; broad rollout remains no-ship. |
-| PR #11 | complete | All three Vercel checks passed; the site owner explicitly approved the merge; GitHub merged it to `main` as `72ea5f96` at 2026-07-16T15:05:24Z. |
-| PR #12 | complete | The site owner explicitly approved the merge; GitHub merged it to `main` as `f09eeea5` at 2026-07-16T23:46:41Z. |
-| Vercel preview | complete | The signed-in mock result was explicitly confirmed by the site owner before merge. |
-| Cloudflare/production site | unverified online | Repository contains `cf_project.json` with project `notes-website` and production branch `main`; no fresh deployment/runtime proof has been collected in this Wave 0 pass. |
+| Area                            | Status                                       | Evidence and remaining gate                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public discovery redesign       | partial                                      | `DiscoverHome`, `MapPage`, `RecentGrowth`, topic/path/search components and routes exist. Old redesign task checkboxes understate the implementation. Production behavior still needs Wave 0 online reconciliation.                                                                                                                                                                                                                                                                 |
+| Account and private workspace   | partial                                      | Password auth, account/workspace routes, private knowledge bases/documents, editor, tags, links, sources, versions, publication snapshot UI and admin shell exist. A multi-agent hotfix now covers stable auth loading, retry after SDK/network failure, duplicate-submit protection, SPA cleanup, and responsive account/workspace layouts. The 39 unchecked account tasks are stale as a source of truth; Wave 1 must test remaining flows and fix gaps rather than rebuild them. |
+| Publication and public snapshot | partial                                      | `document_publications`, `publish_document`, `unpublish_document`, `read_published_document`, and `list_public_documents` exist in migrations. Idempotent job/retry/last-success failure semantics still require P01/P02 reconciliation and production verification.                                                                                                                                                                                                                |
+| AI consent and data foundation  | complete                                     | Default-off settings, zero budget, four AI tables with owner RLS, browser write restrictions, and authenticated mock `ai-write` code exist. Migration deployment, unauthenticated `401`, four real-account RLS assertions, and the signed-in no-model/no-cost response have all been accepted.                                                                                                                                                                                      |
+| AI provider preparation         | complete; not deployed                       | PR #12 merged the dormant production boundary. Local PostgreSQL migration/RLS and true two-session concurrency validation passed; no production migration, secret, function deployment, or paid request exists.                                                                                                                                                                                                                                                                     |
+| AI paid/model features          | narrow canary prepared locally; not deployed | `agent/ai-live-canary` connects `ai-write` to the guarded DeepSeek path only for an authenticated owner's verified public publication snapshot and only when both environment and database flags allow it. Client selection/context is never sent. Independent review found no P0/P1 for a site-owner, single-request, low-budget canary; broad rollout remains no-ship.                                                                                                            |
+| PR #11                          | complete                                     | All three Vercel checks passed; the site owner explicitly approved the merge; GitHub merged it to `main` as `72ea5f96` at 2026-07-16T15:05:24Z.                                                                                                                                                                                                                                                                                                                                     |
+| PR #12                          | complete                                     | The site owner explicitly approved the merge; GitHub merged it to `main` as `f09eeea5` at 2026-07-16T23:46:41Z.                                                                                                                                                                                                                                                                                                                                                                     |
+| Vercel preview                  | complete                                     | The signed-in mock result was explicitly confirmed by the site owner before merge.                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Cloudflare/production site      | unverified online                            | Repository contains `cf_project.json` with project `notes-website` and production branch `main`; no fresh deployment/runtime proof has been collected in this Wave 0 pass.                                                                                                                                                                                                                                                                                                          |
 
 ## Verification run on 2026-07-16
 
@@ -83,11 +96,11 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 
 ## Legacy task-file reconciliation
 
-| Task file | Checkbox count | Interpretation |
-| --- | ---: | --- |
-| `.design/wouldkeep-redesign/TASKS.md` | 18 done / 23 open | stale status; many open items have evidence files or implemented components. |
-| `.design/account-knowledge-system/TASKS.md` | 0 done / 39 open | stale status; major account/workspace/database features exist. |
-| `.design/ai-knowledge-assistant/TASKS.md` | 11 done / 25 open | foundation and dormant DeepSeek provider preparation are reconciled; live calls and later AI phases remain intentionally open. |
+| Task file                                   |    Checkbox count | Interpretation                                                                                                                 |
+| ------------------------------------------- | ----------------: | ------------------------------------------------------------------------------------------------------------------------------ |
+| `.design/wouldkeep-redesign/TASKS.md`       | 18 done / 23 open | stale status; many open items have evidence files or implemented components.                                                   |
+| `.design/account-knowledge-system/TASKS.md` |  0 done / 39 open | stale status; major account/workspace/database features exist.                                                                 |
+| `.design/ai-knowledge-assistant/TASKS.md`   | 11 done / 25 open | foundation and dormant DeepSeek provider preparation are reconciled; live calls and later AI phases remain intentionally open. |
 
 ## Remaining orchestration and production gates
 
