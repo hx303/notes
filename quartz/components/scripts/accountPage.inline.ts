@@ -1,3 +1,14 @@
+import {
+  clearAiSettingsDraft,
+  clearProfileSettingsDraft,
+  readAiSettingsDraft,
+  readProfileSettingsDraft,
+  writeAiSettingsDraft,
+  writeProfileSettingsDraft,
+  type AiSettingsDraft,
+  type ProfileSettingsDraft,
+} from "./accountSettingsPersistence.ts"
+
 const localDraftKey = (userId: string, documentId = "new") =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
 
@@ -318,30 +329,74 @@ const init = async () => {
     if (!aiEnabled?.checked) aiPrivateContent.checked = false
   }
 
+  const currentAiSettingsDraft = (): Omit<AiSettingsDraft, "version" | "savedAt"> => ({
+    enabled: Boolean(aiEnabled?.checked),
+    allowPrivateContent: Boolean(aiEnabled?.checked && aiPrivateContent?.checked),
+    monthlyBudgetCents: Number(
+      aiMonthlyBudget?.value ?? 0,
+    ) as AiSettingsDraft["monthlyBudgetCents"],
+    groundingMode: aiGroundingMode?.value === "knowledge_base" ? "knowledge_base" : "selected_only",
+  })
+
+  const applyAiSettingsDraft = (draft: Omit<AiSettingsDraft, "version" | "savedAt">) => {
+    if (aiEnabled) aiEnabled.checked = draft.enabled
+    if (aiPrivateContent) aiPrivateContent.checked = draft.allowPrivateContent
+    if (aiGroundingMode) aiGroundingMode.value = draft.groundingMode
+    if (aiMonthlyBudget) aiMonthlyBudget.value = String(draft.monthlyBudgetCents)
+    updateAiControls()
+  }
+
+  const persistAiSettingsDraft = () => {
+    if (!currentUser) return
+    writeAiSettingsDraft(sessionStorage, currentUser.id, currentAiSettingsDraft())
+    setAiStatus("有未保存的 AI 设置；切换页面后会保留，点击保存后才会生效。")
+  }
+
   const loadAiSettings = async () => {
     if (!client || !currentUser || !aiSettingsForm) return
+    const ownerId = currentUser.id
     const result = await client
       .from("ai_preferences")
-      .select("enabled,allow_private_content,monthly_budget_cents,grounding_mode")
-      .eq("owner_id", currentUser.id)
+      .select("enabled,allow_private_content,monthly_budget_cents,grounding_mode,updated_at")
+      .eq("owner_id", ownerId)
       .maybeSingle()
+    if (disposed || currentUser?.id !== ownerId) return
     if (result.error) {
+      const missingSchema = String(result.error.message ?? "")
+        .toLowerCase()
+        .includes("ai_preferences")
+      const draft = readAiSettingsDraft(sessionStorage, ownerId)
+      if (draft) applyAiSettingsDraft(draft)
       setAiStatus(
-        "AI 设置尚未启用，请先在 Supabase 执行 20260716_ai_assistant_foundation.sql。",
+        missingSchema
+          ? "AI 设置尚未启用，请先在 Supabase 执行 20260716_ai_assistant_foundation.sql。"
+          : draft
+            ? "云端设置暂时无法读取，已恢复本机未保存的设置。"
+            : "云端设置暂时无法读取，请检查网络后重试。",
         "error",
       )
-      if (aiSave) aiSave.disabled = true
+      if (aiSave) aiSave.disabled = missingSchema
       return
     }
-    if (aiEnabled) aiEnabled.checked = Boolean(result.data?.enabled)
-    if (aiPrivateContent) aiPrivateContent.checked = Boolean(result.data?.allow_private_content)
-    if (aiGroundingMode)
-      aiGroundingMode.value =
-        result.data?.grounding_mode === "knowledge_base" ? "knowledge_base" : "selected_only"
-    if (aiMonthlyBudget) aiMonthlyBudget.value = String(result.data?.monthly_budget_cents ?? 0)
-    updateAiControls()
+    applyAiSettingsDraft({
+      enabled: Boolean(result.data?.enabled),
+      allowPrivateContent: Boolean(result.data?.allow_private_content),
+      groundingMode:
+        result.data?.grounding_mode === "knowledge_base" ? "knowledge_base" : "selected_only",
+      monthlyBudgetCents: Number(
+        result.data?.monthly_budget_cents ?? 0,
+      ) as AiSettingsDraft["monthlyBudgetCents"],
+    })
+    const draft = readAiSettingsDraft(sessionStorage, ownerId)
+    if (draft) applyAiSettingsDraft(draft)
     if (aiSave) aiSave.disabled = false
-    setAiStatus(result.data ? "已读取你的 AI 设置。" : "当前使用安全默认设置：全部关闭。")
+    setAiStatus(
+      draft
+        ? "已恢复尚未保存的 AI 设置；点击保存后才会生效。"
+        : result.data
+          ? "已读取你的 AI 设置。"
+          : "当前使用安全默认设置：全部关闭。",
+    )
   }
 
   const safeProfileAvatarUrl = (value = "") => {
@@ -412,20 +467,45 @@ const init = async () => {
     renderProfileAvatar(profilePreviewObjectUrl || currentProfileAvatarUrl, displayName)
   }
 
+  const currentProfileSettingsDraft = (): Omit<ProfileSettingsDraft, "version" | "savedAt"> => ({
+    displayName: profileDisplayName?.value ?? "",
+    signature: profileSignature?.value ?? "",
+    bio: profileBio?.value ?? "",
+    location: profileLocation?.value ?? "",
+    website: profileWebsite?.value ?? "",
+  })
+
+  const applyProfileSettingsDraft = (draft: Omit<ProfileSettingsDraft, "version" | "savedAt">) => {
+    if (profileDisplayName) profileDisplayName.value = draft.displayName
+    if (profileSignature) profileSignature.value = draft.signature
+    if (profileBio) profileBio.value = draft.bio
+    if (profileLocation) profileLocation.value = draft.location
+    if (profileWebsite) profileWebsite.value = draft.website
+    updateProfilePreview()
+  }
+
+  const persistProfileSettingsDraft = () => {
+    if (!currentUser) return
+    writeProfileSettingsDraft(sessionStorage, currentUser.id, currentProfileSettingsDraft())
+    setProfileStatus("有未保存的个人资料；切换页面后会保留。")
+  }
+
   const loadProfileSettings = async () => {
     if (!client || !currentUser || !profileSettingsForm) return
+    const ownerId = currentUser.id
     let result = await client
       .from("profiles")
       .select("display_name,avatar_url,signature,bio,location,website_url")
-      .eq("id", currentUser.id)
+      .eq("id", ownerId)
       .maybeSingle()
     profilePersonalizationAvailable = !result.error
     if (result.error)
       result = await client
         .from("profiles")
         .select("display_name,avatar_url")
-        .eq("id", currentUser.id)
+        .eq("id", ownerId)
         .maybeSingle()
+    if (disposed || currentUser?.id !== ownerId) return
     if (result.error) {
       setProfileStatus("暂时无法读取个人资料，请刷新后重试。", "error")
       return
@@ -440,11 +520,15 @@ const init = async () => {
     if (profileWebsite) profileWebsite.value = result.data?.website_url ?? ""
     if (profileEmail) profileEmail.textContent = currentUser.email ?? "—"
     updateProfilePreview()
+    const draft = readProfileSettingsDraft(sessionStorage, ownerId)
+    if (draft) applyProfileSettingsDraft(draft)
     setProfileStatus(
-      profilePersonalizationAvailable
-        ? ""
-        : "个性签名等扩展资料尚未启用；请先执行最新的个人资料迁移文件。",
-      profilePersonalizationAvailable ? "" : "error",
+      draft
+        ? "已恢复尚未保存的个人资料；点击保存后才会同步。"
+        : profilePersonalizationAvailable
+          ? ""
+          : "个性签名等扩展资料尚未启用；请先执行最新的个人资料迁移文件。",
+      draft || profilePersonalizationAvailable ? "" : "error",
     )
   }
 
@@ -1306,8 +1390,7 @@ const init = async () => {
           try {
             await loadCapabilities()
             const knowledgeBaseId = await ensureKnowledgeBase()
-            if (!knowledgeBaseId)
-              setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
+            if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
             await loadDocuments()
             restoreLocalBackup()
             await loadLinkOptions()
@@ -1329,8 +1412,7 @@ const init = async () => {
   if (!client) {
     setStatus("登录服务暂时无法加载；请检查网络后重试。", "error")
     resolveAuthState()
-  }
-  else await sync()
+  } else await sync()
   if (disposed) return
 
   function watchAuthState() {
@@ -1585,40 +1667,57 @@ const init = async () => {
 
   ;[profileDisplayName, profileSignature, profileBio, profileLocation, profileWebsite].forEach(
     (field) => {
-      field?.addEventListener("input", updateProfilePreview)
+      field?.addEventListener("input", () => {
+        updateProfilePreview()
+        persistProfileSettingsDraft()
+      })
     },
   )
 
-  aiEnabled?.addEventListener("change", updateAiControls)
+  ;[aiEnabled, aiPrivateContent, aiGroundingMode, aiMonthlyBudget].forEach((field) => {
+    field?.addEventListener("change", () => {
+      updateAiControls()
+      persistAiSettingsDraft()
+    })
+  })
 
   aiSettingsForm?.addEventListener("submit", async (event) => {
     event.preventDefault()
-    if (!client || !currentUser) {
+    if (aiSettingsForm.dataset.saving === "true") return
+    if (!currentUser || !(await ensureClient(true))) {
       setAiStatus("登录状态已失效，请重新登录。", "error")
       return
     }
+    const ownerId = currentUser.id
+    const draft = currentAiSettingsDraft()
+    writeAiSettingsDraft(sessionStorage, ownerId, draft)
     const originalLabel = aiSave?.textContent ?? "保存 AI 设置"
+    aiSettingsForm.dataset.saving = "true"
+    aiSettingsForm.setAttribute("aria-busy", "true")
     if (aiSave) {
       aiSave.disabled = true
       aiSave.textContent = "正在保存…"
     }
     setAiStatus("正在保存你的 AI 使用边界…")
     try {
-      const enabled = Boolean(aiEnabled?.checked)
-      const result = await client.from("ai_preferences").upsert(
-        {
-          owner_id: currentUser.id,
-          enabled,
-          allow_private_content: Boolean(enabled && aiPrivateContent?.checked),
-          monthly_budget_cents: Number(aiMonthlyBudget?.value ?? 0),
-          grounding_mode:
-            aiGroundingMode?.value === "knowledge_base" ? "knowledge_base" : "selected_only",
-          provider: "openai",
-          model: "unconfigured",
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "owner_id" },
-      )
+      const enabled = draft.enabled
+      const result = await client
+        .from("ai_preferences")
+        .upsert(
+          {
+            owner_id: ownerId,
+            enabled,
+            allow_private_content: draft.allowPrivateContent,
+            monthly_budget_cents: draft.monthlyBudgetCents,
+            grounding_mode: draft.groundingMode,
+            provider: "deepseek",
+            model: "deepseek-v4-flash",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "owner_id" },
+        )
+        .select("enabled,allow_private_content,monthly_budget_cents,grounding_mode,updated_at")
+        .single()
       if (result.error) {
         setAiStatus(
           String(result.error.message ?? "")
@@ -1630,12 +1729,28 @@ const init = async () => {
         )
         return
       }
+      clearAiSettingsDraft(sessionStorage, ownerId)
+      if (disposed || currentUser?.id !== ownerId) return
+      applyAiSettingsDraft({
+        enabled: Boolean(result.data.enabled),
+        allowPrivateContent: Boolean(result.data.allow_private_content),
+        monthlyBudgetCents: Number(
+          result.data.monthly_budget_cents ?? 0,
+        ) as AiSettingsDraft["monthlyBudgetCents"],
+        groundingMode:
+          result.data.grounding_mode === "knowledge_base" ? "knowledge_base" : "selected_only",
+      })
       setAiStatus(
-        enabled ? "AI 设置已保存；真实模型仍未连接，不会产生费用。" : "AI 助手已保持关闭。",
+        enabled ? "AI 设置已保存；真实调用仍受总开关和预算边界保护。" : "AI 助手已保持关闭。",
         "success",
       )
+    } catch {
+      if (!disposed && currentUser?.id === ownerId)
+        setAiStatus("网络中断，设置尚未保存；本机草稿已保留，请稍后重试。", "error")
     } finally {
-      if (aiSave) {
+      delete aiSettingsForm.dataset.saving
+      aiSettingsForm.removeAttribute("aria-busy")
+      if (!disposed && currentUser?.id === ownerId && aiSave) {
         aiSave.disabled = false
         aiSave.textContent = originalLabel
       }
@@ -1682,10 +1797,14 @@ const init = async () => {
 
   profileSettingsForm?.addEventListener("submit", async (event) => {
     event.preventDefault()
-    if (!client || !currentUser || !profileDisplayName) {
+    if (profileSettingsForm.dataset.saving === "true") return
+    if (!currentUser || !profileDisplayName || !(await ensureClient(true))) {
       setProfileStatus("登录状态已失效，请重新登录。", "error")
       return
     }
+    const ownerId = currentUser.id
+    const ownerEmail = currentUser.email ?? ""
+    writeProfileSettingsDraft(sessionStorage, ownerId, currentProfileSettingsDraft())
     const displayName = profileDisplayName.value.trim()
     if (displayName.length < 2 || displayName.length > 40) {
       setProfileStatus("显示名称需要 2–40 个字符。", "error")
@@ -1711,6 +1830,8 @@ const init = async () => {
     }
 
     const originalLabel = profileSave?.textContent ?? "保存个人资料"
+    profileSettingsForm.dataset.saving = "true"
+    profileSettingsForm.setAttribute("aria-busy", "true")
     if (profileSave) {
       profileSave.disabled = true
       profileSave.textContent = "正在保存…"
@@ -1719,7 +1840,7 @@ const init = async () => {
     let avatarUrl = currentProfileAvatarUrl
     try {
       if (profileCroppedBlob) {
-        const avatarPath = `${currentUser.id}/avatar`
+        const avatarPath = `${ownerId}/avatar`
         const upload = await client.storage.from("avatars").upload(avatarPath, profileCroppedBlob, {
           upsert: true,
           contentType: profileCroppedBlob.type || "image/webp",
@@ -1751,7 +1872,7 @@ const init = async () => {
           website_url: websiteUrl || null,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", currentUser.id)
+        .eq("id", ownerId)
       if (update.error) {
         const message = String(update.error.message ?? "").toLowerCase()
         setProfileStatus(
@@ -1762,6 +1883,8 @@ const init = async () => {
         )
         return
       }
+      clearProfileSettingsDraft(sessionStorage, ownerId)
+      if (disposed || currentUser?.id !== ownerId) return
       currentProfileAvatarUrl = avatarUrl
       profileCroppedBlob = null
       if (profileWebsite) profileWebsite.value = websiteUrl
@@ -1776,13 +1899,18 @@ const init = async () => {
             display_name: displayName,
             avatar_url: avatarUrl,
             signature,
-            email: currentUser.email ?? "",
+            email: ownerEmail,
           },
         }),
       )
       setProfileStatus("个人资料已保存，右上角头像和个人卡片已经同步。", "success")
+    } catch {
+      if (!disposed && currentUser?.id === ownerId)
+        setProfileStatus("网络中断，资料尚未保存；本机草稿已保留，请稍后重试。", "error")
     } finally {
-      if (profileSave) {
+      delete profileSettingsForm.dataset.saving
+      profileSettingsForm.removeAttribute("aria-busy")
+      if (!disposed && currentUser?.id === ownerId && profileSave) {
         profileSave.disabled = false
         profileSave.textContent = originalLabel
       }
