@@ -8,6 +8,7 @@ import {
   type AiSettingsDraft,
   type ProfileSettingsDraft,
 } from "./accountSettingsPersistence.ts"
+import { bindDocumentEditorRoute } from "./editorDraftRoute.ts"
 import {
   assertImportComplexity,
   createLatestImportRequestGate,
@@ -1421,6 +1422,11 @@ const init = async () => {
     if (!data.documentId && result.data?.id) {
       const field = form.elements.namedItem("documentId") as HTMLInputElement | null
       if (field) field.value = result.data.id
+      window.history.replaceState(
+        window.history.state,
+        "",
+        bindDocumentEditorRoute(window.location.href, result.data.id),
+      )
     }
     if (result.data?.revision !== undefined) {
       const revision = form.elements.namedItem("revision") as HTMLInputElement | null
