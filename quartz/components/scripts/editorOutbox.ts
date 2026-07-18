@@ -557,8 +557,12 @@ export const createEditorOutbox = (
         const records = (await validRecords()).filter(
           (record) => record.ownerId === ownerId && record.documentId === documentId,
         )
+        const latest =
+          records.filter((record) => record.status === "queued").sort(newestIntentFirst)[0] ??
+          records.sort(newestIntentFirst)[0] ??
+          null
         for (const record of records) await repository.delete(record.operationId)
-        return true
+        return latest ? clone(latest) : null
       }),
 
     migrateNewDocument: (

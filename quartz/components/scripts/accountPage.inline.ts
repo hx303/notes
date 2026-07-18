@@ -21,6 +21,7 @@ import {
   createEditorOutbox,
   createIndexedDbEditorOutboxRepository,
   type EditorOutboxClaim,
+  type EditorOutboxRecord,
 } from "./editorOutbox.ts"
 import {
   assertImportComplexity,
@@ -1248,18 +1249,53 @@ const init = async () => {
     if (conflictSection) conflictSection.hidden = true
   }
 
-  const recoverableConflictBackup = (conflict: NonNullable<typeof editorConflict>) => {
+  const recoverableConflictBackup = (
+    conflict: NonNullable<typeof editorConflict>,
+    durableRecord?: EditorOutboxRecord | null,
+  ) => {
+    const candidates: Array<{ backup: EditorBackup; priority: number }> = [
+      { backup: conflict.backup, priority: 0 },
+    ]
     const raw = localStorage.getItem(localDraftKey(conflict.ownerId, conflict.documentId))
-    if (!raw) return conflict.backup
-    const inspection = inspectEditorBackup(raw, conflict.ownerId, conflict.documentId)
-    return inspection.state === "invalid" ? conflict.backup : inspection.backup
+    if (raw) {
+      const inspection = inspectEditorBackup(raw, conflict.ownerId, conflict.documentId)
+      if (inspection.state !== "invalid")
+        candidates.push({ backup: inspection.backup, priority: 1 })
+    }
+    if (durableRecord) {
+      const form = materializeEditorOutboxFormIdentity(durableRecord.payload.form, durableRecord)
+      if (form)
+        candidates.push({
+          backup: addEditorBackupMetadata(
+            {
+              ...form,
+              __sources: Array.isArray(durableRecord.payload.sources)
+                ? durableRecord.payload.sources
+                : [],
+            },
+            conflict.ownerId,
+            conflict.documentId,
+            durableRecord.baseRevision,
+            durableRecord.updatedAt,
+          ),
+          priority: 2,
+        })
+    }
+    return candidates.sort(
+      (left, right) =>
+        Number(right.backup.__editorRecovery?.savedAt ?? 0) -
+          Number(left.backup.__editorRecovery?.savedAt ?? 0) || right.priority - left.priority,
+    )[0]!.backup
   }
 
-  const archiveEditorConflict = (conflict: NonNullable<typeof editorConflict>) => {
+  const archiveEditorConflict = (
+    conflict: NonNullable<typeof editorConflict>,
+    backup = recoverableConflictBackup(conflict),
+  ) => {
     if (!currentUser || currentUser.id !== conflict.ownerId) return false
     try {
       const archiveKey = `wouldkeep:editor-conflict-archive:${conflict.ownerId}:${conflict.documentId}:${Date.now()}`
-      localStorage.setItem(archiveKey, JSON.stringify(recoverableConflictBackup(conflict)))
+      localStorage.setItem(archiveKey, JSON.stringify(backup))
       return true
     } catch {
       setStatus(
@@ -1277,7 +1313,18 @@ const init = async () => {
     cloud: WorkspaceFormData,
   ) => {
     if (!currentUser) return
-    editorConflict = { ownerId: String(currentUser.id), documentId, backup, reason, cloud }
+    const ownerId = String(currentUser.id)
+    const liveForm = form ? readForm() : null
+    const frozenBackup =
+      reason === "remote-write" && liveForm && (liveForm.documentId || "new") === documentId
+        ? addEditorBackupMetadata(
+            { ...liveForm, __sources: collectSources() },
+            ownerId,
+            documentId,
+            Number(backup.__editorRecovery?.baseRevision ?? liveForm.revision),
+          )
+        : backup
+    editorConflict = { ownerId, documentId, backup: frozenBackup, reason, cloud }
     invalidateEditorSaves()
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     // The recovery controls live inside the editor form. A document-open request may have
@@ -1289,12 +1336,13 @@ const init = async () => {
     }
     setEditorConflictInteractivity(true)
     if (state) state.textContent = "本地稿与云端版本冲突，自动同步已暂停"
-    if (conflictLocalTitle) conflictLocalTitle.textContent = String(backup.title ?? "未命名知识")
-    if (conflictLocalBody) conflictLocalBody.textContent = String(backup.body ?? "")
+    if (conflictLocalTitle)
+      conflictLocalTitle.textContent = String(frozenBackup.title ?? "未命名知识")
+    if (conflictLocalBody) conflictLocalBody.textContent = String(frozenBackup.body ?? "")
     if (conflictCloudTitle) conflictCloudTitle.textContent = cloud.title || "未命名知识"
     if (conflictCloudBody) conflictCloudBody.textContent = cloud.body
     if (conflictMeta)
-      conflictMeta.textContent = `本地基于第 ${Number(backup.revision ?? 0)} 版 · 云端第 ${cloud.revision} 版`
+      conflictMeta.textContent = `本地基于第 ${Number(frozenBackup.revision ?? 0)} 版 · 云端第 ${cloud.revision} 版`
     if (conflictSection) conflictSection.hidden = false
     setStatus("检测到另一处修改。本地稿已冻结保留；选择处理方式前不会覆盖任何一方。", "error")
   }
@@ -2157,20 +2205,52 @@ const init = async () => {
   }
 
   const resolveDurableEditorConflict = async (conflict: NonNullable<typeof editorConflict>) => {
-    if (!editorOutbox) return true
+    if (!editorOutbox) return { ok: true as const, latest: null }
     try {
-      return editorOutbox.resolveDocumentConflict(conflict.ownerId, conflict.documentId)
+      return {
+        ok: true as const,
+        latest: await editorOutbox.resolveDocumentConflict(conflict.ownerId, conflict.documentId),
+      }
     } catch {
       setStatus("恢复队列暂时无法确认你的选择；冲突稿仍保持冻结，请稍后重试。", "error")
-      return false
+      return { ok: false as const, latest: null }
+    }
+  }
+
+  const restoreDurableEditorConflict = async (
+    conflict: NonNullable<typeof editorConflict>,
+    backup: EditorBackup,
+    latest: EditorOutboxRecord | null,
+  ) => {
+    if (!editorOutbox) return
+    try {
+      const queued = await editorOutbox.enqueue({
+        ownerId: conflict.ownerId,
+        documentId: conflict.documentId,
+        baseRevision: Number(
+          latest?.baseRevision ??
+            backup.__editorRecovery?.baseRevision ??
+            conflict.cloud.revision ??
+            0,
+        ),
+        payload: latest?.payload ?? {
+          form: backup,
+          sources: Array.isArray(backup.__sources) ? backup.__sources : [],
+        },
+      })
+      const frozen = await editorOutbox.markConflict(conflict.ownerId, queued.operationId)
+      if (editorConflict && frozen) editorConflict.operationId = frozen.operationId
+    } catch {
+      setStatus("恢复副本无法归档，持久队列也暂时不可用；请保持页面开启并清理浏览器空间。", "error")
     }
   }
 
   root.querySelector("[data-conflict-use-local]")?.addEventListener("click", async () => {
     const conflict = editorConflict
     if (!conflict || !form || !currentUser || !client || currentUser.id !== conflict.ownerId) return
-    const recoverableBackup = recoverableConflictBackup(conflict)
-    if (!(await resolveDurableEditorConflict(conflict))) return
+    const resolution = await resolveDurableEditorConflict(conflict)
+    if (!resolution.ok) return
+    const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
     const backup = recoverableBackup as Record<string, unknown> & {
       __sources?: WorkspaceSource[]
     }
@@ -2194,8 +2274,13 @@ const init = async () => {
   root.querySelector("[data-conflict-use-cloud]")?.addEventListener("click", async () => {
     const conflict = editorConflict
     if (!conflict || !currentUser || !form || currentUser.id !== conflict.ownerId) return
-    if (!archiveEditorConflict(conflict)) return
-    if (!(await resolveDurableEditorConflict(conflict))) return
+    const resolution = await resolveDurableEditorConflict(conflict)
+    if (!resolution.ok) return
+    const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
+    if (!archiveEditorConflict(conflict, recoverableBackup)) {
+      await restoreDurableEditorConflict(conflict, recoverableBackup, resolution.latest)
+      return
+    }
     clearEditorConflict()
     fillForm(conflict.cloud)
     if (state) state.textContent = "正在载入云端版本…"
@@ -2203,7 +2288,7 @@ const init = async () => {
       localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
       setStatus("已采用云端版本；原本地稿已另存为浏览器恢复副本。", "success")
     } else {
-      freezeEditorConflict(conflict.documentId, conflict.backup, conflict.reason, conflict.cloud)
+      freezeEditorConflict(conflict.documentId, recoverableBackup, conflict.reason, conflict.cloud)
       setStatus("云端版本暂时无法完整载入；本地稿仍保持可恢复状态，请联网后重试。", "error")
     }
   })
@@ -2211,8 +2296,9 @@ const init = async () => {
   root.querySelector("[data-conflict-save-copy]")?.addEventListener("click", async () => {
     const conflict = editorConflict
     if (!conflict || !form || !currentUser || currentUser.id !== conflict.ownerId) return
-    const recoverableBackup = recoverableConflictBackup(conflict)
-    if (!(await resolveDurableEditorConflict(conflict))) return
+    const resolution = await resolveDurableEditorConflict(conflict)
+    if (!resolution.ok) return
+    const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
     const backup = recoverableBackup as Record<string, unknown> & {
       __sources?: WorkspaceSource[]
     }
@@ -2241,7 +2327,7 @@ const init = async () => {
       return
     }
     if (await requestDocumentSave()) {
-      archiveEditorConflict(conflict)
+      archiveEditorConflict(conflict, recoverableBackup)
       localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
       if (state) state.textContent = "私密副本已保存"
       setStatus("已创建新的私密副本；原文档和冲突恢复稿都未被覆盖。", "success")

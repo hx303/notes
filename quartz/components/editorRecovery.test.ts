@@ -140,7 +140,10 @@ test("conflicts freeze the original backup until an explicit recovery action", (
   assert.ok(conflictGuard > 0)
   assert.ok(backupWrite > conflictGuard)
   assert.match(accountScript, /data-conflict-use-local[\s\S]*fillForm\(backup\)/)
-  assert.match(accountScript, /data-conflict-use-cloud[\s\S]*archiveEditorConflict\(conflict\)/)
+  assert.match(
+    accountScript,
+    /data-conflict-use-cloud[\s\S]*archiveEditorConflict\(conflict, recoverableBackup\)/,
+  )
   assert.match(
     accountScript,
     /data-conflict-save-copy[\s\S]*\[name=visibility\]\[value=private\][\s\S]*requestDocumentSave/,
@@ -189,7 +192,7 @@ test("session changes invalidate private editor reads and clear sensitive UI sta
   assert.match(accountScript, /if \(!isCurrentOpen\(\)\) return false/)
   assert.match(accountScript, /event === "SIGNED_OUT"[\s\S]{0,220}clearSensitiveEditorState\(\)/)
   assert.match(accountScript, /clearSensitiveEditorState[\s\S]{0,500}form\?\.reset\(\)/)
-  assert.match(accountScript, /ownerId: String\(currentUser\.id\)/)
+  assert.match(accountScript, /const ownerId = String\(currentUser\.id\)/)
   assert.match(accountScript, /const syncRequest = authSyncRequests\.begin\(\)/)
   assert.match(accountScript, /if \(!isCurrentSync\(\)\) return\s+currentUser = resolvedUser/)
   assert.match(accountScript, /if \(isCurrentSync\(\)\) resolveAuthState\(\)/)
@@ -215,10 +218,12 @@ test("only the latest document-open request may update document-specific UI", ()
 })
 
 test("conflict recovery controls remain interactive after a gated document open", () => {
-  assert.match(
-    accountScript,
-    /freezeEditorConflict[\s\S]{0,900}form\.inert = false[\s\S]{0,120}aria-busy", "false"/,
-  )
+  const freezeStart = accountScript.indexOf("const freezeEditorConflict")
+  const formUnlocked = accountScript.indexOf("form.inert = false", freezeStart)
+  const conflictOnly = accountScript.indexOf("setEditorConflictInteractivity(true)", formUnlocked)
+  assert.ok(freezeStart > 0)
+  assert.ok(formUnlocked > freezeStart)
+  assert.ok(conflictOnly > formUnlocked)
   assert.match(
     accountScript,
     /const saveTargetIsCurrent[\s\S]{0,600}editorConflict\?\.documentId !== documentIdentity[\s\S]{0,300}if \(!saveTargetIsCurrent\(\)\)/,
@@ -231,6 +236,10 @@ test("conflict recovery controls remain interactive after a gated document open"
   assert.match(accountScript, /data-conflict-use-local/)
   assert.match(accountScript, /data-conflict-use-cloud/)
   assert.match(accountScript, /data-conflict-save-copy/)
+  assert.match(
+    accountScript,
+    /latest: await editorOutbox\.resolveDocumentConflict[\s\S]{0,1600}recoverableConflictBackup\(conflict, resolution\.latest\)/,
+  )
 })
 
 test("document loading invalidates queued saves and stages metadata only after the core read", () => {

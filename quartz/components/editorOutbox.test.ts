@@ -532,7 +532,8 @@ test("conflicts freeze payload, cannot be claimed, migrated, or deleted by succe
     "queued",
   )
   assert.deepEqual(followUp.payload, { title: "queued behind conflict" })
-  assert.equal(await outbox.resolveDocumentConflict("owner-a", "new"), true)
+  const resolved = await outbox.resolveDocumentConflict("owner-a", "new")
+  assert.deepEqual(resolved?.payload, { title: "queued behind conflict" })
   assert.deepEqual(await outbox.listForOwner("owner-a"), [])
 })
 
