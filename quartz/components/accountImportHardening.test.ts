@@ -267,5 +267,7 @@ test("private import preview lazily loads same-origin parsers and keeps writes b
   )
   assert.match(publicScript, /purify-3\.4\.12\.min\.js/)
   assert.match(publicScript, /value\?\.version === "3\.4\.12"/)
+  assert.match(publicScript, /delete globalWindow\.__wouldkeepScriptLoads\[src\]/)
+  assert.match(publicScript, /timeout \$\{src\}/)
   assert.match(publicScript, /purifier\.sanitize\(inertTemplate\.content, \{/)
 })

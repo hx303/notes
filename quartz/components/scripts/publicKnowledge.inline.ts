@@ -7,25 +7,51 @@ type PublicSource = {
   accessed_at?: string | null
 }
 
-const loadPublicScript = (src: string, globalName: string, validate?: (value: any) => boolean) => {
+const loadPublicScript = (
+  src: string,
+  globalName: string,
+  timeoutMs = 12_000,
+  validate?: (value: any) => boolean,
+) => {
   const globalWindow = window as any
   if (globalWindow[globalName] && (!validate || validate(globalWindow[globalName])))
     return Promise.resolve(globalWindow[globalName])
   if (globalWindow[globalName] && validate) delete globalWindow[globalName]
   globalWindow.__wouldkeepScriptLoads ??= {}
   if (globalWindow.__wouldkeepScriptLoads[src]) return globalWindow.__wouldkeepScriptLoads[src]
-  globalWindow.__wouldkeepScriptLoads[src] = new Promise((resolve, reject) => {
+  const request = new Promise((resolve, reject) => {
     const script = document.createElement("script")
+    let settled = false
+    let timeout: number | undefined
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      if (timeout) window.clearTimeout(timeout)
+      delete globalWindow.__wouldkeepScriptLoads[src]
+      script.onload = null
+      script.onerror = null
+      script.remove()
+      reject(error)
+    }
     script.src = src
     script.async = true
-    script.onload = () =>
-      globalWindow[globalName] && (!validate || validate(globalWindow[globalName]))
-        ? resolve(globalWindow[globalName])
-        : reject(new Error(`missing or invalid ${globalName}`))
-    script.onerror = () => reject(new Error(`failed ${src}`))
+    script.onload = () => {
+      if (!globalWindow[globalName] || (validate && !validate(globalWindow[globalName])))
+        return fail(new Error(`missing or invalid ${globalName}`))
+      if (settled) return
+      settled = true
+      if (timeout) window.clearTimeout(timeout)
+      resolve(globalWindow[globalName])
+    }
+    script.onerror = () => fail(new Error(`failed ${src}`))
     document.head.appendChild(script)
+    timeout = window.setTimeout(() => fail(new Error(`timeout ${src}`)), timeoutMs)
   })
-  return globalWindow.__wouldkeepScriptLoads[src]
+  globalWindow.__wouldkeepScriptLoads[src] = request
+  return request.catch((error) => {
+    delete globalWindow.__wouldkeepScriptLoads[src]
+    throw error
+  })
 }
 
 const renderPublicMarkdown = async (target: HTMLElement, markdown: string) => {
@@ -40,6 +66,7 @@ const renderPublicMarkdown = async (target: HTMLElement, markdown: string) => {
       loadPublicScript(
         "/static/vendor/workspace-import/purify-3.4.12.min.js",
         "DOMPurify",
+        12_000,
         (value) => value?.version === "3.4.12",
       ),
     ])) as any[]
