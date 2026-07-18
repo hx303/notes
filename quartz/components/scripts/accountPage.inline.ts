@@ -1904,6 +1904,10 @@ const init = async () => {
         status: editorConflict?.documentId === documentId ? "conflict" : saved ? "saved" : "queued",
         revision: saved ? readForm().revision : undefined,
       })
+      if (saved)
+        window.setTimeout(() => {
+          void flushDurableOutboxForCurrentDocument()
+        }, 0)
       return saved
     }
     editorCoordinator?.publishStatus({

@@ -265,9 +265,10 @@ test("a new operation migrates to its cloud identity without changing operation 
 
 test("a claimed first insert binds its cloud identity without releasing the in-flight claim", async () => {
   const repository = createMemoryEditorOutboxRepository()
+  const operationIds = ["operation-new", "operation-follow-up"]
   const outbox = createEditorOutbox(repository, {
-    now: clock(10, 20, 30),
-    createOperationId: () => "operation-new",
+    now: clock(10, 20, 30, 40, 50, 60),
+    createOperationId: () => operationIds.shift() ?? "unexpected-operation",
   })
   await outbox.enqueue({
     ownerId: "owner-a",
@@ -277,13 +278,30 @@ test("a claimed first insert binds its cloud identity without releasing the in-f
   })
   const claim = await outbox.claimNext("owner-a", "new")
   assert.ok(claim)
+  await outbox.enqueue({
+    ownerId: "owner-a",
+    documentId: "new",
+    baseRevision: 0,
+    payload: { title: "edited while first insert saves" },
+  })
   const bound = await outbox.bindCreatedDocument("owner-a", claim, "document-created", 1)
   assert.ok(bound)
   assert.equal(bound.record.status, "saving")
   assert.equal(bound.record.documentId, "document-created")
   assert.equal(bound.record.baseRevision, 1)
+  const followUp = (await outbox.listForOwner("owner-a")).find(
+    ({ operationId }) => operationId !== bound.record.operationId,
+  )
+  assert.equal(followUp?.documentId, "document-created")
+  assert.equal(followUp?.baseRevision, 1)
   assert.equal(await outbox.completeAfterSuccess("owner-a", claim, 1), false)
   assert.equal(await outbox.completeAfterSuccess("owner-a", bound, 1), true)
+  const followUpClaim = await outbox.claimNext("owner-a", "document-created")
+  assert.ok(followUpClaim)
+  assert.deepEqual(followUpClaim.record.payload, {
+    title: "edited while first insert saves",
+  })
+  assert.equal(await outbox.completeAfterSuccess("owner-a", followUpClaim, 2), true)
   assert.deepEqual(await outbox.listForOwner("owner-a"), [])
 })
 

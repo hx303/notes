@@ -416,6 +416,21 @@ export const createEditorOutbox = (
           baseRevision,
           updatedAt: nextUpdatedAt(current),
         }
+        const followUps = (await validRecords()).filter(
+          (record) =>
+            record.operationId !== current.operationId &&
+            record.ownerId === current.ownerId &&
+            record.documentId === "new" &&
+            record.status === "queued",
+        )
+        for (const followUp of followUps) {
+          await repository.put({
+            ...followUp,
+            documentId,
+            baseRevision,
+            updatedAt: nextUpdatedAt(followUp),
+          })
+        }
         await repository.put(bound)
         return { record: bound, updatedAt: bound.updatedAt }
       }),
