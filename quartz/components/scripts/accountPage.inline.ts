@@ -2228,7 +2228,14 @@ const init = async () => {
     backup: EditorBackup,
     latest: EditorOutboxRecord | null,
   ) => {
-    if (editorConflict === conflict) editorConflict.backup = backup
+    const rememberBackup = (nextBackup: EditorBackup) => {
+      if (editorConflict !== conflict) return
+      editorConflict.backup = nextBackup
+      if (conflictLocalTitle)
+        conflictLocalTitle.textContent = String(nextBackup.title ?? "未命名知识")
+      if (conflictLocalBody) conflictLocalBody.textContent = String(nextBackup.body ?? "")
+    }
+    rememberBackup(backup)
     if (!editorOutbox) return
     try {
       const frozen = await editorOutbox.restoreConflict({
@@ -2245,7 +2252,10 @@ const init = async () => {
           sources: Array.isArray(backup.__sources) ? backup.__sources : [],
         },
       })
-      if (editorConflict === conflict) editorConflict.operationId = frozen.operationId
+      if (editorConflict === conflict) {
+        editorConflict.operationId = frozen.operationId
+        rememberBackup(recoverableConflictBackup(conflict, frozen))
+      }
     } catch {
       setStatus("恢复副本无法归档，持久队列也暂时不可用；请保持页面开启并清理浏览器空间。", "error")
     }

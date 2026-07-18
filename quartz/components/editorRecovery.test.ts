@@ -255,6 +255,10 @@ test("conflict choices are single-flight and storage denial keeps durable recove
     accountScript,
     /const archived = archiveEditorConflict[\s\S]{0,500}archived[\s\S]{0,180}浏览器恢复归档不可用/,
   )
+  assert.match(
+    accountScript,
+    /const rememberBackup[\s\S]{0,500}editorOutbox\.restoreConflict[\s\S]{0,900}rememberBackup\(recoverableConflictBackup\(conflict, frozen\)\)/,
+  )
 })
 
 test("document loading invalidates queued saves and stages metadata only after the core read", () => {
