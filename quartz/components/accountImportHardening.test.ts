@@ -18,6 +18,10 @@ const staticEmitter = readFileSync(
   new URL("../plugins/emitters/static.ts", import.meta.url),
   "utf8",
 )
+const publicScript = readFileSync(
+  new URL("./scripts/publicKnowledge.inline.ts", import.meta.url),
+  "utf8",
+)
 
 const deferred = () => {
   let resolve!: () => void
@@ -226,6 +230,7 @@ test("private import preview lazily loads same-origin parsers and keeps writes b
   assert.match(script, /turndown-7\.2\.0\.js/)
   assert.match(script, /marked-15\.0\.12\.umd\.js/)
   assert.match(script, /purify-3\.4\.12\.min\.js/)
+  assert.match(script, /value\?\.version === "3\.4\.12"/)
   assert.match(script, /timeoutMs = 0/)
   assert.match(script, /12_000/)
   assert.match(script, /ALLOWED_TAGS:[\s\S]*"table"[\s\S]*"img"/)
@@ -253,4 +258,14 @@ test("private import preview lazily loads same-origin parsers and keeps writes b
   ]) {
     assert.match(staticEmitter, new RegExp(filename.replaceAll(".", "\\.")))
   }
+  assert.match(staticEmitter, /createHash\("sha256"\)/)
+  assert.match(staticEmitter, /Workspace import vendor integrity check failed/)
+  assert.match(staticEmitter, /THIRD_PARTY_LICENSES\.txt/)
+  assert.doesNotMatch(
+    publicScript,
+    /dompurify@3\.2\.6|cdn\.jsdelivr\.net\/npm\/(?:marked|dompurify)@/,
+  )
+  assert.match(publicScript, /purify-3\.4\.12\.min\.js/)
+  assert.match(publicScript, /value\?\.version === "3\.4\.12"/)
+  assert.match(publicScript, /purifier\.sanitize\(inertTemplate\.content, \{/)
 })

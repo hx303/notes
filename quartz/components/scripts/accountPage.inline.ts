@@ -20,9 +20,16 @@ import {
 const localDraftKey = (userId: string, documentId = "new") =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
 
-const loadExternalScript = (src: string, globalName: string, timeoutMs = 0) => {
+const loadExternalScript = (
+  src: string,
+  globalName: string,
+  timeoutMs = 0,
+  validate?: (value: any) => boolean,
+) => {
   const globalWindow = window as any
-  if (globalWindow[globalName]) return Promise.resolve(globalWindow[globalName])
+  if (globalWindow[globalName] && (!validate || validate(globalWindow[globalName])))
+    return Promise.resolve(globalWindow[globalName])
+  if (globalWindow[globalName] && validate) delete globalWindow[globalName]
   globalWindow.__wouldkeepScriptLoads ??= {}
   if (globalWindow.__wouldkeepScriptLoads[src]) return globalWindow.__wouldkeepScriptLoads[src]
   const request = new Promise((resolve, reject) => {
@@ -42,7 +49,8 @@ const loadExternalScript = (src: string, globalName: string, timeoutMs = 0) => {
     script.src = src
     script.async = true
     script.onload = () => {
-      if (!globalWindow[globalName]) return fail(new Error(`missing ${globalName}`))
+      if (!globalWindow[globalName] || (validate && !validate(globalWindow[globalName])))
+        return fail(new Error(`missing or invalid ${globalName}`))
       if (settled) return
       settled = true
       if (timeout) window.clearTimeout(timeout)
@@ -74,10 +82,16 @@ const loadExternalStyle = (href: string) => {
 }
 
 const importVendorUrl = (filename: string) => `/static/vendor/workspace-import/${filename}`
+const isExpectedDOMPurify = (value: any) => value?.version === "3.4.12"
 const loadImportPreviewLibraries = async () => {
   const [markedLibrary, purifier] = await Promise.all([
     loadExternalScript(importVendorUrl("marked-15.0.12.umd.js"), "marked", 12_000),
-    loadExternalScript(importVendorUrl("purify-3.4.12.min.js"), "DOMPurify", 12_000),
+    loadExternalScript(
+      importVendorUrl("purify-3.4.12.min.js"),
+      "DOMPurify",
+      12_000,
+      isExpectedDOMPurify,
+    ),
   ])
   return { markedLibrary: markedLibrary as any, purifier: purifier as any }
 }
