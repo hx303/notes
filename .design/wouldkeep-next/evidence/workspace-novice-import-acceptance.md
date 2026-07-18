@@ -1,12 +1,13 @@
 # Workspace novice import independent acceptance
 
-- Candidate: `611be6046307cabb2c8682fff049d4b3c7e83fa6`
+- Candidate: `51451d85cc9ecfe93cbc75af88479b5863dbca47`
 - Baseline: `a6ef3be6d981ab005ac56522b9d0c7df25db3df1`
-- Verdict: automated/code gate PASS; P0=0, P1=0; browser gate NOT PROVEN.
-- Focused tests: 15/15 PASS.
-- Full tests: 226/226 PASS.
+- Verdict: automated/code and deployment gates PASS; P0=0; browser gate PARTIAL and final refresh recovery recheck remains open.
+- Focused tests: 18/18 PASS, including first-save route recovery.
+- Full tests: 229/229 PASS.
 - TypeScript: PASS.
 - Production build: PASS, 284 inputs / 1051 outputs.
+- Preview deployment: both `Vercel – notes` and `Vercel – vcdeploy` PASS for `51451d85`.
 - Dependency gate: four same-origin UMD files matched the build-time SHA-256 allowlist; `THIRD_PARTY_LICENSES.txt` was emitted; newly introduced conversion dependencies had no official-registry advisory.
 - Scope gate: no migration, Edge Function, Secret, service-role, DeepSeek key, AI behavior, production write, or paid request change.
 
@@ -18,14 +19,18 @@
 - Private previews use an inert template, strict DOMPurify allowlists, and local data images only; explicit confirmation is required before editor mutation and visibility defaults to private.
 - Failed imports retain file context and retry affordance. Parser failures and timeouts evict the shared script-load cache.
 - Account and public routes require DOMPurify 3.4.12 and remove a stale global before loading the same-origin runtime.
+- Browser acceptance on the pre-fix preview proved Markdown file selection, parsed summary and preview, explicit private-draft confirmation, editor population, private visibility, title focus, Cancel/Escape focus return, and no horizontal overflow at 320/375/800/1024/1200/1536 CSS pixels.
+- Browser acceptance exposed a first-save recovery defect: after import and successful autosave, refresh returned to an empty new editor. The cause was removal of the `new` local backup after insert without binding the returned document id into the editor URL.
+- `51451d85` binds the first saved document id with `history.replaceState`, removes transient `action`/`mode` parameters, preserves unrelated query/hash state, and has deterministic route regression coverage.
 
 ## Not proven
 
-- Real login to first private note and refresh recovery.
-- Real file chooser/drag-drop, retry, Cancel/Accept, editor/localStorage preservation.
+- Final real-browser refresh recovery on the post-fix `51451d85` preview. The Chrome extension control channel repeatedly timed out while reading the already-open preview tab after deployment; this was not an application or Vercel failure.
+- Real DOCX file chooser/drag-drop and retry behavior.
+- Editor/localStorage preservation when cloud autosave fails or the network goes offline.
 - Browser network capture proving zero remote image requests.
-- Dialog keyboard loop, Escape, focus return, screen-reader announcements.
-- 320/375/800/1024/1200/1536 CSS pixels, 200% zoom, and mobile touch.
+- Dialog keyboard loop and screen-reader announcements beyond the proven Escape/focus-return path.
+- 200% zoom and mobile touch beyond the proven responsive CSS widths.
 
 ## Residual risk
 
