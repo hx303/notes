@@ -1,8 +1,8 @@
 # wouldkeep Current State
 
-Last reconciled: 2026-07-17 (Asia/Shanghai)
+Last reconciled: 2026-07-18 (Asia/Shanghai)
 
-Working baseline: merged `main` at `f949cf554e7a252f31199012f2d41028a03363d7`
+Working baseline: merged `main` at `01dc10a9fe478f9fbcc03a0f443232ef5e776d5d`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
@@ -20,6 +20,8 @@ Merged production-operation record PR: [#20](https://github.com/hx303/notes/pull
 
 Merged publication-write ACL hardening PR: [#21](https://github.com/hx303/notes/pull/21)
 
+Merged sidebar-scroll and UX repair PR: [#22](https://github.com/hx303/notes/pull/22)
+
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
 ## 2026-07-17 reconciliation after PR #16
@@ -31,7 +33,8 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - Existing account/workspace task checkboxes materially understate implemented import, autosave, version, organization, and publication foundations. Remaining work must begin with browser-level acceptance and gap repair, not wholesale reconstruction.
 - PR #18 merged the reviewed migration namespace normalization. The separately authorized production ledger-only repair retained the five legacy rows, added the ten exact normalized rows without executing their SQL, and ended with 15 aligned versions and zero pending migrations.
 - PR #19 merged the soft-delete/publication-snapshot repair. The separately authorized production deployment applied `20260718001100`; the ledger reached 16 aligned versions and postflight publication, document, and AI invariants passed.
-- PR #21 merged the forward-only anonymous publication-write RPC ACL repair as `f949cf55`. Migration `20260718001200` is committed but remains **not deployed** pending separate production authorization.
+- PR #21 merged the forward-only anonymous publication-write RPC ACL repair as `f949cf55`. The separately authorized production deployment applied `20260718001200`; all three publication write RPCs now deny anonymous/PUBLIC execution, the ledger reached 17 aligned versions, and business/AI invariants were unchanged.
+- PR #22 merged the browser-led sidebar scroll, medium-width navigation, admin file-nav, and keyboard repair as `01dc10a9`. The merged baseline passes TypeScript, 217/217 tests, and a production build with 284 inputs and 1,046 outputs.
 
 ## Executive status
 
@@ -116,4 +119,4 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 
 1. Finish N04 only when the full integration/reference/platform/workspace/public worktree set is needed; the DeepSeek implementation/review worktrees already use the merged baseline and do not disturb occupied worktrees.
 2. Complete fresh Cloudflare/production behavior checks and a production operation record before any further migration, Edge Function replacement, Secret change, feature-flag enablement, or paid call.
-3. Treat the production migration ledger as normalized at 15 aligned versions. Any new business change must be a reviewed forward migration with a version greater than `20260718001000` and requires separate production deployment approval.
+3. Treat the production migration ledger as normalized at 17 aligned versions with zero pending migrations. Any new business change must be a reviewed forward migration with a version greater than `20260718001200` and requires separate production deployment approval.
