@@ -2,7 +2,7 @@
 
 Last reconciled: 2026-07-17 (Asia/Shanghai)
 
-Working baseline: merged `main` at `13cbf2e630ef6845c7e741d434104b38e93d8c68`
+Working baseline: merged `main` at `f949cf554e7a252f31199012f2d41028a03363d7`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
@@ -14,6 +14,12 @@ Merged settings-persistence PR: [#16](https://github.com/hx303/notes/pull/16)
 
 Merged Wave 2 / migration-normalization PR: [#18](https://github.com/hx303/notes/pull/18)
 
+Merged publication-integrity PR: [#19](https://github.com/hx303/notes/pull/19)
+
+Merged production-operation record PR: [#20](https://github.com/hx303/notes/pull/20)
+
+Merged publication-write ACL hardening PR: [#21](https://github.com/hx303/notes/pull/21)
+
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
 ## 2026-07-17 reconciliation after PR #16
@@ -24,6 +30,8 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - The current baseline passes TypeScript, 197/197 tests, and a production build with 284 Markdown inputs and 1,046 emitted files.
 - Existing account/workspace task checkboxes materially understate implemented import, autosave, version, organization, and publication foundations. Remaining work must begin with browser-level acceptance and gap repair, not wholesale reconstruction.
 - PR #18 merged the reviewed migration namespace normalization. The separately authorized production ledger-only repair retained the five legacy rows, added the ten exact normalized rows without executing their SQL, and ended with 15 aligned versions and zero pending migrations.
+- PR #19 merged the soft-delete/publication-snapshot repair. The separately authorized production deployment applied `20260718001100`; the ledger reached 16 aligned versions and postflight publication, document, and AI invariants passed.
+- PR #21 merged the forward-only anonymous publication-write RPC ACL repair as `f949cf55`. Migration `20260718001200` is committed but remains **not deployed** pending separate production authorization.
 
 ## Executive status
 
@@ -98,10 +106,10 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 
 ## Legacy task-file reconciliation
 
-| Task file                                   |    Checkbox count | Interpretation                                                                                                                 |
-| ------------------------------------------- | ----------------: | ------------------------------------------------------------------------------------------------------------------------------ |
-| `.design/wouldkeep-redesign/TASKS.md`       | 18 done / 23 open | stale status; many open items have evidence files or implemented components.                                                   |
-| `.design/account-knowledge-system/TASKS.md` |  0 done / 39 open | stale status; major account/workspace/database features exist.                                                                 |
+| Task file                                   |    Checkbox count | Interpretation                                                                                                                      |
+| ------------------------------------------- | ----------------: | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `.design/wouldkeep-redesign/TASKS.md`       | 18 done / 23 open | stale status; many open items have evidence files or implemented components.                                                        |
+| `.design/account-knowledge-system/TASKS.md` |  0 done / 39 open | stale status; major account/workspace/database features exist.                                                                      |
 | `.design/ai-knowledge-assistant/TASKS.md`   | 11 done / 25 open | foundation and default-off DeepSeek production boundary are reconciled; paid rollout and later AI phases remain intentionally open. |
 
 ## Remaining orchestration and production gates

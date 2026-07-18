@@ -395,6 +395,10 @@
   align-content: start;
   gap: 1.2rem;
   min-width: 0;
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
   padding: 1rem 0;
 }
 .workspace-nav-heading {
@@ -1985,19 +1989,41 @@
   .workspace-nav {
     position: static;
     grid-row: auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1rem;
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior-y: auto;
+    scrollbar-gutter: auto;
     padding: 0 0 1.25rem;
     border-bottom: 1px solid var(--account-border);
   }
   .workspace-nav-heading {
-    padding: 0 0 0.8rem;
+    padding: 0 0 0.4rem;
     border-bottom: 0;
   }
   .workspace-nav-links {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    gap: 0.4rem;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 0.35rem;
+    scroll-snap-type: inline proximity;
+  }
+  .workspace-nav-links a {
+    flex: 0 0 9.5rem;
+    scroll-snap-align: start;
   }
   .workspace-nav-utility {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding-top: 0.75rem;
+    display: flex;
+    gap: 0.35rem;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .workspace-nav a small {
+    display: none;
   }
   .profile-settings-layout {
     grid-template-columns: 1fr;
@@ -2028,6 +2054,14 @@
 }
 
 @media (max-width: 600px) {
+  .workspace-nav {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .workspace-nav-heading {
+    display: none;
+  }
   body:has(.account-page) {
     padding-block-end: 0;
   }
@@ -2093,6 +2127,7 @@
     scroll-snap-align: start;
   }
   .workspace-nav-utility {
+    display: grid;
     grid-template-columns: 1fr;
   }
   .workspace-write-options button {

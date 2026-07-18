@@ -227,6 +227,11 @@ a {
       padding: $topSpacing 2rem 2rem 2rem;
       display: flex;
       height: 100vh;
+      height: 100dvh;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+      scrollbar-gutter: stable;
       position: sticky;
     }
 
@@ -241,6 +246,9 @@ a {
         position: initial;
         display: flex;
         height: unset;
+        overflow-y: visible;
+        overscroll-behavior-y: auto;
+        scrollbar-gutter: auto;
         flex-direction: row;
         flex-wrap: wrap;
         padding: 0;
@@ -265,6 +273,9 @@ a {
       @media all and not ($desktop) {
         position: initial;
         height: unset;
+        overflow-y: visible;
+        overscroll-behavior-y: auto;
+        scrollbar-gutter: auto;
         width: 100%;
         flex-direction: row;
         padding: 0;

@@ -869,6 +869,29 @@ body.light .admin-work-row:hover {
   width: 292px;
 }
 
+.main > .sidebar .sidebar-files {
+  scrollbar-color: var(--admin-line-strong) var(--admin-paper-strong);
+  scrollbar-width: thin;
+}
+
+.main > .sidebar .sidebar-files::-webkit-scrollbar {
+  width: 10px;
+}
+
+.main > .sidebar .sidebar-files::-webkit-scrollbar-track {
+  background: var(--admin-paper-strong);
+}
+
+.main > .sidebar .sidebar-files::-webkit-scrollbar-thumb {
+  background: var(--admin-line-strong);
+  border: 2px solid var(--admin-paper-strong);
+  border-radius: 999px;
+}
+
+.main > .sidebar .sidebar-files::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-green);
+}
+
 .main > .editor-area {
   background: var(--admin-paper-strong);
 }
