@@ -21,6 +21,18 @@ const clock = (...values: number[]) => {
   }
 }
 
+const createSharedMutationLock = () => {
+  let tail: Promise<void> = Promise.resolve()
+  return <T>(operation: () => Promise<T>) => {
+    const result = tail.then(operation, operation)
+    tail = result.then(
+      () => undefined,
+      () => undefined,
+    )
+    return result
+  }
+}
+
 const record = (overrides: Record<string, unknown> = {}) => ({
   schemaVersion: EDITOR_OUTBOX_SCHEMA_VERSION,
   operationId: "operation-a",
@@ -235,6 +247,52 @@ test("same owner and document coalesce to the latest payload and earliest base r
   assert.equal(merged.baseRevision, 3)
   assert.deepEqual(merged.payload, { title: "latest", body: "new" })
   assert.equal((await outbox.listForOwner("owner-a")).length, 1)
+})
+
+test("a browser-wide mutation lock keeps saving immutable across outbox instances", async () => {
+  const repository = createMemoryEditorOutboxRepository()
+  const runExclusiveMutation = createSharedMutationLock()
+  const operationIds = ["operation-saving", "operation-follow-up"]
+  const options = {
+    now: clock(10, 20, 30, 40, 50),
+    createOperationId: () => operationIds.shift() ?? "unexpected-operation",
+    runExclusiveMutation,
+  }
+  const tabA = createEditorOutbox(repository, options)
+  const tabB = createEditorOutbox(repository, options)
+  await tabA.enqueue({
+    ownerId: "owner-a",
+    documentId: "new",
+    baseRevision: 0,
+    payload: { form: { title: "first" } },
+  })
+
+  const [claim] = await Promise.all([
+    tabA.claimNext("owner-a", "new"),
+    tabB.enqueue({
+      ownerId: "owner-a",
+      documentId: "new",
+      baseRevision: 0,
+      payload: { form: { title: "latest" } },
+    }),
+  ])
+  assert.ok(claim)
+  const records = await tabA.listForOwner("owner-a")
+  assert.equal(records.length, 2)
+  assert.equal(
+    records.find(({ operationId }) => operationId === claim.record.operationId)?.status,
+    "saving",
+  )
+  assert.equal(
+    (
+      records.find(({ status }) => status === "queued")?.payload.form as
+        | { title?: string }
+        | undefined
+    )?.title,
+    "latest",
+  )
+  const bound = await tabA.bindCreatedDocument("owner-a", claim, "cloud-document", 1)
+  assert.ok(bound)
 })
 
 test("a new operation migrates to its cloud identity without changing operation identity", async () => {

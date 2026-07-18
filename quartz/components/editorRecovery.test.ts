@@ -128,7 +128,7 @@ test("all editor save entry points use the serialized queue", () => {
   assert.doesNotMatch(accountScript, /await saveDocumentOnce\(\)/)
   assert.match(
     accountScript,
-    /loadPublication\(documentId,[\s\S]{0,200}restoreLocalBackup\(documentId,[\s\S]{0,100}result\.data\?\.revision/,
+    /loadPublication\([\s\S]{0,220}isCurrentOpen[\s\S]{0,900}restoreLocalBackup\(documentId,[\s\S]{0,100}result\.data\?\.revision/,
   )
 })
 
@@ -199,10 +199,30 @@ test("only the latest document-open request may update document-specific UI", ()
   assert.match(accountScript, /loadDocumentTags\(documentId, isCurrentOpen\)/)
   assert.match(accountScript, /loadDocumentLinks\(documentId, isCurrentOpen\)/)
   assert.match(accountScript, /loadDocumentSources\(documentId, isCurrentOpen\)/)
-  assert.match(accountScript, /loadPublication\([^\n]+isCurrentOpen\)/)
+  assert.match(accountScript, /loadPublication\([\s\S]{0,180}isCurrentOpen/)
   assert.match(accountScript, /if \(!authContextIsCurrent\(context\) \|\| !isCurrent\(\)\) return/)
   assert.match(accountScript, /if \(field\) field\.value = names\.join/)
   assert.match(accountScript, /if \(field\) field\.value = values\.join/)
+  assert.match(
+    accountScript,
+    /if \(!tagsLoaded \|\| !linksLoaded \|\| !sourcesLoaded \|\| !publicationLoaded\)/,
+  )
+  assert.match(accountScript, /标签、关系、来源或发布状态读取失败；已锁定编辑器/)
+  assert.match(accountScript, /form\.inert = false[\s\S]{0,100}aria-busy", "false"/)
+})
+
+test("conflict recovery controls remain interactive after a gated document open", () => {
+  assert.match(
+    accountScript,
+    /freezeEditorConflict[\s\S]{0,900}form\.inert = false[\s\S]{0,120}aria-busy", "false"/,
+  )
+  assert.match(
+    accountScript,
+    /const saveDocumentOnce[\s\S]{0,1600}editorConflict\?\.documentId === documentIdentity[\s\S]{0,180}return false/,
+  )
+  assert.match(accountScript, /data-conflict-use-local/)
+  assert.match(accountScript, /data-conflict-use-cloud/)
+  assert.match(accountScript, /data-conflict-save-copy/)
 })
 
 test("the durable outbox is wired before network saves and recovered after refresh", () => {

@@ -846,7 +846,7 @@ const init = async () => {
   }
 
   const loadVersions = async (documentId: string, isCurrent = () => true) => {
-    if (!client || !currentUser || !history || !historyList) return
+    if (!client || !currentUser || !history || !historyList) return false
     const loadClient = client
     const ownerId = String(currentUser.id)
     const loadEpoch = authEpoch
@@ -864,11 +864,12 @@ const init = async () => {
       client !== loadClient ||
       !isCurrent()
     )
-      return
-    if (result.error || !result.data?.length) {
+      return false
+    if (result.error) return false
+    if (!result.data?.length) {
       historyList.replaceChildren()
       history.hidden = true
-      return
+      return true
     }
     history.hidden = false
     historyList.replaceChildren()
@@ -903,6 +904,7 @@ const init = async () => {
         historyList.appendChild(button)
       },
     )
+    return true
   }
 
   const ensureKnowledgeBase = async (isCurrent = () => true) => {
@@ -1068,7 +1070,7 @@ const init = async () => {
   }
 
   const loadDocumentSources = async (documentId: string, isCurrent = () => true) => {
-    if (!client || !currentUser) return
+    if (!client || !currentUser) return false
     const context = captureAuthContext()
     const result = await context.client
       .from("document_sources")
@@ -1076,14 +1078,14 @@ const init = async () => {
       .eq("document_id", documentId)
       .eq("owner_id", context.ownerId)
       .order("sort_order", { ascending: true })
-    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return false
     if (result.error) {
       sourcesMigrationAvailable = false
-      renderSources()
-      return
+      return false
     }
     sourcesMigrationAvailable = true
     renderSources((result.data ?? []) as WorkspaceSource[])
+    return true
   }
 
   const saveDocumentSources = async (
@@ -1230,6 +1232,13 @@ const init = async () => {
     if (!currentUser) return
     editorConflict = { ownerId: String(currentUser.id), documentId, backup, reason, cloud }
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    // The recovery controls live inside the editor form. A document-open request may have
+    // made that form inert while loading, so explicitly restore interactivity before asking
+    // the user to resolve the conflict. Save requests remain blocked by editorConflict.
+    if (form) {
+      form.inert = false
+      form.setAttribute("aria-busy", "false")
+    }
     if (state) state.textContent = "本地稿与云端版本冲突，自动同步已暂停"
     if (conflictLocalTitle) conflictLocalTitle.textContent = String(backup.title ?? "未命名知识")
     if (conflictLocalBody) conflictLocalBody.textContent = String(backup.body ?? "")
@@ -1430,19 +1439,21 @@ const init = async () => {
   }
 
   const loadDocumentTags = async (documentId: string, isCurrent = () => true) => {
-    if (!client || !currentUser || !form) return
+    if (!client || !currentUser || !form) return false
     const context = captureAuthContext()
     const result = await context.client
       .from("document_tags")
       .select("tags(name)")
       .eq("document_id", documentId)
       .eq("owner_id", context.ownerId)
-    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return false
+    if (result.error) return false
     const names = (result.data ?? [])
       .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
       .filter(Boolean)
     const field = form.elements.namedItem("tags") as HTMLInputElement | null
     if (field) field.value = names.join("，")
+    return true
   }
 
   const saveLinks = async (
@@ -1499,14 +1510,15 @@ const init = async () => {
   }
 
   const loadDocumentLinks = async (documentId: string, isCurrent = () => true) => {
-    if (!client || !currentUser || !form) return
+    if (!client || !currentUser || !form) return false
     const context = captureAuthContext()
     const result = await context.client
       .from("document_links")
       .select("relation_type,to_document_id,documents!document_links_to_document_id_fkey(title)")
       .eq("from_document_id", documentId)
       .eq("owner_id", context.ownerId)
-    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return false
+    if (result.error) return false
     const groups: Record<string, string[]> = { prerequisite: [], related: [] }
     ;(result.data ?? []).forEach(
       (item: { relation_type: string; documents?: { title?: string } | null }) => {
@@ -1521,6 +1533,7 @@ const init = async () => {
       const field = form.elements.namedItem(name) as HTMLInputElement | null
       if (field) field.value = values.join("，")
     }
+    return true
   }
 
   const publicationUrl = (publication: PublicationState) =>
@@ -1567,7 +1580,7 @@ const init = async () => {
   }
 
   const loadPublication = async (documentId: string, revision: number, isCurrent = () => true) => {
-    if (!client || !currentUser) return
+    if (!client || !currentUser) return false
     const context = captureAuthContext()
     const result = await context.client
       .from("document_publications")
@@ -1575,15 +1588,16 @@ const init = async () => {
       .eq("document_id", documentId)
       .eq("owner_id", context.ownerId)
       .maybeSingle()
-    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return false
     if (result.error) {
       currentPublication = null
       if (publicationStatus)
         publicationStatus.textContent =
           "正式发布功能尚未启用；请执行 20260718000500_publication_flow.sql。"
-      return
+      return false
     }
     updatePublicationUI(result.data as PublicationState | null, revision)
+    return true
   }
 
   const publishCurrentDocument = async () => {
@@ -2174,6 +2188,10 @@ const init = async () => {
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     clearEditorConflict()
     form?.reset()
+    if (form) {
+      form.inert = false
+      form.setAttribute("aria-busy", "false")
+    }
     renderSources()
     historyList?.replaceChildren()
     if (history) history.hidden = true
@@ -2249,14 +2267,39 @@ const init = async () => {
     if (!isCurrentOpen()) return false
     await loadLinkOptions(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadDocumentTags(documentId, isCurrentOpen)
+    const tagsLoaded = await loadDocumentTags(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadDocumentLinks(documentId, isCurrentOpen)
+    const linksLoaded = await loadDocumentLinks(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadDocumentSources(documentId, isCurrentOpen)
+    const sourcesLoaded = await loadDocumentSources(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadPublication(documentId, Number(result.data?.revision ?? 0), isCurrentOpen)
+    const publicationLoaded = await loadPublication(
+      documentId,
+      Number(result.data?.revision ?? 0),
+      isCurrentOpen,
+    )
     if (!isCurrentOpen()) return false
+    if (!tagsLoaded || !linksLoaded || !sourcesLoaded || !publicationLoaded) {
+      const localRestored =
+        restoredLocally &&
+        !options.ignoreLocalBackup &&
+        restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
+      if (localRestored) {
+        if (state) state.textContent = "关联数据暂时无法核对，继续使用完整本地恢复稿"
+        setStatus(
+          "云端关联数据暂时无法完整读取；已保留本地标签、关系和来源，不会用空值覆盖。",
+          "error",
+        )
+        setOpenBusy(false)
+        return true
+      }
+      if (state) state.textContent = "文档关联数据尚未安全加载，编辑已暂停"
+      setStatus(
+        "标签、关系、来源或发布状态读取失败；已锁定编辑器以防空值覆盖，请重新打开这条知识。",
+        "error",
+      )
+      return false
+    }
     if (!options.ignoreLocalBackup)
       restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
     if (!options.ignoreLocalBackup) void flushDurableOutboxForCurrentDocument()

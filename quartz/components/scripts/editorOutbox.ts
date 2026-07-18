@@ -1,4 +1,5 @@
 export const EDITOR_OUTBOX_SCHEMA_VERSION = 1 as const
+export const EDITOR_OUTBOX_MUTATION_LOCK_NAME = "wouldkeep:editor-outbox:v1"
 
 export type EditorOutboxStatus = "queued" | "saving" | "conflict"
 
@@ -221,6 +222,7 @@ export const createIndexedDbEditorOutboxRepository = (
 type EditorOutboxOptions = {
   now?: () => number
   createOperationId?: () => string
+  runExclusiveMutation?: <T>(operation: () => Promise<T>) => Promise<T>
 }
 
 type EnqueueInput = {
@@ -235,16 +237,29 @@ const defaultOperationId = () => {
   return `editor-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
+const runWithBrowserMutationLock = <T>(operation: () => Promise<T>): Promise<T> => {
+  const locks = globalThis.navigator?.locks
+  return locks
+    ? (locks.request(
+        EDITOR_OUTBOX_MUTATION_LOCK_NAME,
+        { mode: "exclusive" },
+        operation,
+      ) as Promise<T>)
+    : operation()
+}
+
 export const createEditorOutbox = (
   repository: EditorOutboxRepository,
   options: EditorOutboxOptions = {},
 ) => {
   const now = options.now ?? Date.now
   const createOperationId = options.createOperationId ?? defaultOperationId
+  const runExclusiveMutation = options.runExclusiveMutation ?? runWithBrowserMutationLock
   let mutationTail: Promise<void> = Promise.resolve()
 
   const serialize = <T>(operation: () => Promise<T>): Promise<T> => {
-    const result = mutationTail.then(operation, operation)
+    const lockedOperation = () => runExclusiveMutation(operation)
+    const result = mutationTail.then(lockedOperation, lockedOperation)
     mutationTail = result.then(
       () => undefined,
       () => undefined,
@@ -329,12 +344,14 @@ export const createEditorOutbox = (
   return {
     listForOwner: async (ownerId: string) => {
       await mutationTail
-      return (await validRecords())
-        .filter((record) => record.ownerId === ownerId)
-        .sort(
-          (left, right) =>
-            left.createdAt - right.createdAt || left.operationId.localeCompare(right.operationId),
-        )
+      return runExclusiveMutation(async () =>
+        (await validRecords())
+          .filter((record) => record.ownerId === ownerId)
+          .sort(
+            (left, right) =>
+              left.createdAt - right.createdAt || left.operationId.localeCompare(right.operationId),
+          ),
+      )
     },
 
     recoverInterrupted: (ownerId: string, documentId?: string) =>
