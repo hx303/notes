@@ -13,6 +13,7 @@ import {
   addEditorBackupMetadata,
   createSerializedSaveQueue,
   inspectEditorBackup,
+  materializeEditorOutboxFormIdentity,
   type EditorBackup,
 } from "./editorRecovery.ts"
 import { createEditorCoordinator, type EditorCoordinator } from "./editorCoordinator.ts"
@@ -410,6 +411,8 @@ const init = async () => {
   let currentPublication: PublicationState | null = null
   let importedDraft: ImportedDraft | null = null
   const importRequests = createLatestImportRequestGate()
+  const authSyncRequests = createLatestImportRequestGate()
+  const openDocumentRequests = createLatestImportRequestGate()
   let importConfirming = false
   let lastImportFile: File | null = null
   let currentProfileAvatarUrl = ""
@@ -428,8 +431,11 @@ const init = async () => {
       return null
     }
   })()
-  let preparedOutboxOwnerId = ""
   const activeOutboxClaims = new Map<string, EditorOutboxClaim>()
+  const durableSaveOutcomes = new Map<
+    string,
+    { ownerId: string; documentId: string; revision: number; complete: boolean }
+  >()
   let disposed = false
 
   const captureAuthContext = () => ({
@@ -447,6 +453,8 @@ const init = async () => {
   window.addCleanup(() => {
     disposed = true
     importRequests.invalidate()
+    authSyncRequests.invalidate()
+    openDocumentRequests.invalidate()
     importedDraft = null
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     authSubscription?.unsubscribe?.()
@@ -535,15 +543,16 @@ const init = async () => {
     setAiStatus("有未保存的 AI 设置；切换页面后会保留，点击保存后才会生效。")
   }
 
-  const loadAiSettings = async () => {
+  const loadAiSettings = async (isCurrent = () => true) => {
     if (!client || !currentUser || !aiSettingsForm) return
-    const ownerId = currentUser.id
-    const result = await client
+    const context = captureAuthContext()
+    const ownerId = context.ownerId
+    const result = await context.client
       .from("ai_preferences")
       .select("enabled,allow_private_content,monthly_budget_cents,grounding_mode,updated_at")
       .eq("owner_id", ownerId)
       .maybeSingle()
-    if (disposed || currentUser?.id !== ownerId) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     if (result.error) {
       const missingSchema = String(result.error.message ?? "")
         .toLowerCase()
@@ -673,35 +682,38 @@ const init = async () => {
     setProfileStatus("有未保存的个人资料；切换页面后会保留。")
   }
 
-  const loadProfileSettings = async () => {
+  const loadProfileSettings = async (isCurrent = () => true) => {
     if (!client || !currentUser || !profileSettingsForm) return
-    const ownerId = currentUser.id
-    let result = await client
+    const context = captureAuthContext()
+    const ownerId = context.ownerId
+    const ownerEmail = currentUser.email ?? ""
+    let result = await context.client
       .from("profiles")
       .select("display_name,avatar_url,signature,bio,location,website_url")
       .eq("id", ownerId)
       .maybeSingle()
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     profilePersonalizationAvailable = !result.error
-    if (result.error)
-      result = await client
+    if (result.error) {
+      result = await context.client
         .from("profiles")
         .select("display_name,avatar_url")
         .eq("id", ownerId)
         .maybeSingle()
-    if (disposed || currentUser?.id !== ownerId) return
+      if (!authContextIsCurrent(context) || !isCurrent()) return
+    }
     if (result.error) {
       setProfileStatus("暂时无法读取个人资料，请刷新后重试。", "error")
       return
     }
-    const displayName =
-      result.data?.display_name?.trim() || currentUser.email?.split("@")[0] || "我的账户"
+    const displayName = result.data?.display_name?.trim() || ownerEmail.split("@")[0] || "我的账户"
     currentProfileAvatarUrl = result.data?.avatar_url ?? ""
     if (profileDisplayName) profileDisplayName.value = displayName
     if (profileSignature) profileSignature.value = result.data?.signature ?? ""
     if (profileBio) profileBio.value = result.data?.bio ?? ""
     if (profileLocation) profileLocation.value = result.data?.location ?? ""
     if (profileWebsite) profileWebsite.value = result.data?.website_url ?? ""
-    if (profileEmail) profileEmail.textContent = currentUser.email ?? "—"
+    if (profileEmail) profileEmail.textContent = ownerEmail || "—"
     updateProfilePreview()
     const draft = readProfileSettingsDraft(sessionStorage, ownerId)
     if (draft) applyProfileSettingsDraft(draft)
@@ -833,7 +845,7 @@ const init = async () => {
     })
   }
 
-  const loadVersions = async (documentId: string) => {
+  const loadVersions = async (documentId: string, isCurrent = () => true) => {
     if (!client || !currentUser || !history || !historyList) return
     const loadClient = client
     const ownerId = String(currentUser.id)
@@ -845,9 +857,16 @@ const init = async () => {
       .eq("owner_id", ownerId)
       .order("version_no", { ascending: false })
       .limit(10)
-    if (disposed || authEpoch !== loadEpoch || currentUser?.id !== ownerId || client !== loadClient)
+    if (
+      disposed ||
+      authEpoch !== loadEpoch ||
+      currentUser?.id !== ownerId ||
+      client !== loadClient ||
+      !isCurrent()
+    )
       return
     if (result.error || !result.data?.length) {
+      historyList.replaceChildren()
       history.hidden = true
       return
     }
@@ -860,6 +879,7 @@ const init = async () => {
         button.className = "editor-history-item"
         button.textContent = `版本 ${version.version_no} · ${formatDate(version.created_at)}`
         button.addEventListener("click", () => {
+          if (!isCurrent()) return
           const normalizedSnapshot = {
             title: "",
             body: "",
@@ -885,25 +905,29 @@ const init = async () => {
     )
   }
 
-  const ensureKnowledgeBase = async () => {
+  const ensureKnowledgeBase = async (isCurrent = () => true) => {
     if (!client || !currentUser) return null
-    const existing = await client
+    const context = captureAuthContext()
+    const contextIsCurrent = () => authContextIsCurrent(context) && isCurrent()
+    const existing = await context.client
       .from("knowledge_bases")
       .select("id")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle()
+    if (!contextIsCurrent()) return null
     if (existing.data?.id) return existing.data.id
-    const created = await client
+    const created = await context.client
       .from("knowledge_bases")
-      .insert({ owner_id: currentUser.id, name: "我的知识库", default_visibility: "private" })
+      .insert({ owner_id: context.ownerId, name: "我的知识库", default_visibility: "private" })
       .select("id")
       .single()
+    if (!contextIsCurrent()) return null
     return created.data?.id ?? null
   }
 
-  const loadDocuments = async () => {
+  const loadDocuments = async (isCurrent = () => true) => {
     if (!client || !currentUser || !workspace) return
     const context = captureAuthContext()
     const result = await context.client
@@ -911,7 +935,7 @@ const init = async () => {
       .select("id,title,topic,status,visibility,maturity,revision,updated_at,deleted_at")
       .eq("owner_id", context.ownerId)
       .order("updated_at", { ascending: false })
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     if (result.error) {
       setStatus("云端知识库还没有准备好；请先在 Supabase 执行工作区迁移。")
       return
@@ -919,11 +943,11 @@ const init = async () => {
     renderDocuments((result.data ?? []) as WorkspaceDocument[])
   }
 
-  const loadCapabilities = async () => {
+  const loadCapabilities = async (isCurrent = () => true) => {
     if (!client || !currentUser || !workspace) return
     const context = captureAuthContext()
     const result = await context.client.rpc("current_account_capabilities")
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     const capabilities = result.data as { is_site_owner?: boolean; role?: string } | null
     const isSiteOwner = !result.error && capabilities?.is_site_owner === true
     siteOwnerNavItems.forEach((item) => {
@@ -1043,7 +1067,7 @@ const init = async () => {
     return true
   }
 
-  const loadDocumentSources = async (documentId: string) => {
+  const loadDocumentSources = async (documentId: string, isCurrent = () => true) => {
     if (!client || !currentUser) return
     const context = captureAuthContext()
     const result = await context.client
@@ -1052,7 +1076,7 @@ const init = async () => {
       .eq("document_id", documentId)
       .eq("owner_id", context.ownerId)
       .order("sort_order", { ascending: true })
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     if (result.error) {
       sourcesMigrationAvailable = false
       renderSources()
@@ -1125,21 +1149,45 @@ const init = async () => {
     sources: collectSources(),
   })
 
-  const restoreDurableOutboxBackup = async (documentId: string) => {
+  const restoreDurableOutboxBackup = async (documentId: string, isCurrent = () => true) => {
     if (!editorOutbox || !currentUser || !form) return false
     const ownerId = String(currentUser.id)
-    if (localStorage.getItem(localDraftKey(ownerId, documentId))) return false
+    const existingRaw = localStorage.getItem(localDraftKey(ownerId, documentId))
     try {
       const records = await editorOutbox.listForOwner(ownerId)
+      if (!isCurrent()) return false
       const record = records
-        .filter((candidate) => candidate.documentId === documentId)
-        .sort((left, right) => right.updatedAt - left.updatedAt)[0]
-      const payloadForm = record?.payload.form
-      if (!record || !payloadForm || typeof payloadForm !== "object" || Array.isArray(payloadForm))
-        return false
-      const sources = Array.isArray(record.payload.sources) ? record.payload.sources : []
+        .filter(
+          (candidate) => candidate.documentId === documentId && candidate.status !== "conflict",
+        )
+        .sort(
+          (left, right) =>
+            right.updatedAt - left.updatedAt ||
+            right.createdAt - left.createdAt ||
+            right.operationId.localeCompare(left.operationId),
+        )[0]
+      if (!record) return false
+      let payloadForm = materializeEditorOutboxFormIdentity(record.payload.form, record)
+      if (!payloadForm) return false
+      let existingSources: WorkspaceSource[] | null = null
+      if (existingRaw) {
+        const inspection = inspectEditorBackup(
+          existingRaw,
+          ownerId,
+          documentId,
+          record.baseRevision,
+        )
+        if (inspection.state !== "conflict" || !inspection.backup.__editorRecovery) return false
+        if (inspection.backup.__editorRecovery.baseRevision >= record.baseRevision) return false
+        payloadForm = materializeEditorOutboxFormIdentity(inspection.backup, record)
+        if (!payloadForm) return false
+        if (Array.isArray(inspection.backup.__sources))
+          existingSources = inspection.backup.__sources as WorkspaceSource[]
+      }
+      const sources =
+        existingSources ?? (Array.isArray(record.payload.sources) ? record.payload.sources : [])
       const backup = addEditorBackupMetadata(
-        { ...(payloadForm as Record<string, unknown>), __sources: sources },
+        { ...payloadForm, __sources: sources },
         ownerId,
         documentId,
         record.baseRevision,
@@ -1147,6 +1195,7 @@ const init = async () => {
       localStorage.setItem(localDraftKey(ownerId, documentId), JSON.stringify(backup))
       return true
     } catch {
+      if (!isCurrent()) return false
       setStatus("持久恢复队列暂时不可用；当前页面与本地浏览器备份仍会继续保留。", "error")
       return false
     }
@@ -1258,8 +1307,9 @@ const init = async () => {
 
   const workspaceFormFromOutboxClaim = (claim: EditorOutboxClaim | undefined) => {
     const value = claim?.record.payload.form
-    if (!value || typeof value !== "object" || Array.isArray(value)) return null
-    const data = value as Record<string, unknown>
+    if (!claim) return null
+    const data = materializeEditorOutboxFormIdentity(value, claim.record)
+    if (!data) return null
     return {
       title: String(data.title ?? ""),
       body: String(data.body ?? ""),
@@ -1270,7 +1320,7 @@ const init = async () => {
       prerequisites: String(data.prerequisites ?? ""),
       related: String(data.related ?? ""),
       documentId: String(data.documentId ?? ""),
-      revision: Number(data.revision ?? claim?.record.baseRevision ?? 0),
+      revision: Number(data.revision ?? 0),
       status: String(data.status ?? "draft"),
     } satisfies WorkspaceFormData
   }
@@ -1338,7 +1388,7 @@ const init = async () => {
     return true
   }
 
-  const loadLinkOptions = async (currentDocumentId = "") => {
+  const loadLinkOptions = async (currentDocumentId = "", isCurrent = () => true) => {
     const datalist = root.querySelector<HTMLElement>("[data-knowledge-link-options]")
     if (!client || !currentUser || !datalist) return
     const context = captureAuthContext()
@@ -1350,7 +1400,7 @@ const init = async () => {
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(30)
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     datalist.replaceChildren()
     ;(result.data ?? []).forEach((item: { id: string; title: string }) => {
       const option = globalThis.document.createElement("option")
@@ -1360,7 +1410,7 @@ const init = async () => {
     })
   }
 
-  const loadTagOptions = async () => {
+  const loadTagOptions = async (isCurrent = () => true) => {
     const datalist = root.querySelector<HTMLElement>("[data-tag-options]")
     if (!client || !currentUser || !datalist) return
     const context = captureAuthContext()
@@ -1370,7 +1420,7 @@ const init = async () => {
       .eq("owner_id", context.ownerId)
       .order("name", { ascending: true })
       .limit(100)
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     datalist.replaceChildren()
     ;(result.data ?? []).forEach((item: { name: string }) => {
       const option = globalThis.document.createElement("option")
@@ -1379,7 +1429,7 @@ const init = async () => {
     })
   }
 
-  const loadDocumentTags = async (documentId: string) => {
+  const loadDocumentTags = async (documentId: string, isCurrent = () => true) => {
     if (!client || !currentUser || !form) return
     const context = captureAuthContext()
     const result = await context.client
@@ -1387,12 +1437,12 @@ const init = async () => {
       .select("tags(name)")
       .eq("document_id", documentId)
       .eq("owner_id", context.ownerId)
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     const names = (result.data ?? [])
       .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
       .filter(Boolean)
     const field = form.elements.namedItem("tags") as HTMLInputElement | null
-    if (field && names.length) field.value = names.join("，")
+    if (field) field.value = names.join("，")
   }
 
   const saveLinks = async (
@@ -1448,7 +1498,7 @@ const init = async () => {
     return true
   }
 
-  const loadDocumentLinks = async (documentId: string) => {
+  const loadDocumentLinks = async (documentId: string, isCurrent = () => true) => {
     if (!client || !currentUser || !form) return
     const context = captureAuthContext()
     const result = await context.client
@@ -1456,7 +1506,7 @@ const init = async () => {
       .select("relation_type,to_document_id,documents!document_links_to_document_id_fkey(title)")
       .eq("from_document_id", documentId)
       .eq("owner_id", context.ownerId)
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     const groups: Record<string, string[]> = { prerequisite: [], related: [] }
     ;(result.data ?? []).forEach(
       (item: { relation_type: string; documents?: { title?: string } | null }) => {
@@ -1469,7 +1519,7 @@ const init = async () => {
       ["related", groups.related],
     ] as const) {
       const field = form.elements.namedItem(name) as HTMLInputElement | null
-      if (field && values.length) field.value = values.join("，")
+      if (field) field.value = values.join("，")
     }
   }
 
@@ -1516,7 +1566,7 @@ const init = async () => {
     if (saveButton) saveButton.textContent = "保存修改（不会自动更新公开页）"
   }
 
-  const loadPublication = async (documentId: string, revision: number) => {
+  const loadPublication = async (documentId: string, revision: number, isCurrent = () => true) => {
     if (!client || !currentUser) return
     const context = captureAuthContext()
     const result = await context.client
@@ -1525,7 +1575,7 @@ const init = async () => {
       .eq("document_id", documentId)
       .eq("owner_id", context.ownerId)
       .maybeSingle()
-    if (!authContextIsCurrent(context)) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return
     if (result.error) {
       currentPublication = null
       if (publicationStatus)
@@ -1684,12 +1734,13 @@ const init = async () => {
           .select("id,revision")
           .maybeSingle()
       : await saveClient.from("documents").insert(payload).select("id,revision").single()
-    if (!identityIsCurrent()) return false
     if (result.error) {
+      if (!identityIsCurrent()) return false
       setStatus("云端保存失败，已保留本地备份；请检查工作区迁移是否已执行。")
       return false
     }
     if (data.documentId && !result.data) {
+      if (!identityIsCurrent()) return false
       const conflictBackup = addEditorBackupMetadata(
         {
           ...(outboxClaim?.record.payload.form as Record<string, unknown> | undefined),
@@ -1717,8 +1768,8 @@ const init = async () => {
       freezeEditorConflict(data.documentId, conflictBackup, "remote-write", cloud)
       return false
     }
+    let authoritativeClaim = outboxClaim
     if (!data.documentId && result.data?.id) {
-      boundDocumentIdentity = result.data.id
       const firstInsertClaim = activeOutboxClaims.get("new")
       if (editorOutbox && firstInsertClaim) {
         try {
@@ -1728,11 +1779,29 @@ const init = async () => {
             result.data.id,
             Number(result.data.revision ?? 0),
           )
-          if (boundClaim) activeOutboxClaims.set("new", boundClaim)
+          if (boundClaim) {
+            activeOutboxClaims.set("new", boundClaim)
+            authoritativeClaim = boundClaim
+          }
         } catch {
-          setStatus("云端已创建文档，但恢复队列正在核对新编号；请暂时不要关闭页面。", "error")
+          if (identityIsCurrent())
+            setStatus("云端已创建文档，但恢复队列正在核对新编号；请暂时不要关闭页面。", "error")
         }
       }
+    }
+    const authoritativeDocumentId = String(result.data?.id ?? data.documentId)
+    const authoritativeRevision = Number(result.data?.revision ?? data.revision)
+    if (authoritativeClaim && authoritativeDocumentId) {
+      durableSaveOutcomes.set(authoritativeClaim.record.operationId, {
+        ownerId,
+        documentId: authoritativeDocumentId,
+        revision: authoritativeRevision,
+        complete: false,
+      })
+    }
+    if (!identityIsCurrent()) return false
+    if (!data.documentId && result.data?.id) {
+      boundDocumentIdentity = result.data.id
       const field = form.elements.namedItem("documentId") as HTMLInputElement | null
       if (field) field.value = result.data.id
       const revisionField = form.elements.namedItem("revision") as HTMLInputElement | null
@@ -1821,6 +1890,10 @@ const init = async () => {
         return false
       }
     }
+    if (authoritativeClaim) {
+      const outcome = durableSaveOutcomes.get(authoritativeClaim.record.operationId)
+      if (outcome) outcome.complete = true
+    }
     if (!identityIsCurrent()) return false
     if (editorChangeGeneration === generationAtStart) {
       localStorage.removeItem(localDraftKey(ownerId, data.documentId || "new"))
@@ -1860,14 +1933,20 @@ const init = async () => {
       let claim: EditorOutboxClaim | null = null
       if (editorOutbox && ownerId && (durableEnqueueSucceeded || options.enqueue === false)) {
         try {
+          await editorOutbox.recoverInterrupted(ownerId, documentId)
           claim = await editorOutbox.claimNext(ownerId, documentId)
           if (!claim) {
-            const conflict = (await editorOutbox.listForOwner(ownerId)).find(
-              (record) => record.documentId === documentId && record.status === "conflict",
+            const pending = (await editorOutbox.listForOwner(ownerId)).filter(
+              (record) => record.documentId === documentId,
             )
+            const conflict = pending.find((record) => record.status === "conflict")
             if (conflict) {
               if (editorConflict?.documentId === documentId)
                 editorConflict.operationId = conflict.operationId
+              return false
+            }
+            if (pending.length) {
+              setStatus("恢复队列仍有未完成的保存记录；已停止报告成功并保留待恢复内容。", "error")
               return false
             }
             return true
@@ -1884,12 +1963,53 @@ const init = async () => {
         status: "saving",
       })
       const saved = await saveQueue.request()
-      const finalClaim = activeOutboxClaims.get(documentId) ?? claim
+      let finalClaim = activeOutboxClaims.get(documentId) ?? claim
       activeOutboxClaims.delete(documentId)
+      let durableComplete = false
+      let durableRevision: number | undefined
       if (editorOutbox && ownerId && finalClaim) {
         try {
-          if (saved) {
-            await editorOutbox.completeAfterSuccess(ownerId, finalClaim, readForm().revision)
+          const outcome = durableSaveOutcomes.get(finalClaim.record.operationId)
+          if (outcome?.ownerId === ownerId) {
+            if (finalClaim.record.documentId === "new" && outcome.documentId !== "new") {
+              const rebound = await editorOutbox.bindCreatedDocument(
+                ownerId,
+                finalClaim,
+                outcome.documentId,
+                outcome.revision,
+              )
+              if (rebound) finalClaim = rebound
+              else {
+                const records = await editorOutbox.listForOwner(ownerId)
+                for (const record of records.filter(
+                  (candidate) => candidate.documentId === "new" && candidate.status !== "conflict",
+                )) {
+                  await editorOutbox.migrateNewDocument(
+                    ownerId,
+                    record.operationId,
+                    outcome.documentId,
+                    outcome.revision,
+                  )
+                }
+                const migratedClaim = await editorOutbox.claimNext(ownerId, outcome.documentId)
+                if (!migratedClaim) throw new Error("created-document-binding-unavailable")
+                finalClaim = migratedClaim
+              }
+            }
+            durableRevision = outcome.revision
+            if (outcome.complete) {
+              durableComplete = await editorOutbox.completeAfterSuccess(
+                ownerId,
+                finalClaim,
+                outcome.revision,
+              )
+            } else {
+              await editorOutbox.advanceAfterPartialSuccess(ownerId, finalClaim, outcome.revision)
+            }
+            durableSaveOutcomes.delete(finalClaim.record.operationId)
+          } else if (saved) {
+            setStatus("云端已保存，但缺少可验证的响应版本；恢复队列会保守保留并再次核对。", "error")
+            await editorOutbox.requeueAfterFailure(ownerId, finalClaim)
           } else if (editorConflict?.documentId === documentId) {
             const conflict = await editorOutbox.markConflict(ownerId, finalClaim.record.operationId)
             if (conflict && editorConflict) editorConflict.operationId = conflict.operationId
@@ -1901,8 +2021,17 @@ const init = async () => {
       editorCoordinator?.publishStatus({
         documentId,
         operationId: finalClaim?.record.operationId ?? queuedOperationId,
-        status: editorConflict?.documentId === documentId ? "conflict" : saved ? "saved" : "queued",
-        revision: saved ? readForm().revision : undefined,
+        status:
+          editorConflict?.documentId === documentId
+            ? "conflict"
+            : durableComplete || (saved && !finalClaim)
+              ? "saved"
+              : "queued",
+        revision: durableComplete
+          ? durableRevision
+          : saved && !finalClaim
+            ? readForm().revision
+            : undefined,
       })
       if (saved)
         window.setTimeout(() => {
@@ -1924,11 +2053,13 @@ const init = async () => {
     const documentId = readForm().documentId || "new"
     if (editorConflict?.documentId === documentId) return false
     try {
-      const hasQueuedOperation = (await editorOutbox.listForOwner(ownerId)).some(
-        (record) => record.documentId === documentId && record.status === "queued",
+      const hasPendingOperation = (await editorOutbox.listForOwner(ownerId)).some(
+        (record) =>
+          record.documentId === documentId &&
+          (record.status === "queued" || record.status === "saving"),
       )
-      if (!hasQueuedOperation) return false
-      return requestDocumentSave({ enqueue: false })
+      if (!hasPendingOperation) return false
+      return requestDocumentSave()
     } catch {
       return false
     }
@@ -2063,10 +2194,29 @@ const init = async () => {
     const ownerId = String(currentUser.id)
     const openClient = client
     const openEpoch = authEpoch
+    const openRequest = openDocumentRequests.begin()
     const isCurrentOpen = () =>
-      !disposed && authEpoch === openEpoch && currentUser?.id === ownerId && client === openClient
+      !disposed &&
+      openDocumentRequests.isCurrent(openRequest) &&
+      authEpoch === openEpoch &&
+      currentUser?.id === ownerId &&
+      client === openClient
+    const setOpenBusy = (busy: boolean) => {
+      form.inert = busy
+      form.setAttribute("aria-busy", String(busy))
+      if (state && busy) state.textContent = "正在安全切换文档…"
+    }
+    setOpenBusy(true)
+    historyList?.replaceChildren()
+    if (history) history.hidden = true
+    for (const name of ["tags", "prerequisites", "related"]) {
+      const field = form.elements.namedItem(name) as HTMLInputElement | null
+      if (field) field.value = ""
+    }
+    renderSources()
+    updatePublicationUI(null)
     if (editorConflict?.documentId !== documentId) clearEditorConflict()
-    await restoreDurableOutboxBackup(documentId)
+    await restoreDurableOutboxBackup(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
     const restoredLocally = options.ignoreLocalBackup ? false : restoreLocalBackup(documentId)
     if (restoredLocally) {
@@ -2087,6 +2237,7 @@ const init = async () => {
         if (state) state.textContent = "离线编辑中，本地稿等待同步"
         setStatus("暂时无法连接云端。你可以继续编辑，本地稿会保留并在联网后核对版本。")
       } else setStatus("这条知识暂时无法打开，请刷新后重试。")
+      setOpenBusy(false)
       return false
     }
     fillForm(result.data ?? {})
@@ -2094,22 +2245,23 @@ const init = async () => {
     if (flatWorkbench) flatWorkbench.hidden = true
     if (editor) editor.hidden = false
     if (state) state.textContent = "已加载云端草稿"
-    await loadVersions(documentId)
+    await loadVersions(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadLinkOptions(documentId)
+    await loadLinkOptions(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadDocumentTags(documentId)
+    await loadDocumentTags(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadDocumentLinks(documentId)
+    await loadDocumentLinks(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadDocumentSources(documentId)
+    await loadDocumentSources(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    await loadPublication(documentId, Number(result.data?.revision ?? 0))
+    await loadPublication(documentId, Number(result.data?.revision ?? 0), isCurrentOpen)
     if (!isCurrentOpen()) return false
     if (!options.ignoreLocalBackup)
       restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
     if (!options.ignoreLocalBackup) void flushDurableOutboxForCurrentDocument()
     editor?.scrollIntoView({ behavior: "smooth", block: "start" })
+    setOpenBusy(false)
     return true
   }
 
@@ -2143,38 +2295,42 @@ const init = async () => {
         }
       })
     }
-    if (editorOutbox && preparedOutboxOwnerId !== ownerId) {
-      try {
-        await editorOutbox.recoverInterrupted(ownerId)
-        preparedOutboxOwnerId = ownerId
-      } catch {
-        setStatus("持久恢复队列暂时无法打开；浏览器内草稿仍会保留。", "error")
-      }
-    }
   }
 
   const sync = async () => {
     if (disposed) return
+    const syncRequest = authSyncRequests.begin()
+    const isCurrentSync = () => !disposed && authSyncRequests.isCurrent(syncRequest)
     const previousOwnerId = currentUser?.id ? String(currentUser.id) : ""
     try {
+      let resolvedUser: any = null
       try {
-        currentUser = client ? ((await client.auth.getUser()).data?.user ?? null) : null
+        resolvedUser = client ? ((await client.auth.getUser()).data?.user ?? null) : null
       } catch {
-        currentUser = null
+        if (!isCurrentSync()) return
+        if (currentUser) {
+          currentUser = null
+          authEpoch += 1
+          clearSensitiveEditorState()
+          editorCoordinator?.close()
+          editorCoordinator = null
+        }
         setStatus("登录状态暂时无法确认；输入入口和内容都已保留，请检查网络后重试。", "error")
         return
       }
-      if (disposed) return
+      if (!isCurrentSync()) return
+      currentUser = resolvedUser
       const nextOwnerId = currentUser?.id ? String(currentUser.id) : ""
       if (nextOwnerId !== previousOwnerId) {
         authEpoch += 1
         clearSensitiveEditorState()
       }
-      if (currentUser) await prepareEditorPersistence(String(currentUser.id))
-      else {
+      if (currentUser) {
+        await prepareEditorPersistence(String(currentUser.id))
+        if (!isCurrentSync()) return
+      } else {
         editorCoordinator?.close()
         editorCoordinator = null
-        preparedOutboxOwnerId = ""
       }
       if (session) session.hidden = !currentUser || (accountMode !== "signin" && !workspace)
       if (login) login.hidden = Boolean(currentUser)
@@ -2194,24 +2350,37 @@ const init = async () => {
         if (flatWorkbench) flatWorkbench.hidden = true
         if (currentUser) {
           try {
-            await loadCapabilities()
-            const knowledgeBaseId = await ensureKnowledgeBase()
+            await loadCapabilities(isCurrentSync)
+            if (!isCurrentSync()) return
+            const knowledgeBaseId = await ensureKnowledgeBase(isCurrentSync)
+            if (!isCurrentSync()) return
             if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
-            await loadDocuments()
-            await restoreDurableOutboxBackup("new")
+            await loadDocuments(isCurrentSync)
+            if (!isCurrentSync()) return
+            await restoreDurableOutboxBackup("new", isCurrentSync)
+            if (!isCurrentSync()) return
             restoreLocalBackup()
             void flushDurableOutboxForCurrentDocument()
-            await loadLinkOptions()
-            await loadTagOptions()
-            if (workspaceSection === "settings") await loadProfileSettings()
-            if (workspaceSection === "ai-settings") await loadAiSettings()
+            await loadLinkOptions("", isCurrentSync)
+            if (!isCurrentSync()) return
+            await loadTagOptions(isCurrentSync)
+            if (!isCurrentSync()) return
+            if (workspaceSection === "settings") {
+              await loadProfileSettings(isCurrentSync)
+              if (!isCurrentSync()) return
+            }
+            if (workspaceSection === "ai-settings") {
+              await loadAiSettings(isCurrentSync)
+              if (!isCurrentSync()) return
+            }
           } catch {
-            setStatus("登录已确认，但工作区数据暂时无法加载；请检查网络后刷新重试。", "error")
+            if (isCurrentSync())
+              setStatus("登录已确认，但工作区数据暂时无法加载；请检查网络后刷新重试。", "error")
           }
         }
       }
     } finally {
-      resolveAuthState()
+      if (isCurrentSync()) resolveAuthState()
     }
   }
 
@@ -2750,6 +2919,11 @@ const init = async () => {
   })
 
   const startNewDocument = (showEditor = true, preferRecovery = true) => {
+    openDocumentRequests.invalidate()
+    if (form) {
+      form.inert = false
+      form.setAttribute("aria-busy", "false")
+    }
     const ownerId = currentUser?.id ? String(currentUser.id) : ""
     const pendingNewDraft = ownerId ? localStorage.getItem(localDraftKey(ownerId, "new")) : null
     if (preferRecovery && pendingNewDraft && restoreLocalBackup("new")) {

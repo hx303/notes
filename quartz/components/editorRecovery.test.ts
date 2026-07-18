@@ -5,6 +5,7 @@ import {
   addEditorBackupMetadata,
   createSerializedSaveQueue,
   inspectEditorBackup,
+  materializeEditorOutboxFormIdentity,
 } from "./scripts/editorRecovery"
 
 const accountScript = readFileSync(
@@ -43,6 +44,33 @@ test("legacy new drafts remain recoverable but legacy cloud drafts fail closed",
     reason: "unknown-base",
   })
   assert.equal(inspectEditorBackup("not-json", "owner-a", "new").state, "invalid")
+})
+
+test("outbox record identity overrides stale payload form identity during replay", () => {
+  const payloadForm = {
+    title: "edited while saving",
+    body: "the immutable content stays intact",
+    documentId: "",
+    revision: 0,
+  }
+  assert.deepEqual(
+    materializeEditorOutboxFormIdentity(payloadForm, {
+      documentId: "cloud-document",
+      baseRevision: 1,
+    }),
+    {
+      ...payloadForm,
+      documentId: "cloud-document",
+      revision: 1,
+    },
+  )
+  assert.deepEqual(
+    materializeEditorOutboxFormIdentity(
+      { ...payloadForm, documentId: "stale-document", revision: 4 },
+      { documentId: "new", baseRevision: 0 },
+    ),
+    { ...payloadForm, documentId: "", revision: 0 },
+  )
 })
 
 test("save requests are serialized and an in-flight edit produces one follow-up save", async () => {
@@ -159,16 +187,46 @@ test("session changes invalidate private editor reads and clear sensitive UI sta
   assert.match(accountScript, /event === "SIGNED_OUT"[\s\S]{0,220}clearSensitiveEditorState\(\)/)
   assert.match(accountScript, /clearSensitiveEditorState[\s\S]{0,500}form\?\.reset\(\)/)
   assert.match(accountScript, /ownerId: String\(currentUser\.id\)/)
+  assert.match(accountScript, /const syncRequest = authSyncRequests\.begin\(\)/)
+  assert.match(accountScript, /if \(!isCurrentSync\(\)\) return\s+currentUser = resolvedUser/)
+  assert.match(accountScript, /if \(isCurrentSync\(\)\) resolveAuthState\(\)/)
+})
+
+test("only the latest document-open request may update document-specific UI", () => {
+  assert.match(accountScript, /const openRequest = openDocumentRequests\.begin\(\)/)
+  assert.match(accountScript, /openDocumentRequests\.isCurrent\(openRequest\)/)
+  assert.match(accountScript, /loadVersions\(documentId, isCurrentOpen\)/)
+  assert.match(accountScript, /loadDocumentTags\(documentId, isCurrentOpen\)/)
+  assert.match(accountScript, /loadDocumentLinks\(documentId, isCurrentOpen\)/)
+  assert.match(accountScript, /loadDocumentSources\(documentId, isCurrentOpen\)/)
+  assert.match(accountScript, /loadPublication\([^\n]+isCurrentOpen\)/)
+  assert.match(accountScript, /if \(!authContextIsCurrent\(context\) \|\| !isCurrent\(\)\) return/)
+  assert.match(accountScript, /if \(field\) field\.value = names\.join/)
+  assert.match(accountScript, /if \(field\) field\.value = values\.join/)
 })
 
 test("the durable outbox is wired before network saves and recovered after refresh", () => {
   assert.match(accountScript, /createIndexedDbEditorOutboxRepository\(\)/)
-  assert.match(accountScript, /await editorOutbox\.recoverInterrupted\(ownerId\)/)
+  assert.match(accountScript, /await editorOutbox\.recoverInterrupted\(ownerId, documentId\)/)
   assert.match(accountScript, /await editorOutbox\.enqueue\(\{/)
   assert.match(accountScript, /await editorOutbox\.claimNext\(ownerId, documentId\)/)
-  assert.match(accountScript, /completeAfterSuccess\(ownerId, finalClaim/)
-  assert.match(accountScript, /restoreDurableOutboxBackup\(documentId\)/)
+  assert.match(accountScript, /completeAfterSuccess\(\s*ownerId,\s*finalClaim/)
+  assert.match(accountScript, /restoreDurableOutboxBackup\(documentId, isCurrentOpen\)/)
   assert.match(accountScript, /bindCreatedDocument\(/)
+  assert.match(accountScript, /materializeEditorOutboxFormIdentity\(value, claim\.record\)/)
+  assert.match(
+    accountScript,
+    /materializeEditorOutboxFormIdentity\(record\.payload\.form, record\)/,
+  )
+  assert.match(
+    accountScript,
+    /inspection\.backup\.__editorRecovery\.baseRevision >= record\.baseRevision/,
+  )
+  assert.match(accountScript, /materializeEditorOutboxFormIdentity\(inspection\.backup, record\)/)
+  assert.match(accountScript, /const durableSaveOutcomes = new Map/)
+  assert.match(accountScript, /completeAfterSuccess\([\s\S]{0,100}outcome\.revision/)
+  assert.match(accountScript, /advanceAfterPartialSuccess\([\s\S]{0,100}outcome\.revision/)
+  assert.match(accountScript, /form\.inert = busy/)
 })
 
 test("recovered new drafts and historical versions cannot be silently mixed or overwritten", () => {

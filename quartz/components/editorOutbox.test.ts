@@ -364,6 +364,69 @@ test("in-flight operations stay immutable and a follow-up waits for the authorit
   assert.deepEqual(await outbox.listForOwner("owner-a"), [])
 })
 
+test("partial success requeues the operation and follow-up at the committed revision", async () => {
+  const repository = createMemoryEditorOutboxRepository()
+  const operationIds = ["operation-partial", "operation-follow-up"]
+  const outbox = createEditorOutbox(repository, {
+    now: clock(10, 20, 30, 40, 50, 60),
+    createOperationId: () => operationIds.shift() ?? "unexpected-operation",
+  })
+  await outbox.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 3,
+    payload: { form: { documentId: "document-a", revision: 3, title: "first" } },
+  })
+  const claim = await outbox.claimNext("owner-a", "document-a")
+  assert.ok(claim)
+  await outbox.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 3,
+    payload: { form: { documentId: "document-a", revision: 3, title: "follow-up" } },
+  })
+
+  const advanced = await outbox.advanceAfterPartialSuccess("owner-a", claim, 4)
+  assert.equal(advanced?.status, "queued")
+  assert.equal(advanced?.baseRevision, 4)
+  const records = await outbox.listForOwner("owner-a")
+  assert.equal(records.length, 1)
+  assert.ok(records.every(({ baseRevision, status }) => baseRevision === 4 && status === "queued"))
+  assert.equal((records[0]?.payload.form as { title?: string } | undefined)?.title, "follow-up")
+  const retry = await outbox.claimNext("owner-a", "document-a")
+  assert.ok(retry)
+  assert.equal(retry.record.baseRevision, 4)
+})
+
+test("interrupted and failed saves coalesce into the latest full-form intent", async () => {
+  const repository = createMemoryEditorOutboxRepository()
+  const operationIds = ["operation-saving", "operation-follow-up"]
+  const outbox = createEditorOutbox(repository, {
+    now: clock(10, 20, 30, 40, 50, 60),
+    createOperationId: () => operationIds.shift() ?? "unexpected-operation",
+  })
+  await outbox.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 7,
+    payload: { title: "older" },
+  })
+  const claim = await outbox.claimNext("owner-a", "document-a")
+  assert.ok(claim)
+  await outbox.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 7,
+    payload: { title: "latest" },
+  })
+
+  const recovered = await outbox.recoverInterrupted("owner-a", "document-a")
+  assert.equal(recovered.length, 1)
+  assert.equal(recovered[0]?.baseRevision, 7)
+  assert.deepEqual(recovered[0]?.payload, { title: "latest" })
+  assert.equal((await outbox.listForOwner("owner-a")).length, 1)
+})
+
 test("conflicts freeze payload, cannot be claimed, migrated, or deleted by success", async () => {
   const repository = createMemoryEditorOutboxRepository()
   const operationIds = ["operation-saving", "operation-follow-up"]

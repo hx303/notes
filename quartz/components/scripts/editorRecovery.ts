@@ -18,6 +18,24 @@ export type EditorBackupInspection =
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
+export const materializeEditorOutboxFormIdentity = (
+  form: unknown,
+  record: { documentId: string; baseRevision: number },
+): Record<string, unknown> | null => {
+  if (
+    !isRecord(form) ||
+    !record.documentId ||
+    !Number.isInteger(record.baseRevision) ||
+    record.baseRevision < 0
+  )
+    return null
+  return {
+    ...form,
+    documentId: record.documentId === "new" ? "" : record.documentId,
+    revision: record.baseRevision,
+  }
+}
+
 const isEditorBackupMeta = (value: unknown): value is EditorBackupMeta => {
   if (!isRecord(value)) return false
   return (
@@ -93,9 +111,7 @@ export type SerializedSaveQueue = {
  * are coalesced into one follow-up save so the latest form state is persisted
  * after the first request updates the document revision.
  */
-export const createSerializedSaveQueue = (
-  save: () => Promise<boolean>,
-): SerializedSaveQueue => {
+export const createSerializedSaveQueue = (save: () => Promise<boolean>): SerializedSaveQueue => {
   let active: Promise<boolean> | null = null
   let rerun = false
 

@@ -31,8 +31,14 @@ test("account SPA resources are cleaned up when Quartz replaces the page", () =>
   assert.match(script, /window\.removeEventListener\("online", onlineHandler\)/)
   assert.match(script, /window\.clearTimeout\(autosaveTimer\)/)
   assert.match(script, /if \(disposed\) return[\s\S]*onAuthStateChange/)
-  assert.match(script, /await loadCapabilities\(\)[\s\S]*catch \{\s*setStatus\(/)
-  assert.doesNotMatch(script, /await loadCapabilities\(\)[\s\S]*catch \{\s*currentUser = null/)
+  assert.match(
+    script,
+    /await loadCapabilities\(isCurrentSync\)[\s\S]*catch \{[\s\S]{0,120}setStatus\(/,
+  )
+  assert.doesNotMatch(
+    script,
+    /await loadCapabilities\(isCurrentSync\)[\s\S]*catch \{\s*currentUser = null/,
+  )
 })
 
 test("auth client timeout can reconnect in place and binds only one subscription", () => {

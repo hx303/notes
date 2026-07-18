@@ -288,6 +288,44 @@ export const createEditorOutbox = (
     return created
   }
 
+  const newestIntentFirst = (left: EditorOutboxRecord, right: EditorOutboxRecord) =>
+    right.updatedAt - left.updatedAt ||
+    right.createdAt - left.createdAt ||
+    right.operationId.localeCompare(left.operationId)
+
+  const requeueStoppedSaving = async (
+    current: EditorOutboxRecord,
+    baseRevision?: number,
+  ): Promise<EditorOutboxRecord> => {
+    const followUps = (await validRecords())
+      .filter(
+        (record) =>
+          record.operationId !== current.operationId &&
+          record.ownerId === current.ownerId &&
+          record.documentId === current.documentId &&
+          record.status === "queued",
+      )
+      .sort(newestIntentFirst)
+    const winner = followUps[0] ?? current
+    const nextBaseRevision =
+      baseRevision ??
+      Math.min(current.baseRevision, ...followUps.map((record) => record.baseRevision))
+    const queued: EditorOutboxRecord = {
+      ...winner,
+      baseRevision: nextBaseRevision,
+      updatedAt:
+        winner.operationId === current.operationId
+          ? nextUpdatedAt(current)
+          : Math.max(nextUpdatedAt(winner), nextUpdatedAt(current)),
+      status: "queued",
+    }
+    for (const record of [current, ...followUps]) {
+      if (record.operationId !== winner.operationId) await repository.delete(record.operationId)
+    }
+    await repository.put(queued)
+    return queued
+  }
+
   return {
     listForOwner: async (ownerId: string) => {
       await mutationTail
@@ -299,19 +337,17 @@ export const createEditorOutbox = (
         )
     },
 
-    recoverInterrupted: (ownerId: string) =>
+    recoverInterrupted: (ownerId: string, documentId?: string) =>
       serialize(async () => {
         const interrupted = (await validRecords()).filter(
-          (record) => record.ownerId === ownerId && record.status === "saving",
+          (record) =>
+            record.ownerId === ownerId &&
+            record.status === "saving" &&
+            (documentId === undefined || record.documentId === documentId),
         )
         const recovered: EditorOutboxRecord[] = []
         for (const record of interrupted) {
-          const queued: EditorOutboxRecord = {
-            ...record,
-            updatedAt: nextUpdatedAt(record),
-            status: "queued",
-          }
-          await repository.put(queued)
+          const queued = await requeueStoppedSaving(record)
           recovered.push(queued)
         }
         return recovered
@@ -333,13 +369,22 @@ export const createEditorOutbox = (
 
         // A saving row is the immutable idempotency unit for its in-flight request.
         // Later edits merge only into a distinct queued follow-up.
-        const queued = matching.find((record) => record.status === "queued")
+        const queuedRecords = matching
+          .filter((record) => record.status === "queued")
+          .sort(newestIntentFirst)
+        const queued = queuedRecords[0]
         if (queued) {
           const merged: EditorOutboxRecord = {
             ...queued,
+            baseRevision: Math.min(
+              input.baseRevision,
+              ...queuedRecords.map((record) => record.baseRevision),
+            ),
             payload: clone(input.payload),
             updatedAt: nextUpdatedAt(queued),
           }
+          for (const duplicate of queuedRecords.slice(1))
+            await repository.delete(duplicate.operationId)
           await repository.put(merged)
           return merged
         }
@@ -386,13 +431,17 @@ export const createEditorOutbox = (
         const current = await ownedRecord(ownerId, claim.record.operationId)
         if (!current || current.status === "conflict") return current
         if (current.status !== "saving" || current.updatedAt !== claim.updatedAt) return current
-        const queued: EditorOutboxRecord = {
-          ...current,
-          updatedAt: nextUpdatedAt(current),
-          status: "queued",
-        }
-        await repository.put(queued)
-        return queued
+        return requeueStoppedSaving(current)
+      }),
+
+    advanceAfterPartialSuccess: (ownerId: string, claim: EditorOutboxClaim, nextRevision: number) =>
+      serialize(async () => {
+        if (!isNonnegativeInteger(nextRevision))
+          throw new TypeError("nextRevision must be a nonnegative integer")
+        const current = await ownedRecord(ownerId, claim.record.operationId)
+        if (!current || current.status === "conflict") return current
+        if (current.status !== "saving" || current.updatedAt !== claim.updatedAt) return current
+        return requeueStoppedSaving(current, nextRevision)
       }),
 
     bindCreatedDocument: (
