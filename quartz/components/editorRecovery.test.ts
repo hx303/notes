@@ -160,7 +160,7 @@ test("existing documents restore locally before attempting a cloud read", () => 
 test("partial cloud writes retain recovery data and online sync requires pending work", () => {
   assert.match(
     accountScript,
-    /version\.error[\s\S]*!tagsSaved[\s\S]*!prerequisitesSaved[\s\S]*!relatedSaved[\s\S]*saveDocumentSources/,
+    /const sourcesSaved = await saveDocumentSources[\s\S]{0,400}version\.error[\s\S]*!tagsSaved[\s\S]*!prerequisitesSaved[\s\S]*!relatedSaved[\s\S]*!sourcesSaved/,
   )
   assert.match(accountScript, /const ownerId = String\(currentUser\.id\)/)
   assert.match(accountScript, /currentUser\?\.id === ownerId/)
@@ -218,11 +218,50 @@ test("conflict recovery controls remain interactive after a gated document open"
   )
   assert.match(
     accountScript,
-    /const saveDocumentOnce[\s\S]{0,1600}editorConflict\?\.documentId === documentIdentity[\s\S]{0,180}return false/,
+    /const saveTargetIsCurrent[\s\S]{0,600}editorConflict\?\.documentId !== documentIdentity[\s\S]{0,300}if \(!saveTargetIsCurrent\(\)\)/,
   )
+  assert.match(
+    accountScript,
+    /setEditorConflictInteractivity[\s\S]{0,700}child === conflictSection[\s\S]{0,200}child\.inert = true/,
+  )
+  assert.match(accountScript, /data-editor-clear[\s\S]{0,180}if \(editorConflict\)/)
   assert.match(accountScript, /data-conflict-use-local/)
   assert.match(accountScript, /data-conflict-use-cloud/)
   assert.match(accountScript, /data-conflict-save-copy/)
+})
+
+test("document loading invalidates queued saves and stages metadata only after the core read", () => {
+  const openStart = accountScript.indexOf("const openDocument = async")
+  const invalidate = accountScript.indexOf("invalidateEditorSaves()", openStart)
+  const coreRead = accountScript.indexOf('.from("documents")', openStart)
+  const coreFill = accountScript.indexOf("fillForm(result.data ?? {})", coreRead)
+  const metadataClear = accountScript.indexOf(
+    'for (const name of ["tags", "prerequisites", "related"])',
+    coreFill,
+  )
+  assert.ok(openStart > 0)
+  assert.ok(invalidate > openStart)
+  assert.ok(coreRead > invalidate)
+  assert.ok(coreFill > coreRead)
+  assert.ok(metadataClear > coreFill)
+  assert.match(
+    accountScript,
+    /const requestDocumentSave[\s\S]{0,500}if \(!editorSaveIsAllowed\(documentId, requestSaveEpoch\)\)[\s\S]{0,300}return false[\s\S]{0,500}editorOutbox\.enqueue/,
+  )
+  const saveStart = accountScript.indexOf("const saveDocumentOnce")
+  const knowledgeBase = accountScript.indexOf(
+    "const knowledgeBaseId = await ensureKnowledgeBase()",
+    saveStart,
+  )
+  const postAwaitGuard = accountScript.indexOf(
+    "if (!knowledgeBaseId || !saveTargetIsCurrent()) return false",
+    knowledgeBase,
+  )
+  const coreWrite = accountScript.indexOf('.from("documents")', postAwaitGuard)
+  assert.ok(saveStart > 0)
+  assert.ok(knowledgeBase > saveStart)
+  assert.ok(postAwaitGuard > knowledgeBase)
+  assert.ok(coreWrite > postAwaitGuard)
 })
 
 test("the durable outbox is wired before network saves and recovered after refresh", () => {
