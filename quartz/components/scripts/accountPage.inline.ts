@@ -10,6 +10,11 @@ import {
 } from "./accountSettingsPersistence.ts"
 import { bindDocumentEditorRoute } from "./editorDraftRoute.ts"
 import {
+  addEditorBackupMetadata,
+  createSerializedSaveQueue,
+  inspectEditorBackup,
+} from "./editorRecovery.ts"
+import {
   assertImportComplexity,
   createLatestImportRequestGate,
   decodeUtf8Markdown,
@@ -376,6 +381,7 @@ const init = async () => {
   let client: any = null
   let currentUser: any = null
   let autosaveTimer: number | undefined
+  let editorChangeGeneration = 0
   let workspaceDocuments: WorkspaceDocument[] = []
   let sourcesMigrationAvailable: boolean | null = null
   let currentPublication: PublicationState | null = null
@@ -1009,13 +1015,19 @@ const init = async () => {
   const writeLocalBackup = () => {
     if (!form) return
     const data = readForm()
-    const backup = {
-      ...Object.fromEntries(new FormData(form).entries()),
-      __sources: collectSources(),
-    }
+    const documentId = data.documentId || "new"
+    const backup = addEditorBackupMetadata(
+      {
+        ...Object.fromEntries(new FormData(form).entries()),
+        __sources: collectSources(),
+      },
+      currentUser?.id ?? "anonymous",
+      documentId,
+      data.revision,
+    )
     try {
       localStorage.setItem(
-        localDraftKey(currentUser?.id ?? "anonymous", data.documentId || "new"),
+        localDraftKey(currentUser?.id ?? "anonymous", documentId),
         JSON.stringify(backup),
       )
     } catch {
@@ -1024,20 +1036,27 @@ const init = async () => {
     }
   }
 
-  const restoreLocalBackup = (documentId = "new") => {
+  const restoreLocalBackup = (documentId = "new", cloudRevision?: number) => {
     if (!form || !currentUser) return false
     const raw = localStorage.getItem(localDraftKey(currentUser.id, documentId))
     if (!raw) return false
-    try {
-      const backup = JSON.parse(raw) as Record<string, unknown> & { __sources?: WorkspaceSource[] }
-      fillForm(backup)
-      renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
-      if (state) state.textContent = "已恢复本地备份，保存后会同步到云端"
-      return true
-    } catch {
+    const inspection = inspectEditorBackup(raw, currentUser.id, documentId, cloudRevision)
+    if (inspection.state === "invalid") {
       localStorage.removeItem(localDraftKey(currentUser.id, documentId))
       return false
     }
+    if (inspection.state === "conflict") {
+      if (state) state.textContent = "发现本地备份与云端版本不一致，已保留备份且未自动覆盖"
+      setStatus("检测到另一处修改。为避免覆盖，本地备份已保留；请先比较版本再决定。", "error")
+      return false
+    }
+    const backup = inspection.backup as Record<string, unknown> & {
+      __sources?: WorkspaceSource[]
+    }
+    fillForm(backup)
+    renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
+    if (state) state.textContent = "已恢复本地备份，保存后会同步到云端"
+    return true
   }
 
   const readForm = (): WorkspaceFormData => {
@@ -1312,7 +1331,7 @@ const init = async () => {
     try {
       if (autosaveTimer) window.clearTimeout(autosaveTimer)
       writeLocalBackup()
-      if (!(await saveDocument())) return
+      if (!(await requestDocumentSave())) return
       const data = readForm()
       if (!data.documentId) return
       const audience = data.visibility === "unlisted" ? "unlisted" : "public"
@@ -1378,9 +1397,11 @@ const init = async () => {
     await loadDocuments()
   }
 
-  const saveDocument = async () => {
+  const saveDocumentOnce = async () => {
     if (!form || !currentUser || !client) return false
     const data = readForm()
+    const generationAtStart = editorChangeGeneration
+    writeLocalBackup()
     const knowledgeBaseId = await ensureKnowledgeBase()
     if (!knowledgeBaseId) return false
     const visibility =
@@ -1427,6 +1448,10 @@ const init = async () => {
         "",
         bindDocumentEditorRoute(window.location.href, result.data.id),
       )
+      if (editorChangeGeneration !== generationAtStart) {
+        writeLocalBackup()
+        localStorage.removeItem(localDraftKey(currentUser.id, "new"))
+      }
     }
     if (result.data?.revision !== undefined) {
       const revision = form.elements.namedItem("revision") as HTMLInputElement | null
@@ -1455,18 +1480,22 @@ const init = async () => {
         return false
       }
     }
-    localStorage.removeItem(localDraftKey(currentUser.id, data.documentId || "new"))
+    if (editorChangeGeneration === generationAtStart)
+      localStorage.removeItem(localDraftKey(currentUser.id, data.documentId || "new"))
     updatePublicationUI(currentPublication, Number(result.data?.revision ?? data.revision))
     await loadDocuments()
     return true
   }
+
+  const saveQueue = createSerializedSaveQueue(saveDocumentOnce)
+  const requestDocumentSave = () => saveQueue.request()
 
   const queueAutosave = () => {
     if (!form || !currentUser || !client) return
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     autosaveTimer = window.setTimeout(async () => {
       if (state) state.textContent = "正在自动保存…"
-      if (await saveDocument()) {
+      if (await requestDocumentSave()) {
         if (state) state.textContent = "已自动保存到云端"
       }
     }, 1000)
@@ -1495,6 +1524,7 @@ const init = async () => {
     await loadDocumentLinks(documentId)
     await loadDocumentSources(documentId)
     await loadPublication(documentId, Number(result.data?.revision ?? 0))
+    restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
     editor?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
@@ -2645,7 +2675,7 @@ const init = async () => {
       flatSave.textContent = "正在保存…"
     }
     setFlatStatus("正在保存到你的私密知识库…")
-    const saved = await saveDocument()
+    const saved = await requestDocumentSave()
     if (flatSave) {
       flatSave.disabled = false
       flatSave.textContent = "保存为私密草稿"
@@ -2836,6 +2866,7 @@ const init = async () => {
       })
     })
     form.addEventListener("input", () => {
+      editorChangeGeneration += 1
       normalizeTags()
       if (state) state.textContent = currentUser && client ? "即将自动保存" : "有未保存改动"
       writeLocalBackup()
@@ -2851,7 +2882,7 @@ const init = async () => {
         return
       }
       if (state) state.textContent = "正在保存到云端…"
-      if (await saveDocument()) {
+      if (await requestDocumentSave()) {
         if (state) state.textContent = "云端草稿已保存"
       }
     })
@@ -2905,7 +2936,7 @@ const init = async () => {
     }
     if (!currentUser || !form) return
     setStatus("网络已恢复，正在同步本地备份…")
-    if (await saveDocument()) setStatus("本地备份已同步到云端。")
+    if (await requestDocumentSave()) setStatus("本地备份已同步到云端。")
   }
   window.addEventListener("online", onlineHandler)
 }
