@@ -93,3 +93,20 @@ test("account routes reclaim empty Quartz side rails and adapt at content-driven
   assert.match(styles, /prefers-reduced-motion: reduce/)
   assert.match(styles, /account-auth-loading[\s\S]*min-height: 21rem/)
 })
+
+test("editor conflicts are announced and offer three explicit, responsive recovery actions", () => {
+  assert.match(component, /data-editor-state/)
+  assert.match(component, /data-editor-state[\s\S]{0,120}role="status"/)
+  assert.match(component, /data-editor-state[\s\S]{0,160}aria-live="polite"/)
+  assert.match(component, /data-editor-state[\s\S]{0,200}aria-atomic="true"/)
+  assert.match(component, /data-editor-conflict[\s\S]*aria-labelledby="editor-conflict-title"/)
+  assert.match(component, /tabIndex=\{-1\}[\s\S]{0,80}data-editor-conflict-title/)
+  assert.match(component, /data-conflict-use-local/)
+  assert.match(component, /data-conflict-use-cloud/)
+  assert.match(component, /data-conflict-save-copy/)
+  assert.match(styles, /\.editor-conflict-actions[\s\S]*min-height: 44px/)
+  assert.match(
+    styles,
+    /@media \(max-width: 50rem\)[\s\S]*\.editor-conflict-compare[\s\S]*grid-template-columns: 1fr/,
+  )
+})

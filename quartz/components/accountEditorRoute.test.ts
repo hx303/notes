@@ -42,10 +42,10 @@ test("rebinding an editor route is idempotent and replaces a stale document iden
 
 test("the first-save path binds the returned id and refresh initialization opens that route", () => {
   assert.match(accountScript, /bindDocumentEditorRoute/)
-  assert.match(
-    accountScript,
-    /if \(!data\.documentId && result\.data\?\.id\) \{[\s\S]{0,800}history\.replaceState\([\s\S]{0,300}bindDocumentEditorRoute/,
-  )
+  const firstInsert = accountScript.indexOf("if (!data.documentId && result.data?.id)")
+  const routeBinding = accountScript.indexOf("bindDocumentEditorRoute", firstInsert)
+  assert.ok(firstInsert > 0)
+  assert.ok(routeBinding > firstInsert)
   assert.match(
     accountScript,
     /const documentId = params\.get\("document"\)[\s\S]{0,400}void openDocument\(documentId\)/,

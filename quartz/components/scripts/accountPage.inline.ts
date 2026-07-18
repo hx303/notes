@@ -13,7 +13,14 @@ import {
   addEditorBackupMetadata,
   createSerializedSaveQueue,
   inspectEditorBackup,
+  type EditorBackup,
 } from "./editorRecovery.ts"
+import { createEditorCoordinator, type EditorCoordinator } from "./editorCoordinator.ts"
+import {
+  createEditorOutbox,
+  createIndexedDbEditorOutboxRepository,
+  type EditorOutboxClaim,
+} from "./editorOutbox.ts"
 import {
   assertImportComplexity,
   createLatestImportRequestGate,
@@ -354,6 +361,13 @@ const init = async () => {
   const historyList = root.querySelector<HTMLElement>("[data-editor-history-list]")
   const form = root.querySelector<HTMLFormElement>("[data-editor-form]")
   const state = root.querySelector<HTMLElement>("[data-editor-state]")
+  const conflictSection = root.querySelector<HTMLElement>("[data-editor-conflict]")
+  const conflictHeading = root.querySelector<HTMLElement>("[data-editor-conflict-title]")
+  const conflictMeta = root.querySelector<HTMLElement>("[data-editor-conflict-meta]")
+  const conflictLocalTitle = root.querySelector<HTMLElement>("[data-editor-conflict-local-title]")
+  const conflictLocalBody = root.querySelector<HTMLElement>("[data-editor-conflict-local-body]")
+  const conflictCloudTitle = root.querySelector<HTMLElement>("[data-editor-conflict-cloud-title]")
+  const conflictCloudBody = root.querySelector<HTMLElement>("[data-editor-conflict-cloud-body]")
   const sourceList = root.querySelector<HTMLElement>("[data-source-list]")
   const sourceEmpty = root.querySelector<HTMLElement>("[data-source-empty]")
   const sourceStatus = root.querySelector<HTMLElement>("[data-source-status]")
@@ -380,8 +394,17 @@ const init = async () => {
   const flatSave = root.querySelector<HTMLButtonElement>("[data-flat-save]")
   let client: any = null
   let currentUser: any = null
+  let authEpoch = 0
   let autosaveTimer: number | undefined
   let editorChangeGeneration = 0
+  let editorConflict: {
+    ownerId: string
+    documentId: string
+    backup: EditorBackup
+    reason: "unknown-base" | "stale-base" | "remote-write"
+    cloud: WorkspaceFormData
+    operationId?: string
+  } | null = null
   let workspaceDocuments: WorkspaceDocument[] = []
   let sourcesMigrationAvailable: boolean | null = null
   let currentPublication: PublicationState | null = null
@@ -397,7 +420,29 @@ const init = async () => {
   let profilePersonalizationAvailable = true
   let authSubscription: { unsubscribe?: () => void } | null = null
   let onlineHandler: (() => void) | null = null
+  let editorCoordinator: EditorCoordinator | null = null
+  const editorOutbox = (() => {
+    try {
+      return createEditorOutbox(createIndexedDbEditorOutboxRepository())
+    } catch {
+      return null
+    }
+  })()
+  let preparedOutboxOwnerId = ""
+  const activeOutboxClaims = new Map<string, EditorOutboxClaim>()
   let disposed = false
+
+  const captureAuthContext = () => ({
+    ownerId: currentUser?.id ? String(currentUser.id) : "",
+    client,
+    epoch: authEpoch,
+  })
+  const authContextIsCurrent = (context: ReturnType<typeof captureAuthContext>) =>
+    !disposed &&
+    Boolean(context.ownerId) &&
+    currentUser?.id === context.ownerId &&
+    client === context.client &&
+    authEpoch === context.epoch
 
   window.addCleanup(() => {
     disposed = true
@@ -406,6 +451,7 @@ const init = async () => {
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     authSubscription?.unsubscribe?.()
     if (onlineHandler) window.removeEventListener("online", onlineHandler)
+    editorCoordinator?.close()
     profileCropper?.destroy?.()
     if (profilePreviewObjectUrl) URL.revokeObjectURL(profilePreviewObjectUrl)
     if (profileCropSourceUrl) URL.revokeObjectURL(profileCropSourceUrl)
@@ -789,13 +835,18 @@ const init = async () => {
 
   const loadVersions = async (documentId: string) => {
     if (!client || !currentUser || !history || !historyList) return
-    const result = await client
+    const loadClient = client
+    const ownerId = String(currentUser.id)
+    const loadEpoch = authEpoch
+    const result = await loadClient
       .from("document_versions")
       .select("version_no,snapshot,created_at")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", ownerId)
       .order("version_no", { ascending: false })
       .limit(10)
+    if (disposed || authEpoch !== loadEpoch || currentUser?.id !== ownerId || client !== loadClient)
+      return
     if (result.error || !result.data?.length) {
       history.hidden = true
       return
@@ -809,7 +860,24 @@ const init = async () => {
         button.className = "editor-history-item"
         button.textContent = `版本 ${version.version_no} · ${formatDate(version.created_at)}`
         button.addEventListener("click", () => {
-          fillForm(version.snapshot)
+          const normalizedSnapshot = {
+            title: "",
+            body: "",
+            topic: "",
+            maturity: "seed",
+            visibility: "private",
+            tags: "",
+            prerequisites: "",
+            related: "",
+            ...version.snapshot,
+          }
+          fillForm(normalizedSnapshot)
+          const snapshotSources = (normalizedSnapshot as Record<string, unknown>).__sources
+          renderSources(
+            Array.isArray(snapshotSources) ? (snapshotSources as WorkspaceSource[]) : [],
+          )
+          editorChangeGeneration += 1
+          writeLocalBackup()
           if (state) state.textContent = `已载入版本 ${version.version_no}，保存后会生成新版本`
         })
         historyList.appendChild(button)
@@ -837,11 +905,13 @@ const init = async () => {
 
   const loadDocuments = async () => {
     if (!client || !currentUser || !workspace) return
-    const result = await client
+    const context = captureAuthContext()
+    const result = await context.client
       .from("documents")
       .select("id,title,topic,status,visibility,maturity,revision,updated_at,deleted_at")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
       .order("updated_at", { ascending: false })
+    if (!authContextIsCurrent(context)) return
     if (result.error) {
       setStatus("云端知识库还没有准备好；请先在 Supabase 执行工作区迁移。")
       return
@@ -851,7 +921,9 @@ const init = async () => {
 
   const loadCapabilities = async () => {
     if (!client || !currentUser || !workspace) return
-    const result = await client.rpc("current_account_capabilities")
+    const context = captureAuthContext()
+    const result = await context.client.rpc("current_account_capabilities")
+    if (!authContextIsCurrent(context)) return
     const capabilities = result.data as { is_site_owner?: boolean; role?: string } | null
     const isSiteOwner = !result.error && capabilities?.is_site_owner === true
     siteOwnerNavItems.forEach((item) => {
@@ -973,12 +1045,14 @@ const init = async () => {
 
   const loadDocumentSources = async (documentId: string) => {
     if (!client || !currentUser) return
-    const result = await client
+    const context = captureAuthContext()
+    const result = await context.client
       .from("document_sources")
       .select("kind,url,title,author,note")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
       .order("sort_order", { ascending: true })
+    if (!authContextIsCurrent(context)) return
     if (result.error) {
       sourcesMigrationAvailable = false
       renderSources()
@@ -988,13 +1062,17 @@ const init = async () => {
     renderSources((result.data ?? []) as WorkspaceSource[])
   }
 
-  const saveDocumentSources = async (documentId: string) => {
-    const sources = collectSources()
-    if (!sources.length && sourcesMigrationAvailable !== true) return true
-    if (!validateSources()) return false
-    const result = await client.rpc("replace_document_sources", {
+  const saveDocumentSources = async (
+    documentId: string,
+    saveClient = client,
+    sources?: WorkspaceSource[],
+  ) => {
+    const sourceSnapshot = sources ?? collectSources()
+    if (!sourceSnapshot.length && sourcesMigrationAvailable !== true) return true
+    if (!sources && !validateSources()) return false
+    const result = await saveClient.rpc("replace_document_sources", {
       p_document_id: documentId,
-      p_sources: sources,
+      p_sources: sourceSnapshot,
     })
     if (result.error) {
       sourcesMigrationAvailable = false
@@ -1006,16 +1084,20 @@ const init = async () => {
     }
     sourcesMigrationAvailable = true
     if (sourceStatus)
-      sourceStatus.textContent = sources.length
-        ? `已保存 ${sources.length} 条来源。`
+      sourceStatus.textContent = sourceSnapshot.length
+        ? `已保存 ${sourceSnapshot.length} 条来源。`
         : "来源已清空并同步。"
     return true
   }
 
   const writeLocalBackup = () => {
-    if (!form) return
+    if (!form) return false
     const data = readForm()
     const documentId = data.documentId || "new"
+    // Once a conflict is visible, its local side is immutable until the user
+    // explicitly chooses a recovery action. Form input may currently reflect
+    // the cloud side, so rewriting this key would destroy the recoverable copy.
+    if (editorConflict?.documentId === documentId) return false
     const backup = addEditorBackupMetadata(
       {
         ...Object.fromEntries(new FormData(form).entries()),
@@ -1030,10 +1112,84 @@ const init = async () => {
         localDraftKey(currentUser?.id ?? "anonymous", documentId),
         JSON.stringify(backup),
       )
+      return true
     } catch {
       if (state)
         state.textContent = "文档较大，本地备份空间不足；内容仍在当前页面，请尽快保存到云端"
+      return false
     }
+  }
+
+  const currentEditorOutboxPayload = () => ({
+    form: form ? Object.fromEntries(new FormData(form).entries()) : {},
+    sources: collectSources(),
+  })
+
+  const restoreDurableOutboxBackup = async (documentId: string) => {
+    if (!editorOutbox || !currentUser || !form) return false
+    const ownerId = String(currentUser.id)
+    if (localStorage.getItem(localDraftKey(ownerId, documentId))) return false
+    try {
+      const records = await editorOutbox.listForOwner(ownerId)
+      const record = records
+        .filter((candidate) => candidate.documentId === documentId)
+        .sort((left, right) => right.updatedAt - left.updatedAt)[0]
+      const payloadForm = record?.payload.form
+      if (!record || !payloadForm || typeof payloadForm !== "object" || Array.isArray(payloadForm))
+        return false
+      const sources = Array.isArray(record.payload.sources) ? record.payload.sources : []
+      const backup = addEditorBackupMetadata(
+        { ...(payloadForm as Record<string, unknown>), __sources: sources },
+        ownerId,
+        documentId,
+        record.baseRevision,
+      )
+      localStorage.setItem(localDraftKey(ownerId, documentId), JSON.stringify(backup))
+      return true
+    } catch {
+      setStatus("持久恢复队列暂时不可用；当前页面与本地浏览器备份仍会继续保留。", "error")
+      return false
+    }
+  }
+
+  const clearEditorConflict = () => {
+    editorConflict = null
+    if (conflictSection) conflictSection.hidden = true
+  }
+
+  const archiveEditorConflict = (conflict: NonNullable<typeof editorConflict>) => {
+    if (!currentUser || currentUser.id !== conflict.ownerId) return false
+    try {
+      const archiveKey = `wouldkeep:editor-conflict-archive:${conflict.ownerId}:${conflict.documentId}:${Date.now()}`
+      localStorage.setItem(archiveKey, JSON.stringify(conflict.backup))
+      return true
+    } catch {
+      setStatus(
+        "浏览器空间不足，暂时无法创建恢复副本；本地稿仍保持冻结，请先导出或清理空间。",
+        "error",
+      )
+      return false
+    }
+  }
+
+  const freezeEditorConflict = (
+    documentId: string,
+    backup: EditorBackup,
+    reason: "unknown-base" | "stale-base" | "remote-write",
+    cloud: WorkspaceFormData,
+  ) => {
+    if (!currentUser) return
+    editorConflict = { ownerId: String(currentUser.id), documentId, backup, reason, cloud }
+    if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    if (state) state.textContent = "本地稿与云端版本冲突，自动同步已暂停"
+    if (conflictLocalTitle) conflictLocalTitle.textContent = String(backup.title ?? "未命名知识")
+    if (conflictLocalBody) conflictLocalBody.textContent = String(backup.body ?? "")
+    if (conflictCloudTitle) conflictCloudTitle.textContent = cloud.title || "未命名知识"
+    if (conflictCloudBody) conflictCloudBody.textContent = cloud.body
+    if (conflictMeta)
+      conflictMeta.textContent = `本地基于第 ${Number(backup.revision ?? 0)} 版 · 云端第 ${cloud.revision} 版`
+    if (conflictSection) conflictSection.hidden = false
+    setStatus("检测到另一处修改。本地稿已冻结保留；选择处理方式前不会覆盖任何一方。", "error")
   }
 
   const restoreLocalBackup = (documentId = "new", cloudRevision?: number) => {
@@ -1042,12 +1198,20 @@ const init = async () => {
     if (!raw) return false
     const inspection = inspectEditorBackup(raw, currentUser.id, documentId, cloudRevision)
     if (inspection.state === "invalid") {
-      localStorage.removeItem(localDraftKey(currentUser.id, documentId))
+      try {
+        localStorage.setItem(
+          `wouldkeep:editor-recovery-quarantine:${currentUser.id}:${documentId}:${Date.now()}`,
+          raw,
+        )
+        localStorage.removeItem(localDraftKey(currentUser.id, documentId))
+        setStatus("发现一份无法自动读取的旧备份，已隔离保留；当前文档不会用它覆盖。", "error")
+      } catch {
+        setStatus("发现一份无法自动读取的本地备份；浏览器空间不足，备份未被删除。", "error")
+      }
       return false
     }
     if (inspection.state === "conflict") {
-      if (state) state.textContent = "发现本地备份与云端版本不一致，已保留备份且未自动覆盖"
-      setStatus("检测到另一处修改。为避免覆盖，本地备份已保留；请先比较版本再决定。", "error")
+      freezeEditorConflict(documentId, inspection.backup, inspection.reason, readForm())
       return false
     }
     const backup = inspection.backup as Record<string, unknown> & {
@@ -1055,6 +1219,8 @@ const init = async () => {
     }
     fillForm(backup)
     renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
+    clearEditorConflict()
+    editorChangeGeneration += 1
     if (state) state.textContent = "已恢复本地备份，保存后会同步到云端"
     return true
   }
@@ -1090,8 +1256,50 @@ const init = async () => {
     }
   }
 
-  const saveTags = async (documentId: string, knowledgeBaseId: string, rawTags: string) => {
-    if (!client || !currentUser) return
+  const workspaceFormFromOutboxClaim = (claim: EditorOutboxClaim | undefined) => {
+    const value = claim?.record.payload.form
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null
+    const data = value as Record<string, unknown>
+    return {
+      title: String(data.title ?? ""),
+      body: String(data.body ?? ""),
+      topic: String(data.topic ?? ""),
+      maturity: String(data.maturity ?? "seed"),
+      visibility: String(data.visibility ?? "private"),
+      tags: String(data.tags ?? ""),
+      prerequisites: String(data.prerequisites ?? ""),
+      related: String(data.related ?? ""),
+      documentId: String(data.documentId ?? ""),
+      revision: Number(data.revision ?? claim?.record.baseRevision ?? 0),
+      status: String(data.status ?? "draft"),
+    } satisfies WorkspaceFormData
+  }
+
+  const workspaceSourcesFromOutboxClaim = (claim: EditorOutboxClaim | undefined) => {
+    const value = claim?.record.payload.sources
+    if (!Array.isArray(value)) return null
+    const sources = value.filter(
+      (source): source is WorkspaceSource =>
+        Boolean(source) &&
+        typeof source === "object" &&
+        !Array.isArray(source) &&
+        ((source as WorkspaceSource).kind === "web" ||
+          (source as WorkspaceSource).kind === "personal") &&
+        ["url", "title", "author", "note"].every(
+          (key) => typeof (source as unknown as Record<string, unknown>)[key] === "string",
+        ),
+    )
+    return sources.length === value.length ? sources : null
+  }
+
+  const saveTags = async (
+    documentId: string,
+    knowledgeBaseId: string,
+    rawTags: string,
+    ownerId: string,
+    saveClient: any,
+  ) => {
+    if (!saveClient) return false
     const names = [
       ...new Set(
         rawTags
@@ -1100,19 +1308,20 @@ const init = async () => {
           .filter(Boolean),
       ),
     ]
-    await client
+    const deletion = await saveClient
       .from("document_tags")
       .delete()
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", ownerId)
+    if (deletion.error) return false
     for (const name of names) {
       const normalizedName = name.normalize("NFKC").toLocaleLowerCase()
-      const tag = await client
+      const tag = await saveClient
         .from("tags")
         .upsert(
           {
             knowledge_base_id: knowledgeBaseId,
-            owner_id: currentUser.id,
+            owner_id: ownerId,
             name,
             normalized_name: normalizedName,
           },
@@ -1120,24 +1329,28 @@ const init = async () => {
         )
         .select("id")
         .single()
-      if (tag.data?.id)
-        await client
-          .from("document_tags")
-          .upsert({ document_id: documentId, tag_id: tag.data.id, owner_id: currentUser.id })
+      if (tag.error || !tag.data?.id) return false
+      const assignment = await saveClient
+        .from("document_tags")
+        .upsert({ document_id: documentId, tag_id: tag.data.id, owner_id: ownerId })
+      if (assignment.error) return false
     }
+    return true
   }
 
   const loadLinkOptions = async (currentDocumentId = "") => {
     const datalist = root.querySelector<HTMLElement>("[data-knowledge-link-options]")
     if (!client || !currentUser || !datalist) return
-    const result = await client
+    const context = captureAuthContext()
+    const result = await context.client
       .from("documents")
       .select("id,title")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
       .neq("id", currentDocumentId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(30)
+    if (!authContextIsCurrent(context)) return
     datalist.replaceChildren()
     ;(result.data ?? []).forEach((item: { id: string; title: string }) => {
       const option = globalThis.document.createElement("option")
@@ -1150,12 +1363,14 @@ const init = async () => {
   const loadTagOptions = async () => {
     const datalist = root.querySelector<HTMLElement>("[data-tag-options]")
     if (!client || !currentUser || !datalist) return
-    const result = await client
+    const context = captureAuthContext()
+    const result = await context.client
       .from("tags")
       .select("name")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
       .order("name", { ascending: true })
       .limit(100)
+    if (!authContextIsCurrent(context)) return
     datalist.replaceChildren()
     ;(result.data ?? []).forEach((item: { name: string }) => {
       const option = globalThis.document.createElement("option")
@@ -1166,11 +1381,13 @@ const init = async () => {
 
   const loadDocumentTags = async (documentId: string) => {
     if (!client || !currentUser || !form) return
-    const result = await client
+    const context = captureAuthContext()
+    const result = await context.client
       .from("document_tags")
       .select("tags(name)")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
+    if (!authContextIsCurrent(context)) return
     const names = (result.data ?? [])
       .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
       .filter(Boolean)
@@ -1182,8 +1399,10 @@ const init = async () => {
     documentId: string,
     rawTitles: string,
     relationType: "prerequisite" | "related",
+    ownerId: string,
+    saveClient: any,
   ) => {
-    if (!client || !currentUser) return
+    if (!saveClient) return false
     const titles = [
       ...new Set(
         rawTitles
@@ -1192,19 +1411,21 @@ const init = async () => {
           .filter(Boolean),
       ),
     ]
-    await client
+    const deletion = await saveClient
       .from("document_links")
       .delete()
       .eq("from_document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", ownerId)
       .eq("relation_type", relationType)
-    if (!titles.length) return
-    const targets = await client
+    if (deletion.error) return false
+    if (!titles.length) return true
+    const targets = await saveClient
       .from("documents")
       .select("id,title")
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", ownerId)
       .in("title", titles)
       .is("deleted_at", null)
+    if (targets.error) return false
     const titleMap = new Map(
       (targets.data ?? []).map((target: { id: string; title: string }) => [
         target.title,
@@ -1217,19 +1438,25 @@ const init = async () => {
       .map((toDocumentId) => ({
         from_document_id: documentId,
         to_document_id: toDocumentId,
-        owner_id: currentUser.id,
+        owner_id: ownerId,
         relation_type: relationType,
       }))
-    if (rows.length) await client.from("document_links").upsert(rows)
+    if (rows.length) {
+      const assignment = await saveClient.from("document_links").upsert(rows)
+      if (assignment.error) return false
+    }
+    return true
   }
 
   const loadDocumentLinks = async (documentId: string) => {
     if (!client || !currentUser || !form) return
-    const result = await client
+    const context = captureAuthContext()
+    const result = await context.client
       .from("document_links")
       .select("relation_type,to_document_id,documents!document_links_to_document_id_fkey(title)")
       .eq("from_document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
+    if (!authContextIsCurrent(context)) return
     const groups: Record<string, string[]> = { prerequisite: [], related: [] }
     ;(result.data ?? []).forEach(
       (item: { relation_type: string; documents?: { title?: string } | null }) => {
@@ -1291,12 +1518,14 @@ const init = async () => {
 
   const loadPublication = async (documentId: string, revision: number) => {
     if (!client || !currentUser) return
-    const result = await client
+    const context = captureAuthContext()
+    const result = await context.client
       .from("document_publications")
       .select("document_id,audience,share_token,source_revision,published_at")
       .eq("document_id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", context.ownerId)
       .maybeSingle()
+    if (!authContextIsCurrent(context)) return
     if (result.error) {
       currentPublication = null
       if (publicationStatus)
@@ -1399,11 +1628,35 @@ const init = async () => {
 
   const saveDocumentOnce = async () => {
     if (!form || !currentUser || !client) return false
-    const data = readForm()
+    const liveDocumentIdentity = readForm().documentId || "new"
+    const outboxClaim = activeOutboxClaims.get(liveDocumentIdentity)
+    const data = workspaceFormFromOutboxClaim(outboxClaim) ?? readForm()
+    const sourceSnapshot = outboxClaim
+      ? workspaceSourcesFromOutboxClaim(outboxClaim)
+      : collectSources()
+    if (!sourceSnapshot) {
+      setStatus("持久恢复队列中的来源数据无法验证；已停止保存并保留原始记录。", "error")
+      return false
+    }
+    const ownerId = String(currentUser.id)
+    const saveClient = client
+    const documentIdentity = data.documentId || "new"
+    let boundDocumentIdentity = ""
+    const identityIsCurrent = () =>
+      !disposed &&
+      currentUser?.id === ownerId &&
+      client === saveClient &&
+      ((readForm().documentId || "new") === documentIdentity ||
+        (Boolean(boundDocumentIdentity) && readForm().documentId === boundDocumentIdentity))
+    if (editorConflict?.documentId === documentIdentity) {
+      if (state) state.textContent = "本地稿与云端版本冲突，自动同步已暂停"
+      setStatus("请先处理版本冲突；在你选择前，本地稿和云端稿都会保留。", "error")
+      return false
+    }
     const generationAtStart = editorChangeGeneration
-    writeLocalBackup()
+    if (!outboxClaim) writeLocalBackup()
     const knowledgeBaseId = await ensureKnowledgeBase()
-    if (!knowledgeBaseId) return false
+    if (!knowledgeBaseId || !identityIsCurrent()) return false
     const visibility =
       data.visibility === "public" ||
       data.visibility === "unlisted" ||
@@ -1416,33 +1669,92 @@ const init = async () => {
       body: data.body,
       topic: data.topic,
       maturity: data.maturity,
-      owner_id: currentUser.id,
+      owner_id: ownerId,
       knowledge_base_id: knowledgeBaseId,
       status: documentStatus,
       visibility,
     }
     const result = data.documentId
-      ? await client
+      ? await saveClient
           .from("documents")
           .update({ ...payload, revision: data.revision + 1 })
           .eq("id", data.documentId)
-          .eq("owner_id", currentUser.id)
+          .eq("owner_id", ownerId)
           .eq("revision", data.revision)
           .select("id,revision")
           .maybeSingle()
-      : await client.from("documents").insert(payload).select("id,revision").single()
+      : await saveClient.from("documents").insert(payload).select("id,revision").single()
+    if (!identityIsCurrent()) return false
     if (result.error) {
       setStatus("云端保存失败，已保留本地备份；请检查工作区迁移是否已执行。")
       return false
     }
     if (data.documentId && !result.data) {
-      setStatus("这条知识在其他标签页已被修改，请重新加载后再保存。")
-      if (state) state.textContent = "发现版本冲突"
+      const conflictBackup = addEditorBackupMetadata(
+        {
+          ...(outboxClaim?.record.payload.form as Record<string, unknown> | undefined),
+          ...data,
+          __sources: sourceSnapshot,
+        },
+        ownerId,
+        data.documentId,
+        data.revision,
+      )
+      const latest = await saveClient
+        .from("documents")
+        .select("id,title,body,topic,maturity,status,visibility,revision")
+        .eq("id", data.documentId)
+        .eq("owner_id", ownerId)
+        .single()
+      const cloud = latest.data
+        ? ({
+            ...data,
+            ...latest.data,
+            documentId: data.documentId,
+            revision: Number(latest.data.revision ?? data.revision),
+          } as WorkspaceFormData)
+        : data
+      freezeEditorConflict(data.documentId, conflictBackup, "remote-write", cloud)
       return false
     }
     if (!data.documentId && result.data?.id) {
+      boundDocumentIdentity = result.data.id
+      const firstInsertClaim = activeOutboxClaims.get("new")
+      if (editorOutbox && firstInsertClaim) {
+        try {
+          const boundClaim = await editorOutbox.bindCreatedDocument(
+            ownerId,
+            firstInsertClaim,
+            result.data.id,
+            Number(result.data.revision ?? 0),
+          )
+          if (boundClaim) activeOutboxClaims.set("new", boundClaim)
+        } catch {
+          setStatus("云端已创建文档，但恢复队列正在核对新编号；请暂时不要关闭页面。", "error")
+        }
+      }
       const field = form.elements.namedItem("documentId") as HTMLInputElement | null
       if (field) field.value = result.data.id
+      const revisionField = form.elements.namedItem("revision") as HTMLInputElement | null
+      if (revisionField) revisionField.value = String(result.data.revision ?? 0)
+      try {
+        const migratedBackup = addEditorBackupMetadata(
+          {
+            ...(outboxClaim?.record.payload.form as Record<string, unknown> | undefined),
+            ...data,
+            documentId: result.data.id,
+            revision: Number(result.data.revision ?? 0),
+            __sources: sourceSnapshot,
+          },
+          ownerId,
+          result.data.id,
+          Number(result.data.revision ?? 0),
+        )
+        localStorage.setItem(localDraftKey(ownerId, result.data.id), JSON.stringify(migratedBackup))
+        localStorage.removeItem(localDraftKey(ownerId, "new"))
+      } catch {
+        setStatus("云端文档已创建；浏览器备份编号尚未迁移，请保持页面开启直到保存完成。", "error")
+      }
       window.history.replaceState(
         window.history.state,
         "",
@@ -1450,18 +1762,17 @@ const init = async () => {
       )
       if (editorChangeGeneration !== generationAtStart) {
         writeLocalBackup()
-        localStorage.removeItem(localDraftKey(currentUser.id, "new"))
       }
     }
     if (result.data?.revision !== undefined) {
       const revision = form.elements.namedItem("revision") as HTMLInputElement | null
       if (revision) revision.value = String(result.data.revision)
     }
-    if (result.data?.id && currentUser) {
-      await client.from("document_versions").insert({
+    if (result.data?.id) {
+      const version = await saveClient.from("document_versions").insert({
         document_id: result.data.id,
-        owner_id: currentUser.id,
-        created_by: currentUser.id,
+        owner_id: ownerId,
+        created_by: ownerId,
         version_no: result.data.revision ?? 0,
         snapshot: {
           title: data.title,
@@ -1469,26 +1780,249 @@ const init = async () => {
           topic: data.topic,
           maturity: data.maturity,
           visibility: payload.visibility,
+          tags: data.tags,
+          prerequisites: data.prerequisites,
+          related: data.related,
+          __sources: sourceSnapshot,
         },
       })
-      await saveTags(result.data.id, knowledgeBaseId!, data.tags ?? "")
-      await saveLinks(result.data.id, data.prerequisites ?? "", "prerequisite")
-      await saveLinks(result.data.id, data.related ?? "", "related")
-      if (!(await saveDocumentSources(result.data.id))) {
+      const tagsSaved = await saveTags(
+        result.data.id,
+        knowledgeBaseId,
+        data.tags ?? "",
+        ownerId,
+        saveClient,
+      )
+      const prerequisitesSaved = await saveLinks(
+        result.data.id,
+        data.prerequisites ?? "",
+        "prerequisite",
+        ownerId,
+        saveClient,
+      )
+      const relatedSaved = await saveLinks(
+        result.data.id,
+        data.related ?? "",
+        "related",
+        ownerId,
+        saveClient,
+      )
+      if (
+        version.error ||
+        !tagsSaved ||
+        !prerequisitesSaved ||
+        !relatedSaved ||
+        !(await saveDocumentSources(result.data.id, saveClient, sourceSnapshot))
+      ) {
+        if (!identityIsCurrent()) return false
         await loadDocuments()
-        if (state) state.textContent = "正文已保存，来源待同步"
+        if (state) state.textContent = "正文已保存，关联信息仍待同步"
+        setStatus("部分内容尚未同步完整，本地恢复副本已保留；稍后可安全重试。", "error")
         return false
       }
     }
-    if (editorChangeGeneration === generationAtStart)
-      localStorage.removeItem(localDraftKey(currentUser.id, data.documentId || "new"))
+    if (!identityIsCurrent()) return false
+    if (editorChangeGeneration === generationAtStart) {
+      localStorage.removeItem(localDraftKey(ownerId, data.documentId || "new"))
+      if (!data.documentId && result.data?.id)
+        localStorage.removeItem(localDraftKey(ownerId, result.data.id))
+    }
     updatePublicationUI(currentPublication, Number(result.data?.revision ?? data.revision))
     await loadDocuments()
-    return true
+    return identityIsCurrent()
   }
 
   const saveQueue = createSerializedSaveQueue(saveDocumentOnce)
-  const requestDocumentSave = () => saveQueue.request()
+  const requestDocumentSave = async (options: { enqueue?: boolean } = {}) => {
+    const documentId = readForm().documentId || "new"
+    const ownerId = currentUser?.id ? String(currentUser.id) : ""
+    let durableEnqueueSucceeded = false
+    let queuedOperationId: string | undefined
+    if (editorOutbox && ownerId && options.enqueue !== false) {
+      try {
+        const queued = await editorOutbox.enqueue({
+          ownerId,
+          documentId,
+          baseRevision: readForm().revision,
+          payload: currentEditorOutboxPayload(),
+        })
+        durableEnqueueSucceeded = true
+        queuedOperationId = queued.operationId
+      } catch {
+        setStatus("持久恢复队列暂时不可用；仍会尝试保存到云端并保留浏览器备份。", "error")
+      }
+    }
+    const run = async () => {
+      if ((readForm().documentId || "new") !== documentId) {
+        if (state) state.textContent = "编辑目标已切换，本次旧保存已取消"
+        return false
+      }
+      let claim: EditorOutboxClaim | null = null
+      if (editorOutbox && ownerId && (durableEnqueueSucceeded || options.enqueue === false)) {
+        try {
+          claim = await editorOutbox.claimNext(ownerId, documentId)
+          if (!claim) {
+            const conflict = (await editorOutbox.listForOwner(ownerId)).find(
+              (record) => record.documentId === documentId && record.status === "conflict",
+            )
+            if (conflict) {
+              if (editorConflict?.documentId === documentId)
+                editorConflict.operationId = conflict.operationId
+              return false
+            }
+            return true
+          }
+          activeOutboxClaims.set(documentId, claim)
+        } catch {
+          if (options.enqueue === false) return false
+          claim = null
+        }
+      }
+      editorCoordinator?.publishStatus({
+        documentId,
+        operationId: claim?.record.operationId ?? queuedOperationId,
+        status: "saving",
+      })
+      const saved = await saveQueue.request()
+      const finalClaim = activeOutboxClaims.get(documentId) ?? claim
+      activeOutboxClaims.delete(documentId)
+      if (editorOutbox && ownerId && finalClaim) {
+        try {
+          if (saved) {
+            await editorOutbox.completeAfterSuccess(ownerId, finalClaim, readForm().revision)
+          } else if (editorConflict?.documentId === documentId) {
+            const conflict = await editorOutbox.markConflict(ownerId, finalClaim.record.operationId)
+            if (conflict && editorConflict) editorConflict.operationId = conflict.operationId
+          } else await editorOutbox.requeueAfterFailure(ownerId, finalClaim)
+        } catch {
+          setStatus("云端结果已返回，但恢复队列尚未确认；下次打开时会保守地再次核对。", "error")
+        }
+      }
+      editorCoordinator?.publishStatus({
+        documentId,
+        operationId: finalClaim?.record.operationId ?? queuedOperationId,
+        status: editorConflict?.documentId === documentId ? "conflict" : saved ? "saved" : "queued",
+        revision: saved ? readForm().revision : undefined,
+      })
+      return saved
+    }
+    editorCoordinator?.publishStatus({
+      documentId,
+      operationId: queuedOperationId,
+      status: "queued",
+    })
+    return editorCoordinator?.runExclusive(documentId, run) ?? run()
+  }
+
+  const flushDurableOutboxForCurrentDocument = async () => {
+    if (!editorOutbox || !currentUser || !form) return false
+    const ownerId = String(currentUser.id)
+    const documentId = readForm().documentId || "new"
+    if (editorConflict?.documentId === documentId) return false
+    try {
+      const hasQueuedOperation = (await editorOutbox.listForOwner(ownerId)).some(
+        (record) => record.documentId === documentId && record.status === "queued",
+      )
+      if (!hasQueuedOperation) return false
+      return requestDocumentSave({ enqueue: false })
+    } catch {
+      return false
+    }
+  }
+
+  const resolveDurableEditorConflict = async (conflict: NonNullable<typeof editorConflict>) => {
+    if (!editorOutbox) return true
+    try {
+      const operationId =
+        conflict.operationId ??
+        (await editorOutbox.listForOwner(conflict.ownerId)).find(
+          (record) => record.documentId === conflict.documentId && record.status === "conflict",
+        )?.operationId
+      if (!operationId) return true
+      return editorOutbox.resolveConflict(conflict.ownerId, operationId)
+    } catch {
+      setStatus("恢复队列暂时无法确认你的选择；冲突稿仍保持冻结，请稍后重试。", "error")
+      return false
+    }
+  }
+
+  root.querySelector("[data-conflict-use-local]")?.addEventListener("click", async () => {
+    const conflict = editorConflict
+    if (!conflict || !form || !currentUser || !client || currentUser.id !== conflict.ownerId) return
+    if (!(await resolveDurableEditorConflict(conflict))) return
+    const backup = conflict.backup as Record<string, unknown> & {
+      __sources?: WorkspaceSource[]
+    }
+    fillForm(backup)
+    renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
+    const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
+    const revision = form.elements.namedItem("revision") as HTMLInputElement | null
+    if (documentId) documentId.value = conflict.documentId
+    if (revision) revision.value = String(conflict.cloud.revision)
+    clearEditorConflict()
+    editorChangeGeneration += 1
+    writeLocalBackup()
+    if (state) state.textContent = "正在以本地稿创建新的云端版本…"
+    if (await requestDocumentSave()) {
+      if (state) state.textContent = "本地稿已保存为新的云端版本"
+      setStatus("已保留你的本地内容，并在当前云端版本之后创建了新版本。", "success")
+    }
+  })
+
+  root.querySelector("[data-conflict-use-cloud]")?.addEventListener("click", async () => {
+    const conflict = editorConflict
+    if (!conflict || !currentUser || !form || currentUser.id !== conflict.ownerId) return
+    if (!archiveEditorConflict(conflict)) return
+    if (!(await resolveDurableEditorConflict(conflict))) return
+    clearEditorConflict()
+    fillForm(conflict.cloud)
+    if (state) state.textContent = "正在载入云端版本…"
+    if (await openDocument(conflict.documentId, { ignoreLocalBackup: true })) {
+      localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
+      setStatus("已采用云端版本；原本地稿已另存为浏览器恢复副本。", "success")
+    } else {
+      freezeEditorConflict(conflict.documentId, conflict.backup, conflict.reason, conflict.cloud)
+      setStatus("云端版本暂时无法完整载入；本地稿仍保持可恢复状态，请联网后重试。", "error")
+    }
+  })
+
+  root.querySelector("[data-conflict-save-copy]")?.addEventListener("click", async () => {
+    const conflict = editorConflict
+    if (!conflict || !form || !currentUser || currentUser.id !== conflict.ownerId) return
+    if (!(await resolveDurableEditorConflict(conflict))) return
+    const backup = conflict.backup as Record<string, unknown> & {
+      __sources?: WorkspaceSource[]
+    }
+    fillForm(backup)
+    renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
+    const title = form.elements.namedItem("title") as HTMLInputElement | null
+    const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
+    const revision = form.elements.namedItem("revision") as HTMLInputElement | null
+    const statusField = form.elements.namedItem("status") as HTMLInputElement | null
+    const privateVisibility = form.querySelector<HTMLInputElement>(
+      "[name=visibility][value=private]",
+    )
+    if (title && !title.value.endsWith("（冲突副本）")) title.value += "（冲突副本）"
+    if (documentId) documentId.value = ""
+    if (revision) revision.value = "0"
+    if (statusField) statusField.value = "draft"
+    if (privateVisibility) privateVisibility.checked = true
+    clearEditorConflict()
+    updatePublicationUI(null)
+    editorChangeGeneration += 1
+    writeLocalBackup()
+    if (state) state.textContent = "正在另存为私密副本…"
+    if (!currentUser || !client) {
+      setStatus("私密副本已保存在当前浏览器；登录服务恢复后可继续同步。")
+      return
+    }
+    if (await requestDocumentSave()) {
+      archiveEditorConflict(conflict)
+      localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
+      if (state) state.textContent = "私密副本已保存"
+      setStatus("已创建新的私密副本；原文档和冲突恢复稿都未被覆盖。", "success")
+    }
+  })
 
   const queueAutosave = () => {
     if (!form || !currentUser || !client) return
@@ -1501,17 +2035,55 @@ const init = async () => {
     }, 1000)
   }
 
-  const openDocument = async (documentId: string) => {
-    if (!client || !currentUser || !form) return
-    const result = await client
+  const clearSensitiveEditorState = () => {
+    if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    clearEditorConflict()
+    form?.reset()
+    renderSources()
+    historyList?.replaceChildren()
+    if (history) history.hidden = true
+    if (editor) editor.hidden = true
+    if (flatWorkbench) flatWorkbench.hidden = true
+    currentPublication = null
+    updatePublicationUI(null)
+    workspaceDocuments = []
+    if (libraryList) libraryList.replaceChildren()
+    if (state) state.textContent = "登录状态已变化，已清除上一账户在页面中的内容"
+  }
+
+  const openDocument = async (
+    documentId: string,
+    options: { ignoreLocalBackup?: boolean } = {},
+  ) => {
+    if (!client || !currentUser || !form) return false
+    const ownerId = String(currentUser.id)
+    const openClient = client
+    const openEpoch = authEpoch
+    const isCurrentOpen = () =>
+      !disposed && authEpoch === openEpoch && currentUser?.id === ownerId && client === openClient
+    if (editorConflict?.documentId !== documentId) clearEditorConflict()
+    await restoreDurableOutboxBackup(documentId)
+    if (!isCurrentOpen()) return false
+    const restoredLocally = options.ignoreLocalBackup ? false : restoreLocalBackup(documentId)
+    if (restoredLocally) {
+      if (writeLauncher) writeLauncher.hidden = true
+      if (flatWorkbench) flatWorkbench.hidden = true
+      if (editor) editor.hidden = false
+      if (state) state.textContent = "已从本地恢复，正在核对云端版本…"
+    }
+    const result = await openClient
       .from("documents")
       .select("id,title,body,topic,maturity,status,visibility,revision")
       .eq("id", documentId)
-      .eq("owner_id", currentUser.id)
+      .eq("owner_id", ownerId)
       .single()
+    if (!isCurrentOpen()) return false
     if (result.error) {
-      setStatus("这条知识暂时无法打开，请刷新后重试。")
-      return
+      if (restoredLocally) {
+        if (state) state.textContent = "离线编辑中，本地稿等待同步"
+        setStatus("暂时无法连接云端。你可以继续编辑，本地稿会保留并在联网后核对版本。")
+      } else setStatus("这条知识暂时无法打开，请刷新后重试。")
+      return false
     }
     fillForm(result.data ?? {})
     if (writeLauncher) writeLauncher.hidden = true
@@ -1519,17 +2091,67 @@ const init = async () => {
     if (editor) editor.hidden = false
     if (state) state.textContent = "已加载云端草稿"
     await loadVersions(documentId)
+    if (!isCurrentOpen()) return false
     await loadLinkOptions(documentId)
+    if (!isCurrentOpen()) return false
     await loadDocumentTags(documentId)
+    if (!isCurrentOpen()) return false
     await loadDocumentLinks(documentId)
+    if (!isCurrentOpen()) return false
     await loadDocumentSources(documentId)
+    if (!isCurrentOpen()) return false
     await loadPublication(documentId, Number(result.data?.revision ?? 0))
-    restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
+    if (!isCurrentOpen()) return false
+    if (!options.ignoreLocalBackup)
+      restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
+    if (!options.ignoreLocalBackup) void flushDurableOutboxForCurrentDocument()
     editor?.scrollIntoView({ behavior: "smooth", block: "start" })
+    return true
+  }
+
+  const prepareEditorPersistence = async (ownerId: string) => {
+    if (editorCoordinator?.ownerId !== ownerId || editorCoordinator.isClosed()) {
+      editorCoordinator?.close()
+      editorCoordinator = createEditorCoordinator({ ownerId })
+      editorCoordinator.subscribe((message) => {
+        if (!form) return
+        const currentDocumentId = readForm().documentId || "new"
+        if (message.documentId !== currentDocumentId) return
+        if (message.status === "saving") {
+          if (state) state.textContent = "另一标签页正在保存这条知识…"
+          return
+        }
+        if (message.status === "conflict") {
+          if (state) state.textContent = "另一标签页检测到版本冲突"
+          setStatus("另一标签页已暂停同步；请先在对应页面处理版本冲突。", "error")
+          return
+        }
+        if (message.status === "saved") {
+          const hasLocalChanges = Boolean(
+            currentUser && localStorage.getItem(localDraftKey(currentUser.id, currentDocumentId)),
+          )
+          if (hasLocalChanges || currentDocumentId === "new") {
+            if (state) state.textContent = "另一标签页已保存新版本；当前本地改动仍保留"
+          } else {
+            if (state) state.textContent = "另一标签页已保存，正在刷新当前版本…"
+            void openDocument(currentDocumentId)
+          }
+        }
+      })
+    }
+    if (editorOutbox && preparedOutboxOwnerId !== ownerId) {
+      try {
+        await editorOutbox.recoverInterrupted(ownerId)
+        preparedOutboxOwnerId = ownerId
+      } catch {
+        setStatus("持久恢复队列暂时无法打开；浏览器内草稿仍会保留。", "error")
+      }
+    }
   }
 
   const sync = async () => {
     if (disposed) return
+    const previousOwnerId = currentUser?.id ? String(currentUser.id) : ""
     try {
       try {
         currentUser = client ? ((await client.auth.getUser()).data?.user ?? null) : null
@@ -1539,6 +2161,17 @@ const init = async () => {
         return
       }
       if (disposed) return
+      const nextOwnerId = currentUser?.id ? String(currentUser.id) : ""
+      if (nextOwnerId !== previousOwnerId) {
+        authEpoch += 1
+        clearSensitiveEditorState()
+      }
+      if (currentUser) await prepareEditorPersistence(String(currentUser.id))
+      else {
+        editorCoordinator?.close()
+        editorCoordinator = null
+        preparedOutboxOwnerId = ""
+      }
       if (session) session.hidden = !currentUser || (accountMode !== "signin" && !workspace)
       if (login) login.hidden = Boolean(currentUser)
       if (email) email.textContent = currentUser?.email ?? ""
@@ -1561,7 +2194,9 @@ const init = async () => {
             const knowledgeBaseId = await ensureKnowledgeBase()
             if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
             await loadDocuments()
+            await restoreDurableOutboxBackup("new")
             restoreLocalBackup()
+            void flushDurableOutboxForCurrentDocument()
             await loadLinkOptions()
             await loadTagOptions()
             if (workspaceSection === "settings") await loadProfileSettings()
@@ -1587,7 +2222,15 @@ const init = async () => {
   function watchAuthState() {
     if (!client || authSubscription) return
     const listener = client.auth.onAuthStateChange((event: string) => {
-      if (event === "SIGNED_IN" && workspace) void sync()
+      if (!workspace) return
+      if (event === "SIGNED_OUT") {
+        authEpoch += 1
+        currentUser = null
+        clearSensitiveEditorState()
+        editorCoordinator?.close()
+        editorCoordinator = null
+        void sync()
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") void sync()
     })
     authSubscription = listener?.data?.subscription ?? null
   }
@@ -2102,7 +2745,30 @@ const init = async () => {
     librarySearch?.focus()
   })
 
-  const startNewDocument = (showEditor = true) => {
+  const startNewDocument = (showEditor = true, preferRecovery = true) => {
+    const ownerId = currentUser?.id ? String(currentUser.id) : ""
+    const pendingNewDraft = ownerId ? localStorage.getItem(localDraftKey(ownerId, "new")) : null
+    if (preferRecovery && pendingNewDraft && restoreLocalBackup("new")) {
+      if (writeLauncher && showEditor) writeLauncher.hidden = true
+      if (flatWorkbench && showEditor) flatWorkbench.hidden = true
+      if (editor) editor.hidden = !showEditor
+      if (state) state.textContent = "已恢复尚未保存的新知识草稿"
+      if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
+      return
+    }
+    if (!preferRecovery && pendingNewDraft && ownerId) {
+      try {
+        localStorage.setItem(
+          `wouldkeep:editor-draft-archive:${ownerId}:new:${Date.now()}`,
+          pendingNewDraft,
+        )
+        localStorage.removeItem(localDraftKey(ownerId, "new"))
+      } catch {
+        setStatus("浏览器空间不足，无法安全归档现有新草稿；已取消新建操作。", "error")
+        return
+      }
+    }
+    clearEditorConflict()
     form?.reset()
     const documentId = form?.elements.namedItem("documentId") as HTMLInputElement | null
     if (documentId) documentId.value = ""
@@ -2437,7 +3103,7 @@ const init = async () => {
     const draft = importedDraft
     importedDraft = null
     if (importConfirm) importConfirm.disabled = true
-    startNewDocument()
+    startNewDocument(true, false)
     const title = form.elements.namedItem("title") as HTMLInputElement | null
     const body = form.elements.namedItem("body") as HTMLTextAreaElement | null
     const privateVisibility = form.querySelector<HTMLInputElement>(
@@ -2868,6 +3534,11 @@ const init = async () => {
     form.addEventListener("input", () => {
       editorChangeGeneration += 1
       normalizeTags()
+      const documentIdentity = readForm().documentId || "new"
+      if (editorConflict?.documentId === documentIdentity) {
+        if (state) state.textContent = "版本冲突待处理，自动同步保持暂停"
+        return
+      }
       if (state) state.textContent = currentUser && client ? "即将自动保存" : "有未保存改动"
       writeLocalBackup()
       queueAutosave()
@@ -2876,6 +3547,14 @@ const init = async () => {
       event.preventDefault()
       if (autosaveTimer) window.clearTimeout(autosaveTimer)
       normalizeTags()
+      const documentIdentity = readForm().documentId || "new"
+      if (editorConflict?.documentId === documentIdentity) {
+        if (state) state.textContent = "版本冲突待处理，自动同步保持暂停"
+        setStatus("请先处理版本冲突；在你选择前，本地稿和云端稿都会保留。", "error")
+        conflictHeading?.focus()
+        conflictSection?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+        return
+      }
       writeLocalBackup()
       if (!currentUser || !client) {
         setStatus("请先登录，草稿已暂存于当前浏览器。")
@@ -2893,6 +3572,22 @@ const init = async () => {
         !window.confirm("确定清空当前内容吗？已经保存的历史版本不会被删除。")
       )
         return
+      const ownerId = currentUser?.id ? String(currentUser.id) : "anonymous"
+      const activeDocumentId = data.documentId || "new"
+      const activeKey = localDraftKey(ownerId, activeDocumentId)
+      const activeBackup = localStorage.getItem(activeKey)
+      if (activeBackup) {
+        try {
+          localStorage.setItem(
+            `wouldkeep:editor-draft-archive:${ownerId}:${activeDocumentId}:${Date.now()}`,
+            activeBackup,
+          )
+          localStorage.removeItem(activeKey)
+        } catch {
+          setStatus("浏览器空间不足，无法安全归档当前草稿；已取消清空操作。", "error")
+          return
+        }
+      }
       form.reset()
       const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
       if (documentId) documentId.value = ""
@@ -2935,6 +3630,16 @@ const init = async () => {
       }
     }
     if (!currentUser || !form) return
+    const pendingDocument = readForm().documentId || "new"
+    if (editorConflict?.documentId === pendingDocument) {
+      if (state) state.textContent = "版本冲突待处理，自动同步保持暂停"
+      setStatus("网络已恢复，但检测到版本冲突。请先比较并选择要保留的版本。", "error")
+      return
+    }
+    if (!localStorage.getItem(localDraftKey(currentUser.id, pendingDocument))) {
+      setStatus("网络连接已恢复，没有待同步的本地改动。", "success")
+      return
+    }
     setStatus("网络已恢复，正在同步本地备份…")
     if (await requestDocumentSave()) setStatus("本地备份已同步到云端。")
   }

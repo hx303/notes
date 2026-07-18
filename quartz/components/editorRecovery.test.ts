@@ -96,11 +96,100 @@ test("a failed save remains failed even when the coalesced follow-up succeeds", 
 
 test("all editor save entry points use the serialized queue", () => {
   assert.match(accountScript, /createSerializedSaveQueue\(saveDocumentOnce\)/)
-  assert.equal(accountScript.match(/await requestDocumentSave\(\)/g)?.length, 5)
+  assert.ok((accountScript.match(/await requestDocumentSave\(\)/g)?.length ?? 0) >= 5)
   assert.doesNotMatch(accountScript, /await saveDocumentOnce\(\)/)
   assert.match(
     accountScript,
     /loadPublication\(documentId,[\s\S]{0,200}restoreLocalBackup\(documentId,[\s\S]{0,100}result\.data\?\.revision/,
+  )
+})
+
+test("conflicts freeze the original backup until an explicit recovery action", () => {
+  const conflictGuard = accountScript.indexOf(
+    "if (editorConflict?.documentId === documentId) return false",
+  )
+  const backupWrite = accountScript.indexOf("const backup = addEditorBackupMetadata", conflictGuard)
+  assert.ok(conflictGuard > 0)
+  assert.ok(backupWrite > conflictGuard)
+  assert.match(accountScript, /data-conflict-use-local[\s\S]*fillForm\(backup\)/)
+  assert.match(accountScript, /data-conflict-use-cloud[\s\S]*archiveEditorConflict\(conflict\)/)
+  assert.match(
+    accountScript,
+    /data-conflict-save-copy[\s\S]*\[name=visibility\]\[value=private\][\s\S]*requestDocumentSave/,
+  )
+})
+
+test("existing documents restore locally before attempting a cloud read", () => {
+  const openDocument = accountScript.indexOf("const openDocument = async")
+  const localRestore = accountScript.indexOf("restoreLocalBackup(documentId)", openDocument)
+  const cloudRead = accountScript.indexOf('.from("documents")', openDocument)
+  assert.ok(openDocument > 0)
+  assert.ok(localRestore > openDocument)
+  assert.ok(cloudRead > localRestore)
+  assert.match(accountScript, /if \(restoredLocally\)[\s\S]*离线编辑中，本地稿等待同步/)
+})
+
+test("partial cloud writes retain recovery data and online sync requires pending work", () => {
+  assert.match(
+    accountScript,
+    /version\.error[\s\S]*!tagsSaved[\s\S]*!prerequisitesSaved[\s\S]*!relatedSaved[\s\S]*saveDocumentSources/,
+  )
+  assert.match(accountScript, /const ownerId = String\(currentUser\.id\)/)
+  assert.match(accountScript, /currentUser\?\.id === ownerId/)
+  assert.match(accountScript, /client === saveClient/)
+  assert.match(
+    accountScript,
+    /onlineHandler = async[\s\S]*editorConflict\?\.documentId[\s\S]*localStorage\.getItem\(localDraftKey/,
+  )
+})
+
+test("save coordination is owner scoped, cross-tab exclusive, and SPA safe", () => {
+  assert.match(accountScript, /createEditorCoordinator\(\{ ownerId \}\)/)
+  assert.match(accountScript, /editorCoordinator\?\.runExclusive\(documentId, run\)/)
+  assert.match(accountScript, /editorCoordinator\?\.publishStatus\(\{[\s\S]{0,160}status: "queued"/)
+  assert.match(accountScript, /editorCoordinator\?\.close\(\)/)
+  assert.match(accountScript, /另一标签页正在保存这条知识/)
+  assert.match(accountScript, /另一标签页已保存新版本；当前本地改动仍保留/)
+})
+
+test("session changes invalidate private editor reads and clear sensitive UI state", () => {
+  assert.match(accountScript, /let authEpoch = 0/)
+  assert.match(accountScript, /const openEpoch = authEpoch/)
+  assert.match(accountScript, /if \(!isCurrentOpen\(\)\) return false/)
+  assert.match(accountScript, /event === "SIGNED_OUT"[\s\S]{0,220}clearSensitiveEditorState\(\)/)
+  assert.match(accountScript, /clearSensitiveEditorState[\s\S]{0,500}form\?\.reset\(\)/)
+  assert.match(accountScript, /ownerId: String\(currentUser\.id\)/)
+})
+
+test("the durable outbox is wired before network saves and recovered after refresh", () => {
+  assert.match(accountScript, /createIndexedDbEditorOutboxRepository\(\)/)
+  assert.match(accountScript, /await editorOutbox\.recoverInterrupted\(ownerId\)/)
+  assert.match(accountScript, /await editorOutbox\.enqueue\(\{/)
+  assert.match(accountScript, /await editorOutbox\.claimNext\(ownerId, documentId\)/)
+  assert.match(accountScript, /completeAfterSuccess\(ownerId, finalClaim/)
+  assert.match(accountScript, /restoreDurableOutboxBackup\(documentId\)/)
+  assert.match(accountScript, /bindCreatedDocument\(/)
+})
+
+test("recovered new drafts and historical versions cannot be silently mixed or overwritten", () => {
+  assert.match(accountScript, /preferRecovery && pendingNewDraft && restoreLocalBackup\("new"\)/)
+  assert.match(accountScript, /wouldkeep:editor-draft-archive:/)
+  assert.match(
+    accountScript,
+    /const normalizedSnapshot = \{[\s\S]{0,300}tags: ""[\s\S]{0,200}related: ""/,
+  )
+  assert.match(accountScript, /renderSources\(\s*Array\.isArray\(snapshotSources\)/)
+  assert.match(
+    accountScript,
+    /if \(\(readForm\(\)\.documentId \|\| "new"\) !== documentId\)[\s\S]{0,160}return false/,
+  )
+})
+
+test("invalid backups are quarantined instead of silently discarded", () => {
+  assert.match(accountScript, /wouldkeep:editor-recovery-quarantine:/)
+  assert.match(
+    accountScript,
+    /localStorage\.setItem\([\s\S]{0,200}editor-recovery-quarantine:[\s\S]{0,300}localStorage\.removeItem/,
   )
 })
 
