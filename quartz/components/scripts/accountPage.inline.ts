@@ -2608,6 +2608,8 @@ const init = async () => {
       if (!isCurrentSync()) return
       currentUser = resolvedUser
       const nextOwnerId = currentUser?.id ? String(currentUser.id) : ""
+      const preserveWriteSurface =
+        workspaceSection === "write" && Boolean(nextOwnerId) && nextOwnerId === previousOwnerId
       if (nextOwnerId !== previousOwnerId) {
         authEpoch += 1
         clearSensitiveEditorState()
@@ -2626,15 +2628,17 @@ const init = async () => {
         if (authPanel) authPanel.hidden = Boolean(currentUser)
         if (workspaceOverview) workspaceOverview.hidden = !currentUser
         if (library) library.hidden = !currentUser
-        if (writeLauncher) writeLauncher.hidden = !currentUser
+        if (writeLauncher && !preserveWriteSurface) writeLauncher.hidden = !currentUser
         if (profileSettings) profileSettings.hidden = !currentUser
         if (aiSettings) aiSettings.hidden = !currentUser
         if (!currentUser)
           siteOwnerNavItems.forEach((item) => {
             item.hidden = true
           })
-        if (editor) editor.hidden = true
-        if (flatWorkbench) flatWorkbench.hidden = true
+        if (!preserveWriteSurface) {
+          if (editor) editor.hidden = true
+          if (flatWorkbench) flatWorkbench.hidden = true
+        }
         if (currentUser) {
           try {
             await loadCapabilities(isCurrentSync)

@@ -58,6 +58,21 @@ test("auth client timeout can reconnect in place and binds only one subscription
   assert.match(script, /if \(!client \|\| authSubscription\) return/)
 })
 
+test("same-account auth refresh preserves the active write surface", () => {
+  assert.match(
+    script,
+    /const preserveWriteSurface =[\s\S]{0,180}workspaceSection === "write"[\s\S]{0,180}nextOwnerId === previousOwnerId/,
+  )
+  assert.match(
+    script,
+    /if \(writeLauncher && !preserveWriteSurface\) writeLauncher\.hidden = !currentUser/,
+  )
+  assert.match(
+    script,
+    /if \(!preserveWriteSurface\) \{[\s\S]{0,120}editor\.hidden = true[\s\S]{0,120}flatWorkbench\.hidden = true/,
+  )
+})
+
 test("account settings survive SPA navigation and ignore stale account responses", () => {
   assert.match(script, /writeAiSettingsDraft\(sessionStorage/)
   assert.match(script, /readAiSettingsDraft\(sessionStorage/)
