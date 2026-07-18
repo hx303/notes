@@ -421,6 +421,15 @@ const init = async () => {
     expectedEpoch === editorSaveEpoch &&
     editorSaveReadyDocumentId === documentId &&
     editorConflict?.documentId !== documentId
+  let editorUiMutationTail: Promise<void> = Promise.resolve()
+  const runEditorUiExclusive = <T>(operation: () => Promise<T>): Promise<T> => {
+    const result = editorUiMutationTail.then(operation, operation)
+    editorUiMutationTail = result.then(
+      () => undefined,
+      () => undefined,
+    )
+    return result
+  }
   let workspaceDocuments: WorkspaceDocument[] = []
   let sourcesMigrationAvailable: boolean | null = null
   let currentPublication: PublicationState | null = null
@@ -1239,11 +1248,18 @@ const init = async () => {
     if (conflictSection) conflictSection.hidden = true
   }
 
+  const recoverableConflictBackup = (conflict: NonNullable<typeof editorConflict>) => {
+    const raw = localStorage.getItem(localDraftKey(conflict.ownerId, conflict.documentId))
+    if (!raw) return conflict.backup
+    const inspection = inspectEditorBackup(raw, conflict.ownerId, conflict.documentId)
+    return inspection.state === "invalid" ? conflict.backup : inspection.backup
+  }
+
   const archiveEditorConflict = (conflict: NonNullable<typeof editorConflict>) => {
     if (!currentUser || currentUser.id !== conflict.ownerId) return false
     try {
       const archiveKey = `wouldkeep:editor-conflict-archive:${conflict.ownerId}:${conflict.documentId}:${Date.now()}`
-      localStorage.setItem(archiveKey, JSON.stringify(conflict.backup))
+      localStorage.setItem(archiveKey, JSON.stringify(recoverableConflictBackup(conflict)))
       return true
     } catch {
       setStatus(
@@ -1283,7 +1299,11 @@ const init = async () => {
     setStatus("检测到另一处修改。本地稿已冻结保留；选择处理方式前不会覆盖任何一方。", "error")
   }
 
-  const restoreLocalBackup = (documentId = "new", cloudRevision?: number) => {
+  const restoreLocalBackup = (
+    documentId = "new",
+    cloudRevision?: number,
+    options: { deferConflict?: boolean } = {},
+  ) => {
     if (!form || !currentUser) return false
     const raw = localStorage.getItem(localDraftKey(currentUser.id, documentId))
     if (!raw) return false
@@ -1302,6 +1322,7 @@ const init = async () => {
       return false
     }
     if (inspection.state === "conflict") {
+      if (options.deferConflict) return false
       freezeEditorConflict(documentId, inspection.backup, inspection.reason, readForm())
       return false
     }
@@ -2114,7 +2135,7 @@ const init = async () => {
       operationId: queuedOperationId,
       status: "queued",
     })
-    return editorCoordinator?.runExclusive(documentId, run) ?? run()
+    return runEditorUiExclusive(() => editorCoordinator?.runExclusive(documentId, run) ?? run())
   }
 
   const flushDurableOutboxForCurrentDocument = async () => {
@@ -2138,13 +2159,7 @@ const init = async () => {
   const resolveDurableEditorConflict = async (conflict: NonNullable<typeof editorConflict>) => {
     if (!editorOutbox) return true
     try {
-      const operationId =
-        conflict.operationId ??
-        (await editorOutbox.listForOwner(conflict.ownerId)).find(
-          (record) => record.documentId === conflict.documentId && record.status === "conflict",
-        )?.operationId
-      if (!operationId) return true
-      return editorOutbox.resolveConflict(conflict.ownerId, operationId)
+      return editorOutbox.resolveDocumentConflict(conflict.ownerId, conflict.documentId)
     } catch {
       setStatus("恢复队列暂时无法确认你的选择；冲突稿仍保持冻结，请稍后重试。", "error")
       return false
@@ -2154,8 +2169,9 @@ const init = async () => {
   root.querySelector("[data-conflict-use-local]")?.addEventListener("click", async () => {
     const conflict = editorConflict
     if (!conflict || !form || !currentUser || !client || currentUser.id !== conflict.ownerId) return
+    const recoverableBackup = recoverableConflictBackup(conflict)
     if (!(await resolveDurableEditorConflict(conflict))) return
-    const backup = conflict.backup as Record<string, unknown> & {
+    const backup = recoverableBackup as Record<string, unknown> & {
       __sources?: WorkspaceSource[]
     }
     fillForm(backup)
@@ -2195,8 +2211,9 @@ const init = async () => {
   root.querySelector("[data-conflict-save-copy]")?.addEventListener("click", async () => {
     const conflict = editorConflict
     if (!conflict || !form || !currentUser || currentUser.id !== conflict.ownerId) return
+    const recoverableBackup = recoverableConflictBackup(conflict)
     if (!(await resolveDurableEditorConflict(conflict))) return
-    const backup = conflict.backup as Record<string, unknown> & {
+    const backup = recoverableBackup as Record<string, unknown> & {
       __sources?: WorkspaceSource[]
     }
     fillForm(backup)
@@ -2265,7 +2282,7 @@ const init = async () => {
     if (state) state.textContent = "登录状态已变化，已清除上一账户在页面中的内容"
   }
 
-  const openDocument = async (
+  const openDocumentOnce = async (
     documentId: string,
     options: { ignoreLocalBackup?: boolean } = {},
   ) => {
@@ -2294,7 +2311,9 @@ const init = async () => {
     if (editorConflict?.documentId !== documentId) clearEditorConflict()
     await restoreDurableOutboxBackup(documentId, isCurrentOpen)
     if (!isCurrentOpen()) return false
-    const restoredLocally = options.ignoreLocalBackup ? false : restoreLocalBackup(documentId)
+    const restoredLocally = options.ignoreLocalBackup
+      ? false
+      : restoreLocalBackup(documentId, undefined, { deferConflict: true })
     if (restoredLocally) {
       if (writeLauncher) writeLauncher.hidden = true
       if (flatWorkbench) flatWorkbench.hidden = true
@@ -2381,6 +2400,9 @@ const init = async () => {
     setOpenBusy(false)
     return true
   }
+
+  const openDocument = (documentId: string, options: { ignoreLocalBackup?: boolean } = {}) =>
+    runEditorUiExclusive(() => openDocumentOnce(documentId, options))
 
   const prepareEditorPersistence = async (ownerId: string) => {
     if (editorCoordinator?.ownerId !== ownerId || editorCoordinator.isClosed()) {

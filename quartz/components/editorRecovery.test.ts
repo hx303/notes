@@ -148,8 +148,11 @@ test("conflicts freeze the original backup until an explicit recovery action", (
 })
 
 test("existing documents restore locally before attempting a cloud read", () => {
-  const openDocument = accountScript.indexOf("const openDocument = async")
-  const localRestore = accountScript.indexOf("restoreLocalBackup(documentId)", openDocument)
+  const openDocument = accountScript.indexOf("const openDocumentOnce = async")
+  const localRestore = accountScript.indexOf(
+    "restoreLocalBackup(documentId, undefined, { deferConflict: true })",
+    openDocument,
+  )
   const cloudRead = accountScript.indexOf('.from("documents")', openDocument)
   assert.ok(openDocument > 0)
   assert.ok(localRestore > openDocument)
@@ -231,7 +234,7 @@ test("conflict recovery controls remain interactive after a gated document open"
 })
 
 test("document loading invalidates queued saves and stages metadata only after the core read", () => {
-  const openStart = accountScript.indexOf("const openDocument = async")
+  const openStart = accountScript.indexOf("const openDocumentOnce = async")
   const invalidate = accountScript.indexOf("invalidateEditorSaves()", openStart)
   const coreRead = accountScript.indexOf('.from("documents")', openStart)
   const coreFill = accountScript.indexOf("fillForm(result.data ?? {})", coreRead)
@@ -262,6 +265,16 @@ test("document loading invalidates queued saves and stages metadata only after t
   assert.ok(knowledgeBase > saveStart)
   assert.ok(postAwaitGuard > knowledgeBase)
   assert.ok(coreWrite > postAwaitGuard)
+  assert.match(
+    accountScript,
+    /const openDocument = \([\s\S]{0,180}runEditorUiExclusive\(\(\) => openDocumentOnce/,
+  )
+  assert.match(
+    accountScript,
+    /runEditorUiExclusive\(\(\) => editorCoordinator\?\.runExclusive\(documentId, run\)/,
+  )
+  assert.match(accountScript, /if \(options\.deferConflict\) return false/)
+  assert.match(accountScript, /resolveDocumentConflict\(conflict\.ownerId, conflict\.documentId\)/)
 })
 
 test("the durable outbox is wired before network saves and recovered after refresh", () => {

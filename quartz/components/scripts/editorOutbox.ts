@@ -550,6 +550,17 @@ export const createEditorOutbox = (
         return true
       }),
 
+    resolveDocumentConflict: (ownerId: string, documentId: string) =>
+      serialize(async () => {
+        if (!isNonemptyString(ownerId)) throw new TypeError("ownerId is required")
+        if (!isNonemptyString(documentId)) throw new TypeError("documentId is required")
+        const records = (await validRecords()).filter(
+          (record) => record.ownerId === ownerId && record.documentId === documentId,
+        )
+        for (const record of records) await repository.delete(record.operationId)
+        return true
+      }),
+
     migrateNewDocument: (
       ownerId: string,
       operationId: string,
