@@ -48,7 +48,7 @@ const record = (overrides: Record<string, unknown> = {}) => ({
 })
 
 const createFakeIndexedDb = (
-  failures: { open?: Error; transaction?: Error; request?: Error } = {},
+  failures: { open?: Error; transaction?: Error; request?: Error; requestAt?: number } = {},
 ) => {
   const rows = new Map<string, unknown>()
   const stores = new Set<string>()
@@ -56,6 +56,7 @@ const createFakeIndexedDb = (
   const upgrades: Array<{ name: string; keyPath: string | string[] | null }> = []
   let opened = false
   let requestFailure = failures.request
+  let requestCount = 0
 
   const fire = (target: Record<string, unknown>, name: string, eventName: string) => {
     const handler = target[name]
@@ -75,17 +76,43 @@ const createFakeIndexedDb = (
     onversionchange: null,
   }
 
-  databaseTarget.transaction = (storeName: string, _mode: IDBTransactionMode) => {
+  databaseTarget.transaction = (storeName: string, mode: IDBTransactionMode) => {
     if (failures.transaction) throw failures.transaction
     if (!stores.has(storeName)) throw new Error(`Missing object store: ${storeName}`)
+    const transactionRows = new Map(
+      [...rows].map(([key, value]) => [key, cloneForTest(value)] as const),
+    )
+    let aborted = false
+    let pending = 0
+    let completionScheduled = false
     const transactionTarget: Record<string, unknown> = {
       error: null,
       oncomplete: null,
       onerror: null,
       onabort: null,
-      abort: () => fire(transactionTarget, "onabort", "abort"),
+    }
+    const abort = () => {
+      if (aborted) return
+      aborted = true
+      fire(transactionTarget, "onabort", "abort")
+    }
+    transactionTarget.abort = abort
+    const scheduleCompletion = () => {
+      if (aborted || pending !== 0 || completionScheduled) return
+      completionScheduled = true
+      queueMicrotask(() => {
+        if (aborted || pending !== 0) return
+        if (mode === "readwrite") {
+          rows.clear()
+          for (const [key, value] of transactionRows) rows.set(key, cloneForTest(value))
+        }
+        fire(transactionTarget, "oncomplete", "complete")
+      })
     }
     const request = (operation: () => unknown) => {
+      pending += 1
+      requestCount += 1
+      const currentRequest = requestCount
       const requestTarget: Record<string, unknown> = {
         result: undefined,
         error: null,
@@ -93,33 +120,45 @@ const createFakeIndexedDb = (
         onerror: null,
       }
       queueMicrotask(() => {
-        if (requestFailure) {
+        if (aborted) return
+        if (requestFailure && currentRequest === (failures.requestAt ?? 1)) {
           const error = requestFailure
           requestFailure = undefined
           requestTarget.error = error
           transactionTarget.error = error
           fire(requestTarget, "onerror", "error")
-          fire(transactionTarget, "onabort", "abort")
+          fire(transactionTarget, "onerror", "error")
+          abort()
           return
         }
-        requestTarget.result = operation()
+        try {
+          requestTarget.result = operation()
+        } catch (error) {
+          transactionTarget.error = error
+          requestTarget.error = error
+          fire(requestTarget, "onerror", "error")
+          fire(transactionTarget, "onerror", "error")
+          abort()
+          return
+        }
+        pending -= 1
         fire(requestTarget, "onsuccess", "success")
-        queueMicrotask(() => fire(transactionTarget, "oncomplete", "complete"))
+        scheduleCompletion()
       })
       return requestTarget as unknown as IDBRequest
     }
     const storeTarget = {
-      get: (key: IDBValidKey) => request(() => cloneForTest(rows.get(String(key)))),
-      getAll: () => request(() => [...rows.values()].map(cloneForTest)),
+      get: (key: IDBValidKey) => request(() => cloneForTest(transactionRows.get(String(key)))),
+      getAll: () => request(() => [...transactionRows.values()].map(cloneForTest)),
       put: (value: unknown) =>
         request(() => {
           const operationId = String((value as { operationId?: unknown }).operationId ?? "")
-          rows.set(operationId, cloneForTest(value))
+          transactionRows.set(operationId, cloneForTest(value))
           return operationId
         }),
       delete: (key: IDBValidKey) =>
         request(() => {
-          rows.delete(String(key))
+          transactionRows.delete(String(key))
           return undefined
         }),
     }
@@ -537,6 +576,139 @@ test("conflicts freeze payload, cannot be claimed, migrated, or deleted by succe
   assert.deepEqual(await outbox.listForOwner("owner-a"), [])
 })
 
+test("restoring a conflict atomically replaces every prior row without exposing queued work", async () => {
+  const repository = createMemoryEditorOutboxRepository()
+  const outbox = createEditorOutbox(repository, {
+    now: clock(30),
+    createOperationId: () => "operation-restored",
+  })
+
+  const restored = await outbox.restoreConflict({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 7,
+    payload: { title: "newest recoverable intent" },
+  })
+
+  assert.equal(restored.status, "conflict")
+  assert.equal(restored.baseRevision, 7)
+  assert.deepEqual(restored.payload, { title: "newest recoverable intent" })
+  const records = await outbox.listForOwner("owner-a")
+  assert.deepEqual(records, [restored])
+  assert.equal(await outbox.claimNext("owner-a", "document-a"), null)
+})
+
+test("restoring a conflict preserves a newer matching intent created after resolve", async () => {
+  const repository = createMemoryEditorOutboxRepository([
+    {
+      key: "operation-saving",
+      value: record({
+        operationId: "operation-saving",
+        payload: { title: "in flight" },
+        updatedAt: 40,
+        status: "saving",
+      }),
+    },
+    {
+      key: "operation-follow-up",
+      value: record({
+        operationId: "operation-follow-up",
+        baseRevision: 8,
+        payload: { title: "new cross-tab follow-up" },
+        createdAt: 20,
+        updatedAt: 30,
+      }),
+    },
+  ])
+  const outbox = createEditorOutbox(repository, {
+    now: clock(50),
+    createOperationId: () => "operation-restored",
+  })
+
+  const restored = await outbox.restoreConflict({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 3,
+    payload: { title: "stale pre-resolve intent" },
+  })
+
+  assert.equal(restored.status, "conflict")
+  assert.equal(restored.baseRevision, 8)
+  assert.deepEqual(restored.payload, { title: "new cross-tab follow-up" })
+  assert.deepEqual(await outbox.listForOwner("owner-a"), [restored])
+})
+
+test("an atomic resolve failure preserves the entire conflict group", async () => {
+  const failure = new Error("second delete failed")
+  const fake = createFakeIndexedDb({ request: failure, requestAt: 5 })
+  const repository = createIndexedDbEditorOutboxRepository({ indexedDB: fake.factory })
+  const conflict = parseEditorOutboxRecord(
+    record({ operationId: "operation-conflict", status: "conflict" }),
+  )
+  const latest = parseEditorOutboxRecord(
+    record({ operationId: "operation-latest", payload: { title: "latest" }, updatedAt: 20 }),
+  )
+  assert.ok(conflict)
+  assert.ok(latest)
+  await repository.put(conflict)
+  await repository.put(latest)
+  const outbox = createEditorOutbox(repository)
+
+  await assert.rejects(() => outbox.resolveDocumentConflict("owner-a", "document-a"), failure)
+  const records = await outbox.listForOwner("owner-a")
+  assert.deepEqual(records.map(({ operationId }) => operationId).sort(), [
+    "operation-conflict",
+    "operation-latest",
+  ])
+  assert.deepEqual(records.find(({ operationId }) => operationId === "operation-latest")?.payload, {
+    title: "latest",
+  })
+})
+
+test("an atomic conflict restore failure leaves the old group intact and no queued replacement", async () => {
+  const failure = new Error("replacement write failed")
+  const fake = createFakeIndexedDb({ request: failure, requestAt: 7 })
+  const repository = createIndexedDbEditorOutboxRepository({ indexedDB: fake.factory })
+  const conflict = parseEditorOutboxRecord(
+    record({ operationId: "operation-conflict", status: "conflict" }),
+  )
+  const latest = parseEditorOutboxRecord(
+    record({ operationId: "operation-latest", payload: { title: "latest" }, updatedAt: 20 }),
+  )
+  assert.ok(conflict)
+  assert.ok(latest)
+  await repository.put(conflict)
+  await repository.put(latest)
+  const outbox = createEditorOutbox(repository, {
+    now: clock(30),
+    createOperationId: () => "operation-restored",
+  })
+
+  await assert.rejects(
+    () =>
+      outbox.restoreConflict({
+        ownerId: "owner-a",
+        documentId: "document-a",
+        baseRevision: 3,
+        payload: { title: "restored" },
+      }),
+    failure,
+  )
+  const records = await outbox.listForOwner("owner-a")
+  assert.deepEqual(records.map(({ operationId }) => operationId).sort(), [
+    "operation-conflict",
+    "operation-latest",
+  ])
+  assert.equal(
+    records.some(({ status }) => status === "queued"),
+    true,
+  )
+  assert.equal(
+    records.some(({ operationId }) => operationId === "operation-restored"),
+    false,
+  )
+})
+
 test("mutations reject cross-account operation access", async () => {
   const repository = createMemoryEditorOutboxRepository([{ key: "operation-a", value: record() }])
   const outbox = createEditorOutbox(repository, { now: clock(20) })
@@ -584,8 +756,15 @@ test("IndexedDB repository upgrades one versioned store and persists CRUD operat
   await repository.put(valid)
   assert.deepEqual(await repository.get(valid.operationId), valid)
   assert.deepEqual(await repository.getAll(), [valid])
-  await repository.delete(valid.operationId)
+  const replacement = parseEditorOutboxRecord(
+    record({ operationId: "operation-b", payload: { title: "replacement" } }),
+  )
+  assert.ok(replacement)
+  await repository.replace([replacement], [valid.operationId])
   assert.equal(await repository.get(valid.operationId), undefined)
+  assert.deepEqual(await repository.get(replacement.operationId), replacement)
+  await repository.replace([], [replacement.operationId])
+  assert.deepEqual(await repository.getAll(), [])
 
   assert.deepEqual(fake.opens, [
     { name: EDITOR_OUTBOX_DATABASE_NAME, version: EDITOR_OUTBOX_DATABASE_VERSION },

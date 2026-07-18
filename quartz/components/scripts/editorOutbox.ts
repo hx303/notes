@@ -21,6 +21,8 @@ export type EditorOutboxRepository = {
   getAll(): Promise<unknown[]>
   put(record: EditorOutboxRecord): Promise<void>
   delete(operationId: string): Promise<void>
+  /** Atomically delete a set of rows and persist their replacements. */
+  replace(records: EditorOutboxRecord[], deletedOperationIds: string[]): Promise<void>
 }
 
 export type EditorOutboxClaim = {
@@ -88,6 +90,13 @@ export const createMemoryEditorOutboxRepository = (
     },
     delete: async (operationId) => {
       entries.delete(operationId)
+    },
+    replace: async (records, deletedOperationIds) => {
+      const next = new Map(entries)
+      for (const operationId of deletedOperationIds) next.delete(operationId)
+      for (const record of records) next.set(record.operationId, clone(record))
+      entries.clear()
+      for (const [operationId, value] of next) entries.set(operationId, value)
     },
   }
 }
@@ -207,6 +216,44 @@ export const createIndexedDbEditorOutboxRepository = (
     })
   }
 
+  const runTransaction = async (
+    mode: IDBTransactionMode,
+    operation: (store: IDBObjectStore) => void,
+  ) => {
+    const database = await openDatabase()
+    return new Promise<void>((resolve, reject) => {
+      let transaction: IDBTransaction | undefined
+      try {
+        transaction = database.transaction(storeName, mode)
+        operation(transaction.objectStore(storeName))
+      } catch (error) {
+        try {
+          transaction?.abort()
+        } catch {
+          // Reject with the original synchronous transaction error.
+        }
+        reject(error)
+        return
+      }
+
+      let settled = false
+      const fail = (error: unknown) => {
+        if (settled) return
+        settled = true
+        reject(error)
+      }
+      transaction.onerror = () =>
+        fail(indexedDbError("Editor outbox transaction failed", transaction.error))
+      transaction.onabort = () =>
+        fail(indexedDbError("Editor outbox transaction was aborted", transaction.error))
+      transaction.oncomplete = () => {
+        if (settled) return
+        settled = true
+        resolve()
+      }
+    })
+  }
+
   return {
     get: (operationId) => runRequest("readonly", (store) => store.get(operationId)),
     getAll: () => runRequest("readonly", (store) => store.getAll()),
@@ -215,6 +262,12 @@ export const createIndexedDbEditorOutboxRepository = (
     },
     delete: async (operationId) => {
       await runRequest("readwrite", (store) => store.delete(operationId))
+    },
+    replace: async (records, deletedOperationIds) => {
+      await runTransaction("readwrite", (store) => {
+        for (const operationId of deletedOperationIds) store.delete(operationId)
+        for (const record of records) store.put(clone(record))
+      })
     },
   }
 }
@@ -561,8 +614,56 @@ export const createEditorOutbox = (
           records.filter((record) => record.status === "queued").sort(newestIntentFirst)[0] ??
           records.sort(newestIntentFirst)[0] ??
           null
-        for (const record of records) await repository.delete(record.operationId)
+        await repository.replace(
+          [],
+          records.map((record) => record.operationId),
+        )
         return latest ? clone(latest) : null
+      }),
+
+    restoreConflict: (input: EnqueueInput) =>
+      serialize(async () => {
+        if (!isNonemptyString(input.ownerId)) throw new TypeError("ownerId is required")
+        if (!isNonemptyString(input.documentId)) throw new TypeError("documentId is required")
+        if (!isNonnegativeInteger(input.baseRevision))
+          throw new TypeError("baseRevision must be a nonnegative integer")
+        if (!isRecord(input.payload)) throw new TypeError("payload must be an object")
+
+        const matching = (await validRecords()).filter(
+          (record) => record.ownerId === input.ownerId && record.documentId === input.documentId,
+        )
+        // Any matching row was persisted after the caller's earlier resolve. Prefer
+        // that newer durable intent, with queued follow-ups taking precedence over
+        // their immutable in-flight predecessor.
+        const newestMatching =
+          matching.filter((record) => record.status === "queued").sort(newestIntentFirst)[0] ??
+          matching.sort(newestIntentFirst)[0] ??
+          null
+        const operationId = createOperationId()
+        if (!isNonemptyString(operationId)) throw new TypeError("operationId is required")
+        const existing = parseEditorOutboxRecord(await repository.get(operationId))
+        if (existing && !matching.some((record) => record.operationId === operationId))
+          throw new Error("Duplicate editor outbox operationId")
+        const timestamp = now()
+        if (!isTimestamp(timestamp))
+          throw new TypeError("now() must return a nonnegative timestamp")
+        const conflict: EditorOutboxRecord = {
+          schemaVersion: EDITOR_OUTBOX_SCHEMA_VERSION,
+          operationId,
+          ownerId: input.ownerId,
+          documentId: input.documentId,
+          baseRevision: newestMatching?.baseRevision ?? input.baseRevision,
+          payload: clone(newestMatching?.payload ?? input.payload),
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          attempts: 0,
+          status: "conflict",
+        }
+        await repository.replace(
+          [conflict],
+          matching.map((record) => record.operationId),
+        )
+        return clone(conflict)
       }),
 
     migrateNewDocument: (

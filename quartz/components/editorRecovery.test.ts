@@ -236,9 +236,24 @@ test("conflict recovery controls remain interactive after a gated document open"
   assert.match(accountScript, /data-conflict-use-local/)
   assert.match(accountScript, /data-conflict-use-cloud/)
   assert.match(accountScript, /data-conflict-save-copy/)
+  assert.match(accountScript, /latest: await editorOutbox\.resolveDocumentConflict/)
+  assert.match(accountScript, /recoverableConflictBackup\(conflict, resolution\.latest\)/)
+})
+
+test("conflict choices are single-flight and storage denial keeps durable recovery usable", () => {
+  assert.match(accountScript, /let editorConflictResolutionPending = false/)
   assert.match(
     accountScript,
-    /latest: await editorOutbox\.resolveDocumentConflict[\s\S]{0,1600}recoverableConflictBackup\(conflict, resolution\.latest\)/,
+    /runEditorConflictResolution[\s\S]{0,500}editorConflictResolutionPending = true[\s\S]{0,300}control\.disabled = true[\s\S]{0,500}editorConflictResolutionPending = false/,
+  )
+  assert.ok((accountScript.match(/await runEditorConflictResolution/g)?.length ?? 0) >= 3)
+  assert.match(
+    accountScript,
+    /let raw: string \| null = null[\s\S]{0,120}localStorage\.getItem\(localDraftKey\(conflict\.ownerId, conflict\.documentId\)\)[\s\S]{0,100}catch/,
+  )
+  assert.match(
+    accountScript,
+    /const archived = archiveEditorConflict[\s\S]{0,500}archived[\s\S]{0,180}浏览器恢复归档不可用/,
   )
 })
 

@@ -399,6 +399,7 @@ const init = async () => {
   let authEpoch = 0
   let autosaveTimer: number | undefined
   let editorChangeGeneration = 0
+  let editorConflictResolutionPending = false
   let editorConflict: {
     ownerId: string
     documentId: string
@@ -1256,7 +1257,12 @@ const init = async () => {
     const candidates: Array<{ backup: EditorBackup; priority: number }> = [
       { backup: conflict.backup, priority: 0 },
     ]
-    const raw = localStorage.getItem(localDraftKey(conflict.ownerId, conflict.documentId))
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem(localDraftKey(conflict.ownerId, conflict.documentId))
+    } catch {
+      // The durable record and in-memory conflict remain usable when storage access is blocked.
+    }
     if (raw) {
       const inspection = inspectEditorBackup(raw, conflict.ownerId, conflict.documentId)
       if (inspection.state !== "invalid")
@@ -2222,9 +2228,10 @@ const init = async () => {
     backup: EditorBackup,
     latest: EditorOutboxRecord | null,
   ) => {
+    if (editorConflict === conflict) editorConflict.backup = backup
     if (!editorOutbox) return
     try {
-      const queued = await editorOutbox.enqueue({
+      const frozen = await editorOutbox.restoreConflict({
         ownerId: conflict.ownerId,
         documentId: conflict.documentId,
         baseRevision: Number(
@@ -2233,105 +2240,150 @@ const init = async () => {
             conflict.cloud.revision ??
             0,
         ),
-        payload: latest?.payload ?? {
+        payload: {
           form: backup,
           sources: Array.isArray(backup.__sources) ? backup.__sources : [],
         },
       })
-      const frozen = await editorOutbox.markConflict(conflict.ownerId, queued.operationId)
-      if (editorConflict && frozen) editorConflict.operationId = frozen.operationId
+      if (editorConflict === conflict) editorConflict.operationId = frozen.operationId
     } catch {
       setStatus("恢复副本无法归档，持久队列也暂时不可用；请保持页面开启并清理浏览器空间。", "error")
     }
   }
 
-  root.querySelector("[data-conflict-use-local]")?.addEventListener("click", async () => {
+  const runEditorConflictResolution = async (
+    action: (conflict: NonNullable<typeof editorConflict>) => Promise<void>,
+  ) => {
     const conflict = editorConflict
-    if (!conflict || !form || !currentUser || !client || currentUser.id !== conflict.ownerId) return
-    const resolution = await resolveDurableEditorConflict(conflict)
-    if (!resolution.ok) return
-    const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
-    const backup = recoverableBackup as Record<string, unknown> & {
-      __sources?: WorkspaceSource[]
+    if (
+      !conflict ||
+      editorConflictResolutionPending ||
+      !currentUser ||
+      currentUser.id !== conflict.ownerId
+    )
+      return
+    editorConflictResolutionPending = true
+    conflictSection?.setAttribute("aria-busy", "true")
+    const controls = conflictSection?.querySelectorAll<HTMLButtonElement>("button") ?? []
+    for (const control of controls) control.disabled = true
+    try {
+      if (editorConflict !== conflict) return
+      await action(conflict)
+    } finally {
+      editorConflictResolutionPending = false
+      conflictSection?.setAttribute("aria-busy", "false")
+      for (const control of controls) control.disabled = false
     }
-    fillForm(backup)
-    renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
-    const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
-    const revision = form.elements.namedItem("revision") as HTMLInputElement | null
-    if (documentId) documentId.value = conflict.documentId
-    if (revision) revision.value = String(conflict.cloud.revision)
-    clearEditorConflict()
-    allowEditorSaves(conflict.documentId)
-    editorChangeGeneration += 1
-    writeLocalBackup()
-    if (state) state.textContent = "正在以本地稿创建新的云端版本…"
-    if (await requestDocumentSave()) {
-      if (state) state.textContent = "本地稿已保存为新的云端版本"
-      setStatus("已保留你的本地内容，并在当前云端版本之后创建了新版本。", "success")
-    }
+  }
+
+  root.querySelector("[data-conflict-use-local]")?.addEventListener("click", async () => {
+    await runEditorConflictResolution(async (conflict) => {
+      if (!form || !currentUser || !client) return
+      const resolution = await resolveDurableEditorConflict(conflict)
+      if (!resolution.ok || editorConflict !== conflict) return
+      const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
+      const backup = recoverableBackup as Record<string, unknown> & {
+        __sources?: WorkspaceSource[]
+      }
+      fillForm(backup)
+      renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
+      const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
+      const revision = form.elements.namedItem("revision") as HTMLInputElement | null
+      if (documentId) documentId.value = conflict.documentId
+      if (revision) revision.value = String(conflict.cloud.revision)
+      clearEditorConflict()
+      allowEditorSaves(conflict.documentId)
+      editorChangeGeneration += 1
+      writeLocalBackup()
+      if (state) state.textContent = "正在以本地稿创建新的云端版本…"
+      if (await requestDocumentSave()) {
+        if (state) state.textContent = "本地稿已保存为新的云端版本"
+        setStatus("已保留你的本地内容，并在当前云端版本之后创建了新版本。", "success")
+      }
+    })
   })
 
   root.querySelector("[data-conflict-use-cloud]")?.addEventListener("click", async () => {
-    const conflict = editorConflict
-    if (!conflict || !currentUser || !form || currentUser.id !== conflict.ownerId) return
-    const resolution = await resolveDurableEditorConflict(conflict)
-    if (!resolution.ok) return
-    const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
-    if (!archiveEditorConflict(conflict, recoverableBackup)) {
-      await restoreDurableEditorConflict(conflict, recoverableBackup, resolution.latest)
-      return
-    }
-    clearEditorConflict()
-    fillForm(conflict.cloud)
-    if (state) state.textContent = "正在载入云端版本…"
-    if (await openDocument(conflict.documentId, { ignoreLocalBackup: true })) {
-      localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
-      setStatus("已采用云端版本；原本地稿已另存为浏览器恢复副本。", "success")
-    } else {
-      freezeEditorConflict(conflict.documentId, recoverableBackup, conflict.reason, conflict.cloud)
-      setStatus("云端版本暂时无法完整载入；本地稿仍保持可恢复状态，请联网后重试。", "error")
-    }
+    await runEditorConflictResolution(async (conflict) => {
+      if (!form || !currentUser) return
+      const resolution = await resolveDurableEditorConflict(conflict)
+      if (!resolution.ok || editorConflict !== conflict) return
+      const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
+      if (!archiveEditorConflict(conflict, recoverableBackup)) {
+        await restoreDurableEditorConflict(conflict, recoverableBackup, resolution.latest)
+        return
+      }
+      clearEditorConflict()
+      fillForm(conflict.cloud)
+      if (state) state.textContent = "正在载入云端版本…"
+      if (await openDocument(conflict.documentId, { ignoreLocalBackup: true })) {
+        try {
+          localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
+        } catch {
+          // The adopted cloud state is authoritative even when local cleanup is unavailable.
+        }
+        setStatus("已采用云端版本；原本地稿已另存为浏览器恢复副本。", "success")
+      } else {
+        freezeEditorConflict(
+          conflict.documentId,
+          recoverableBackup,
+          conflict.reason,
+          conflict.cloud,
+        )
+        setStatus("云端版本暂时无法完整载入；本地稿仍保持可恢复状态，请联网后重试。", "error")
+      }
+    })
   })
 
   root.querySelector("[data-conflict-save-copy]")?.addEventListener("click", async () => {
-    const conflict = editorConflict
-    if (!conflict || !form || !currentUser || currentUser.id !== conflict.ownerId) return
-    const resolution = await resolveDurableEditorConflict(conflict)
-    if (!resolution.ok) return
-    const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
-    const backup = recoverableBackup as Record<string, unknown> & {
-      __sources?: WorkspaceSource[]
-    }
-    fillForm(backup)
-    renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
-    const title = form.elements.namedItem("title") as HTMLInputElement | null
-    const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
-    const revision = form.elements.namedItem("revision") as HTMLInputElement | null
-    const statusField = form.elements.namedItem("status") as HTMLInputElement | null
-    const privateVisibility = form.querySelector<HTMLInputElement>(
-      "[name=visibility][value=private]",
-    )
-    if (title && !title.value.endsWith("（冲突副本）")) title.value += "（冲突副本）"
-    if (documentId) documentId.value = ""
-    if (revision) revision.value = "0"
-    if (statusField) statusField.value = "draft"
-    if (privateVisibility) privateVisibility.checked = true
-    clearEditorConflict()
-    allowEditorSaves("new")
-    updatePublicationUI(null)
-    editorChangeGeneration += 1
-    writeLocalBackup()
-    if (state) state.textContent = "正在另存为私密副本…"
-    if (!currentUser || !client) {
-      setStatus("私密副本已保存在当前浏览器；登录服务恢复后可继续同步。")
-      return
-    }
-    if (await requestDocumentSave()) {
-      archiveEditorConflict(conflict, recoverableBackup)
-      localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
-      if (state) state.textContent = "私密副本已保存"
-      setStatus("已创建新的私密副本；原文档和冲突恢复稿都未被覆盖。", "success")
-    }
+    await runEditorConflictResolution(async (conflict) => {
+      if (!form || !currentUser) return
+      const resolution = await resolveDurableEditorConflict(conflict)
+      if (!resolution.ok || editorConflict !== conflict) return
+      const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
+      const backup = recoverableBackup as Record<string, unknown> & {
+        __sources?: WorkspaceSource[]
+      }
+      fillForm(backup)
+      renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
+      const title = form.elements.namedItem("title") as HTMLInputElement | null
+      const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
+      const revision = form.elements.namedItem("revision") as HTMLInputElement | null
+      const statusField = form.elements.namedItem("status") as HTMLInputElement | null
+      const privateVisibility = form.querySelector<HTMLInputElement>(
+        "[name=visibility][value=private]",
+      )
+      if (title && !title.value.endsWith("（冲突副本）")) title.value += "（冲突副本）"
+      if (documentId) documentId.value = ""
+      if (revision) revision.value = "0"
+      if (statusField) statusField.value = "draft"
+      if (privateVisibility) privateVisibility.checked = true
+      clearEditorConflict()
+      allowEditorSaves("new")
+      updatePublicationUI(null)
+      editorChangeGeneration += 1
+      writeLocalBackup()
+      if (state) state.textContent = "正在另存为私密副本…"
+      if (!currentUser || !client) {
+        setStatus("私密副本已保存在当前浏览器；登录服务恢复后可继续同步。")
+        return
+      }
+      if (await requestDocumentSave()) {
+        const archived = archiveEditorConflict(conflict, recoverableBackup)
+        try {
+          localStorage.removeItem(localDraftKey(conflict.ownerId, conflict.documentId))
+        } catch {
+          // The new cloud copy is already safe; cleanup can be retried by the browser later.
+        }
+        if (state) state.textContent = "私密副本已保存"
+        setStatus(
+          archived
+            ? "已创建新的私密副本；原文档和冲突恢复稿都未被覆盖。"
+            : "私密副本已保存到云端，但浏览器恢复归档不可用；请立即确认副本内容。",
+          archived ? "success" : "error",
+        )
+      }
+    })
   })
 
   const queueAutosave = () => {
