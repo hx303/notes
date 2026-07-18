@@ -2,7 +2,7 @@
 
 Last reconciled: 2026-07-18 (Asia/Shanghai)
 
-Working baseline: merged `main` at `01dc10a9fe478f9fbcc03a0f443232ef5e776d5d`
+Working baseline: merged `main` at `a6ef3be6d981ab005ac56522b9d0c7df25db3df1`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
@@ -22,6 +22,8 @@ Merged publication-write ACL hardening PR: [#21](https://github.com/hx303/notes/
 
 Merged sidebar-scroll and UX repair PR: [#22](https://github.com/hx303/notes/pull/22)
 
+Merged production ACL operation record PR: [#23](https://github.com/hx303/notes/pull/23)
+
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
 ## 2026-07-17 reconciliation after PR #16
@@ -35,6 +37,8 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - PR #19 merged the soft-delete/publication-snapshot repair. The separately authorized production deployment applied `20260718001100`; the ledger reached 16 aligned versions and postflight publication, document, and AI invariants passed.
 - PR #21 merged the forward-only anonymous publication-write RPC ACL repair as `f949cf55`. The separately authorized production deployment applied `20260718001200`; all three publication write RPCs now deny anonymous/PUBLIC execution, the ledger reached 17 aligned versions, and business/AI invariants were unchanged.
 - PR #22 merged the browser-led sidebar scroll, medium-width navigation, admin file-nav, and keyboard repair as `01dc10a9`. The merged baseline passes TypeScript, 217/217 tests, and a production build with 284 inputs and 1,046 outputs.
+- PR #23 merged the production ACL operation record and advanced `main` to `a6ef3be6`.
+- P03/P04 import hardening PR #24 contains functional refresh-recovery fix `51451d85`. TypeScript, 18/18 focused tests, 229/229 full tests, the 284-input/1,051-output production build, and all Vercel checks pass. Real-browser Markdown import, private default, URL binding, and post-refresh content recovery are proven; broader DOCX/drag-drop/network/screen-reader/zoom/touch evidence remains P2 and the Draft PR still requires explicit Ready/merge authorization.
 
 ## Executive status
 

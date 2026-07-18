@@ -7,23 +7,51 @@ type PublicSource = {
   accessed_at?: string | null
 }
 
-const loadPublicScript = (src: string, globalName: string) => {
+const loadPublicScript = (
+  src: string,
+  globalName: string,
+  timeoutMs = 12_000,
+  validate?: (value: any) => boolean,
+) => {
   const globalWindow = window as any
-  if (globalWindow[globalName]) return Promise.resolve(globalWindow[globalName])
+  if (globalWindow[globalName] && (!validate || validate(globalWindow[globalName])))
+    return Promise.resolve(globalWindow[globalName])
+  if (globalWindow[globalName] && validate) delete globalWindow[globalName]
   globalWindow.__wouldkeepScriptLoads ??= {}
   if (globalWindow.__wouldkeepScriptLoads[src]) return globalWindow.__wouldkeepScriptLoads[src]
-  globalWindow.__wouldkeepScriptLoads[src] = new Promise((resolve, reject) => {
+  const request = new Promise((resolve, reject) => {
     const script = document.createElement("script")
+    let settled = false
+    let timeout: number | undefined
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      if (timeout) window.clearTimeout(timeout)
+      delete globalWindow.__wouldkeepScriptLoads[src]
+      script.onload = null
+      script.onerror = null
+      script.remove()
+      reject(error)
+    }
     script.src = src
     script.async = true
-    script.onload = () =>
-      globalWindow[globalName]
-        ? resolve(globalWindow[globalName])
-        : reject(new Error(`missing ${globalName}`))
-    script.onerror = () => reject(new Error(`failed ${src}`))
+    script.onload = () => {
+      if (!globalWindow[globalName] || (validate && !validate(globalWindow[globalName])))
+        return fail(new Error(`missing or invalid ${globalName}`))
+      if (settled) return
+      settled = true
+      if (timeout) window.clearTimeout(timeout)
+      resolve(globalWindow[globalName])
+    }
+    script.onerror = () => fail(new Error(`failed ${src}`))
     document.head.appendChild(script)
+    timeout = window.setTimeout(() => fail(new Error(`timeout ${src}`)), timeoutMs)
   })
-  return globalWindow.__wouldkeepScriptLoads[src]
+  globalWindow.__wouldkeepScriptLoads[src] = request
+  return request.catch((error) => {
+    delete globalWindow.__wouldkeepScriptLoads[src]
+    throw error
+  })
 }
 
 const renderPublicMarkdown = async (target: HTMLElement, markdown: string) => {
@@ -34,17 +62,66 @@ const renderPublicMarkdown = async (target: HTMLElement, markdown: string) => {
   }
   try {
     const [marked, purifier] = (await Promise.all([
-      loadPublicScript("https://cdn.jsdelivr.net/npm/marked@15.0.12/lib/marked.umd.js", "marked"),
+      loadPublicScript("/static/vendor/workspace-import/marked-15.0.12.umd.js", "marked"),
       loadPublicScript(
-        "https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js",
+        "/static/vendor/workspace-import/purify-3.4.12.min.js",
         "DOMPurify",
+        12_000,
+        (value) => value?.version === "3.4.12",
       ),
     ])) as any[]
-    target.innerHTML = purifier.sanitize(marked.parse(source, { gfm: true, breaks: true }), {
-      FORBID_TAGS: ["style", "script", "iframe", "object", "embed", "form"],
-      FORBID_ATTR: ["style", "onerror", "onload"],
+    const inertTemplate = document.createElement("template")
+    inertTemplate.innerHTML = marked.parse(source, { gfm: true, breaks: true })
+    const fragment = purifier.sanitize(inertTemplate.content, {
+      ALLOWED_TAGS: [
+        "p",
+        "br",
+        "hr",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "strong",
+        "em",
+        "del",
+        "code",
+        "pre",
+        "blockquote",
+        "ul",
+        "ol",
+        "li",
+        "a",
+        "table",
+        "thead",
+        "tbody",
+        "tfoot",
+        "tr",
+        "th",
+        "td",
+        "img",
+      ],
+      ALLOWED_ATTR: ["href", "title", "alt", "src", "colspan", "rowspan", "scope"],
+      FORBID_TAGS: [
+        "style",
+        "script",
+        "iframe",
+        "object",
+        "embed",
+        "form",
+        "svg",
+        "math",
+        "picture",
+        "source",
+        "video",
+        "audio",
+        "track",
+      ],
+      FORBID_ATTR: ["style", "onerror", "onload", "srcset", "poster"],
+      RETURN_DOM_FRAGMENT: true,
     })
-    target.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+    fragment.querySelectorAll("a").forEach((link: HTMLAnchorElement) => {
       const href = link.getAttribute("href") ?? ""
       if (!/^(https?:|mailto:|\/|#)/i.test(href)) link.removeAttribute("href")
       if (/^https?:/i.test(href)) {
@@ -52,7 +129,7 @@ const renderPublicMarkdown = async (target: HTMLElement, markdown: string) => {
         link.rel = "noreferrer"
       }
     })
-    target.querySelectorAll<HTMLImageElement>("img").forEach((image) => {
+    fragment.querySelectorAll("img").forEach((image: HTMLImageElement) => {
       const src = image.getAttribute("src") ?? ""
       if (!/^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,)/i.test(src)) image.remove()
       else {
@@ -60,6 +137,7 @@ const renderPublicMarkdown = async (target: HTMLElement, markdown: string) => {
         image.decoding = "async"
       }
     })
+    target.replaceChildren(fragment)
   } catch {
     target.textContent = source
   }

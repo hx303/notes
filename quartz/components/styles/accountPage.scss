@@ -1900,6 +1900,29 @@
   color: var(--light);
   font-size: 1.25rem;
 }
+.knowledge-import-file {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+}
+.knowledge-import-file div {
+  min-width: 0;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: var(--account-surface);
+}
+.knowledge-import-file dt {
+  margin-bottom: 0.25rem;
+  color: var(--darkgray);
+  font-size: 0.72rem;
+}
+.knowledge-import-file dd {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
 .knowledge-import-result {
   display: grid;
   gap: 1rem;
@@ -1955,7 +1978,63 @@
   font-size: 0.78rem;
   line-height: 1.6;
 }
+.knowledge-import-preview {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--account-border);
+}
+.knowledge-import-preview > strong {
+  font-size: 0.82rem;
+}
+.knowledge-import-preview > div {
+  box-sizing: border-box;
+  max-height: min(42vh, 22rem);
+  overflow: auto;
+  padding: 0.9rem;
+  border: 1px solid var(--account-border);
+  border-radius: 10px;
+  background: var(--light);
+  font-size: 0.86rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.knowledge-import-preview > div > :first-child {
+  margin-top: 0;
+}
+.knowledge-import-preview > div > :last-child {
+  margin-bottom: 0;
+}
+.knowledge-import-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 18rem;
+  margin-block: 0.75rem;
+  object-fit: contain;
+}
+.knowledge-import-remote-image {
+  display: block;
+  margin-block: 0.75rem;
+  padding: 0.7rem;
+  border: 1px dashed var(--account-border);
+  border-radius: 8px;
+  color: var(--darkgray);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.knowledge-import-preview table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.knowledge-import-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
 .knowledge-import-status {
+  flex: 1 1 auto;
   min-height: 1.35rem;
   margin: 0;
   color: var(--darkgray);
@@ -2230,6 +2309,13 @@
   }
   .knowledge-import-result dl {
     grid-template-columns: 1fr;
+  }
+  .knowledge-import-file {
+    grid-template-columns: 1fr;
+  }
+  .knowledge-import-feedback {
+    align-items: stretch;
+    flex-direction: column;
   }
   .knowledge-import-actions {
     flex-direction: column-reverse;

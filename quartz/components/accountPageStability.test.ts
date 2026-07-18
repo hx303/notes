@@ -39,7 +39,7 @@ test("auth client timeout can reconnect in place and binds only one subscription
   assert.match(script, /const ensureClient = async \(announce = false\)/)
   assert.match(script, /globalWindow\.supabase \?\?/)
   assert.match(script, /delete globalWindow\.__wouldkeepScriptLoads\[src\]/)
-  assert.match(script, /script\.onerror = \(\) => \{[\s\S]*script\.remove\(\)[\s\S]*reject/)
+  assert.match(script, /const fail = \(error: Error\) => \{[\s\S]*script\.remove\(\)[\s\S]*reject/)
   assert.match(script, /submitAuth[\s\S]*await ensureClient\(true\)/)
   assert.match(script, /recovery\?\.addEventListener[\s\S]*await ensureClient\(true\)/)
   assert.match(script, /forgotForm\?\.addEventListener[\s\S]*await ensureClient\(true\)/)

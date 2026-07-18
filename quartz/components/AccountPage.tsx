@@ -955,7 +955,12 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                 ×
               </button>
             </header>
-            <label class="knowledge-import-dropzone" data-import-dropzone>
+            <label
+              class="knowledge-import-dropzone"
+              data-import-dropzone
+              aria-busy="false"
+              aria-describedby="knowledge-import-constraints knowledge-import-status"
+            >
               <input
                 type="file"
                 accept=".docx,.md,.markdown,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -966,8 +971,25 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
               </span>
               <strong>选择 DOCX 或 Markdown 文件</strong>
               <span>也可以把文件拖到这里</span>
-              <small>DOCX 会保留常见标题、列表、表格与内嵌图片；单个文件不超过 10 MB。</small>
+              <small id="knowledge-import-constraints">
+                DOCX 会保留常见标题、列表、表格与内嵌图片；Markdown 请使用 UTF-8
+                编码；单个文件不超过 10 MB。
+              </small>
             </label>
+            <dl class="knowledge-import-file" data-import-file-context hidden>
+              <div>
+                <dt>当前文件</dt>
+                <dd data-import-file-name>—</dd>
+              </div>
+              <div>
+                <dt>文件大小</dt>
+                <dd data-import-file-size>—</dd>
+              </div>
+              <div>
+                <dt>识别类型</dt>
+                <dd data-import-file-type>—</dd>
+              </div>
+            </dl>
             <section
               class="knowledge-import-result"
               data-import-result
@@ -998,20 +1020,32 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                 <strong>转换提示</strong>
                 <ul data-import-note-list />
               </div>
-              <p>下一步会把内容放入编辑器，并保持“仅自己可见”。请检查排版后再保存或分享。</p>
+              <div class="knowledge-import-preview">
+                <strong>正文结构与图片预览</strong>
+                <div data-import-preview aria-busy="false" />
+              </div>
+              <p>
+                下一步只会把内容放入编辑器作为私密草稿，不会立即保存或公开。请检查排版后再保存或分享。
+              </p>
             </section>
-            <p
-              class="knowledge-import-status"
-              data-import-status
-              role="status"
-              aria-live="polite"
-            />
+            <div class="knowledge-import-feedback">
+              <p
+                id="knowledge-import-status"
+                class="knowledge-import-status"
+                data-import-status
+                role="status"
+                aria-live="polite"
+              />
+              <button type="button" class="account-secondary" data-import-retry hidden>
+                重新读取这个文件
+              </button>
+            </div>
             <div class="knowledge-import-actions">
               <button type="button" class="account-secondary" data-import-cancel>
                 取消
               </button>
               <button type="button" class="account-primary" data-import-confirm disabled>
-                放入编辑器检查
+                放入编辑器作为私密草稿
               </button>
             </div>
           </form>

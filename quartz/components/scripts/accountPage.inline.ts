@@ -8,33 +8,59 @@ import {
   type AiSettingsDraft,
   type ProfileSettingsDraft,
 } from "./accountSettingsPersistence.ts"
+import { bindDocumentEditorRoute } from "./editorDraftRoute.ts"
+import {
+  assertImportComplexity,
+  createLatestImportRequestGate,
+  decodeUtf8Markdown,
+  inspectDocxArchive,
+  redactRemoteImportImages,
+  validateImportFile,
+} from "./importDraft.ts"
 
 const localDraftKey = (userId: string, documentId = "new") =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
 
-const loadExternalScript = (src: string, globalName: string) => {
+const loadExternalScript = (
+  src: string,
+  globalName: string,
+  timeoutMs = 0,
+  validate?: (value: any) => boolean,
+) => {
   const globalWindow = window as any
-  if (globalWindow[globalName]) return Promise.resolve(globalWindow[globalName])
+  if (globalWindow[globalName] && (!validate || validate(globalWindow[globalName])))
+    return Promise.resolve(globalWindow[globalName])
+  if (globalWindow[globalName] && validate) delete globalWindow[globalName]
   globalWindow.__wouldkeepScriptLoads ??= {}
   if (globalWindow.__wouldkeepScriptLoads[src]) return globalWindow.__wouldkeepScriptLoads[src]
   const request = new Promise((resolve, reject) => {
     const script = document.createElement("script")
+    let settled = false
+    let timeout: number | undefined
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      if (timeout) window.clearTimeout(timeout)
+      delete globalWindow.__wouldkeepScriptLoads[src]
+      script.onload = null
+      script.onerror = null
+      script.remove()
+      reject(error)
+    }
     script.src = src
     script.async = true
     script.onload = () => {
-      if (globalWindow[globalName]) resolve(globalWindow[globalName])
-      else {
-        delete globalWindow.__wouldkeepScriptLoads[src]
-        script.remove()
-        reject(new Error(`missing ${globalName}`))
-      }
+      if (!globalWindow[globalName] || (validate && !validate(globalWindow[globalName])))
+        return fail(new Error(`missing or invalid ${globalName}`))
+      if (settled) return
+      settled = true
+      if (timeout) window.clearTimeout(timeout)
+      resolve(globalWindow[globalName])
     }
-    script.onerror = () => {
-      delete globalWindow.__wouldkeepScriptLoads[src]
-      script.remove()
-      reject(new Error(`failed ${src}`))
-    }
+    script.onerror = () => fail(new Error(`failed ${src}`))
     document.head.appendChild(script)
+    if (timeoutMs > 0)
+      timeout = window.setTimeout(() => fail(new Error(`timeout ${src}`)), timeoutMs)
   })
   globalWindow.__wouldkeepScriptLoads[src] = request
   return request.catch((error) => {
@@ -56,25 +82,108 @@ const loadExternalStyle = (href: string) => {
   })
 }
 
-const renderMarkdownInto = async (target: HTMLElement, markdown: string) => {
+const importVendorUrl = (filename: string) => `/static/vendor/workspace-import/${filename}`
+const isExpectedDOMPurify = (value: any) => value?.version === "3.4.12"
+const loadImportPreviewLibraries = async () => {
+  const [markedLibrary, purifier] = await Promise.all([
+    loadExternalScript(importVendorUrl("marked-15.0.12.umd.js"), "marked", 12_000),
+    loadExternalScript(
+      importVendorUrl("purify-3.4.12.min.js"),
+      "DOMPurify",
+      12_000,
+      isExpectedDOMPurify,
+    ),
+  ])
+  return { markedLibrary: markedLibrary as any, purifier: purifier as any }
+}
+const loadMammoth = () =>
+  loadExternalScript(importVendorUrl("mammoth-1.12.0.min.js"), "mammoth", 12_000) as Promise<any>
+const loadTurndown = () =>
+  loadExternalScript(
+    importVendorUrl("turndown-7.2.0.js"),
+    "TurndownService",
+    12_000,
+  ) as Promise<any>
+
+const renderMarkdownInto = async (
+  target: HTMLElement,
+  markdown: string,
+  options: { shouldRender?: () => boolean; localImagesOnly?: boolean } = {},
+) => {
+  const shouldRender = options.shouldRender ?? (() => true)
   const source = markdown.trim()
+  if (!shouldRender()) return
   if (!source) {
     target.textContent = "正文还没有内容。"
     return
   }
   try {
-    const [marked, purifier] = (await Promise.all([
-      loadExternalScript("https://cdn.jsdelivr.net/npm/marked@15.0.12/lib/marked.umd.js", "marked"),
-      loadExternalScript(
-        "https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js",
-        "DOMPurify",
-      ),
-    ])) as any[]
-    target.innerHTML = purifier.sanitize(marked.parse(source, { gfm: true, breaks: true }), {
-      FORBID_TAGS: ["style", "script", "iframe", "object", "embed", "form"],
-      FORBID_ATTR: ["style", "onerror", "onload"],
+    let previewLibraries: Awaited<ReturnType<typeof loadImportPreviewLibraries>>
+    try {
+      previewLibraries = await loadImportPreviewLibraries()
+    } catch {
+      if (options.localImagesOnly) throw new Error("preview-dependency-unavailable")
+      throw new Error("preview-fallback")
+    }
+    const { markedLibrary, purifier } = previewLibraries
+    if (!shouldRender()) return
+    const previewSource = options.localImagesOnly ? redactRemoteImportImages(source) : source
+    const previewHtml = await markedLibrary.parse(previewSource, { gfm: true, breaks: true })
+    if (!shouldRender()) return
+    assertImportComplexity({ htmlCharacters: previewHtml.length })
+    const inertTemplate = document.createElement("template")
+    inertTemplate.innerHTML = previewHtml
+    const fragment = purifier.sanitize(inertTemplate.content, {
+      ALLOWED_TAGS: [
+        "p",
+        "br",
+        "hr",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ul",
+        "ol",
+        "li",
+        "blockquote",
+        "pre",
+        "code",
+        "strong",
+        "em",
+        "del",
+        "a",
+        "table",
+        "thead",
+        "tbody",
+        "tfoot",
+        "tr",
+        "th",
+        "td",
+        "img",
+      ],
+      ALLOWED_ATTR: ["href", "title", "alt", "src", "colspan", "rowspan", "scope", "class"],
+      FORBID_TAGS: [
+        "style",
+        "script",
+        "iframe",
+        "object",
+        "embed",
+        "form",
+        "svg",
+        "math",
+        "picture",
+        "source",
+        "video",
+        "audio",
+        "track",
+      ],
+      FORBID_ATTR: ["style", "onerror", "onload", "srcset", "poster"],
+      RETURN_DOM_FRAGMENT: true,
     })
-    target.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+    assertImportComplexity({ domNodes: fragment.querySelectorAll("*").length })
+    fragment.querySelectorAll("a").forEach((link: HTMLAnchorElement) => {
       const href = link.getAttribute("href") ?? ""
       if (!/^(https?:|mailto:|\/|#)/i.test(href)) link.removeAttribute("href")
       if (/^https?:/i.test(href)) {
@@ -82,13 +191,27 @@ const renderMarkdownInto = async (target: HTMLElement, markdown: string) => {
         link.rel = "noreferrer"
       }
     })
-    target.querySelectorAll<HTMLImageElement>("img").forEach((image) => {
+    fragment.querySelectorAll("img").forEach((image: HTMLImageElement) => {
       const src = image.getAttribute("src") ?? ""
-      if (!/^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,)/i.test(src)) image.remove()
+      const isLocalImage = /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(src)
+      const isRemoteImage = /^https?:\/\//i.test(src)
+      if (options.localImagesOnly && !isLocalImage) {
+        const placeholder = document.createElement("span")
+        placeholder.className = "knowledge-import-remote-image"
+        placeholder.textContent = "远程图片未加载"
+        image.replaceWith(placeholder)
+      } else if (!isLocalImage && !isRemoteImage) image.remove()
       else image.loading = "lazy"
     })
-  } catch {
-    target.textContent = source
+    if (!shouldRender()) return
+    target.replaceChildren(fragment)
+  } catch (error) {
+    if (
+      options.localImagesOnly ||
+      (error instanceof Error && error.message === "content-too-large")
+    )
+      throw error
+    if (shouldRender()) target.textContent = source
   }
 }
 
@@ -241,6 +364,9 @@ const init = async () => {
   const importResult = root.querySelector<HTMLElement>("[data-import-result]")
   const importStatus = root.querySelector<HTMLElement>("[data-import-status]")
   const importConfirm = root.querySelector<HTMLButtonElement>("[data-import-confirm]")
+  const importRetry = root.querySelector<HTMLButtonElement>("[data-import-retry]")
+  const importFileContext = root.querySelector<HTMLElement>("[data-import-file-context]")
+  const importPreview = root.querySelector<HTMLElement>("[data-import-preview]")
   const flatWorkbench = root.querySelector<HTMLElement>("[data-flat-workbench]")
   const flatForm = root.querySelector<HTMLFormElement>("[data-flat-workbench-form]")
   const flatTitle = root.querySelector<HTMLInputElement>("[data-flat-title]")
@@ -254,6 +380,9 @@ const init = async () => {
   let sourcesMigrationAvailable: boolean | null = null
   let currentPublication: PublicationState | null = null
   let importedDraft: ImportedDraft | null = null
+  const importRequests = createLatestImportRequestGate()
+  let importConfirming = false
+  let lastImportFile: File | null = null
   let currentProfileAvatarUrl = ""
   let profilePreviewObjectUrl = ""
   let profileCropSourceUrl = ""
@@ -266,6 +395,8 @@ const init = async () => {
 
   window.addCleanup(() => {
     disposed = true
+    importRequests.invalidate()
+    importedDraft = null
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     authSubscription?.unsubscribe?.()
     if (onlineHandler) window.removeEventListener("online", onlineHandler)
@@ -726,7 +857,10 @@ const init = async () => {
     if (!form) return
     for (const [name, value] of Object.entries(data)) {
       const field = form.elements.namedItem(name) as
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | HTMLSelectElement
+        | null
       if (field && value !== null && value !== undefined) field.value = String(value)
     }
   }
@@ -1288,6 +1422,11 @@ const init = async () => {
     if (!data.documentId && result.data?.id) {
       const field = form.elements.namedItem("documentId") as HTMLInputElement | null
       if (field) field.value = result.data.id
+      window.history.replaceState(
+        window.history.state,
+        "",
+        bindDocumentEditorRoute(window.location.href, result.data.id),
+      )
     }
     if (result.data?.revision !== undefined) {
       const revision = form.elements.namedItem("revision") as HTMLInputElement | null
@@ -1664,7 +1803,6 @@ const init = async () => {
       closeAvatarCropper()
       setProfileStatus("头像已经裁剪好；点击“保存个人资料”后才会上传。")
     })
-
   ;[profileDisplayName, profileSignature, profileBio, profileLocation, profileWebsite].forEach(
     (field) => {
       field?.addEventListener("input", () => {
@@ -1673,7 +1811,6 @@ const init = async () => {
       })
     },
   )
-
   ;[aiEnabled, aiPrivateContent, aiGroundingMode, aiMonthlyBudget].forEach((field) => {
     field?.addEventListener("change", () => {
       updateAiControls()
@@ -1956,16 +2093,54 @@ const init = async () => {
     .querySelectorAll<HTMLButtonElement>("[data-new-document]")
     .forEach((button) => button.addEventListener("click", () => startNewDocument()))
 
-  const resetImportDialog = () => {
+  const setImportStatus = (
+    message: string,
+    stateName: "" | "error" | "success" = "",
+    canRetry = false,
+  ) => {
+    if (!importStatus) return
+    importStatus.textContent = message
+    importStatus.dataset.state = stateName
+    importStatus.setAttribute("role", stateName === "error" ? "alert" : "status")
+    importStatus.setAttribute("aria-live", stateName === "error" ? "assertive" : "polite")
+    if (importRetry) importRetry.hidden = !canRetry
+  }
+  const resetImportDialog = (invalidateRequest = true) => {
+    if (invalidateRequest) importRequests.invalidate()
     importedDraft = null
+    importConfirming = false
+    lastImportFile = null
     if (importFile) importFile.value = ""
     if (importResult) importResult.hidden = true
-    if (importStatus) {
-      importStatus.textContent = ""
-      importStatus.dataset.state = ""
+    if (importFileContext) importFileContext.hidden = true
+    if (importPreview) {
+      importPreview.replaceChildren()
+      importPreview.setAttribute("aria-busy", "false")
     }
+    setImportStatus("")
     if (importConfirm) importConfirm.disabled = true
     importDropzone?.classList.remove("is-dragging", "is-busy")
+    importDropzone?.setAttribute("aria-busy", "false")
+  }
+  const formatImportFileSize = (size: number) =>
+    size >= 1024 * 1024
+      ? `${(size / (1024 * 1024)).toLocaleString("zh-CN", { maximumFractionDigits: 1 })} MB`
+      : `${Math.max(1, Math.ceil(size / 1024)).toLocaleString("zh-CN")} KB`
+  const showImportFileContext = (file: File) => {
+    const name = root.querySelector<HTMLElement>("[data-import-file-name]")
+    const size = root.querySelector<HTMLElement>("[data-import-file-size]")
+    const type = root.querySelector<HTMLElement>("[data-import-file-type]")
+    const extension = file.name.split(".").pop()?.toLowerCase()
+    if (name) name.textContent = file.name
+    if (size) size.textContent = formatImportFileSize(file.size)
+    if (type)
+      type.textContent =
+        extension === "docx"
+          ? "Word DOCX"
+          : extension === "md" || extension === "markdown"
+            ? "Markdown（UTF-8）"
+            : file.type || "未识别"
+    if (importFileContext) importFileContext.hidden = false
   }
   const titleFromFilename = (filename: string) =>
     filename
@@ -1994,7 +2169,21 @@ const init = async () => {
         )
     return { title: title || titleFromFilename(filename), body: body.trim() }
   }
-  const showImportedDraft = (draft: ImportedDraft) => {
+  const showImportedDraft = async (draft: ImportedDraft, isActiveRequest: () => boolean) => {
+    if (!isActiveRequest()) return
+    if (importPreview) {
+      importPreview.setAttribute("aria-busy", "true")
+      await renderMarkdownInto(importPreview, draft.body, {
+        shouldRender: isActiveRequest,
+        localImagesOnly: true,
+      })
+      if (!isActiveRequest()) return
+      importPreview.setAttribute("aria-busy", "false")
+      importPreview.querySelectorAll<HTMLImageElement>("img").forEach((image, index) => {
+        if (!image.alt.trim()) image.alt = `导入图片预览 ${index + 1}`
+      })
+    }
+    if (!isActiveRequest()) return
     importedDraft = draft
     const resultTitle = root.querySelector<HTMLElement>("[data-import-result-title]")
     const title = root.querySelector<HTMLElement>("[data-import-title]")
@@ -2015,69 +2204,62 @@ const init = async () => {
     })
     if (notes) notes.hidden = draft.notes.length === 0
     if (importResult) importResult.hidden = false
-    if (importStatus) {
-      importStatus.textContent = "请检查摘要后，再放入编辑器。"
-      importStatus.dataset.state = "success"
-    }
+    setImportStatus("请检查摘要后，再放入编辑器。", "success")
     if (importConfirm) importConfirm.disabled = false
   }
   const processImportFile = async (file: File) => {
-    resetImportDialog()
-    if (file.size > 10 * 1024 * 1024) {
-      if (importStatus) {
-        importStatus.textContent = "文件超过 10 MB。请先压缩图片或拆分文档后重试。"
-        importStatus.dataset.state = "error"
-      }
+    const request = importRequests.begin()
+    resetImportDialog(false)
+    lastImportFile = file
+    showImportFileContext(file)
+    const isActiveRequest = () => !disposed && importRequests.isCurrent(request)
+    if (!isActiveRequest()) return
+    const validation = validateImportFile(file)
+    if (!validation.ok) {
+      const message =
+        validation.reason === "too-large"
+          ? "文件超过 10 MB。请先压缩图片或拆分文档后重试；编辑器内容未改变。"
+          : validation.reason === "empty-file"
+            ? "这个文件是空的，请选择其他文件；编辑器内容未改变。"
+            : "目前支持 DOCX、MD 和 Markdown 文件；编辑器内容未改变。"
+      setImportStatus(message, "error")
       return
     }
-    if (file.size === 0) {
-      if (importStatus) {
-        importStatus.textContent = "这个文件是空的，请选择其他文件。"
-        importStatus.dataset.state = "error"
-      }
-      return
-    }
-    const extension = file.name.split(".").pop()?.toLowerCase()
-    if (!extension || !["docx", "md", "markdown"].includes(extension)) {
-      if (importStatus) {
-        importStatus.textContent = "目前支持 DOCX、MD 和 Markdown 文件。"
-        importStatus.dataset.state = "error"
-      }
-      return
-    }
+    const { extension } = validation
     importDropzone?.classList.add("is-busy")
-    if (importStatus) {
-      importStatus.textContent = extension === "docx" ? "正在读取文字与图片…" : "正在读取 Markdown…"
-      importStatus.dataset.state = ""
-    }
+    importDropzone?.setAttribute("aria-busy", "true")
+    setImportStatus(extension === "docx" ? "正在读取文字与图片…" : "正在读取 Markdown…")
     try {
       if (extension === "md" || extension === "markdown") {
-        const prepared = prepareMarkdown(await file.text(), file.name)
+        const buffer = await file.arrayBuffer()
+        if (!isActiveRequest()) return
+        const prepared = prepareMarkdown(decodeUtf8Markdown(buffer), file.name)
         if (!prepared.body) throw new Error("empty-content")
-        showImportedDraft({
-          ...prepared,
-          imageCount: (prepared.body.match(/!\[[^\]]*\]\([^)]*\)/g) ?? []).length,
-          notes: [],
-        })
+        assertImportComplexity({ bodyCharacters: prepared.body.length })
+        if (!isActiveRequest()) return
+        await showImportedDraft(
+          {
+            ...prepared,
+            imageCount: (prepared.body.match(/!\[[^\]]*\]\([^)]*\)/g) ?? []).length,
+            notes: [],
+          },
+          isActiveRequest,
+        )
         return
       }
-      const [mammoth, TurndownService] = (await Promise.all([
-        loadExternalScript(
-          "https://cdn.jsdelivr.net/npm/mammoth@1.10.0/mammoth.browser.min.js",
-          "mammoth",
-        ),
-        loadExternalScript(
-          "https://cdn.jsdelivr.net/npm/turndown@7.2.0/dist/turndown.js",
-          "TurndownService",
-        ),
-      ])) as any[]
       let imageCount = 0
       let imageBytes = 0
       const notes: string[] = []
+      const arrayBuffer = await file.arrayBuffer()
+      if (!isActiveRequest()) return
+      inspectDocxArchive(arrayBuffer)
+      const [mammoth, TurndownService] = await Promise.all([loadMammoth(), loadTurndown()])
+      if (!isActiveRequest()) return
       const converted = await mammoth.convertToHtml(
-        { arrayBuffer: await file.arrayBuffer() },
+        { arrayBuffer },
         {
           convertImage: mammoth.images.imgElement(async (image: any) => {
+            if (!isActiveRequest()) throw new Error("stale-import")
             imageCount += 1
             if (imageCount > 30) throw new Error("too-many-images")
             if (!/^image\/(?:png|jpe?g|gif|webp)$/i.test(image.contentType))
@@ -2091,7 +2273,10 @@ const init = async () => {
           }),
         },
       )
+      if (!isActiveRequest()) return
+      assertImportComplexity({ htmlCharacters: converted.value.length })
       const parsed = new DOMParser().parseFromString(converted.value, "text/html")
+      assertImportComplexity({ domNodes: parsed.querySelectorAll("*").length })
       const firstHeading = parsed.querySelector("h1")
       const title = firstHeading?.textContent?.trim() || titleFromFilename(file.name)
       firstHeading?.remove()
@@ -2104,6 +2289,7 @@ const init = async () => {
       turndown.keep(["table", "thead", "tbody", "tfoot", "tr", "th", "td"])
       const body = turndown.turndown(parsed.body.innerHTML).trim()
       if (!body) throw new Error("empty-content")
+      assertImportComplexity({ bodyCharacters: body.length })
       if (converted.messages?.length) {
         notes.push(`有 ${converted.messages.length} 处复杂格式需要人工检查。`)
         converted.messages
@@ -2112,26 +2298,50 @@ const init = async () => {
             notes.push(String(message.message || "部分 Word 格式已简化。")),
           )
       }
-      showImportedDraft({ title, body, imageCount, notes })
+      if (!isActiveRequest()) return
+      await showImportedDraft({ title, body, imageCount, notes }, isActiveRequest)
     } catch (error) {
+      if (!isActiveRequest()) return
       const message = error instanceof Error ? error.message : ""
+      const knownFailure = [
+        "too-many-images",
+        "unsupported-image",
+        "image-too-large",
+        "images-too-large",
+        "invalid-encoding",
+        "empty-content",
+        "content-too-large",
+        "docx-archive",
+        "archive-",
+        "unsupported-docx",
+      ].some((code) => message.includes(code))
+      const canRetry = !knownFailure
       const friendly = message.includes("too-many-images")
-        ? "文档包含超过 30 张图片，请拆分后导入。"
+        ? "文档包含超过 30 张图片，请拆分后导入；编辑器内容未改变。"
         : message.includes("unsupported-image")
-          ? "文档包含暂不支持的图片格式，请在 Word 中转为 PNG 或 JPG 后重试。"
+          ? "文档包含暂不支持的图片格式，请在 Word 中转为 PNG 或 JPG 后重试；编辑器内容未改变。"
           : message.includes("image-too-large")
-            ? "文档中有单张超过 2.5 MB 的图片，请压缩图片后重试。"
+            ? "文档中有单张超过 2.5 MB 的图片，请压缩图片后重试；编辑器内容未改变。"
             : message.includes("images-too-large")
-              ? "文档内图片合计超过 6 MB，请压缩图片后重试。"
-              : message.includes("empty-content")
-                ? "没有从文件中读到正文内容，请检查文件后重试。"
-                : "文件转换失败。请确认它是有效的 DOCX 或 Markdown 文件，然后重试。"
-      if (importStatus) {
-        importStatus.textContent = friendly
-        importStatus.dataset.state = "error"
-      }
+              ? "文档内图片合计超过 6 MB，请压缩图片后重试；编辑器内容未改变。"
+              : message.includes("invalid-encoding")
+                ? "Markdown 不是有效的 UTF-8 编码。请在文本编辑器中另存为 UTF-8 后重试；编辑器内容未改变。"
+                : message.includes("content-too-large")
+                  ? "转换后的正文或结构过大。请拆分文档后分别导入；编辑器内容未改变。"
+                  : /docx-archive|archive-|unsupported-docx/.test(message)
+                    ? "DOCX 的压缩结构异常、加密或解压后过大。请在 Word 中另存为新的 DOCX，或拆分后导入；编辑器内容未改变。"
+                    : message.includes("preview-dependency-unavailable") ||
+                        message.includes("/static/vendor/workspace-import/")
+                      ? "本地导入组件暂时未能加载。请重新读取这个文件；编辑器内容未改变。"
+                      : message.includes("empty-content")
+                        ? "没有从文件中读到正文内容，请检查文件后重试；编辑器内容未改变。"
+                        : "文件转换失败。如果文件来自云盘，请先确认它已完整下载，再重新读取；编辑器内容未改变。"
+      setImportStatus(friendly, "error", canRetry)
     } finally {
-      importDropzone?.classList.remove("is-busy")
+      if (isActiveRequest()) {
+        importDropzone?.classList.remove("is-busy")
+        importDropzone?.setAttribute("aria-busy", "false")
+      }
     }
   }
 
@@ -2139,12 +2349,15 @@ const init = async () => {
     resetImportDialog()
     if (importDialog?.showModal) importDialog.showModal()
     else importDialog?.setAttribute("open", "")
-    window.setTimeout(() => importFile?.focus(), 0)
+    window.setTimeout(() => {
+      if (!disposed && importDialog?.open) importFile?.focus()
+    }, 0)
   }
   root
     .querySelectorAll<HTMLButtonElement>("[data-open-import]")
     .forEach((button) => button.addEventListener("click", openImportDialog))
   const closeImport = () => {
+    resetImportDialog()
     if (importDialog?.open && importDialog.close) importDialog.close()
     else importDialog?.removeAttribute("open")
   }
@@ -2154,9 +2367,15 @@ const init = async () => {
   importDialog?.addEventListener("click", (event) => {
     if (event.target === importDialog) closeImport()
   })
+  importDialog?.addEventListener("cancel", () => resetImportDialog())
   importFile?.addEventListener("change", () => {
     const file = importFile.files?.[0]
     if (file) void processImportFile(file)
+  })
+  importRetry?.addEventListener("click", () => {
+    if (!lastImportFile || importDropzone?.classList.contains("is-busy")) return
+    const file = lastImportFile
+    void processImportFile(file)
   })
   ;["dragenter", "dragover"].forEach((name) =>
     importDropzone?.addEventListener(name, (event) => {
@@ -2175,14 +2394,19 @@ const init = async () => {
     if (file) void processImportFile(file)
   })
   importConfirm?.addEventListener("click", () => {
-    if (!importedDraft || !form) return
+    if (importConfirming || !importedDraft || !form) return
+    importConfirming = true
     const existing = readForm()
     if (
       (existing.title.trim() || existing.body.trim()) &&
       !window.confirm("导入会替换当前编辑器中尚未保存的内容。要继续吗？")
-    )
+    ) {
+      importConfirming = false
       return
+    }
     const draft = importedDraft
+    importedDraft = null
+    if (importConfirm) importConfirm.disabled = true
     startNewDocument()
     const title = form.elements.namedItem("title") as HTMLInputElement | null
     const body = form.elements.namedItem("body") as HTMLTextAreaElement | null
@@ -2243,11 +2467,11 @@ const init = async () => {
     if (html.trim()) {
       formatLabel = "Word / 富文本"
       try {
-        const TurndownService = (await loadExternalScript(
-          "https://cdn.jsdelivr.net/npm/turndown@7.2.0/dist/turndown.js",
-          "TurndownService",
-        )) as any
+        assertImportComplexity({ htmlCharacters: html.length })
+        const TurndownService = await loadTurndown()
+        if (disposed) throw new Error("stale-import")
         const parsed = new DOMParser().parseFromString(html, "text/html")
+        assertImportComplexity({ domNodes: parsed.querySelectorAll("*").length })
         parsed
           .querySelectorAll("script,style,meta,link,iframe,object,embed,form")
           .forEach((node) => node.remove())
@@ -2282,9 +2506,11 @@ const init = async () => {
         })
         turndown.keep(["table", "thead", "tbody", "tfoot", "tr", "th", "td"])
         content = turndown.turndown(parsed.body.innerHTML).trim() || content
+        assertImportComplexity({ bodyCharacters: content.length })
       } catch (error) {
         const message = error instanceof Error ? error.message : ""
-        if (/too-many-images|image-too-large|images-too-large/.test(message)) throw error
+        if (/too-many-images|image-too-large|images-too-large|content-too-large/.test(message))
+          throw error
         formatLabel = "纯文本（富文本转换暂不可用）"
       }
     } else if (!flatTitle?.value.trim() && !flatBody?.value.trim()) {
@@ -2310,6 +2536,7 @@ const init = async () => {
     }
     if (imageMarkdown.length)
       content = [content.trim(), ...imageMarkdown].filter(Boolean).join("\n\n")
+    assertImportComplexity({ bodyCharacters: content.length })
     return {
       content: content.trim(),
       detectedTitle,
@@ -2365,6 +2592,7 @@ const init = async () => {
     setFlatStatus("正在识别粘贴内容…")
     void convertPastedContent(html, text, images)
       .then((result) => {
+        if (disposed) return
         if (!result.content) {
           setFlatStatus("剪贴板中没有可用文字或图片。", "error")
           return
@@ -2378,6 +2606,7 @@ const init = async () => {
         )
       })
       .catch((error) => {
+        if (disposed) return
         const message = error instanceof Error ? error.message : ""
         setFlatStatus(
           message.includes("too-many-images")
@@ -2386,7 +2615,9 @@ const init = async () => {
               ? "粘贴内容中有单张超过 2.5 MB 的图片，请先压缩。"
               : message.includes("images-too-large")
                 ? "粘贴图片合计超过 6 MB，请减少或压缩图片。"
-                : "暂时无法转换粘贴内容，请改用文件导入。",
+                : message.includes("content-too-large")
+                  ? "粘贴内容的正文或结构过大，请拆分后分次粘贴。"
+                  : "暂时无法转换粘贴内容，请改用文件导入。",
           "error",
         )
       })
@@ -2679,5 +2910,5 @@ const init = async () => {
   window.addEventListener("online", onlineHandler)
 }
 
-document.addEventListener("nav", init)
-window.addEventListener("load", init, { once: true })
+if (typeof document !== "undefined") document.addEventListener("nav", init)
+if (typeof window !== "undefined") window.addEventListener("load", init, { once: true })
