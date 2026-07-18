@@ -2,7 +2,7 @@
 
 Last reconciled: 2026-07-18 (Asia/Shanghai)
 
-Working baseline: merged `main` at `a6ef3be6d981ab005ac56522b9d0c7df25db3df1`
+Working baseline: merged `main` at `a4662b1d163d4d60d7ad0ed291ce4b0eebebc8b6`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
@@ -24,6 +24,8 @@ Merged sidebar-scroll and UX repair PR: [#22](https://github.com/hx303/notes/pul
 
 Merged production ACL operation record PR: [#23](https://github.com/hx303/notes/pull/23)
 
+Merged novice import and refresh-recovery PR: [#24](https://github.com/hx303/notes/pull/24)
+
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
 ## 2026-07-17 reconciliation after PR #16
@@ -38,7 +40,8 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - PR #21 merged the forward-only anonymous publication-write RPC ACL repair as `f949cf55`. The separately authorized production deployment applied `20260718001200`; all three publication write RPCs now deny anonymous/PUBLIC execution, the ledger reached 17 aligned versions, and business/AI invariants were unchanged.
 - PR #22 merged the browser-led sidebar scroll, medium-width navigation, admin file-nav, and keyboard repair as `01dc10a9`. The merged baseline passes TypeScript, 217/217 tests, and a production build with 284 inputs and 1,046 outputs.
 - PR #23 merged the production ACL operation record and advanced `main` to `a6ef3be6`.
-- P03/P04 import hardening PR #24 contains functional refresh-recovery fix `51451d85`. TypeScript, 18/18 focused tests, 229/229 full tests, the 284-input/1,051-output production build, and all Vercel checks pass. Real-browser Markdown import, private default, URL binding, and post-refresh content recovery are proven; broader DOCX/drag-drop/network/screen-reader/zoom/touch evidence remains P2 and the Draft PR still requires explicit Ready/merge authorization.
+- PR #24 merged the P03/P04 import hardening and refresh-recovery work to `main` as `a4662b1d`. TypeScript, 18/18 focused tests, 229/229 full tests, the 284-input/1,051-output production build, all Vercel checks, and the site-owner browser check passed. Broader DOCX/drag-drop/network/screen-reader/zoom/touch evidence remains P2.
+- P05 editor recovery started from `a4662b1d`. Checkpoint `9fb3be7f` versions existing local backups, restores an existing document only against its matching cloud revision, refuses stale local/cloud auto-overwrite, serializes all editor save entry points, and preserves a newer local edit while an older save completes. Focused 15/15, full 235/235, TypeScript, and the 284-input/1,051-output build pass. IndexedDB outbox, cross-tab coordination, explicit conflict decisions, atomic metadata saving, complete version restore, and browser evidence remain open.
 
 ## Executive status
 
