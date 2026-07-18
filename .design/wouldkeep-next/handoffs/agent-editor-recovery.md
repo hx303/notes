@@ -5,7 +5,7 @@
 - Worktree: `worktrees-next/editor-recovery`
 - Branch: `agent/editor-recovery`
 - Baseline SHA: `a4662b1d163d4d60d7ad0ed291ce4b0eebebc8b6`
-- Current SHA: `dafaf9a15ddd483024e9b1c899bdf4acedb43f26`
+- Current SHA: `fef1901f`
 - Demonstrable slice: durable owner-scoped editor outbox, cross-tab serialization/status, offline refresh recovery, explicit conflict comparison/actions, and session-safe version restore
 - Approved research brief (or why none is needed): `.design/reference-research/editor-recovery.md` is being recorded by the reference-research owner; the accepted direction is IndexedDB outbox + Web Locks + BroadcastChannel + server revision/CAS, without CRDT in P05.
 
@@ -32,7 +32,7 @@
 
 ## Evidence
 
-- Commands run and raw result summary: focused editor/account tests 42/42 PASS; full Quartz tests 262/262 PASS; migration guard PASS; TypeScript PASS; `git diff --check` PASS; production build PASS with 284 Markdown inputs and 1,051 outputs.
+- Commands run and raw result summary: focused editor/account tests 46/46 PASS; full Quartz tests 266/266 PASS; migration guard PASS; TypeScript PASS; `git diff --check` PASS; production build PASS with 284 Markdown inputs and 1,051 outputs.
 - UI evidence (viewport, theme, state, screenshot path/diff): not yet collected; first checkpoint is not Ready and requires a deployed preview plus offline/refresh and conflict browser evidence.
 - Security evidence (owner / other user / anonymous): pure backup inspection rejects owner/document mismatch; production account-isolation browser evidence remains open.
 - Migration or Edge Function deployed to production: **No**.
