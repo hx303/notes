@@ -71,6 +71,10 @@ test("same-account auth refresh preserves the active write surface", () => {
     script,
     /if \(!preserveWriteSurface\) \{[\s\S]{0,120}editor\.hidden = true[\s\S]{0,120}flatWorkbench\.hidden = true/,
   )
+  assert.match(
+    script,
+    /if \(!preserveWriteSurface\) \{\s*await restoreDurableOutboxBackup\("new", isCurrentSync\)[\s\S]{0,120}restoreLocalBackup\(\)\s*\}/,
+  )
 })
 
 test("account settings survive SPA navigation and ignore stale account responses", () => {

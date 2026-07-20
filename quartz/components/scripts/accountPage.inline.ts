@@ -2648,9 +2648,11 @@ const init = async () => {
             if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
             await loadDocuments(isCurrentSync)
             if (!isCurrentSync()) return
-            await restoreDurableOutboxBackup("new", isCurrentSync)
-            if (!isCurrentSync()) return
-            restoreLocalBackup()
+            if (!preserveWriteSurface) {
+              await restoreDurableOutboxBackup("new", isCurrentSync)
+              if (!isCurrentSync()) return
+              restoreLocalBackup()
+            }
             void flushDurableOutboxForCurrentDocument()
             await loadLinkOptions("", isCurrentSync)
             if (!isCurrentSync()) return
