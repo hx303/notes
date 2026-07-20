@@ -30,6 +30,16 @@ The exact local build was served to Chrome and inspected at 1200×900, 800×900,
 
 The DOM contract check confirmed one tag editor, two relationship editors, one source-add action, `maxlength=80`, list semantics on every chip container, and both local/cloud organization summaries in the conflict card. The local origin had no authenticated Supabase session, so this check does not claim signed-in data round-trip acceptance.
 
+### Signed-in PR preview checkpoint
+
+The PR preview was opened with the production account session and a private test draft was created at a document-bound URL.
+
+- The title and body auto-saved to the cloud and both reappeared after opening the exact document URL in a fresh tab.
+- The tag editor created a `P06验收` chip and rejected the NFKC/case-equivalent `ｐ０６验收` as already present.
+- Relationship candidates rendered human-readable title, topic, and update-date labels; no UUID appeared in the visible option text.
+- The preview produced no page console errors during these checks.
+- The tag/source round-trip is still open. Several duplicate tabs were opened while recovering a flaky browser-extension connection; the editor then correctly fail-closed with “文档尚未完整加载，自动同步保持暂停”, so organization changes were not allowed to overwrite cloud data. A clean single-tab rerun is required before claiming persistence.
+
 ## Scope and security gate
 
 Proven in code and automated tests:
