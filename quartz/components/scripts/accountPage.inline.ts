@@ -34,6 +34,16 @@ import {
   redactRemoteImportImages,
   validateImportFile,
 } from "./importDraft.ts"
+import {
+  parseWorkspaceRelations,
+  parseWorkspaceSources,
+  parseWorkspaceTags,
+  serializeWorkspaceRelations,
+  serializeWorkspaceTags,
+  type WorkspaceDocumentReference,
+  type WorkspaceRelationSelection,
+  type WorkspaceTag,
+} from "./workspaceOrganization.ts"
 
 const localDraftKey = (userId: string, documentId = "new") =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
@@ -269,6 +279,12 @@ type WorkspaceSource = {
   note: string
 }
 
+type WorkspaceRelationOption = WorkspaceDocumentReference & {
+  topic?: string
+  visibility?: string
+  updatedAt?: string
+}
+
 type WorkspaceFormData = {
   title: string
   body: string
@@ -281,6 +297,11 @@ type WorkspaceFormData = {
   documentId: string
   revision: number
   status: string
+}
+
+type WorkspaceConflictSnapshot = WorkspaceFormData & {
+  __sources?: WorkspaceSource[]
+  organizationLoaded?: boolean
 }
 
 type PublicationState = {
@@ -378,6 +399,17 @@ const init = async () => {
   const conflictLocalBody = root.querySelector<HTMLElement>("[data-editor-conflict-local-body]")
   const conflictCloudTitle = root.querySelector<HTMLElement>("[data-editor-conflict-cloud-title]")
   const conflictCloudBody = root.querySelector<HTMLElement>("[data-editor-conflict-cloud-body]")
+  const conflictLocalOrganization = root.querySelector<HTMLElement>(
+    "[data-editor-conflict-local-organization]",
+  )
+  const conflictCloudOrganization = root.querySelector<HTMLElement>(
+    "[data-editor-conflict-cloud-organization]",
+  )
+  const tagInput = root.querySelector<HTMLInputElement>("[data-tag-input]")
+  const tagList = root.querySelector<HTMLElement>("[data-tag-list]")
+  const tagValues = root.querySelector<HTMLInputElement>("[data-tag-values]")
+  const tagStatus = root.querySelector<HTMLElement>("[data-tag-status]")
+  const relationEditors = [...root.querySelectorAll<HTMLElement>("[data-relation-editor]")]
   const sourceList = root.querySelector<HTMLElement>("[data-source-list]")
   const sourceEmpty = root.querySelector<HTMLElement>("[data-source-empty]")
   const sourceStatus = root.querySelector<HTMLElement>("[data-source-status]")
@@ -415,7 +447,7 @@ const init = async () => {
     documentId: string
     backup: EditorBackup
     reason: "unknown-base" | "stale-base" | "remote-write"
-    cloud: WorkspaceFormData
+    cloud: WorkspaceConflictSnapshot
     operationId?: string
   } | null = null
   let editorSaveEpoch = 0
@@ -453,6 +485,12 @@ const init = async () => {
     return result
   }
   let workspaceDocuments: WorkspaceDocument[] = []
+  let relationDocumentOptions: WorkspaceRelationOption[] = []
+  let selectedTags: WorkspaceTag[] = []
+  const selectedRelations: Record<"prerequisite" | "related", WorkspaceRelationSelection[]> = {
+    prerequisite: [],
+    related: [],
+  }
   let sourcesMigrationAvailable: boolean | null = null
   let currentPublication: PublicationState | null = null
   let importedDraft: ImportedDraft | null = null
@@ -1013,6 +1051,210 @@ const init = async () => {
         | null
       if (field && value !== null && value !== undefined) field.value = String(value)
     }
+    syncOrganizationEditorsFromFields()
+  }
+
+  const organizationIssueMessage = (code: string) => {
+    const messages: Record<string, string> = {
+      hidden_invalid: "整理信息格式无法识别；原值已保留，请重新加载后再试。",
+      tag_blank: "请输入标签名称。",
+      tag_too_long: "标签名称不能超过 80 个字符。",
+      tag_punctuation_only: "标签需要包含文字或数字，不能只有标点。",
+      relation_unknown: "没有找到这条知识，请重新选择。",
+      relation_ambiguous: "存在同名知识，请从带主题和更新时间的列表中明确选择。",
+      relation_self: "不能把当前知识关联到自己。",
+      relation_duplicate: "这条关系已经存在。",
+      source_limit: "每条知识最多保留 50 条来源，请先合并或移除部分来源。",
+      source_web_url_required: "请填写完整的 http:// 或 https:// 网址。",
+      source_web_url_invalid: "网址只接受 http:// 或 https:// 开头的完整地址。",
+      source_sensitive_url: "网址包含账号、密码、令牌或签名参数，已阻止保存。请先移除敏感信息。",
+      source_personal_title_required: "请为个人经验写一个简短名称，方便以后辨认。",
+      source_duplicate_url: "这条网页来源已经添加过。",
+      source_kind_invalid: "来源类型无法识别，请重新选择。",
+      source_invalid: "这条来源的数据不完整，请检查后重试。",
+    }
+    return messages[code] ?? "整理信息无法验证，请检查后重试。"
+  }
+
+  const dispatchOrganizationInput = () => form?.dispatchEvent(new Event("input", { bubbles: true }))
+
+  const renderTagSelections = (tags: WorkspaceTag[], commit = false) => {
+    selectedTags = [...tags]
+    if (tagValues) tagValues.value = serializeWorkspaceTags(selectedTags)
+    tagList?.replaceChildren()
+    selectedTags.forEach((tag) => {
+      const chip = globalThis.document.createElement("span")
+      chip.className = "organization-chip"
+      chip.setAttribute("role", "listitem")
+      const label = globalThis.document.createElement("span")
+      label.textContent = tag.name
+      const remove = globalThis.document.createElement("button")
+      remove.type = "button"
+      remove.textContent = "×"
+      remove.setAttribute("aria-label", `移除标签“${tag.name}”`)
+      remove.addEventListener("click", () => {
+        renderTagSelections(
+          selectedTags.filter((selected) => selected.normalizedKey !== tag.normalizedKey),
+          true,
+        )
+        if (tagStatus) tagStatus.textContent = `已从当前草稿移除标签“${tag.name}”。`
+        tagInput?.focus()
+      })
+      chip.append(label, remove)
+      tagList?.appendChild(chip)
+    })
+    if (commit) dispatchOrganizationInput()
+  }
+
+  const syncTagEditorFromField = () => {
+    const parsed = parseWorkspaceTags(tagValues?.value ?? "")
+    if (!parsed.ok) {
+      if (tagStatus) tagStatus.textContent = organizationIssueMessage(parsed.issues[0]?.code)
+      return false
+    }
+    renderTagSelections(parsed.value)
+    if (tagStatus) tagStatus.textContent = ""
+    return true
+  }
+
+  const relationTypeForEditor = (editor: HTMLElement) =>
+    editor.dataset.relationEditor === "prerequisite" ? "prerequisite" : "related"
+
+  const relationEditorFor = (relationType: "prerequisite" | "related") =>
+    relationEditors.find((editor) => relationTypeForEditor(editor) === relationType)
+
+  const renderRelationOptions = (editor: HTMLElement) => {
+    const search = editor.querySelector<HTMLInputElement>("[data-relation-search]")
+    const select = editor.querySelector<HTMLSelectElement>("[data-relation-select]")
+    if (!select) return
+    const query = (search?.value ?? "").normalize("NFKC").trim().toLocaleLowerCase()
+    const matches = relationDocumentOptions.filter((document) =>
+      `${document.title} ${document.topic ?? ""}`
+        .normalize("NFKC")
+        .toLocaleLowerCase()
+        .includes(query),
+    )
+    select.replaceChildren()
+    const placeholder = globalThis.document.createElement("option")
+    placeholder.value = ""
+    placeholder.textContent = matches.length ? "请选择一条知识" : "没有找到可关联的知识"
+    select.appendChild(placeholder)
+    matches.forEach((document) => {
+      const option = globalThis.document.createElement("option")
+      option.value = document.id
+      const context = [
+        document.topic || "未归类",
+        document.updatedAt
+          ? `更新于 ${new Date(document.updatedAt).toLocaleDateString("zh-CN")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" · ")
+      option.textContent = `${document.title || "未命名知识"} · ${context}`
+      select.appendChild(option)
+    })
+  }
+
+  const renderRelationSelections = (
+    relationType: "prerequisite" | "related",
+    selections: WorkspaceRelationSelection[],
+    commit = false,
+  ) => {
+    selectedRelations[relationType] = [...selections]
+    const editor = relationEditorFor(relationType)
+    const hidden = editor?.querySelector<HTMLInputElement>("[data-relation-values]")
+    const list = editor?.querySelector<HTMLElement>("[data-relation-list]")
+    if (hidden) hidden.value = serializeWorkspaceRelations(selections)
+    list?.replaceChildren()
+    selections.forEach((selection) => {
+      const chip = globalThis.document.createElement("span")
+      chip.className = "organization-chip"
+      chip.setAttribute("role", "listitem")
+      const label = globalThis.document.createElement("span")
+      label.textContent = selection.title || "未命名知识"
+      const remove = globalThis.document.createElement("button")
+      remove.type = "button"
+      remove.textContent = "×"
+      remove.setAttribute("aria-label", `移除关系“${selection.title || "未命名知识"}”`)
+      remove.addEventListener("click", () => {
+        renderRelationSelections(
+          relationType,
+          selectedRelations[relationType].filter(
+            (selected) => selected.documentId !== selection.documentId,
+          ),
+          true,
+        )
+        const status = editor?.querySelector<HTMLElement>("[data-relation-status]")
+        if (status) status.textContent = "关系已从当前草稿移除；保存后同步到云端。"
+        editor?.querySelector<HTMLInputElement>("[data-relation-search]")?.focus()
+      })
+      chip.append(label, remove)
+      list?.appendChild(chip)
+    })
+    if (commit) dispatchOrganizationInput()
+  }
+
+  const recoverRelationSelections = (rawValue: string): WorkspaceRelationSelection[] => {
+    const raw = rawValue.trim()
+    if (!raw) return []
+    let values: string[]
+    if (raw.startsWith("[")) {
+      try {
+        const parsed: unknown = JSON.parse(raw)
+        if (!Array.isArray(parsed) || !parsed.every((value) => typeof value === "string")) return []
+        values = parsed
+      } catch {
+        return []
+      }
+    } else values = raw.split(/[，,\n]/u)
+
+    return values
+      .map((value) => value.normalize("NFKC").trim().replace(/\s+/gu, " "))
+      .filter(Boolean)
+      .map((value) => {
+        const byId = relationDocumentOptions.find((document) => document.id === value)
+        if (byId) return { documentId: byId.id, title: byId.title }
+        const titleMatches = relationDocumentOptions.filter(
+          (document) => document.title.normalize("NFKC").trim() === value,
+        )
+        if (titleMatches.length === 1)
+          return { documentId: titleMatches[0]!.id, title: titleMatches[0]!.title }
+        return { documentId: value, title: "原关联知识已删除或无法识别" }
+      })
+  }
+
+  const syncRelationEditorFromField = (relationType: "prerequisite" | "related") => {
+    const editor = relationEditorFor(relationType)
+    const hidden = editor?.querySelector<HTMLInputElement>("[data-relation-values]")
+    const status = editor?.querySelector<HTMLElement>("[data-relation-status]")
+    if (!hidden) return false
+    const parsed = parseWorkspaceRelations(hidden.value, {
+      currentDocumentId: readForm().documentId,
+      documents: relationDocumentOptions,
+    })
+    if (!parsed.ok) {
+      const recoverable = recoverRelationSelections(hidden.value)
+      if (recoverable.length) {
+        renderRelationSelections(relationType, recoverable)
+        if (status)
+          status.textContent =
+            "部分关联已被删除、改名或无法识别。原值仍保留；请移除带提示的项目后再保存。"
+      } else if (status) status.textContent = organizationIssueMessage(parsed.issues[0]?.code)
+      return false
+    }
+    renderRelationSelections(relationType, parsed.value)
+    if (status) status.textContent = ""
+    return true
+  }
+
+  const syncOrganizationEditorsFromFields = () => {
+    syncTagEditorFromField()
+    for (const relationType of ["prerequisite", "related"] as const) {
+      const editor = relationEditorFor(relationType)
+      const hidden = editor?.querySelector<HTMLInputElement>("[data-relation-values]")
+      if (!hidden?.value.trim()) renderRelationSelections(relationType, [])
+      else if (relationDocumentOptions.length) syncRelationEditorFromField(relationType)
+    }
   }
 
   const collectSources = (): WorkspaceSource[] => {
@@ -1034,6 +1276,12 @@ const init = async () => {
 
   const addSourceRow = (source?: Partial<WorkspaceSource>, focus = false) => {
     if (!sourceList) return
+    if (sourceList.childElementCount >= 50) {
+      if (sourceStatus)
+        sourceStatus.textContent = "每条知识最多保留 50 条来源，请先合并或移除部分来源。"
+      sourceList.querySelector<HTMLButtonElement>("[data-source-remove]")?.focus()
+      return
+    }
     const row = globalThis.document.createElement("section")
     row.className = "source-row"
     row.dataset.sourceRow = ""
@@ -1063,6 +1311,10 @@ const init = async () => {
       const isWeb = kind.value === "web"
       urlField.hidden = !isWeb
       url.required = isWeb
+      if (!isWeb) {
+        url.value = ""
+        url.removeAttribute("aria-invalid")
+      }
       title.placeholder = isWeb ? "文章标题（可选）" : "例如：三次实验后的观察"
     }
     kind.addEventListener("change", updateKind)
@@ -1085,34 +1337,36 @@ const init = async () => {
     if (sourceStatus) sourceStatus.textContent = ""
   }
 
-  const validateSources = () => {
-    if ((sourceList?.childElementCount ?? 0) > 50) {
-      if (sourceStatus)
-        sourceStatus.textContent = "每条知识最多保留 50 条来源，请先合并或移除部分来源。"
-      return false
+  const validateSources = (sources: WorkspaceSource[] = collectSources()) => {
+    const rows = [...(sourceList?.querySelectorAll<HTMLElement>("[data-source-row]") ?? [])]
+    rows.forEach((row) =>
+      row
+        .querySelectorAll<
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >("input,select,textarea")
+        .forEach((field) => field.removeAttribute("aria-invalid")),
+    )
+    const parsed = parseWorkspaceSources(sources)
+    if (!parsed.ok) {
+      const issue = parsed.issues[0]
+      if (sourceStatus) sourceStatus.textContent = organizationIssueMessage(issue?.code)
+      const row = issue?.index === undefined ? undefined : rows[issue.index]
+      const field =
+        issue?.code === "source_personal_title_required"
+          ? row?.querySelector<HTMLInputElement>("[data-source-title]")
+          : row?.querySelector<HTMLInputElement>("[data-source-url]")
+      field?.setAttribute("aria-invalid", "true")
+      field?.focus()
+      return null
     }
-    for (const row of sourceList?.querySelectorAll<HTMLElement>("[data-source-row]") ?? []) {
-      const kind = row.querySelector<HTMLSelectElement>("[data-source-kind]")?.value
-      const url = row.querySelector<HTMLInputElement>("[data-source-url]")
-      const title = row.querySelector<HTMLInputElement>("[data-source-title]")
-      if (kind === "web") {
-        try {
-          const parsed = new URL(url?.value.trim() ?? "")
-          if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-            throw new Error("protocol")
-        } catch {
-          if (sourceStatus)
-            sourceStatus.textContent = "请为网页来源填写完整的 http:// 或 https:// 网址。"
-          url?.focus()
-          return false
-        }
-      } else if (!title?.value.trim()) {
-        if (sourceStatus) sourceStatus.textContent = "请为个人经验写一个简短名称，方便以后辨认。"
-        title?.focus()
-        return false
+    parsed.value.forEach((source, index) => {
+      if (source.kind === "web") {
+        const input = rows[index]?.querySelector<HTMLInputElement>("[data-source-url]")
+        if (input) input.value = source.url
       }
-    }
-    return true
+    })
+    if (sourceStatus) sourceStatus.textContent = ""
+    return parsed.value as WorkspaceSource[]
   }
 
   const loadDocumentSources = async (documentId: string, isCurrent = () => true) => {
@@ -1139,19 +1393,16 @@ const init = async () => {
     saveClient = client,
     sources?: WorkspaceSource[],
   ) => {
-    const sourceSnapshot = sources ?? collectSources()
+    const sourceSnapshot = validateSources(sources ?? collectSources())
+    if (!sourceSnapshot) return false
     if (!sourceSnapshot.length && sourcesMigrationAvailable !== true) return true
-    if (!sources && !validateSources()) return false
     const result = await saveClient.rpc("replace_document_sources", {
       p_document_id: documentId,
       p_sources: sourceSnapshot,
     })
     if (result.error) {
-      sourcesMigrationAvailable = false
-      if (sourceStatus)
-        sourceStatus.textContent =
-          "正文已保存，但来源尚未同步。请在 Supabase 执行 20260718000400_document_sources.sql。"
-      setStatus("正文已保存；结构化来源迁移尚未启用，本地备份仍然保留。", "error")
+      if (sourceStatus) sourceStatus.textContent = "正文已保存，整理信息暂未同步，请稍后重试。"
+      setStatus("正文已保存，但来源暂未同步；本地恢复副本仍然保留。", "error")
       return false
     }
     sourcesMigrationAvailable = true
@@ -1351,11 +1602,35 @@ const init = async () => {
     }
   }
 
+  const conflictListCount = (value: unknown) => {
+    if (Array.isArray(value)) return value.filter((item) => typeof item === "string").length
+    const raw = String(value ?? "").trim()
+    if (!raw) return 0
+    if (raw.startsWith("[")) {
+      try {
+        const parsed: unknown = JSON.parse(raw)
+        return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string").length : 0
+      } catch {
+        return 0
+      }
+    }
+    return raw.split(/[，,\n]/u).filter((item) => item.trim()).length
+  }
+
+  const conflictOrganizationSummary = (
+    snapshot: Record<string, unknown>,
+    organizationLoaded = true,
+  ) => {
+    if (!organizationLoaded) return "整理信息暂时无法读取；选择云端前不会把本地值冒充为云端值。"
+    const sourceCount = Array.isArray(snapshot.__sources) ? snapshot.__sources.length : 0
+    return `标签 ${conflictListCount(snapshot.tags)} 个 · 前置 ${conflictListCount(snapshot.prerequisites)} 条 · 相关 ${conflictListCount(snapshot.related)} 条 · 来源 ${sourceCount} 条`
+  }
+
   const freezeEditorConflict = (
     documentId: string,
     backup: EditorBackup,
     reason: "unknown-base" | "stale-base" | "remote-write",
-    cloud: WorkspaceFormData,
+    cloud: WorkspaceConflictSnapshot,
   ) => {
     if (!currentUser) return
     const ownerId = String(currentUser.id)
@@ -1369,7 +1644,12 @@ const init = async () => {
             Number(backup.__editorRecovery?.baseRevision ?? liveForm.revision),
           )
         : backup
-    editorConflict = { ownerId, documentId, backup: frozenBackup, reason, cloud }
+    const cloudSnapshot: WorkspaceConflictSnapshot = {
+      ...cloud,
+      __sources: Array.isArray(cloud.__sources) ? cloud.__sources : collectSources(),
+      organizationLoaded: cloud.organizationLoaded !== false,
+    }
+    editorConflict = { ownerId, documentId, backup: frozenBackup, reason, cloud: cloudSnapshot }
     invalidateEditorSaves()
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     // The recovery controls live inside the editor form. A document-open request may have
@@ -1384,10 +1664,19 @@ const init = async () => {
     if (conflictLocalTitle)
       conflictLocalTitle.textContent = String(frozenBackup.title ?? "未命名知识")
     if (conflictLocalBody) conflictLocalBody.textContent = String(frozenBackup.body ?? "")
-    if (conflictCloudTitle) conflictCloudTitle.textContent = cloud.title || "未命名知识"
-    if (conflictCloudBody) conflictCloudBody.textContent = cloud.body
+    if (conflictCloudTitle) conflictCloudTitle.textContent = cloudSnapshot.title || "未命名知识"
+    if (conflictCloudBody) conflictCloudBody.textContent = cloudSnapshot.body
+    if (conflictLocalOrganization)
+      conflictLocalOrganization.textContent = conflictOrganizationSummary(
+        frozenBackup as Record<string, unknown>,
+      )
+    if (conflictCloudOrganization)
+      conflictCloudOrganization.textContent = conflictOrganizationSummary(
+        cloudSnapshot as unknown as Record<string, unknown>,
+        cloudSnapshot.organizationLoaded,
+      )
     if (conflictMeta)
-      conflictMeta.textContent = `本地基于第 ${Number(frozenBackup.revision ?? 0)} 版 · 云端第 ${cloud.revision} 版`
+      conflictMeta.textContent = `本地基于第 ${Number(frozenBackup.revision ?? 0)} 版 · 云端第 ${cloudSnapshot.revision} 版`
     if (conflictSection) conflictSection.hidden = false
     setStatus("检测到另一处修改。本地稿已冻结保留；选择处理方式前不会覆盖任何一方。", "error")
   }
@@ -1510,69 +1799,91 @@ const init = async () => {
     saveClient: any,
   ) => {
     if (!saveClient) return false
-    const names = [
-      ...new Set(
-        rawTags
-          .split(/[，,\n]/)
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-      ),
-    ]
-    const deletion = await saveClient
-      .from("document_tags")
-      .delete()
-      .eq("document_id", documentId)
-      .eq("owner_id", ownerId)
-    if (deletion.error) return false
-    for (const name of names) {
-      const normalizedName = name.normalize("NFKC").toLocaleLowerCase()
+    const parsed = parseWorkspaceTags(rawTags)
+    if (!parsed.ok) {
+      if (tagStatus) tagStatus.textContent = organizationIssueMessage(parsed.issues[0]?.code)
+      return false
+    }
+    const desiredTagIds: string[] = []
+    for (const tagValue of parsed.value) {
       const tag = await saveClient
         .from("tags")
         .upsert(
           {
             knowledge_base_id: knowledgeBaseId,
             owner_id: ownerId,
-            name,
-            normalized_name: normalizedName,
+            name: tagValue.name,
+            normalized_name: tagValue.normalizedKey,
           },
           { onConflict: "knowledge_base_id,normalized_name" },
         )
         .select("id")
         .single()
       if (tag.error || !tag.data?.id) return false
+      desiredTagIds.push(String(tag.data.id))
       const assignment = await saveClient
         .from("document_tags")
         .upsert({ document_id: documentId, tag_id: tag.data.id, owner_id: ownerId })
       if (assignment.error) return false
     }
+    const existing = await saveClient
+      .from("document_tags")
+      .select("tag_id")
+      .eq("document_id", documentId)
+      .eq("owner_id", ownerId)
+    if (existing.error) return false
+    const staleTagIds = (existing.data ?? [])
+      .map((row: { tag_id?: string }) => row.tag_id)
+      .filter((id: string | undefined): id is string => typeof id === "string" && id.length > 0)
+      .filter((id: string) => !desiredTagIds.includes(id))
+    if (staleTagIds.length) {
+      const deletion = await saveClient
+        .from("document_tags")
+        .delete()
+        .eq("document_id", documentId)
+        .eq("owner_id", ownerId)
+        .in("tag_id", staleTagIds)
+      if (deletion.error) return false
+    }
     return true
   }
 
   const loadLinkOptions = async (currentDocumentId = "", isCurrent = () => true) => {
-    const datalist = root.querySelector<HTMLElement>("[data-knowledge-link-options]")
-    if (!client || !currentUser || !datalist) return
+    if (!client || !currentUser) return false
     const context = captureAuthContext()
     const result = await context.client
       .from("documents")
-      .select("id,title")
+      .select("id,title,topic,visibility,updated_at")
       .eq("owner_id", context.ownerId)
       .neq("id", currentDocumentId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
-      .limit(30)
-    if (!authContextIsCurrent(context) || !isCurrent()) return
-    datalist.replaceChildren()
-    ;(result.data ?? []).forEach((item: { id: string; title: string }) => {
-      const option = globalThis.document.createElement("option")
-      option.value = item.title || "未命名知识"
-      option.label = item.id
-      datalist.appendChild(option)
-    })
+    if (!authContextIsCurrent(context) || !isCurrent()) return false
+    if (result.error) return false
+    relationDocumentOptions = (result.data ?? []).map(
+      (item: {
+        id: string
+        title: string
+        topic?: string
+        visibility?: string
+        updated_at?: string
+      }) => ({
+        id: String(item.id),
+        title: item.title || "未命名知识",
+        topic: item.topic,
+        visibility: item.visibility,
+        updatedAt: item.updated_at,
+      }),
+    )
+    relationEditors.forEach(renderRelationOptions)
+    for (const relationType of ["prerequisite", "related"] as const)
+      syncRelationEditorFromField(relationType)
+    return true
   }
 
   const loadTagOptions = async (isCurrent = () => true) => {
     const datalist = root.querySelector<HTMLElement>("[data-tag-options]")
-    if (!client || !currentUser || !datalist) return
+    if (!client || !currentUser || !datalist) return false
     const context = captureAuthContext()
     const result = await context.client
       .from("tags")
@@ -1580,13 +1891,15 @@ const init = async () => {
       .eq("owner_id", context.ownerId)
       .order("name", { ascending: true })
       .limit(100)
-    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (!authContextIsCurrent(context) || !isCurrent()) return false
+    if (result.error) return false
     datalist.replaceChildren()
     ;(result.data ?? []).forEach((item: { name: string }) => {
       const option = globalThis.document.createElement("option")
       option.value = item.name
       datalist.appendChild(option)
     })
+    return true
   }
 
   const loadDocumentTags = async (documentId: string, isCurrent = () => true) => {
@@ -1602,60 +1915,70 @@ const init = async () => {
     const names = (result.data ?? [])
       .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
       .filter(Boolean)
-    const field = form.elements.namedItem("tags") as HTMLInputElement | null
-    if (field) field.value = names.join("，")
+    const parsed = parseWorkspaceTags(names as string[])
+    if (!parsed.ok) return false
+    if (tagValues) tagValues.value = serializeWorkspaceTags(parsed.value)
+    renderTagSelections(parsed.value)
     return true
   }
 
   const saveLinks = async (
     documentId: string,
-    rawTitles: string,
+    rawSelections: string,
     relationType: "prerequisite" | "related",
     ownerId: string,
     saveClient: any,
   ) => {
     if (!saveClient) return false
-    const titles = [
-      ...new Set(
-        rawTitles
-          .split(/[，,\n]/)
-          .map((title) => title.trim())
-          .filter(Boolean),
-      ),
-    ]
-    const deletion = await saveClient
-      .from("document_links")
-      .delete()
-      .eq("from_document_id", documentId)
-      .eq("owner_id", ownerId)
-      .eq("relation_type", relationType)
-    if (deletion.error) return false
-    if (!titles.length) return true
-    const targets = await saveClient
-      .from("documents")
-      .select("id,title")
-      .eq("owner_id", ownerId)
-      .in("title", titles)
-      .is("deleted_at", null)
-    if (targets.error) return false
-    const titleMap = new Map(
-      (targets.data ?? []).map((target: { id: string; title: string }) => [
-        target.title,
-        target.id,
-      ]),
-    )
-    const rows = titles
-      .map((title) => titleMap.get(title))
-      .filter((id): id is string => Boolean(id) && id !== documentId)
-      .map((toDocumentId) => ({
+    const parsed = parseWorkspaceRelations(rawSelections, {
+      currentDocumentId: documentId,
+      documents: relationDocumentOptions,
+    })
+    if (!parsed.ok) {
+      const status =
+        relationEditorFor(relationType)?.querySelector<HTMLElement>("[data-relation-status]")
+      if (status) status.textContent = organizationIssueMessage(parsed.issues[0]?.code)
+      return false
+    }
+    const targetIds = parsed.value.map((selection) => selection.documentId)
+    if (targetIds.length) {
+      const targets = await saveClient
+        .from("documents")
+        .select("id")
+        .eq("owner_id", ownerId)
+        .in("id", targetIds)
+        .is("deleted_at", null)
+      if (targets.error || (targets.data ?? []).length !== targetIds.length) return false
+      const rows = targetIds.map((toDocumentId) => ({
         from_document_id: documentId,
         to_document_id: toDocumentId,
         owner_id: ownerId,
         relation_type: relationType,
       }))
-    if (rows.length) {
       const assignment = await saveClient.from("document_links").upsert(rows)
       if (assignment.error) return false
+    }
+    const existing = await saveClient
+      .from("document_links")
+      .select("to_document_id")
+      .eq("from_document_id", documentId)
+      .eq("owner_id", ownerId)
+      .eq("relation_type", relationType)
+    if (existing.error) return false
+    const staleTargetIds = (existing.data ?? [])
+      .map((row: { to_document_id?: string }) => row.to_document_id)
+      .filter(
+        (id: string | undefined): id is string => Boolean(id) && !targetIds.includes(String(id)),
+      )
+    if (staleTargetIds.length) {
+      const deletion = await saveClient
+        .from("document_links")
+        .delete()
+        .eq("from_document_id", documentId)
+        .eq("owner_id", ownerId)
+        .eq("relation_type", relationType)
+        .in("to_document_id", staleTargetIds)
+      if (deletion.error) return false
     }
     return true
   }
@@ -1670,21 +1993,82 @@ const init = async () => {
       .eq("owner_id", context.ownerId)
     if (!authContextIsCurrent(context) || !isCurrent()) return false
     if (result.error) return false
-    const groups: Record<string, string[]> = { prerequisite: [], related: [] }
+    const groups: Record<"prerequisite" | "related", WorkspaceRelationSelection[]> = {
+      prerequisite: [],
+      related: [],
+    }
     ;(result.data ?? []).forEach(
-      (item: { relation_type: string; documents?: { title?: string } | null }) => {
-        const title = item.documents?.title
-        if (title && groups[item.relation_type]) groups[item.relation_type].push(title)
+      (item: {
+        relation_type: string
+        to_document_id?: string
+        documents?: { title?: string } | null
+      }) => {
+        const title = item.documents?.title || "原关联知识已删除或无法识别"
+        const relationType =
+          item.relation_type === "prerequisite"
+            ? "prerequisite"
+            : item.relation_type === "related"
+              ? "related"
+              : null
+        if (item.to_document_id && relationType)
+          groups[relationType].push({ documentId: String(item.to_document_id), title })
       },
     )
-    for (const [name, values] of [
-      ["prerequisites", groups.prerequisite],
-      ["related", groups.related],
-    ] as const) {
-      const field = form.elements.namedItem(name) as HTMLInputElement | null
-      if (field) field.value = values.join("，")
+    for (const relationType of ["prerequisite", "related"] as const) {
+      const editor = relationEditorFor(relationType)
+      const hidden = editor?.querySelector<HTMLInputElement>("[data-relation-values]")
+      if (hidden) hidden.value = serializeWorkspaceRelations(groups[relationType])
+      renderRelationSelections(relationType, groups[relationType])
     }
     return true
+  }
+
+  const loadCloudOrganizationSnapshot = async (
+    saveClient: any,
+    documentId: string,
+    ownerId: string,
+  ) => {
+    try {
+      const [tagResult, linkResult, sourceResult] = await Promise.all([
+        saveClient
+          .from("document_tags")
+          .select("tags(name)")
+          .eq("document_id", documentId)
+          .eq("owner_id", ownerId),
+        saveClient
+          .from("document_links")
+          .select("relation_type,to_document_id")
+          .eq("from_document_id", documentId)
+          .eq("owner_id", ownerId),
+        saveClient
+          .from("document_sources")
+          .select("kind,url,title,author,note")
+          .eq("document_id", documentId)
+          .eq("owner_id", ownerId)
+          .order("sort_order", { ascending: true }),
+      ])
+      if (tagResult.error || linkResult.error || sourceResult.error) return null
+      const tags = (tagResult.data ?? [])
+        .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
+        .filter((name: string | undefined): name is string => typeof name === "string")
+      const prerequisites: string[] = []
+      const related: string[] = []
+      ;(linkResult.data ?? []).forEach(
+        (item: { relation_type?: string; to_document_id?: string }) => {
+          if (!item.to_document_id) return
+          if (item.relation_type === "prerequisite") prerequisites.push(String(item.to_document_id))
+          if (item.relation_type === "related") related.push(String(item.to_document_id))
+        },
+      )
+      return {
+        tags: JSON.stringify(tags),
+        prerequisites: JSON.stringify(prerequisites),
+        related: JSON.stringify(related),
+        __sources: (sourceResult.data ?? []) as WorkspaceSource[],
+      }
+    } catch {
+      return null
+    }
   }
 
   const publicationUrl = (publication: PublicationState) =>
@@ -1846,13 +2230,54 @@ const init = async () => {
     const liveDocumentIdentity = readForm().documentId || "new"
     const outboxClaim = activeOutboxClaims.get(liveDocumentIdentity)
     const data = workspaceFormFromOutboxClaim(outboxClaim) ?? readForm()
-    const sourceSnapshot = outboxClaim
+    const rawSourceSnapshot = outboxClaim
       ? workspaceSourcesFromOutboxClaim(outboxClaim)
       : collectSources()
-    if (!sourceSnapshot) {
+    if (!rawSourceSnapshot) {
       setStatus("持久恢复队列中的来源数据无法验证；已停止保存并保留原始记录。", "error")
       return false
     }
+    const parsedTags = parseWorkspaceTags(data.tags)
+    if (!parsedTags.ok) {
+      if (tagStatus) tagStatus.textContent = organizationIssueMessage(parsedTags.issues[0]?.code)
+      tagInput?.focus()
+      setStatus("标签尚未通过检查；文档没有写入云端。", "error")
+      return false
+    }
+    const parsedPrerequisites = parseWorkspaceRelations(data.prerequisites, {
+      currentDocumentId: data.documentId,
+      documents: relationDocumentOptions,
+    })
+    const parsedRelated = parseWorkspaceRelations(data.related, {
+      currentDocumentId: data.documentId,
+      documents: relationDocumentOptions,
+    })
+    if (!parsedPrerequisites.ok) {
+      const editor = relationEditorFor("prerequisite")
+      const relationStatus = editor?.querySelector<HTMLElement>("[data-relation-status]")
+      if (relationStatus)
+        relationStatus.textContent = organizationIssueMessage(parsedPrerequisites.issues[0]?.code)
+      editor?.querySelector<HTMLSelectElement>("[data-relation-select]")?.focus()
+      setStatus("知识关系尚未通过检查；文档没有写入云端。", "error")
+      return false
+    }
+    if (!parsedRelated.ok) {
+      const editor = relationEditorFor("related")
+      const relationStatus = editor?.querySelector<HTMLElement>("[data-relation-status]")
+      if (relationStatus)
+        relationStatus.textContent = organizationIssueMessage(parsedRelated.issues[0]?.code)
+      editor?.querySelector<HTMLSelectElement>("[data-relation-select]")?.focus()
+      setStatus("知识关系尚未通过检查；文档没有写入云端。", "error")
+      return false
+    }
+    const sourceSnapshot = validateSources(rawSourceSnapshot)
+    if (!sourceSnapshot) {
+      setStatus("来源尚未通过检查；文档没有写入云端。", "error")
+      return false
+    }
+    data.tags = serializeWorkspaceTags(parsedTags.value)
+    data.prerequisites = serializeWorkspaceRelations(parsedPrerequisites.value)
+    data.related = serializeWorkspaceRelations(parsedRelated.value)
     const ownerId = String(currentUser.id)
     const saveClient = client
     const documentIdentity = data.documentId || "new"
@@ -1933,14 +2358,27 @@ const init = async () => {
         .eq("id", data.documentId)
         .eq("owner_id", ownerId)
         .single()
+      const cloudOrganization = latest.data
+        ? await loadCloudOrganizationSnapshot(saveClient, data.documentId, ownerId)
+        : null
+      if (!saveTargetIsCurrent()) return false
       const cloud = latest.data
         ? ({
             ...data,
+            tags: cloudOrganization?.tags ?? "",
+            prerequisites: cloudOrganization?.prerequisites ?? "",
+            related: cloudOrganization?.related ?? "",
+            __sources: cloudOrganization?.__sources ?? [],
+            organizationLoaded: Boolean(cloudOrganization),
             ...latest.data,
             documentId: data.documentId,
             revision: Number(latest.data.revision ?? data.revision),
-          } as WorkspaceFormData)
-        : data
+          } satisfies WorkspaceConflictSnapshot)
+        : ({
+            ...data,
+            __sources: sourceSnapshot,
+            organizationLoaded: false,
+          } satisfies WorkspaceConflictSnapshot)
       freezeEditorConflict(data.documentId, conflictBackup, "remote-write", cloud)
       return false
     }
@@ -2300,6 +2738,10 @@ const init = async () => {
       if (conflictLocalTitle)
         conflictLocalTitle.textContent = String(nextBackup.title ?? "未命名知识")
       if (conflictLocalBody) conflictLocalBody.textContent = String(nextBackup.body ?? "")
+      if (conflictLocalOrganization)
+        conflictLocalOrganization.textContent = conflictOrganizationSummary(
+          nextBackup as Record<string, unknown>,
+        )
     }
     rememberBackup(backup)
     if (!editorOutbox) return
@@ -2477,6 +2919,8 @@ const init = async () => {
     hideEditorLoadRecovery()
     clearEditorConflict()
     form?.reset()
+    relationDocumentOptions = []
+    syncOrganizationEditorsFromFields()
     if (form) {
       form.inert = false
       form.setAttribute("aria-busy", "false")
@@ -2562,6 +3006,7 @@ const init = async () => {
         const field = form.elements.namedItem(name) as HTMLInputElement | null
         if (field) field.value = ""
       }
+      syncOrganizationEditorsFromFields()
       renderSources()
       updatePublicationUI(null)
       if (writeLauncher) writeLauncher.hidden = true
@@ -2570,7 +3015,7 @@ const init = async () => {
       if (state) state.textContent = "已加载云端草稿"
       await loadVersions(documentId, isCurrentOpen)
       if (!isCurrentOpen()) return false
-      await loadLinkOptions(documentId, isCurrentOpen)
+      const linkOptionsLoaded = await loadLinkOptions(documentId, isCurrentOpen)
       if (!isCurrentOpen()) return false
       const tagsLoaded = await loadDocumentTags(documentId, isCurrentOpen)
       if (!isCurrentOpen()) return false
@@ -2584,7 +3029,13 @@ const init = async () => {
         isCurrentOpen,
       )
       if (!isCurrentOpen()) return false
-      if (!tagsLoaded || !linksLoaded || !sourcesLoaded || !publicationLoaded) {
+      if (
+        !linkOptionsLoaded ||
+        !tagsLoaded ||
+        !linksLoaded ||
+        !sourcesLoaded ||
+        !publicationLoaded
+      ) {
         const localRestored =
           restoredLocally &&
           !options.ignoreLocalBackup &&
@@ -2600,6 +3051,7 @@ const init = async () => {
           return true
         }
         const failedRelatedData = [
+          !linkOptionsLoaded && "关系候选",
           !tagsLoaded && "标签",
           !linksLoaded && "关系",
           !sourcesLoaded && "来源",
@@ -3372,6 +3824,7 @@ const init = async () => {
     if (revision) revision.value = "0"
     const statusField = form?.elements.namedItem("status") as HTMLInputElement | null
     if (statusField) statusField.value = "draft"
+    syncOrganizationEditorsFromFields()
     updatePublicationUI(null)
     renderSources()
     if (writeLauncher && showEditor) writeLauncher.hidden = true
@@ -4047,18 +4500,76 @@ const init = async () => {
       if (preview) preview.hidden = true
       form.querySelector<HTMLInputElement>("[name=title]")?.focus()
     })
-    const normalizeTags = () => {
-      const field = form.elements.namedItem("tags") as HTMLInputElement | null
-      if (!field) return
-      field.value = [
-        ...new Set(
-          field.value
-            .split(/[，,\n]/)
-            .map((tag) => tag.trim())
-            .filter(Boolean),
-        ),
-      ].join("，")
+    const addCurrentTag = () => {
+      const candidate = tagInput?.value ?? ""
+      const parsed = parseWorkspaceTags([candidate])
+      if (!parsed.ok || !parsed.value.length) {
+        if (tagStatus)
+          tagStatus.textContent = organizationIssueMessage(
+            parsed.ok ? "tag_blank" : parsed.issues[0]?.code,
+          )
+        tagInput?.focus()
+        return
+      }
+      const tag = parsed.value[0]
+      if (selectedTags.some((selected) => selected.normalizedKey === tag.normalizedKey)) {
+        if (tagStatus) tagStatus.textContent = `“${tag.name}”已在当前知识中。`
+        tagInput?.select()
+        return
+      }
+      renderTagSelections([...selectedTags, tag], true)
+      if (tagInput) tagInput.value = ""
+      if (tagStatus) tagStatus.textContent = `已添加标签“${tag.name}”。`
+      tagInput?.focus()
     }
+    root
+      .querySelector<HTMLButtonElement>("[data-tag-add]")
+      ?.addEventListener("click", addCurrentTag)
+    tagInput?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return
+      event.preventDefault()
+      addCurrentTag()
+    })
+    relationEditors.forEach((editor) => {
+      const relationType = relationTypeForEditor(editor)
+      const search = editor.querySelector<HTMLInputElement>("[data-relation-search]")
+      const select = editor.querySelector<HTMLSelectElement>("[data-relation-select]")
+      const status = editor.querySelector<HTMLElement>("[data-relation-status]")
+      search?.addEventListener("input", () => renderRelationOptions(editor))
+      editor
+        .querySelector<HTMLButtonElement>("[data-relation-add]")
+        ?.addEventListener("click", () => {
+          const targetId = select?.value ?? ""
+          if (!targetId) {
+            if (status) status.textContent = "请先从列表中选择一条知识。"
+            select?.focus()
+            return
+          }
+          const parsed = parseWorkspaceRelations(
+            [...selectedRelations[relationType].map((item) => item.documentId), targetId],
+            {
+              currentDocumentId: readForm().documentId,
+              documents: relationDocumentOptions,
+            },
+          )
+          if (!parsed.ok) {
+            if (status) status.textContent = organizationIssueMessage(parsed.issues[0]?.code)
+            select?.focus()
+            return
+          }
+          renderRelationSelections(relationType, parsed.value, true)
+          const target = parsed.value.find((item) => item.documentId === targetId)
+          if (status)
+            status.textContent = target
+              ? relationType === "prerequisite"
+                ? `阅读当前知识前，建议先读《${target.title}》。`
+                : `《${target.title}》已添加为相关知识。`
+              : "关系已添加。"
+          if (search) search.value = ""
+          renderRelationOptions(editor)
+          search?.focus()
+        })
+    })
     const classify = () => {
       const title = String((form.elements.namedItem("title") as HTMLInputElement)?.value ?? "")
       const body = String((form.elements.namedItem("body") as HTMLTextAreaElement)?.value ?? "")
@@ -4128,9 +4639,10 @@ const init = async () => {
         connections?.scrollIntoView({ behavior: "smooth", block: "nearest" })
       })
     })
-    form.addEventListener("input", () => {
+    form.addEventListener("input", (event) => {
+      const target = event.target as HTMLElement | null
+      if (target?.matches("[data-tag-input],[data-relation-search]")) return
       editorChangeGeneration += 1
-      normalizeTags()
       const documentIdentity = readForm().documentId || "new"
       editorTabDrafts.markDirty(documentIdentity, editorChangeGeneration)
       if (editorConflict?.documentId === documentIdentity) {
@@ -4148,7 +4660,6 @@ const init = async () => {
     form.addEventListener("submit", async (event) => {
       event.preventDefault()
       if (autosaveTimer) window.clearTimeout(autosaveTimer)
-      normalizeTags()
       const documentIdentity = readForm().documentId || "new"
       if (editorConflict?.documentId === documentIdentity) {
         if (state) state.textContent = "版本冲突待处理，自动同步保持暂停"
@@ -4211,6 +4722,7 @@ const init = async () => {
       if (revision) revision.value = "0"
       const statusField = form.elements.namedItem("status") as HTMLInputElement | null
       if (statusField) statusField.value = "draft"
+      syncOrganizationEditorsFromFields()
       updatePublicationUI(null)
       renderSources()
       allowEditorSaves("new")

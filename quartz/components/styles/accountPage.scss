@@ -1531,6 +1531,92 @@
   padding-top: 1rem;
   border-top: 1px solid var(--account-border);
 }
+.organization-editor {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--account-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--light) 92%, var(--secondary));
+}
+.organization-editor-heading,
+.organization-editor-heading > div {
+  display: grid;
+  gap: 0.25rem;
+}
+.organization-editor-heading strong {
+  font-size: 0.92rem;
+}
+.organization-entry-row,
+.relation-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+.relation-picker {
+  grid-template-columns: minmax(11rem, 1fr) minmax(12rem, 1.2fr) auto;
+}
+.organization-entry-row > label,
+.relation-picker > label {
+  min-width: 0;
+}
+.organization-entry-row > button,
+.relation-picker > button {
+  min-height: 44px;
+}
+.organization-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.organization-chip-list:empty {
+  display: none;
+}
+.organization-chip {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 36px;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--secondary) 42%, var(--account-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--secondary) 12%, var(--light));
+  color: var(--dark);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.organization-chip button {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--darkgray);
+  font: inherit;
+  cursor: pointer;
+}
+.organization-chip button:hover,
+.organization-chip button:focus-visible {
+  background: color-mix(in srgb, var(--secondary) 18%, transparent);
+  color: var(--dark);
+}
+[data-tag-status],
+[data-relation-status] {
+  min-height: 1.2em;
+  margin: 0;
+  color: var(--darkgray);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
 .source-editor {
   display: grid;
   gap: 0.85rem;
@@ -1849,6 +1935,14 @@
   font: inherit;
   font-size: 0.84rem;
   line-height: 1.65;
+}
+.editor-conflict-organization {
+  margin-top: 0.75rem !important;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--account-border);
+  color: var(--darkgray);
+  font-size: 0.8rem;
+  line-height: 1.55;
 }
 .editor-conflict-actions {
   display: flex;
@@ -2363,9 +2457,15 @@
     width: 100%;
   }
   .editor-grid,
+  .organization-entry-row,
+  .relation-picker,
   .source-row-grid,
   .workspace-first-run ol {
     grid-template-columns: 1fr;
+  }
+  .organization-entry-row > button,
+  .relation-picker > button {
+    width: 100%;
   }
   .source-editor-heading,
   .knowledge-preview-heading {

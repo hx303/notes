@@ -287,11 +287,14 @@ test("only the latest document-open request may update document-specific UI", ()
   assert.match(accountScript, /loadDocumentSources\(documentId, isCurrentOpen\)/)
   assert.match(accountScript, /loadPublication\([\s\S]{0,180}isCurrentOpen/)
   assert.match(accountScript, /if \(!authContextIsCurrent\(context\) \|\| !isCurrent\(\)\) return/)
-  assert.match(accountScript, /if \(field\) field\.value = names\.join/)
-  assert.match(accountScript, /if \(field\) field\.value = values\.join/)
+  assert.match(accountScript, /tagValues\.value = serializeWorkspaceTags\(parsed\.value\)/)
   assert.match(
     accountScript,
-    /if \(!tagsLoaded \|\| !linksLoaded \|\| !sourcesLoaded \|\| !publicationLoaded\)/,
+    /hidden\.value = serializeWorkspaceRelations\(groups\[relationType\]\)/,
+  )
+  assert.match(
+    accountScript,
+    /!linkOptionsLoaded \|\|[\s\S]{0,180}!tagsLoaded \|\|[\s\S]{0,180}!linksLoaded \|\|[\s\S]{0,180}!sourcesLoaded \|\|[\s\S]{0,180}!publicationLoaded/,
   )
   assert.match(accountScript, /标签、关系、来源或发布状态读取失败；已锁定编辑器/)
   assert.match(accountScript, /form\.inert = false[\s\S]{0,100}aria-busy", "false"/)
@@ -337,7 +340,7 @@ test("conflict choices are single-flight and storage denial keeps durable recove
   )
   assert.match(
     accountScript,
-    /const rememberBackup[\s\S]{0,500}editorOutbox\.restoreConflict[\s\S]{0,900}rememberBackup\(recoverableConflictBackup\(conflict, frozen\)\)/,
+    /const rememberBackup[\s\S]{0,900}editorOutbox\.restoreConflict[\s\S]{0,900}rememberBackup\(recoverableConflictBackup\(conflict, frozen\)\)/,
   )
 })
 
@@ -439,7 +442,7 @@ test("a successful older save cannot remove a backup written by a newer edit", (
   )
   assert.match(
     accountScript,
-    /form\.addEventListener\("input", \(\) => \{\s*editorChangeGeneration \+= 1[\s\S]{0,180}editorTabDrafts\.markDirty\(documentIdentity, editorChangeGeneration\)/,
+    /form\.addEventListener\("input", \(event\) => \{[\s\S]{0,320}editorChangeGeneration \+= 1[\s\S]{0,180}editorTabDrafts\.markDirty\(documentIdentity, editorChangeGeneration\)/,
   )
   assert.match(accountScript, /const backupTokenAtStart = editorTabDrafts\.backupToken/)
   const bindToken = accountScript.indexOf(
