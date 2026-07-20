@@ -31,8 +31,14 @@ test("account SPA resources are cleaned up when Quartz replaces the page", () =>
   assert.match(script, /window\.removeEventListener\("online", onlineHandler\)/)
   assert.match(script, /window\.clearTimeout\(autosaveTimer\)/)
   assert.match(script, /if \(disposed\) return[\s\S]*onAuthStateChange/)
-  assert.match(script, /await loadCapabilities\(\)[\s\S]*catch \{\s*setStatus\(/)
-  assert.doesNotMatch(script, /await loadCapabilities\(\)[\s\S]*catch \{\s*currentUser = null/)
+  assert.match(
+    script,
+    /await loadCapabilities\(isCurrentSync\)[\s\S]*catch \{[\s\S]{0,120}setStatus\(/,
+  )
+  assert.doesNotMatch(
+    script,
+    /await loadCapabilities\(isCurrentSync\)[\s\S]*catch \{\s*currentUser = null/,
+  )
 })
 
 test("auth client timeout can reconnect in place and binds only one subscription", () => {
@@ -50,6 +56,25 @@ test("auth client timeout can reconnect in place and binds only one subscription
   assert.doesNotMatch(script, /forgotForm\?\.addEventListener[\s\S]*if \(!client \|\| !value\)/)
   assert.match(script, /onlineHandler = async \(\) => \{[\s\S]*await ensureClient\(true\)/)
   assert.match(script, /if \(!client \|\| authSubscription\) return/)
+})
+
+test("same-account auth refresh preserves the active write surface", () => {
+  assert.match(
+    script,
+    /const preserveWriteSurface =[\s\S]{0,180}workspaceSection === "write"[\s\S]{0,180}nextOwnerId === previousOwnerId/,
+  )
+  assert.match(
+    script,
+    /if \(writeLauncher && !preserveWriteSurface\) writeLauncher\.hidden = !currentUser/,
+  )
+  assert.match(
+    script,
+    /if \(!preserveWriteSurface\) \{[\s\S]{0,120}editor\.hidden = true[\s\S]{0,120}flatWorkbench\.hidden = true/,
+  )
+  assert.match(
+    script,
+    /if \(!preserveWriteSurface\) \{\s*await restoreDurableOutboxBackup\("new", isCurrentSync\)[\s\S]{0,120}restoreLocalBackup\(\)\s*\}/,
+  )
 })
 
 test("account settings survive SPA navigation and ignore stale account responses", () => {
@@ -92,4 +117,21 @@ test("account routes reclaim empty Quartz side rails and adapt at content-driven
   assert.match(styles, /body:has\(\.account-page\)[\s\S]*padding-block-end: 0/)
   assert.match(styles, /prefers-reduced-motion: reduce/)
   assert.match(styles, /account-auth-loading[\s\S]*min-height: 21rem/)
+})
+
+test("editor conflicts are announced and offer three explicit, responsive recovery actions", () => {
+  assert.match(component, /data-editor-state/)
+  assert.match(component, /data-editor-state[\s\S]{0,120}role="status"/)
+  assert.match(component, /data-editor-state[\s\S]{0,160}aria-live="polite"/)
+  assert.match(component, /data-editor-state[\s\S]{0,200}aria-atomic="true"/)
+  assert.match(component, /data-editor-conflict[\s\S]*aria-labelledby="editor-conflict-title"/)
+  assert.match(component, /tabIndex=\{-1\}[\s\S]{0,80}data-editor-conflict-title/)
+  assert.match(component, /data-conflict-use-local/)
+  assert.match(component, /data-conflict-use-cloud/)
+  assert.match(component, /data-conflict-save-copy/)
+  assert.match(styles, /\.editor-conflict-actions[\s\S]*min-height: 44px/)
+  assert.match(
+    styles,
+    /@media \(max-width: 50rem\)[\s\S]*\.editor-conflict-compare[\s\S]*grid-template-columns: 1fr/,
+  )
 })

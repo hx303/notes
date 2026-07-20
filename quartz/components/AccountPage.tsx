@@ -1130,10 +1130,27 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
               <p class="account-kicker">WORKSPACE / 工作台</p>
               <h2 id="editor-title">新建一条知识</h2>
             </div>
-            <span class="editor-save-state" data-editor-state>
+            <span
+              class="editor-save-state"
+              data-editor-state
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               尚未保存
             </span>
           </div>
+          <section class="editor-load-recovery" data-editor-load-recovery role="alert" hidden>
+            <div>
+              <strong>这条知识还没有完整载入</strong>
+              <p data-editor-load-recovery-message>
+                编辑器已暂停，避免用不完整的数据覆盖标签、关系、来源或发布状态。
+              </p>
+            </div>
+            <button type="button" class="account-secondary" data-editor-retry-load>
+              重新加载文档
+            </button>
+          </section>
           <form class="editor-form" data-editor-form>
             <input type="hidden" name="documentId" />
             <input type="hidden" name="revision" value="0" />
@@ -1373,6 +1390,49 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                 <h4>来源与依据</h4>
                 <ol data-preview-sources />
               </section>
+            </section>
+            <section
+              class="editor-conflict"
+              data-editor-conflict
+              aria-labelledby="editor-conflict-title"
+              hidden
+            >
+              <div class="editor-conflict-heading">
+                <div>
+                  <p class="account-kicker">RECOVERY / 版本恢复</p>
+                  <h3 id="editor-conflict-title" tabIndex={-1} data-editor-conflict-title>
+                    本地稿和云端稿都已保留
+                  </h3>
+                </div>
+                <span data-editor-conflict-meta>自动同步已暂停</span>
+              </div>
+              <p data-editor-conflict-message>
+                这条知识在另一处发生了修改。请先比较，再明确选择要继续使用的版本。
+              </p>
+              <div class="editor-conflict-compare">
+                <section aria-labelledby="editor-conflict-local-title">
+                  <h4 id="editor-conflict-local-title">我的本地版本</h4>
+                  <strong data-editor-conflict-local-title>未命名知识</strong>
+                  <pre data-editor-conflict-local-body />
+                </section>
+                <section aria-labelledby="editor-conflict-cloud-title">
+                  <h4 id="editor-conflict-cloud-title">当前云端版本</h4>
+                  <strong data-editor-conflict-cloud-title>未命名知识</strong>
+                  <pre data-editor-conflict-cloud-body />
+                </section>
+              </div>
+              <div class="editor-conflict-actions">
+                <button type="button" data-conflict-use-local>
+                  保留我的版本
+                </button>
+                <button type="button" class="account-secondary" data-conflict-use-cloud>
+                  采用云端版本
+                </button>
+                <button type="button" class="account-secondary" data-conflict-save-copy>
+                  另存为私密副本
+                </button>
+              </div>
+              <small>选择前不会写入云端；采用云端时，本地稿仍会保留为恢复副本。</small>
             </section>
             <div class="editor-actions">
               <button type="submit" data-save-document>
