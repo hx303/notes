@@ -1,6 +1,6 @@
 # P06 knowledge organization acceptance
 
-- Candidate: `agent/knowledge-organization`, implementation `8ce887e4`
+- Candidate: `agent/knowledge-organization`, Draft PR #27, implementation `8ce887e4`
 - Baseline: merged `main` `1fccf318e4a2d2077589768bf8854810947092c9`
 - Date: 2026-07-20 (Asia/Shanghai)
 - Current verdict: **implementation gates pass; signed-in PR-preview gate remains open**

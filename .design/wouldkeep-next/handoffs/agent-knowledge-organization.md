@@ -3,7 +3,7 @@
 - Role: P06 workspace implementation and integration commander
 - Model / reasoning effort: GPT-5.6 Codex, high
 - Worktree: `worktrees-next/knowledge-organization`
-- Branch: `agent/knowledge-organization`
+- Branch: `agent/knowledge-organization`, Draft PR #27
 - Baseline SHA: `1fccf318e4a2d2077589768bf8854810947092c9`
 - Current SHA: implementation `8ce887e4` plus this documentation checkpoint
 - Demonstrable slice: no-code tags, owner-document relationships, multi-source validation, safe conflict comparison
@@ -40,5 +40,5 @@
 
 - Known risks: multi-table save is not atomic; signed-in round-trip/owner isolation/conflict/publication browser evidence is open; `continues`, relation note/cycle validation, and multi-knowledge-base filtering are future scope.
 - Rollback or forward-fix path: revert implementation `8ce887e4`; no database rollback is needed. Forward fix can add an atomic owner-scoped organization RPC in a separately approved migration.
-- Blockers: PR-preview deployment plus an authenticated preview session for the remaining browser gate.
+- Blockers: PR #27 preview deployment plus an authenticated preview session for the remaining browser gate.
 - Next task prerequisites: push branch, open draft PR, wait for preview checks, then ask the site owner to sign in only if the preview does not share an existing session.
