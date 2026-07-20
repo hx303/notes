@@ -1,8 +1,8 @@
 # wouldkeep Current State
 
-Last reconciled: 2026-07-18 (Asia/Shanghai)
+Last reconciled: 2026-07-20 (Asia/Shanghai)
 
-Working baseline: merged `main` at `a4662b1d163d4d60d7ad0ed291ce4b0eebebc8b6`
+Working baseline: merged `main` at `1fccf318e4a2d2077589768bf8854810947092c9`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
@@ -26,6 +26,8 @@ Merged production ACL operation record PR: [#23](https://github.com/hx303/notes/
 
 Merged novice import and refresh-recovery PR: [#24](https://github.com/hx303/notes/pull/24)
 
+Merged editor recovery PR: [#26](https://github.com/hx303/notes/pull/26)
+
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
 ## 2026-07-17 reconciliation after PR #16
@@ -41,7 +43,8 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 - PR #22 merged the browser-led sidebar scroll, medium-width navigation, admin file-nav, and keyboard repair as `01dc10a9`. The merged baseline passes TypeScript, 217/217 tests, and a production build with 284 inputs and 1,046 outputs.
 - PR #23 merged the production ACL operation record and advanced `main` to `a6ef3be6`.
 - PR #24 merged the P03/P04 import hardening and refresh-recovery work to `main` as `a4662b1d`. TypeScript, 18/18 focused tests, 229/229 full tests, the 284-input/1,051-output production build, all Vercel checks, and the site-owner browser check passed. Broader DOCX/drag-drop/network/screen-reader/zoom/touch evidence remains P2.
-- P05 editor recovery is at implementation checkpoint `b9b7558e` from baseline `a4662b1d`. It adds an owner-scoped IndexedDB outbox, interrupted-save recovery, latest-intent coalescing, authoritative acknowledgements, Web Locks/BroadcastChannel coordination, offline local-first open, account/document race guards, safe historical restore, and three explicit conflict actions. Conflict groups resolve or re-freeze through one IndexedDB transaction; failure injection proves rollback without partial deletion, conflict actions are single-flight, and a newer cross-tab intent refreshes durable state and the comparison panel. Four P1 race classes are repaired: two same-owner auth-refresh races, cross-tab deletion/refresh of another tab's unqueued input, and first-insert `new` identity cleanup during continued editing or browser-storage failure. Backup deletion now requires the saving tab's exact raw token, tab-local dirty state blocks automatic cloud adoption, and failed first-ID backup writes defer `new` cleanup until a matching complete save. Related-data and thrown loader failures stay fail-closed while exposing a keyboard-operable retry outside the inert form. Signed-in branch-preview acceptance created an explicitly private test draft, confirmed its bound route and exact content, then reloaded and observed the same route, title, body, private-default copy, and version history. At exact implementation HEAD, focused 57/57, full 280/280, migration guard, TypeScript, diff check, independent no-P0/P1 re-review, and the 284-input/1,051-output production build pass. Offline, completed conflict actions, retry interaction, and full keyboard browser evidence remain open; a double-tab attempt was safely blocked when related-data loading did not complete and created no extra cloud version. Server idempotency and an atomic multi-table save remain separately reviewed forward work.
+- PR #26 merged P05 editor recovery to `main` as `1fccf318`. It adds an owner-scoped IndexedDB outbox, interrupted-save recovery, latest-intent coalescing, authoritative acknowledgements, Web Locks/BroadcastChannel coordination, offline local-first open, account/document race guards, safe historical restore, and three explicit conflict actions. The site owner explicitly accepted the remaining P2 offline/conflict/retry/keyboard browser risks before merge. Server idempotency and an atomic multi-table save remain separately reviewed forward work.
+- P06 no-code knowledge organization is at implementation checkpoint `8ce887e4` from baseline `1fccf318`. It replaces comma/title text fields with explicit tag chips and owner-document ID selectors, keeps UUIDs out of visible UI, supports removable tombstones for deleted or unresolvable relationships, preserves citation fragments, rejects HTTP(S) sources containing embedded credentials or secret query parameters, caps sources at 50, and validates organization data before the core document write. Tag/link synchronization is add-first then stale-delete; related-data loading remains fail-closed; conflict cards now compare organization counts and remote-write conflicts fetch a real cloud organization snapshot instead of reusing local values. No schema, RLS, RPC, AI, production migration, or deployment change is included. Focused 35/35, full 291/291, migration guard, TypeScript, changed-file Prettier, diff check, and the 284-input/1,051-output build pass. Local browser structure at 1200/800/375/320 CSS px has no horizontal overflow or console errors; signed-in tag/relation/source save-refresh, owner isolation, conflict actions, and publication snapshot behavior remain the PR-preview gate.
 
 ## Executive status
 
@@ -111,7 +114,7 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
   - `C:/Users/23012/Desktop/wouldkeep/_repo` — `agent/ai-knowledge-assistant-plan`, with untracked `supabase/generated/`.
   - `.../admin-publish` — `agent/admin-editorial-workspace`.
   - `.../work/ai-assistant-foundation` — `agent/ai-assistant-foundation`, clean at reconciliation time.
-- Remote `main` was last reconciled at `24536ab5802e315654d3810da334fcd19b804eaf` after PR #16; the earlier PR #11 baseline was `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`.
+- Remote `main` was last reconciled at `1fccf318e4a2d2077589768bf8854810947092c9` after PR #26; the earlier PR #11 baseline was `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`.
 - Because the local repository is shallow, local merge-base/diff counts against `origin/main` are not authoritative. GitHub's PR mergeability is the current authoritative merge signal until history is deepened.
 
 ## Legacy task-file reconciliation
