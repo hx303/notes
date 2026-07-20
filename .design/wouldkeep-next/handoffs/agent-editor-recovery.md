@@ -5,7 +5,7 @@
 - Worktree: `worktrees-next/editor-recovery`
 - Branch: `agent/editor-recovery`
 - Baseline SHA: `a4662b1d163d4d60d7ad0ed291ce4b0eebebc8b6`
-- Implementation SHA: `f25f2e37` (documentation-only reconciliation follows this checkpoint)
+- Implementation SHA: `c40aa471` (documentation-only reconciliation follows this checkpoint)
 - Demonstrable slice: durable owner-scoped editor outbox, cross-tab serialization/status, offline refresh recovery, explicit conflict comparison/actions, and session-safe version restore
 - Approved research brief (or why none is needed): `.design/reference-research/editor-recovery.md` is being recorded by the reference-research owner; the accepted direction is IndexedDB outbox + Web Locks + BroadcastChannel + server revision/CAS, without CRDT in P05.
 
@@ -26,7 +26,7 @@
 - Made the three conflict choices single-flight and resilient when localStorage access or browser recovery archiving is unavailable.
 - Bound async editor reads and conflicts to an account epoch; sign-out/account changes clear sensitive UI and stale responses cannot repopulate it.
 - Restored legacy versions with missing tags/relations/sources normalized to empty values instead of mixing current metadata.
-- Preserved the active detailed/free write surface across same-owner `SIGNED_IN` and `USER_UPDATED` refreshes while still resetting it on logout or a real owner change.
+- Preserved the active detailed/free write surface and its current document form across same-owner `SIGNED_IN` and `USER_UPDATED` refreshes while still resetting and restoring drafts on initial login, logout, or a real owner change.
 
 ## Changed files and scope
 
@@ -36,8 +36,8 @@
 
 ## Evidence
 
-- Commands run and raw result summary at exact implementation HEAD `f25f2e37`: focused account-stability/recovery tests 27/27 PASS; full Quartz tests 275/275 PASS; migration guard PASS; TypeScript PASS; `git diff --check` PASS; production build PASS with 284 Markdown inputs and 1,051 outputs; both Vercel deployments PASS.
-- UI evidence (viewport, theme, state, screenshot path/diff): independent signed-in Draft-preview acceptance opened the detailed editor and observed it remain active for at least 35 seconds, passing the auth-refresh regression. Public responsive checks at 1,313, 1,024, and 390 CSS pixels found no page-level horizontal overflow; desktop sidebar scrolling and medium navigation behavior were present. Save/refresh, offline storage, conflict-action, and keyboard browser evidence remains open because the Chrome control connection repeatedly timed out on external Statsig requests.
+- Commands run and raw result summary at exact implementation HEAD `c40aa471`: focused account/editor recovery tests 52/52 PASS; full Quartz tests 275/275 PASS; migration guard PASS; TypeScript PASS; `git diff --check` PASS; production build PASS with 284 Markdown inputs and 1,051 outputs. Independent code re-review found no remaining P0/P1.
+- UI evidence (viewport, theme, state, screenshot path/diff): independent signed-in Draft-preview acceptance opened the detailed editor and observed it remain active for at least 35 seconds, passing the write-surface auth-refresh regression. Public responsive checks at 1,313, 1,024, and 390 CSS pixels found no page-level horizontal overflow; desktop sidebar scrolling and medium navigation behavior were present. A later exact-deployment attempt reached the preview but did not share the branch-alias login session; the logged-in alias then hit repeated Chrome control timeouts. Save/refresh, offline storage, conflict-action, and keyboard browser evidence therefore remains open.
 - Security evidence (owner / other user / anonymous): pure backup inspection rejects owner/document mismatch; production account-isolation browser evidence remains open.
 - Migration or Edge Function deployed to production: **No**.
 
