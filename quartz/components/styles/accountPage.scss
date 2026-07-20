@@ -1758,6 +1758,39 @@
   color: var(--darkgray);
   font-size: 0.82rem;
 }
+.editor-load-recovery {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--color-status-warning);
+  border-radius: 12px;
+  background: var(--color-status-warning-bg);
+  color: var(--dark);
+}
+.editor-load-recovery[hidden] {
+  display: none;
+}
+.editor-load-recovery p {
+  margin: 0.35rem 0 0;
+  color: var(--darkgray);
+  overflow-wrap: anywhere;
+}
+.editor-load-recovery button {
+  flex: 0 0 auto;
+}
+@media (max-width: 50rem) {
+  .editor-load-recovery {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .editor-load-recovery button {
+    justify-content: center;
+    width: 100%;
+  }
+}
 .editor-conflict {
   display: grid;
   gap: 1rem;

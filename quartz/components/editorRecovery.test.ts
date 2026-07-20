@@ -3,9 +3,12 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
   addEditorBackupMetadata,
+  createEditorTabDraftState,
   createSerializedSaveQueue,
   inspectEditorBackup,
   materializeEditorOutboxFormIdentity,
+  removeStorageItemIfUnchanged,
+  setStorageItemSafely,
 } from "./scripts/editorRecovery"
 
 const accountScript = readFileSync(
@@ -44,6 +47,83 @@ test("legacy new drafts remain recoverable but legacy cloud drafts fail closed",
     reason: "unknown-base",
   })
   assert.equal(inspectEditorBackup("not-json", "owner-a", "new").state, "invalid")
+})
+
+test("a tab cannot delete another tab's newer backup or adopt cloud over its dirty form", () => {
+  const values = new Map<string, string>()
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    removeItem: (key: string) => void values.delete(key),
+  }
+  const key = "wouldkeep:editor-draft:owner-a:document-a"
+  const tabA = createEditorTabDraftState()
+  const tabB = createEditorTabDraftState()
+
+  tabA.markDirty("document-a", 1)
+  tabA.rememberBackup("document-a", "tab-a-before-save")
+  values.set(key, "tab-a-before-save")
+
+  // Tab B edits while A's cloud save is pending, before B's autosave fires.
+  tabB.markDirty("document-a", 1)
+  tabB.rememberBackup("document-a", "tab-b-newer-input")
+  values.set(key, "tab-b-newer-input")
+
+  assert.equal(removeStorageItemIfUnchanged(storage, key, tabA.backupToken("document-a")), false)
+  assert.equal(values.get(key), "tab-b-newer-input")
+  assert.equal(tabA.clearDirtyIfGeneration("document-a", 1), true)
+  assert.equal(tabB.isDirty("document-a"), true)
+})
+
+test("a tab clears only its matching generation and matching backup token", () => {
+  const values = new Map<string, string>([["draft", "same-tab-backup"]])
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    removeItem: (key: string) => void values.delete(key),
+  }
+  const tab = createEditorTabDraftState()
+  tab.markDirty("new", 4)
+  tab.rememberBackup("new", "same-tab-backup")
+
+  assert.equal(tab.clearDirtyIfGeneration("new", 3), false)
+  assert.equal(tab.isDirty("new"), true)
+  assert.equal(removeStorageItemIfUnchanged(storage, "draft", tab.backupToken("new")), true)
+  assert.equal(values.has("draft"), false)
+  assert.equal(tab.clearDirtyIfGeneration("new", 4), true)
+})
+
+test("a first insert removes this tab's latest new token before moving dirty state to the cloud id", () => {
+  const values = new Map<string, string>([["new-key", "first-save-start"]])
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    removeItem: (key: string) => void values.delete(key),
+  }
+  const tab = createEditorTabDraftState()
+  tab.markDirty("new", 1)
+  tab.rememberBackup("new", "first-save-start")
+
+  // The same tab keeps typing while the first cloud insert is pending.
+  tab.markDirty("new", 2)
+  tab.rememberBackup("new", "latest-live-input")
+  values.set("new-key", "latest-live-input")
+  const newTokenAtBind = tab.backupToken("new")
+
+  values.set("cloud-key", "latest-live-input")
+  assert.equal(removeStorageItemIfUnchanged(storage, "new-key", newTokenAtBind), true)
+  tab.moveDirty("new", "cloud-document")
+  assert.equal(values.has("new-key"), false)
+  assert.equal(tab.isDirty("new"), false)
+  assert.equal(tab.isDirty("cloud-document"), true)
+  assert.equal(tab.clearDirtyIfGeneration("cloud-document", 1), false)
+  assert.equal(tab.clearDirtyIfGeneration("cloud-document", 2), true)
+})
+
+test("a failed first id backup write is observable so new cleanup can be deferred", () => {
+  const storage = {
+    setItem: () => {
+      throw new Error("quota")
+    },
+  }
+  assert.equal(setStorageItemSafely(storage, "cloud-key", "latest-live-input"), false)
 })
 
 test("outbox record identity overrides stale payload form identity during replay", () => {
@@ -134,7 +214,7 @@ test("all editor save entry points use the serialized queue", () => {
 
 test("conflicts freeze the original backup until an explicit recovery action", () => {
   const conflictGuard = accountScript.indexOf(
-    "if (editorConflict?.documentId === documentId) return false",
+    "if (editorConflict?.documentId === documentId) return null",
   )
   const backupWrite = accountScript.indexOf("const backup = addEditorBackupMetadata", conflictGuard)
   assert.ok(conflictGuard > 0)
@@ -347,7 +427,7 @@ test("invalid backups are quarantined instead of silently discarded", () => {
   assert.match(accountScript, /wouldkeep:editor-recovery-quarantine:/)
   assert.match(
     accountScript,
-    /localStorage\.setItem\([\s\S]{0,200}editor-recovery-quarantine:[\s\S]{0,300}localStorage\.removeItem/,
+    /editor-recovery-quarantine:[\s\S]{0,300}removeStorageItemIfUnchanged/,
   )
 })
 
@@ -355,10 +435,61 @@ test("a successful older save cannot remove a backup written by a newer edit", (
   assert.match(accountScript, /const generationAtStart = editorChangeGeneration/)
   assert.match(
     accountScript,
-    /if \(editorChangeGeneration === generationAtStart\)[\s\S]{0,150}localStorage\.removeItem/,
+    /if \(editorChangeGeneration === generationAtStart\)[\s\S]{0,500}removeTabBackupIfUnchanged/,
   )
   assert.match(
     accountScript,
-    /form\.addEventListener\("input", \(\) => \{\s*editorChangeGeneration \+= 1/,
+    /form\.addEventListener\("input", \(\) => \{\s*editorChangeGeneration \+= 1[\s\S]{0,180}editorTabDrafts\.markDirty\(documentIdentity, editorChangeGeneration\)/,
   )
+  assert.match(accountScript, /const backupTokenAtStart = editorTabDrafts\.backupToken/)
+  const bindToken = accountScript.indexOf(
+    'const newBackupTokenAtBind = editorTabDrafts.backupToken("new")',
+  )
+  const moveDirty = accountScript.indexOf(
+    'editorTabDrafts.moveDirty("new", result.data.id)',
+    bindToken,
+  )
+  const safeIdWrite = accountScript.indexOf("setStorageItemSafely(", moveDirty)
+  const idWriteResult = accountScript.indexOf(
+    "idBackupWritten = Boolean(boundBackupToken)",
+    safeIdWrite,
+  )
+  const pendingRegistration = accountScript.indexOf(
+    "pendingNewBackupCleanup.set(result.data.id, newBackupTokenAtBind)",
+    idWriteResult,
+  )
+  assert.ok(bindToken > 0)
+  assert.ok(moveDirty > bindToken)
+  assert.ok(safeIdWrite > moveDirty)
+  assert.ok(idWriteResult > safeIdWrite)
+  assert.ok(pendingRegistration > idWriteResult)
+  assert.match(
+    accountScript,
+    /pendingNewBackupCleanup\.set\(result\.data\.id, newBackupTokenAtBind\)/,
+  )
+  assert.match(
+    accountScript,
+    /pendingNewBackupCleanup\.get\(savedDocumentId\)[\s\S]{0,180}removeTabBackupIfUnchanged\(ownerId, "new", pendingNewToken\)/,
+  )
+  assert.match(accountScript, /removeStorageItemIfUnchanged\([\s\S]{0,180}expectedRaw/)
+  const savedBroadcast = accountScript.indexOf('message.status === "saved"')
+  const tabDirtyGuard = accountScript.indexOf(
+    "editorTabDrafts.isDirty(currentDocumentId)",
+    savedBroadcast,
+  )
+  const inertGuard = accountScript.indexOf("form.inert", tabDirtyGuard)
+  const cloudRefresh = accountScript.indexOf("void openDocument(currentDocumentId)", inertGuard)
+  assert.ok(savedBroadcast > 0)
+  assert.ok(tabDirtyGuard > savedBroadcast)
+  assert.ok(inertGuard > tabDirtyGuard)
+  assert.ok(cloudRefresh > inertGuard)
+})
+
+test("failed related-data loading stays fail-closed and exposes a keyboard retry outside the form", () => {
+  assert.match(accountScript, /const editorLoadRecovery = root\.querySelector/)
+  assert.match(accountScript, /showEditorLoadRecovery\([\s\S]{0,500}读取失败/)
+  assert.match(accountScript, /editorRetryLoad\?\.addEventListener\("click", async/)
+  assert.match(accountScript, /const reopened = await openDocument\(documentId\)/)
+  assert.match(accountScript, /if \(reopened\)[\s\S]{0,150}title\?\.focus\(\)/)
+  assert.match(accountScript, /catch \{[\s\S]{0,400}加载过程意外中断/)
 })

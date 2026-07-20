@@ -1140,6 +1140,17 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
               尚未保存
             </span>
           </div>
+          <section class="editor-load-recovery" data-editor-load-recovery role="alert" hidden>
+            <div>
+              <strong>这条知识还没有完整载入</strong>
+              <p data-editor-load-recovery-message>
+                编辑器已暂停，避免用不完整的数据覆盖标签、关系、来源或发布状态。
+              </p>
+            </div>
+            <button type="button" class="account-secondary" data-editor-retry-load>
+              重新加载文档
+            </button>
+          </section>
           <form class="editor-form" data-editor-form>
             <input type="hidden" name="documentId" />
             <input type="hidden" name="revision" value="0" />

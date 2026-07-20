@@ -15,8 +15,82 @@ export type EditorBackupInspection =
   | { state: "conflict"; backup: EditorBackup; reason: "unknown-base" | "stale-base" }
   | { state: "invalid" }
 
+export type EditorTabDraftState = {
+  markDirty: (documentId: string, generation: number) => void
+  isDirty: (documentId: string) => boolean
+  rememberBackup: (documentId: string, raw: string) => void
+  backupToken: (documentId: string) => string | null
+  moveDirty: (fromDocumentId: string, toDocumentId: string) => void
+  clearDirtyIfGeneration: (documentId: string, generation: number) => boolean
+  forgetBackup: (documentId: string, expectedRaw?: string) => void
+  clearDocument: (documentId: string) => void
+  clearAll: () => void
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value)
+
+/**
+ * Tracks only this tab's edits and backup writes. localStorage is shared by
+ * every same-origin tab, so its presence alone cannot tell whether the current
+ * tab has unsaved work.
+ */
+export const createEditorTabDraftState = (): EditorTabDraftState => {
+  const dirtyGenerations = new Map<string, number>()
+  const backupTokens = new Map<string, string>()
+
+  return {
+    markDirty: (documentId, generation) => dirtyGenerations.set(documentId, generation),
+    isDirty: (documentId) => dirtyGenerations.has(documentId),
+    rememberBackup: (documentId, raw) => backupTokens.set(documentId, raw),
+    backupToken: (documentId) => backupTokens.get(documentId) ?? null,
+    moveDirty: (fromDocumentId, toDocumentId) => {
+      const generation = dirtyGenerations.get(fromDocumentId)
+      dirtyGenerations.delete(fromDocumentId)
+      if (generation !== undefined) dirtyGenerations.set(toDocumentId, generation)
+    },
+    clearDirtyIfGeneration: (documentId, generation) => {
+      if (dirtyGenerations.get(documentId) !== generation) return false
+      dirtyGenerations.delete(documentId)
+      return true
+    },
+    forgetBackup: (documentId, expectedRaw) => {
+      if (expectedRaw !== undefined && backupTokens.get(documentId) !== expectedRaw) return
+      backupTokens.delete(documentId)
+    },
+    clearDocument: (documentId) => {
+      dirtyGenerations.delete(documentId)
+      backupTokens.delete(documentId)
+    },
+    clearAll: () => {
+      dirtyGenerations.clear()
+      backupTokens.clear()
+    },
+  }
+}
+
+export const removeStorageItemIfUnchanged = (
+  storage: Pick<Storage, "getItem" | "removeItem">,
+  key: string,
+  expectedRaw: string | null,
+) => {
+  if (expectedRaw === null || storage.getItem(key) !== expectedRaw) return false
+  storage.removeItem(key)
+  return true
+}
+
+export const setStorageItemSafely = (
+  storage: Pick<Storage, "setItem">,
+  key: string,
+  raw: string,
+) => {
+  try {
+    storage.setItem(key, raw)
+    return true
+  } catch {
+    return false
+  }
+}
 
 export const materializeEditorOutboxFormIdentity = (
   form: unknown,
