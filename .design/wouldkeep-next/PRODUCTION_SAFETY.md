@@ -107,3 +107,13 @@ No production change is authorized by this file. Create a completed operation re
 - Error or discrepancy: the first backup attempt could not start because Docker Desktop was not running; Supabase CLI failed before SQL execution. Docker Desktop was started, a new backup directory was used, and all three backup artifacts completed and were hashed before preflight. No production write occurred during the failed attempt.
 - Recovery boundary: the ACL change is fail-closed and should not be reversed by default. Any defect must use a separately reviewed forward migration; the protected pre-change backups are retained only for separately authorized, precisely scoped recovery.
 - Final status: PR #22 is merged, local `main` is synchronized, migration `20260718001200` is deployed, all three anonymous publication-write RPC permissions are denied, and the production migration list has zero pending entries.
+
+## 2026-07-21 P06 document-link integrity deployment attempt (stopped pre-write)
+
+- Executor and authorization: Codex root/database agents; the site owner explicitly authorized production backup, preflight, deployment, and verification of only `20260721000100_document_links_integrity.sql`.
+- Target: linked Supabase project ref `agocyybolrisqujvjqdj`.
+- Required gates: remote ledger must show only `20260721000100` pending; logical backup must complete; cross-owner, cross-knowledge-base, and missing-endpoint counts must be zero before deployment.
+- Connection evidence: `supabase link` failed with a Management API transport timeout. Two read-only linked `migration list` attempts then failed while initializing the database login role with `LegacyDbConfigLoginRoleNetworkError`; the final attempt used `--dns-resolver https` and failed after 71.9 seconds.
+- External status evidence: the official Supabase status page reported all systems, Management API, Connection Pooler, and Database operational, so the observed failure was treated as a CLI/network-path blocker rather than permission to bypass the gates.
+- Production result: backup not started; preflight not started; migration not deployed; rollback test not run; no business/test row written; no Secret read or exposed; production unchanged.
+- Resume boundary: restart at linked remote-ledger verification after connectivity recovers. Do not use the Dashboard SQL editor or a direct migration write unless an equally complete backup and preflight can be proven first.

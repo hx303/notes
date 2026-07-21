@@ -35,6 +35,21 @@
 - The Chrome extension timed out while handling a site confirmation dialog and then timed out on two read-only reconnect attempts. No text input, autosave, relationship/source write, publication action, or production action was performed.
 - Because the post-timeout local form state could not be read reliably, the agent stopped, finalized the tab as a handoff, and did not claim the relationship-delete/re-add or personal-source round trip as passed. A hard refresh of the exact URL is the first step when browser control is stable again.
 
+### Refreshed PR-preview signed-in acceptance
+
+- After the site owner hard-refreshed the exact preview URL, the independent acceptance agent reconfirmed the private baseline and completed the previously blocked write round trips.
+- Relationship removal saved at revision 10 and remained absent after a hard refresh. Re-adding the same human-readable `PR26 恢复验收草稿（Codex）` prerequisite saved through revision 12 and remained present after a second hard refresh; no UUID was visible.
+- The personal source `P06 验收个人来源 2026-07-21` with author and note saved at revision 13, retained an empty URL, and fully restored after hard refresh. It was then precisely deleted, saved at revision 14, and remained absent after the final hard refresh.
+- Final state: original title/body and document UUID, `private`, original PR26 relationship restored, only `https://example.com/reference#section`, no personal source, `auth=ready`, `aria-busy=false`, and `form.inert=false`.
+- wouldkeep/Vercel page-source console errors: 0. Two unrelated extension errors came from Immersive Translate authentication and another extension's closed message port.
+- No publish, clear, new-document, conflict, or migration browser action occurred. One P2 was observed: selecting then adding a relationship caused two revisions (10→11→12), suggesting a redundant autosave before the actual relation add.
+
+### Production migration attempt
+
+- The site owner explicitly authorized backup, preflight, deployment, and verification of only `20260721000100`.
+- The operation stopped before backup because the Supabase CLI could not initialize the linked database login role. `supabase link` timed out and two linked ledger reads failed with `LegacyDbConfigLoginRoleNetworkError`, including a final `--dns-resolver https` attempt after 71.9 seconds.
+- Production result: no backup started, no preflight ran, no migration deployed, no test data written, no production change, and no secret exposed. Resume from the remote-ledger gate when the CLI connection path recovers.
+
 ## Browser evidence
 
 The exact local build was served to Chrome and inspected at 1200×900, 800×900, 375×812, and 320×720 CSS pixels.
