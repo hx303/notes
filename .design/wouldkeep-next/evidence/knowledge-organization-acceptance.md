@@ -2,13 +2,13 @@
 
 - Candidate: `agent/knowledge-organization`, Draft PR #27, implementation `8ce887e4`
 - Baseline: merged `main` `1fccf318e4a2d2077589768bf8854810947092c9`
-- Date: 2026-07-20 (Asia/Shanghai)
-- Current verdict: **implementation gates pass; signed-in PR-preview gate remains open**
+- Date: 2026-07-21 (Asia/Shanghai)
+- Current verdict: **implementation and signed-in core organization gates pass; destructive, conflict, and multi-owner gates remain open**
 
 ## Automated evidence
 
-- Focused organization + recovery tests: **35/35 passed**.
-- Full Quartz suite: **291/291 passed**.
+- Focused organization + recovery tests: **36/36 passed**.
+- Full Quartz suite: **292/292 passed**.
 - TypeScript: `tsc --noEmit` passed.
 - Migration namespace guard: passed; no migration was added.
 - Changed-file Prettier check: passed for all P06 code, tests, styles, and research files.
@@ -47,7 +47,11 @@ The updated `5d49ca81` preview subsequently passed both Vercel deployments and w
 - Adding `P06验收` changed the state to “已自动保存到云端”; a fresh signed-in tab restored the tag chip from cloud data.
 - A source containing `access_token` did not appear after reopening the document, so the sensitive value was not persisted.
 - A safe source at `https://example.com/reference#section` persisted to cloud data and reappeared after reopening the document with the `#section` anchor intact.
-- Inline sensitive-URL error feedback, relationship round-trip, and private-visibility control remain open browser gates; the browser extension lost page control after selecting a relationship candidate.
+- The prerequisite `PR26 恢复验收草稿（Codex）` was added, explicitly saved, and restored from cloud data after navigating back to the exact document URL. A lightweight locator observed the restored relationship chip 3 seconds after DOM content loaded.
+- The sharing controls restored `仅自己可见` as the checked radio; neither link-only nor public visibility was selected.
+- A second source row containing the fake query parameter `access_token=not-a-real-token` was blocked with the inline message `网址包含账号、密码、令牌或签名参数，已阻止保存。请先移除敏感信息。` The temporary row was then removed and the clean draft saved again.
+- The earlier apparent relationship failure was an acceptance-observation error: a full accessibility snapshot of the very large candidate list delayed observation, while the relation itself restored normally. The production `/workspace/write/` page was also not a valid refresh target because it omitted the PR-preview origin and document query parameter.
+- The misleading intermediate status was corrected: after the core document read, the editor now says `正文已载入，正在加载标签、关系与来源…`; `已加载云端草稿` appears only after every related-data read succeeds. A recovery regression test locks this ordering before the form is unlocked.
 
 ## Scope and security gate
 
@@ -66,9 +70,9 @@ Proven in code and automated tests:
 
 ## Not yet proven in a signed-in preview
 
-- Create/deduplicate/remove tags and refresh the exact saved document.
-- Add two same-title relationships, verify human disambiguation and no visible UUID, then remove a tombstone after soft-deleting a target.
-- Save web and personal sources, reject a sensitive URL, retain an anchor fragment, refresh, and inspect a publication snapshot.
+- Remove an existing tag and refresh the exact saved document.
+- Add two same-title relationships, verify human disambiguation, then remove a tombstone after soft-deleting a target.
+- Save a personal-experience source and inspect a publication snapshot.
 - Exercise local/cloud/copy conflict actions with different tags, relationships, and sources.
 - Confirm current-owner isolation against a second owner and anonymous access.
 - Complete a keyboard-only pass through every add/remove/select action with a screen reader announcement check.

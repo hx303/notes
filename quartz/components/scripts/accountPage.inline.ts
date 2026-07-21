@@ -3015,7 +3015,7 @@ const init = async () => {
       if (writeLauncher) writeLauncher.hidden = true
       if (flatWorkbench) flatWorkbench.hidden = true
       if (editor) editor.hidden = false
-      if (state) state.textContent = "已加载云端草稿"
+      if (state) state.textContent = "正文已载入，正在加载标签、关系与来源…"
       await loadVersions(documentId, isCurrentOpen)
       if (!isCurrentOpen()) return false
       const linkOptionsLoaded = await loadLinkOptions(documentId, isCurrentOpen)
@@ -3071,6 +3071,7 @@ const init = async () => {
         )
         return false
       }
+      if (state) state.textContent = "已加载云端草稿"
       if (!options.ignoreLocalBackup)
         restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
       if (editorConflict?.documentId !== documentId) allowEditorSaves(documentId)

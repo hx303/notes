@@ -392,6 +392,26 @@ test("document loading invalidates queued saves and stages metadata only after t
   assert.match(accountScript, /resolveDocumentConflict\(conflict\.ownerId, conflict\.documentId\)/)
 })
 
+test("document loading reports related data as pending until every cloud read succeeds", () => {
+  const openStart = accountScript.indexOf("const openDocumentOnce = async")
+  const coreReady = accountScript.indexOf(
+    'state.textContent = "正文已载入，正在加载标签、关系与来源…"',
+    openStart,
+  )
+  const relatedReads = accountScript.indexOf(
+    "const linkOptionsLoaded = await loadLinkOptions",
+    coreReady,
+  )
+  const completed = accountScript.indexOf('state.textContent = "已加载云端草稿"', relatedReads)
+  const unlocked = accountScript.indexOf("setOpenBusy(false)", completed)
+
+  assert.ok(openStart > 0)
+  assert.ok(coreReady > openStart)
+  assert.ok(relatedReads > coreReady)
+  assert.ok(completed > relatedReads)
+  assert.ok(unlocked > completed)
+})
+
 test("the durable outbox is wired before network saves and recovered after refresh", () => {
   assert.match(accountScript, /createIndexedDbEditorOutboxRepository\(\)/)
   assert.match(accountScript, /await editorOutbox\.recoverInterrupted\(ownerId, documentId\)/)
