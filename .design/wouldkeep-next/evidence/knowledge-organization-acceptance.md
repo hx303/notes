@@ -41,6 +41,13 @@ The PR preview was opened with the production account session and a private test
 - A clean single-tab rerun reproduced the organization-save pause and identified the actual regression: a document opened from `?document=` loaded its cloud `id` but did not bind that value to the editor's `documentId` field. The save gate therefore compared the cloud document against `new` and correctly refused to overwrite it.
 - The PR now binds the returned cloud `id` before related data is staged. The focused recovery suite passes **24/24**, TypeScript passes, and the full suite passes **291/291**. Tag/source round-trip remains open until the updated preview deployment is available and rechecked.
 
+The updated `5d49ca81` preview subsequently passed both Vercel deployments and was rechecked:
+
+- The opened form now binds `documentId=095dbe7c-0600-46d7-8864-1eb68db5e3c2` with revision 1 and remains interactive.
+- Adding `P06验收` changed the state to “已自动保存到云端”; a fresh signed-in tab restored the tag chip from cloud data.
+- A source containing `access_token` did not appear after reopening the document, so the sensitive value was not persisted.
+- The browser extension lost page control while explicitly saving the safe anchored URL. The automated contract still proves anchor preservation, but the signed-in safe-source round-trip and inline sensitive-URL error feedback remain open browser gates.
+
 ## Scope and security gate
 
 Proven in code and automated tests:
