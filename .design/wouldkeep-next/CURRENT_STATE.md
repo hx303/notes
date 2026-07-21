@@ -1,6 +1,6 @@
 # wouldkeep Current State
 
-Last reconciled: 2026-07-20 (Asia/Shanghai)
+Last reconciled: 2026-07-22 (Asia/Shanghai)
 
 Working baseline: merged `main` at `1fccf318e4a2d2077589768bf8854810947092c9`
 
@@ -48,10 +48,10 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 
 ## Executive status
 
-- P06 hardening checkpoint `a0867e96` adds soft-delete relationship tombstones that remain removable, complete browser-recovery source URL redaction (including fragments and conflict archives), actual-knowledge-base binding for existing documents, safe new/conflict-copy knowledge-base transitions, pre-core-write relationship validation, friendly publication errors/warnings, and forward `document_links` integrity migration `20260721000100`. Focused 43/43, full 303/303, TypeScript, migration guard, diff check, and the 284-input/1,051-output build pass; independent frontend review reports no P0/P1. The migration and rollback SQL matrix are not deployed/run, and final signed-in preview acceptance remains open.
+- P06 hardening at PR #27 head `c688045d` adds soft-delete relationship tombstones that remain removable, complete browser-recovery source URL redaction (including fragments and conflict archives), actual-knowledge-base binding for existing documents, safe new/conflict-copy knowledge-base transitions, pre-core-write relationship validation, friendly publication errors/warnings, and forward `document_links` integrity migration `20260721000100`. Focused 43/43, full 303/303, TypeScript, migration guard, diff check, and the 284-input/1,051-output build pass; independent frontend review reports no P0/P1.
 - The latest PR-preview baseline was rechecked signed-in on exact document `095dbe7c-0600-46d7-8864-1eb68db5e3c2`: complete content, private visibility, original PR26 relationship, one safe web source, and no personal test source. Chrome extension timeouts then prevented safe write-round-trip acceptance, so the agent stopped without relationship/source/publication writes and left that gate open.
 - After a user hard refresh, independent signed-in acceptance completed: PR26 relation delete/refresh/re-add/refresh and personal-source add/refresh/delete/refresh all passed. Final revision 14 is private with the original relationship and only the original safe web source; page-source console errors were zero. A redundant relation-selection autosave remains P2.
-- The authorized `20260721000100` production operation stopped before backup/preflight because Supabase CLI login-role initialization failed three times. Production remains unchanged and the migration remains pending.
+- After the initial transport-blocked attempt, the site owner authorized a retry and `20260721000100` was deployed on 2026-07-22 only after three logical backups, a clean ledger/dry-run, and zero cross-owner, cross-knowledge-base, missing-endpoint, or soft-deleted-endpoint findings. Postflight reached 18 aligned migration versions with zero pending; trigger, RLS, ACL, data-invariant, and rolled-back negative tests passed.
 
 | Area                            | Status                           | Evidence and remaining gate                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -133,5 +133,5 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 ## Remaining orchestration and production gates
 
 1. Finish N04 only when the full integration/reference/platform/workspace/public worktree set is needed; the DeepSeek implementation/review worktrees already use the merged baseline and do not disturb occupied worktrees.
-2. Complete fresh Cloudflare/production behavior checks and a production operation record before any further migration, Edge Function replacement, Secret change, feature-flag enablement, or paid call.
-3. Treat the production migration ledger as normalized at 17 aligned versions with zero pending migrations. Any new business change must be a reviewed forward migration with a version greater than `20260718001200` and requires separate production deployment approval.
+2. PR #27 has completed signed-in preview acceptance and the production operation record; wait for all Vercel checks, then require fresh owner authorization before Ready/merge.
+3. Treat the production migration ledger as normalized at 18 aligned versions with zero pending migrations. Any new business change must be a reviewed forward migration with a version greater than `20260721000100` and requires separate production deployment approval.
