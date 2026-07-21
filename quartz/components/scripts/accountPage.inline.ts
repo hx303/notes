@@ -3001,7 +3001,10 @@ const init = async () => {
         setOpenBusy(false)
         return false
       }
-      fillForm(result.data ?? {})
+      fillForm({
+        ...(result.data ?? {}),
+        documentId: result.data?.id ?? documentId,
+      })
       for (const name of ["tags", "prerequisites", "related"]) {
         const field = form.elements.namedItem(name) as HTMLInputElement | null
         if (field) field.value = ""

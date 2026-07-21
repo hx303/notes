@@ -38,7 +38,8 @@ The PR preview was opened with the production account session and a private test
 - The tag editor created a `P06验收` chip and rejected the NFKC/case-equivalent `ｐ０６验收` as already present.
 - Relationship candidates rendered human-readable title, topic, and update-date labels; no UUID appeared in the visible option text.
 - The preview produced no page console errors during these checks.
-- The tag/source round-trip is still open. Several duplicate tabs were opened while recovering a flaky browser-extension connection; the editor then correctly fail-closed with “文档尚未完整加载，自动同步保持暂停”, so organization changes were not allowed to overwrite cloud data. A clean single-tab rerun is required before claiming persistence.
+- A clean single-tab rerun reproduced the organization-save pause and identified the actual regression: a document opened from `?document=` loaded its cloud `id` but did not bind that value to the editor's `documentId` field. The save gate therefore compared the cloud document against `new` and correctly refused to overwrite it.
+- The PR now binds the returned cloud `id` before related data is staged. The focused recovery suite passes **24/24**, TypeScript passes, and the full suite passes **291/291**. Tag/source round-trip remains open until the updated preview deployment is available and rechecked.
 
 ## Scope and security gate
 

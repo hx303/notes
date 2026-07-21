@@ -348,7 +348,7 @@ test("document loading invalidates queued saves and stages metadata only after t
   const openStart = accountScript.indexOf("const openDocumentOnce = async")
   const invalidate = accountScript.indexOf("invalidateEditorSaves()", openStart)
   const coreRead = accountScript.indexOf('.from("documents")', openStart)
-  const coreFill = accountScript.indexOf("fillForm(result.data ?? {})", coreRead)
+  const coreFill = accountScript.indexOf("documentId: result.data?.id ?? documentId", coreRead)
   const metadataClear = accountScript.indexOf(
     'for (const name of ["tags", "prerequisites", "related"])',
     coreFill,
@@ -358,6 +358,10 @@ test("document loading invalidates queued saves and stages metadata only after t
   assert.ok(coreRead > invalidate)
   assert.ok(coreFill > coreRead)
   assert.ok(metadataClear > coreFill)
+  assert.match(
+    accountScript,
+    /fillForm\(\{[\s\S]{0,160}\.\.\.\(result\.data \?\? \{\}\)[\s\S]{0,120}documentId: result\.data\?\.id \?\? documentId/,
+  )
   assert.match(
     accountScript,
     /const requestDocumentSave[\s\S]{0,500}if \(!editorSaveIsAllowed\(documentId, requestSaveEpoch\)\)[\s\S]{0,300}return false[\s\S]{0,500}editorOutbox\.enqueue/,
