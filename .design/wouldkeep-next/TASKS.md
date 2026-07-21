@@ -38,7 +38,7 @@ Current scheduling rule: `AccountPage.tsx`, `accountPage.inline.ts`, and `accoun
 - [ ] **E00 — 建立范例评估模板**：统一记录来源、访问日期、功能闭环、UI 模式、移动端、无障碍、隐私、许可、适合/不适合 wouldkeep 的部分。 _Agent: reference-research (`gpt-5.6-terra/high`); creates: `.design/reference-research/TEMPLATE.md`._
 - [ ] **E01 — 账户与新手流程范例简报**：对比至少 5 个成熟注册、验证、找回、个人资料和首次建库流程，给出一个主模式和两个辅助模式。 _Agent: reference-research; creates: `auth-onboarding.md`; informs: P03._
 - [ ] **E02 — 编辑器、DOCX/Markdown 导入与恢复范例简报**：研究导入预览、图片处理、自动保存、离线、冲突和版本恢复，核对可复用代码许可证。 _Agent: reference-research; creates: `editor-import-recovery.md`; informs: P04–P05._
-- [ ] **E03 — 标签、分类、链接与来源范例简报**：研究无代码知识组织、双向链接、来源编辑和可解释分类，避免要求用户输入内部标识。 _Agent: reference-research; creates: `knowledge-organization.md`; informs: P06/A23._
+- [x] **E03 — 标签、分类、链接与来源范例简报**：研究无代码知识组织、双向链接、来源编辑和可解释分类，避免要求用户输入内部标识。 _Completed 2026-07-20: `.design/reference-research/knowledge-organization.md` freezes the no-migration tag/relation/source UX and security contract for P06/A23._
 - [ ] **E04 — 公开知识发现与建库方法范例简报**：研究数字花园、主题/路径、知识地图、最近生长、作者主页与模板教学。 _Agent: reference-research; creates: `public-discovery.md`; informs: P07–P09._
 - [ ] **E05 — AI 写作、RAG 与引用范例简报**：研究选区改写预览、整理收件箱、范围选择、引用核验、拒答、预算和隐私同意。 _Agent: reference-research; creates: `ai-assistance.md`; informs: A20–A24._
 - [ ] **E06 — Admin、发布与运行健康范例简报**：研究内容治理、成员角色、发布队列、构建失败恢复、审计和成本健康页。 _Agent: reference-research; creates: `admin-publishing-operations.md`; informs: P01–P02/R32._
@@ -50,8 +50,8 @@ Current scheduling rule: `AccountPage.tsx`, `accountPage.inline.ts`, and `accoun
 - [ ] **P02 — 稳定发布任务垂直切片**：让一条授权知识通过幂等任务生成预览、保留最后成功版本、失败可重试并可撤回；浏览器不持有服务密钥。 _Agent: platform; modifies: publication flow; creates: repeatable verification. Depends on: P01._
 - [ ] **P03 — 账户与知识库新手闭环验收**：以电脑小白身份完成注册/登录/找回、进入个人空间、创建第一条私密知识和再次找回；修复真实阻塞而不重做正常页面。 _Agent: workspace; modifies: account/workspace routes and states; reuses: current AccountPage and Supabase Auth._
 - [ ] **P04 — DOCX/Markdown 导入预览切片**：支持 DOCX（含内嵌图片）与 Markdown 文件/整篇粘贴，先展示结构和图片预览，再明确保存为私密草稿；错误保留输入。 _Agent: workspace; modifies: import/editor UI; creates: parser adapter and fixtures. Depends on: P03._
-- [ ] **P05 — 可靠编辑与恢复切片**：完成自动保存、离线暂存、双标签页冲突比较、版本恢复、删除/撤销，并统一加载/空/错/成功反馈。 _Agent: workspace; modifies: editor/autosave/version states; reuses: document versions. Depends on: P03._
-- [ ] **P06 — 无代码知识组织切片**：让用户用组合框/选择器维护标签、分类建议、知识关系和多来源，不要求输入 Markdown、UUID 或内部 URL。 _Agent: workspace; modifies: existing organization controls; reuses: tags, links and sources._
+- [x] **P05 — 可靠编辑与恢复切片**：完成自动保存、离线暂存、双标签页冲突比较、版本恢复、删除/撤销，并统一加载/空/错/成功反馈。 _Completed 2026-07-20 in merged PR #26 (`main` `1fccf318`); the site owner explicitly accepted the remaining P2 offline/conflict/retry/keyboard browser risks._
+- [ ] **P06 — 无代码知识组织切片**：让用户用组合框/选择器维护标签、分类建议、知识关系和多来源，不要求输入 Markdown、UUID 或内部 URL。 _Checkpoint 2026-07-20: implementation `8ce887e4` passes 291 tests, TypeScript, build, no-migration guard, and four structural responsive checks; signed-in PR-preview round-trip, owner isolation, conflict actions, and publication snapshot remain open._
 - [ ] **P07 — 公开发现现实验收**：验证首页、知识地图、最近生长、主题和学习路径的实际代码与线上体验，只修复未达到“30 秒理解、两步抵达”的缺口。 _Agent: public; modifies: DiscoverHome/MapPage/RecentGrowth/topic/path components as needed._
 - [ ] **P08 — 建库方法可执行切片**：完成 `/build/` 的方法、边界、内容模型、模板和部署说明，使不懂代码的人可以按步骤行动。 _Agent: public; creates/modifies: build content and copyable examples; reuses: article system._
 - [ ] **P09 — 信任与恢复页面切片**：补齐 About、Privacy、License、404 与页脚入口，明确 wouldkeep/夔嵬关系、数据边界和失败后的下一步。 _Agent: public; creates/modifies: trust pages and Footer._

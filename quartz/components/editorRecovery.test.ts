@@ -249,12 +249,98 @@ test("partial cloud writes retain recovery data and online sync requires pending
     /const sourcesSaved = await saveDocumentSources[\s\S]{0,400}version\.error[\s\S]*!tagsSaved[\s\S]*!prerequisitesSaved[\s\S]*!relatedSaved[\s\S]*!sourcesSaved/,
   )
   assert.match(accountScript, /const ownerId = String\(currentUser\.id\)/)
+  assert.ok(
+    (accountScript.match(/redactWorkspaceSourcesForRecovery\(collectSources\(\)\)/gu)?.length ??
+      0) >= 4,
+  )
+  assert.match(
+    accountScript,
+    /localStorage\.setItem\(archiveKey, JSON\.stringify\(redactEditorBackupSources\(backup\)\)\)/,
+  )
+  assert.match(
+    accountScript,
+    /const redactedBackup = redactEditorBackupSources\(backup\)[\s\S]{0,1200}sources: Array\.isArray\(redactedBackup\.__sources\)/,
+  )
   assert.match(accountScript, /currentUser\?\.id === ownerId/)
   assert.match(accountScript, /client === saveClient/)
   assert.match(
     accountScript,
     /onlineHandler = async[\s\S]*editorConflict\?\.documentId[\s\S]*localStorage\.getItem\(localDraftKey/,
   )
+})
+
+test("publication status warns that private drafts do not revoke an existing snapshot", () => {
+  assert.match(accountScript, /当前草稿已改为仅自己可见，但此前发布版本仍在线/)
+  assert.doesNotMatch(accountScript, /20260718000500_publication_flow\.sql/)
+  assert.match(accountScript, /正式发布功能暂不可用；私人草稿不受影响/)
+})
+
+test("relationship options and writes stay inside the current knowledge base", () => {
+  assert.match(
+    accountScript,
+    /loadLinkOptions[\s\S]{0,900}\.eq\("knowledge_base_id", knowledgeBaseId\)/,
+  )
+  assert.match(accountScript, /saveLinks[\s\S]{0,1200}\.eq\("knowledge_base_id", knowledgeBaseId\)/)
+  assert.match(accountScript, /\.in\("relation_type", \["prerequisite", "related"\]\)/)
+})
+
+test("existing documents keep their bound knowledge base instead of being moved on save", () => {
+  assert.match(
+    accountScript,
+    /let editorKnowledgeBaseBinding: \{ documentId: string; knowledgeBaseId: string \} \| null/,
+  )
+  assert.match(
+    accountScript,
+    /if \(data\.documentId\)[\s\S]{0,1100}\.select\("knowledge_base_id"\)[\s\S]{0,700}else \{\s+knowledgeBaseId = String\(\(await ensureKnowledgeBase\(\)\)/,
+  )
+  assert.match(
+    accountScript,
+    /\.eq\("owner_id", ownerId\)\s+\.eq\("knowledge_base_id", knowledgeBaseId\)\s+\.eq\("revision", data\.revision\)/,
+  )
+  assert.match(
+    accountScript,
+    /editorKnowledgeBaseBinding = \{\s+documentId: String\(result\.data\.id\),\s+knowledgeBaseId: String\(result\.data\.knowledge_base_id\)/,
+  )
+})
+
+test("new-document transitions cannot reuse stale cross-knowledge-base relationships", () => {
+  assert.match(
+    accountScript,
+    /const prepareNewDocumentRelationOptions[\s\S]{0,900}editorKnowledgeBaseBinding === null[\s\S]{0,500}loadLinkOptions\("", knowledgeBaseId/,
+  )
+  assert.match(
+    accountScript,
+    /form\?\.reset\(\)\s+editorKnowledgeBaseBinding = null\s+clearRelationDocumentOptions\(\)[\s\S]{0,1600}void prepareNewDocumentRelationOptions\(\)/,
+  )
+  assert.match(
+    accountScript,
+    /editorKnowledgeBaseBinding = \{ documentId: "new", knowledgeBaseId: sourceKnowledgeBaseId \}/,
+  )
+  assert.match(
+    accountScript,
+    /const activeRelationshipTargetIds =[\s\S]{0,1300}\.eq\("knowledge_base_id", knowledgeBaseId\)[\s\S]{0,500}正文尚未写入/,
+  )
+})
+
+test("unavailable relationship retention remains bound to the successfully loaded document", () => {
+  assert.match(accountScript, /let retainedUnavailableRelationDocumentId = ""/)
+  assert.match(
+    accountScript,
+    /retainedUnavailableRelationDocumentId === documentId[\s\S]{0,140}retainedUnavailableRelationTargetIds/,
+  )
+  assert.match(
+    accountScript,
+    /clearRetainedUnavailableRelationTargets\(\)\s+retainedUnavailableRelationDocumentId = documentId/,
+  )
+  const openStart = accountScript.indexOf("const openDocumentOnce")
+  const coreRead = accountScript.indexOf('.from("documents")', openStart)
+  const prematureClear = accountScript.indexOf(
+    "clearRetainedUnavailableRelationTargets()",
+    openStart,
+  )
+  assert.ok(openStart > 0)
+  assert.ok(coreRead > openStart)
+  assert.ok(prematureClear === -1 || prematureClear > coreRead)
 })
 
 test("save coordination is owner scoped, cross-tab exclusive, and SPA safe", () => {
@@ -287,13 +373,18 @@ test("only the latest document-open request may update document-specific UI", ()
   assert.match(accountScript, /loadDocumentSources\(documentId, isCurrentOpen\)/)
   assert.match(accountScript, /loadPublication\([\s\S]{0,180}isCurrentOpen/)
   assert.match(accountScript, /if \(!authContextIsCurrent\(context\) \|\| !isCurrent\(\)\) return/)
-  assert.match(accountScript, /if \(field\) field\.value = names\.join/)
-  assert.match(accountScript, /if \(field\) field\.value = values\.join/)
+  assert.match(accountScript, /tagValues\.value = serializeWorkspaceTags\(parsed\.value\)/)
   assert.match(
     accountScript,
-    /if \(!tagsLoaded \|\| !linksLoaded \|\| !sourcesLoaded \|\| !publicationLoaded\)/,
+    /hidden\.value = serializeWorkspaceRelations\(groups\[relationType\]\)/,
+  )
+  assert.match(
+    accountScript,
+    /!linkOptionsLoaded \|\|[\s\S]{0,180}!tagsLoaded \|\|[\s\S]{0,180}!linksLoaded \|\|[\s\S]{0,180}!sourcesLoaded \|\|[\s\S]{0,180}!publicationLoaded/,
   )
   assert.match(accountScript, /标签、关系、来源或发布状态读取失败；已锁定编辑器/)
+  assert.match(accountScript, /documents!document_links_to_document_id_fkey\(title,deleted_at\)/)
+  assert.match(accountScript, /关系指向已删除或无法访问的知识；请移除后保存草稿/)
   assert.match(accountScript, /form\.inert = false[\s\S]{0,100}aria-busy", "false"/)
 })
 
@@ -337,7 +428,7 @@ test("conflict choices are single-flight and storage denial keeps durable recove
   )
   assert.match(
     accountScript,
-    /const rememberBackup[\s\S]{0,500}editorOutbox\.restoreConflict[\s\S]{0,900}rememberBackup\(recoverableConflictBackup\(conflict, frozen\)\)/,
+    /const rememberBackup[\s\S]{0,900}editorOutbox\.restoreConflict[\s\S]{0,900}rememberBackup\(recoverableConflictBackup\(conflict, frozen\)\)/,
   )
 })
 
@@ -345,7 +436,7 @@ test("document loading invalidates queued saves and stages metadata only after t
   const openStart = accountScript.indexOf("const openDocumentOnce = async")
   const invalidate = accountScript.indexOf("invalidateEditorSaves()", openStart)
   const coreRead = accountScript.indexOf('.from("documents")', openStart)
-  const coreFill = accountScript.indexOf("fillForm(result.data ?? {})", coreRead)
+  const coreFill = accountScript.indexOf("documentId: result.data?.id ?? documentId", coreRead)
   const metadataClear = accountScript.indexOf(
     'for (const name of ["tags", "prerequisites", "related"])',
     coreFill,
@@ -357,13 +448,14 @@ test("document loading invalidates queued saves and stages metadata only after t
   assert.ok(metadataClear > coreFill)
   assert.match(
     accountScript,
+    /fillForm\(\{[\s\S]{0,160}\.\.\.\(result\.data \?\? \{\}\)[\s\S]{0,120}documentId: result\.data\?\.id \?\? documentId/,
+  )
+  assert.match(
+    accountScript,
     /const requestDocumentSave[\s\S]{0,500}if \(!editorSaveIsAllowed\(documentId, requestSaveEpoch\)\)[\s\S]{0,300}return false[\s\S]{0,500}editorOutbox\.enqueue/,
   )
   const saveStart = accountScript.indexOf("const saveDocumentOnce")
-  const knowledgeBase = accountScript.indexOf(
-    "const knowledgeBaseId = await ensureKnowledgeBase()",
-    saveStart,
-  )
+  const knowledgeBase = accountScript.indexOf('let knowledgeBaseId = ""', saveStart)
   const postAwaitGuard = accountScript.indexOf(
     "if (!knowledgeBaseId || !saveTargetIsCurrent()) return false",
     knowledgeBase,
@@ -383,6 +475,26 @@ test("document loading invalidates queued saves and stages metadata only after t
   )
   assert.match(accountScript, /if \(options\.deferConflict\) return false/)
   assert.match(accountScript, /resolveDocumentConflict\(conflict\.ownerId, conflict\.documentId\)/)
+})
+
+test("document loading reports related data as pending until every cloud read succeeds", () => {
+  const openStart = accountScript.indexOf("const openDocumentOnce = async")
+  const coreReady = accountScript.indexOf(
+    'state.textContent = "正文已载入，正在加载标签、关系与来源…"',
+    openStart,
+  )
+  const relatedReads = accountScript.indexOf(
+    "const linkOptionsLoaded = await loadLinkOptions",
+    coreReady,
+  )
+  const completed = accountScript.indexOf('state.textContent = "已加载云端草稿"', relatedReads)
+  const unlocked = accountScript.indexOf("setOpenBusy(false)", completed)
+
+  assert.ok(openStart > 0)
+  assert.ok(coreReady > openStart)
+  assert.ok(relatedReads > coreReady)
+  assert.ok(completed > relatedReads)
+  assert.ok(unlocked > completed)
 })
 
 test("the durable outbox is wired before network saves and recovered after refresh", () => {
@@ -439,7 +551,7 @@ test("a successful older save cannot remove a backup written by a newer edit", (
   )
   assert.match(
     accountScript,
-    /form\.addEventListener\("input", \(\) => \{\s*editorChangeGeneration \+= 1[\s\S]{0,180}editorTabDrafts\.markDirty\(documentIdentity, editorChangeGeneration\)/,
+    /form\.addEventListener\("input", \(event\) => \{[\s\S]{0,320}editorChangeGeneration \+= 1[\s\S]{0,180}editorTabDrafts\.markDirty\(documentIdentity, editorChangeGeneration\)/,
   )
   assert.match(accountScript, /const backupTokenAtStart = editorTabDrafts\.backupToken/)
   const bindToken = accountScript.indexOf(

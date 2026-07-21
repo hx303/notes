@@ -1214,12 +1214,38 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                     </select>
                   </label>
                 </div>
-                <label>
-                  <span>标签</span>
-                  <input name="tags" list="tag-options" placeholder="例如：RCWA，边界条件" />
+                <section class="organization-editor tag-editor" aria-labelledby="tag-editor-title">
+                  <div class="organization-editor-heading">
+                    <div>
+                      <strong id="tag-editor-title">标签</strong>
+                      <small id="tag-editor-help">从已有标签中选择，或明确创建一个新标签。</small>
+                    </div>
+                  </div>
+                  <div class="organization-entry-row">
+                    <label>
+                      <span>搜索或输入标签名称</span>
+                      <input
+                        data-tag-input
+                        list="tag-options"
+                        maxLength={80}
+                        placeholder="例如：RCWA"
+                        aria-describedby="tag-editor-help tag-editor-status"
+                      />
+                    </label>
+                    <button type="button" class="account-secondary" data-tag-add>
+                      添加标签
+                    </button>
+                  </div>
                   <datalist id="tag-options" data-tag-options />
-                  <small>用少量关键词连接同一主题下的知识，多个标签用逗号分隔。</small>
-                </label>
+                  <div
+                    class="organization-chip-list"
+                    data-tag-list
+                    role="list"
+                    aria-label="已选择的标签"
+                  />
+                  <input type="hidden" name="tags" data-tag-values />
+                  <p id="tag-editor-status" data-tag-status role="status" aria-live="polite" />
+                </section>
                 <div class="editor-assist">
                   <button type="button" class="account-secondary" data-auto-classify>
                     获取主题建议
@@ -1241,24 +1267,91 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                 <span class="editor-optional">可选</span>
               </summary>
               <div class="editor-disclosure-content editor-links" data-editor-links>
-                <label>
-                  <span>前置知识</span>
-                  <input
-                    name="prerequisites"
-                    list="knowledge-link-options"
-                    placeholder="搜索你的已有知识标题"
+                <section
+                  class="organization-editor relation-editor"
+                  data-relation-editor="prerequisite"
+                  aria-labelledby="prerequisite-editor-title"
+                >
+                  <div class="organization-editor-heading">
+                    <div>
+                      <strong id="prerequisite-editor-title">前置知识</strong>
+                      <small>阅读当前知识前，建议先读哪些内容？</small>
+                    </div>
+                  </div>
+                  <div class="relation-picker">
+                    <label>
+                      <span>按标题搜索自己的知识</span>
+                      <input
+                        type="search"
+                        data-relation-search
+                        placeholder="输入标题关键词"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <label>
+                      <span>选择知识</span>
+                      <select data-relation-select aria-describedby="prerequisite-status">
+                        <option value="">请先选择一条知识</option>
+                      </select>
+                    </label>
+                    <button type="button" class="account-secondary" data-relation-add>
+                      添加前置知识
+                    </button>
+                  </div>
+                  <div
+                    class="organization-chip-list"
+                    data-relation-list
+                    role="list"
+                    aria-label="已选择的前置知识"
                   />
-                  <small>读者最好先理解什么？</small>
-                </label>
-                <label>
-                  <span>相关知识</span>
-                  <input
-                    name="related"
-                    list="knowledge-link-options"
-                    placeholder="搜索你的已有知识标题"
+                  <input type="hidden" name="prerequisites" data-relation-values />
+                  <p
+                    id="prerequisite-status"
+                    data-relation-status
+                    role="status"
+                    aria-live="polite"
                   />
-                  <small>还可以从哪里继续了解？</small>
-                </label>
+                </section>
+                <section
+                  class="organization-editor relation-editor"
+                  data-relation-editor="related"
+                  aria-labelledby="related-editor-title"
+                >
+                  <div class="organization-editor-heading">
+                    <div>
+                      <strong id="related-editor-title">相关知识</strong>
+                      <small>选择讨论相近主题、适合继续阅读的内容。</small>
+                    </div>
+                  </div>
+                  <div class="relation-picker">
+                    <label>
+                      <span>按标题搜索自己的知识</span>
+                      <input
+                        type="search"
+                        data-relation-search
+                        placeholder="输入标题关键词"
+                        autocomplete="off"
+                      />
+                    </label>
+                    <label>
+                      <span>选择知识</span>
+                      <select data-relation-select aria-describedby="related-status">
+                        <option value="">请先选择一条知识</option>
+                      </select>
+                    </label>
+                    <button type="button" class="account-secondary" data-relation-add>
+                      添加相关知识
+                    </button>
+                  </div>
+                  <div
+                    class="organization-chip-list"
+                    data-relation-list
+                    role="list"
+                    aria-label="已选择的相关知识"
+                  />
+                  <input type="hidden" name="related" data-relation-values />
+                  <p id="related-status" data-relation-status role="status" aria-live="polite" />
+                </section>
                 <section
                   class="source-editor"
                   data-source-editor
@@ -1279,7 +1372,6 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                   <div class="source-list" data-source-list />
                   <p class="source-status" data-source-status role="status" aria-live="polite" />
                 </section>
-                <datalist id="knowledge-link-options" data-knowledge-link-options />
               </div>
             </details>
 
@@ -1414,11 +1506,13 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                   <h4 id="editor-conflict-local-title">我的本地版本</h4>
                   <strong data-editor-conflict-local-title>未命名知识</strong>
                   <pre data-editor-conflict-local-body />
+                  <p class="editor-conflict-organization" data-editor-conflict-local-organization />
                 </section>
                 <section aria-labelledby="editor-conflict-cloud-title">
                   <h4 id="editor-conflict-cloud-title">当前云端版本</h4>
                   <strong data-editor-conflict-cloud-title>未命名知识</strong>
                   <pre data-editor-conflict-cloud-body />
+                  <p class="editor-conflict-organization" data-editor-conflict-cloud-organization />
                 </section>
               </div>
               <div class="editor-conflict-actions">

@@ -91,3 +91,12 @@ Append new entries; never rewrite prior decisions. Each reversal must cite new e
 - Evidence: focused and full tests, TypeScript, diff-check, static build, and independent P0/P1 review passed on `agent/ai-live-canary`.
 - Impact: this is a site-owner, single-request, low-budget canary only. The UI does not yet offer DeepSeek consent, `base_version` is not bound to publication `source_revision`, and the live result must not be wired into selection replacement or automatic writeback.
 - Re-evaluate when: production Supabase migration history/backup is captured, the migration and function are deployed with live flags off, secret configuration succeeds, and the canary operation record is complete.
+
+## D-010 — Preserve removable relationship tombstones while hardening writes
+
+- Date: 2026-07-21.
+- Question: Should a soft-deleted relationship endpoint hide or destroy the existing link, and where must tenant/library integrity be enforced?
+- Decision: keep the existing link owner-readable and owner-deletable so the editor can show a title-free removable tombstone. Reject every insert or update unless both endpoints are live, owned by the link owner, and in the same knowledge base. Enforce this in both pre-write UI validation and a locked database trigger that also covers service-role writes.
+- Reason: silently hiding the row traps users who need to remove it, while relying on browser validation alone permits forged cross-owner or cross-library REST writes.
+- Impact: P06 includes forward migration `20260721000100`, command-specific owner RLS, anonymous denial, owner/other/anon/service-role verification, same-library candidate filtering, and fail-before-core-write relationship checks. The migration remains a separate production approval gate.
+- Re-evaluate when: document restoration semantics or a reviewed relationship-history model requires a different tombstone lifecycle.
