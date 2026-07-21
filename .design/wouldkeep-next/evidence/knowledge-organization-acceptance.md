@@ -46,7 +46,8 @@ The updated `5d49ca81` preview subsequently passed both Vercel deployments and w
 - The opened form now binds `documentId=095dbe7c-0600-46d7-8864-1eb68db5e3c2` with revision 1 and remains interactive.
 - Adding `P06验收` changed the state to “已自动保存到云端”; a fresh signed-in tab restored the tag chip from cloud data.
 - A source containing `access_token` did not appear after reopening the document, so the sensitive value was not persisted.
-- The browser extension lost page control while explicitly saving the safe anchored URL. The automated contract still proves anchor preservation, but the signed-in safe-source round-trip and inline sensitive-URL error feedback remain open browser gates.
+- A safe source at `https://example.com/reference#section` persisted to cloud data and reappeared after reopening the document with the `#section` anchor intact.
+- Inline sensitive-URL error feedback, relationship round-trip, and private-visibility control remain open browser gates; the browser extension lost page control after selecting a relationship candidate.
 
 ## Scope and security gate
 
