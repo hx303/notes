@@ -28,6 +28,13 @@
 - Static migration contract tests pass. The rollback-only SQL behavior matrix is authored but has not run because the local Docker engine is unavailable; no production migration or data mutation occurred.
 - Independent frontend review verdict: **PASS, no remaining P0/P1**. One accepted P2 remains: a recovered unsaved-new draft can briefly show relation candidates as unresolved, but parsing and preflight fail closed before any cloud or partial write.
 
+### Latest PR-preview browser checkpoint (`6f94c287`)
+
+- Both Vercel deployments passed and GitHub reported the Draft PR mergeable.
+- The independent acceptance agent matched the exact preview origin and document UUID, with `authState=ready`, `aria-busy=false`, `form.inert=false`, the complete original title/body, private visibility, the original `PR26 恢复验收草稿（Codex）` relationship, one safe web source, and no temporary personal source.
+- The Chrome extension timed out while handling a site confirmation dialog and then timed out on two read-only reconnect attempts. No text input, autosave, relationship/source write, publication action, or production action was performed.
+- Because the post-timeout local form state could not be read reliably, the agent stopped, finalized the tab as a handoff, and did not claim the relationship-delete/re-add or personal-source round trip as passed. A hard refresh of the exact URL is the first step when browser control is stable again.
+
 ## Browser evidence
 
 The exact local build was served to Chrome and inspected at 1200×900, 800×900, 375×812, and 320×720 CSS pixels.
