@@ -1,21 +1,32 @@
 # P06 knowledge organization acceptance
 
-- Candidate: `agent/knowledge-organization`, Draft PR #27, implementation `8ce887e4`
+- Candidate: `agent/knowledge-organization`, Draft PR #27, hardening implementation `a0867e96`
 - Baseline: merged `main` `1fccf318e4a2d2077589768bf8854810947092c9`
 - Date: 2026-07-21 (Asia/Shanghai)
-- Current verdict: **implementation and signed-in core organization gates pass; destructive, conflict, and multi-owner gates remain open**
+- Current verdict: **frontend implementation has no remaining P0/P1 after independent review; production database deployment and final preview acceptance remain open**
 
 ## Automated evidence
 
-- Focused organization + recovery tests: **36/36 passed**.
-- Full Quartz suite: **292/292 passed**.
+- Focused organization + recovery tests: **43/43 passed**.
+- Full Quartz suite: **303/303 passed**.
 - TypeScript: `tsc --noEmit` passed.
-- Migration namespace guard: passed; no migration was added.
+- Migration namespace guard: passed. Forward migration `20260721000100_document_links_integrity.sql` and owner/other/anon/service-role SQL verification were added but not deployed.
 - Changed-file Prettier check: passed for all P06 code, tests, styles, and research files.
 - `git diff --check`: passed.
 - Quartz build: passed with 284 Markdown inputs and 1,051 emitted files.
 - Build warnings are the existing untracked-date and LaTeX Unicode warnings; no P06 build error occurred.
 - Repository-wide Prettier remains an inherited non-gate: 645 pre-existing files fail the full-repository format check. P06-owned files pass.
+
+### 2026-07-21 relationship hardening checkpoint
+
+- Soft-deleted or inaccessible targets render a title-free removable tombstone. Ordinary saves retain an existing tombstone without re-upserting it; explicit removal still deletes the link.
+- Relationship candidates and writes are constrained to the document's actual knowledge base. Existing documents retain their bound knowledge base; new/cleared drafts reload default-library candidates; conflict copies inherit the source library.
+- Every active relationship target is checked for owner, knowledge base, and liveness before the core document insert/update, preventing partial saves caused by stale candidates.
+- Sensitive source URLs are rejected in credentials, query strings, and URL fragments. Local backup, outbox, conflict archive, conflict restore, and legacy outbox re-persistence all redact the URL before storage.
+- Existing publication snapshots now warn explicitly when a draft is changed to private: the old snapshot remains online until the user chooses “撤回发布”. Internal migration filenames are no longer exposed in user-facing errors.
+- The forward database migration fails closed on pre-existing cross-owner/cross-library rows, adds a locked `SECURITY DEFINER` endpoint trigger, splits command-specific owner RLS, revokes anonymous table access, and keeps soft-delete tombstones owner-readable/deletable.
+- Static migration contract tests pass. The rollback-only SQL behavior matrix is authored but has not run because the local Docker engine is unavailable; no production migration or data mutation occurred.
+- Independent frontend review verdict: **PASS, no remaining P0/P1**. One accepted P2 remains: a recovered unsaved-new draft can briefly show relation candidates as unresolved, but parsing and preflight fail closed before any cloud or partial write.
 
 ## Browser evidence
 
@@ -66,7 +77,7 @@ Proven in code and automated tests:
 - URLs containing Basic Auth, tokens, API keys, session values, passwords, or signature parameters are rejected before they can reach a publication snapshot.
 - Related-data reads fail closed and keep recovery data instead of applying empty values.
 - Remote-write conflicts fetch cloud tags/links/sources and show organization counts; a failed cloud organization read is labelled unknown instead of borrowing local values.
-- Existing owner filters and RLS/RPC boundaries are reused. No schema, RLS, RPC, AI, migration, Secret, production, or paid-call change is included.
+- Existing owner filters remain in the browser. The new forward migration hardens `document_links` RLS and endpoint integrity; it is committed for review but remains undeployed. No AI, Secret, paid-call, or production change is included.
 
 ## Not yet proven in a signed-in preview
 
@@ -75,6 +86,7 @@ Proven in code and automated tests:
 - Save a personal-experience source and inspect a publication snapshot.
 - Exercise local/cloud/copy conflict actions with different tags, relationships, and sources.
 - Confirm current-owner isolation against a second owner and anonymous access.
+- Run the rollback-only relationship SQL matrix, production-safe preflight, migration deployment, and read-only post-deploy contract verification after fresh explicit approval.
 - Complete a keyboard-only pass through every add/remove/select action with a screen reader announcement check.
 
 ## Residual risk

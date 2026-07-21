@@ -14,6 +14,7 @@ State: PR #16 merged baseline with the reviewed DeepSeek/A20 production boundary
 - `knowledge_bases`: `id`, `owner_id`, `name`, `description`, `default_visibility`, timestamps.
 - `documents`: `id`, `knowledge_base_id`, `owner_id`, `title`, `summary`, `body`, `topic`, `maturity`, `status`, `visibility`, `slug`, `revision`, `deleted_at`, publication fields, timestamps.
 - Organization contracts are the existing `tags`, `document_tags`, `document_links`, `document_sources`, and `document_versions` migrations. UI must use selectors/forms and never ask users for UUIDs.
+- `document_links` writes require two live endpoints owned by `owner_id` in the same knowledge base. Existing links with a soft-deleted endpoint remain owner-readable and owner-deletable only so the editor can expose a removable tombstone; they cannot be inserted or updated.
 - Conflict-sensitive writes carry the current document revision/base version; stale results are rejected rather than silently overwriting.
 
 ## Publication
