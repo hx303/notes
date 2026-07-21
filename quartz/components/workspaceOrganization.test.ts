@@ -1,6 +1,7 @@
 import assert from "node:assert"
 import test from "node:test"
 import {
+  WORKSPACE_MISSING_RELATION_TITLE,
   WORKSPACE_SOURCE_MAX_COUNT,
   WORKSPACE_TAG_MAX_CHARACTERS,
   normalizeWorkspaceSourceUrl,
@@ -8,9 +9,11 @@ import {
   parseWorkspaceRelations,
   parseWorkspaceSources,
   parseWorkspaceTags,
+  redactWorkspaceSourcesForRecovery,
   serializeWorkspaceRelations,
   serializeWorkspaceSources,
   serializeWorkspaceTags,
+  workspaceRelationDisplayTitle,
   type WorkspaceDocumentReference,
 } from "./scripts/workspaceOrganization"
 
@@ -96,6 +99,15 @@ test("relations reject self, unknown, ambiguous, and duplicate targets", () => {
   }
 })
 
+test("soft-deleted and inaccessible relation targets render a removable tombstone", () => {
+  assert.equal(workspaceRelationDisplayTitle("  仍可访问的知识  ", null), "仍可访问的知识")
+  assert.equal(
+    workspaceRelationDisplayTitle("已经软删除的知识", "2026-07-21T00:00:00Z"),
+    WORKSPACE_MISSING_RELATION_TITLE,
+  )
+  assert.equal(workspaceRelationDisplayTitle(undefined, null), WORKSPACE_MISSING_RELATION_TITLE)
+})
+
 test("source URLs accept only HTTP(S) and normalize before duplicate checks", () => {
   assert.equal(
     normalizeWorkspaceSourceUrl(" HTTPS://Example.COM:443/a/../paper#section "),
@@ -128,6 +140,48 @@ test("source URLs preserve citation fragments and reject embedded credentials or
     assert.equal(parsed.ok, false)
     if (!parsed.ok) assert.equal(parsed.issues[0]?.code, "source_sensitive_url")
   }
+})
+
+test("browser recovery payloads redact secret-bearing source URLs before persistence", () => {
+  const redacted = redactWorkspaceSourcesForRecovery([
+    {
+      kind: "web",
+      url: "https://example.com/paper?access_token=must-not-persist",
+      title: "保留标题",
+      author: "保留作者",
+      note: "保留说明",
+    },
+    {
+      kind: "web",
+      url: "https://user:password@example.com/paper",
+      title: "嵌入凭据",
+      author: "",
+      note: "",
+    },
+  ])
+
+  assert.deepEqual(redacted, [
+    {
+      kind: "web",
+      url: "",
+      title: "保留标题",
+      author: "保留作者",
+      note: "保留说明",
+    },
+    { kind: "web", url: "", title: "嵌入凭据", author: "", note: "" },
+  ])
+  assert.doesNotMatch(JSON.stringify(redacted), /must-not-persist|password/u)
+  const fragmentRedacted = redactWorkspaceSourcesForRecovery([
+    {
+      kind: "web",
+      url: "https://example.com/callback#access_token=fragment-secret",
+      title: "",
+      author: "",
+      note: "",
+    },
+  ])
+  assert.equal(fragmentRedacted[0]?.url, "")
+  assert.doesNotMatch(JSON.stringify(fragmentRedacted), /fragment-secret/u)
 })
 
 test("sources validate web and personal requirements and enforce the 50 item limit", () => {

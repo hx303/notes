@@ -1,5 +1,6 @@
 export const WORKSPACE_TAG_MAX_CHARACTERS = 80
 export const WORKSPACE_SOURCE_MAX_COUNT = 50
+export const WORKSPACE_MISSING_RELATION_TITLE = "原关联知识已删除或无法识别"
 
 export type WorkspaceOrganizationIssueCode =
   | "hidden_invalid"
@@ -136,6 +137,11 @@ export const serializeWorkspaceTags = (tags: readonly WorkspaceTag[]) =>
 
 const referenceTitleKey = (value: string) => normalizeVisibleText(value)
 
+export const workspaceRelationDisplayTitle = (title: unknown, deletedAt: unknown): string => {
+  const normalizedTitle = typeof title === "string" ? normalizeVisibleText(title) : ""
+  return deletedAt || !normalizedTitle ? WORKSPACE_MISSING_RELATION_TITLE : normalizedTitle
+}
+
 export const parseWorkspaceRelations = (
   input: HiddenStringListInput,
   options: {
@@ -207,15 +213,40 @@ const workspaceSourceUrlKey = (value: string) => {
   return parsed.href
 }
 
+const workspaceSourceSecretKey =
+  /^(?:token|access[_-]?token|auth|authorization|password|passcode|session|api[_-]?key|key|signature|sig|x-amz-signature)$/i
+
 const workspaceSourceUrlContainsSecret = (value: string) => {
   const parsed = new URL(value)
   if (parsed.username || parsed.password) return true
-  return [...parsed.searchParams.keys()].some((key) =>
-    /^(?:token|access[_-]?token|auth|authorization|password|passcode|session|api[_-]?key|key|signature|sig|x-amz-signature)$/i.test(
-      key,
-    ),
+  if ([...parsed.searchParams.keys()].some((key) => workspaceSourceSecretKey.test(key))) return true
+  const fragment = parsed.hash.slice(1)
+  const fragmentQuery = fragment.includes("?")
+    ? fragment.slice(fragment.indexOf("?") + 1)
+    : fragment
+  return [...new URLSearchParams(fragmentQuery).keys()].some((key) =>
+    workspaceSourceSecretKey.test(key),
   )
 }
+
+const workspaceSourceInputContainsSecret = (value: string) => {
+  const normalized = normalizeWorkspaceSourceUrl(value)
+  if (normalized) return workspaceSourceUrlContainsSecret(normalized)
+  return (
+    /(?:^|[?#&])(?:token|access[_-]?token|auth|authorization|password|passcode|session|api[_-]?key|key|signature|sig|x-amz-signature)=/iu.test(
+      value,
+    ) || /:\/\/[^\s/:@]+:[^\s/@]*@/u.test(value)
+  )
+}
+
+export const redactWorkspaceSourcesForRecovery = (
+  sources: readonly WorkspaceSource[],
+): WorkspaceSource[] =>
+  sources.map((source) =>
+    source.kind === "web" && workspaceSourceInputContainsSecret(source.url)
+      ? { ...source, url: "" }
+      : { ...source },
+  )
 
 const parseHiddenSources = (
   input: HiddenSourceListInput,
@@ -279,7 +310,7 @@ export const parseWorkspaceSources = (
       issues.push({ code: "source_web_url_invalid", index, value: rawUrl })
       return
     }
-    if (workspaceSourceUrlContainsSecret(url)) {
+    if (workspaceSourceInputContainsSecret(url)) {
       issues.push({ code: "source_sensitive_url", index, value: url })
       return
     }

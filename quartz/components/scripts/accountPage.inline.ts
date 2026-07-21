@@ -35,11 +35,14 @@ import {
   validateImportFile,
 } from "./importDraft.ts"
 import {
+  WORKSPACE_MISSING_RELATION_TITLE,
   parseWorkspaceRelations,
   parseWorkspaceSources,
   parseWorkspaceTags,
+  redactWorkspaceSourcesForRecovery,
   serializeWorkspaceRelations,
   serializeWorkspaceTags,
+  workspaceRelationDisplayTitle,
   type WorkspaceDocumentReference,
   type WorkspaceRelationSelection,
   type WorkspaceTag,
@@ -491,8 +494,19 @@ const init = async () => {
     prerequisite: [],
     related: [],
   }
+  const retainedUnavailableRelationTargetIds: Record<"prerequisite" | "related", Set<string>> = {
+    prerequisite: new Set(),
+    related: new Set(),
+  }
+  let retainedUnavailableRelationDocumentId = ""
+  const clearRetainedUnavailableRelationTargets = () => {
+    retainedUnavailableRelationTargetIds.prerequisite.clear()
+    retainedUnavailableRelationTargetIds.related.clear()
+    retainedUnavailableRelationDocumentId = ""
+  }
   let sourcesMigrationAvailable: boolean | null = null
   let currentPublication: PublicationState | null = null
+  let editorKnowledgeBaseBinding: { documentId: string; knowledgeBaseId: string } | null = null
   let importedDraft: ImportedDraft | null = null
   const importRequests = createLatestImportRequestGate()
   const authSyncRequests = createLatestImportRequestGate()
@@ -1123,6 +1137,20 @@ const init = async () => {
   const relationEditorFor = (relationType: "prerequisite" | "related") =>
     relationEditors.find((editor) => relationTypeForEditor(editor) === relationType)
 
+  const relationDocumentsForParsing = (
+    relationType: "prerequisite" | "related",
+    documentId = readForm().documentId || "new",
+  ) => [
+    ...relationDocumentOptions,
+    ...selectedRelations[relationType]
+      .filter(
+        (selection) =>
+          retainedUnavailableRelationDocumentId === documentId &&
+          retainedUnavailableRelationTargetIds[relationType].has(selection.documentId),
+      )
+      .map((selection) => ({ id: selection.documentId, title: selection.title })),
+  ]
+
   const renderRelationOptions = (editor: HTMLElement) => {
     const search = editor.querySelector<HTMLInputElement>("[data-relation-search]")
     const select = editor.querySelector<HTMLSelectElement>("[data-relation-select]")
@@ -1230,7 +1258,7 @@ const init = async () => {
     if (!hidden) return false
     const parsed = parseWorkspaceRelations(hidden.value, {
       currentDocumentId: readForm().documentId,
-      documents: relationDocumentOptions,
+      documents: relationDocumentsForParsing(relationType),
     })
     if (!parsed.ok) {
       const recoverable = recoverRelationSelections(hidden.value)
@@ -1425,7 +1453,7 @@ const init = async () => {
     const backup = addEditorBackupMetadata(
       {
         ...Object.fromEntries(new FormData(form).entries()),
-        __sources: collectSources(),
+        __sources: redactWorkspaceSourcesForRecovery(collectSources()),
       },
       currentUser?.id ?? "anonymous",
       documentId,
@@ -1464,7 +1492,7 @@ const init = async () => {
 
   const currentEditorOutboxPayload = () => ({
     form: form ? Object.fromEntries(new FormData(form).entries()) : {},
-    sources: collectSources(),
+    sources: redactWorkspaceSourcesForRecovery(collectSources()),
   })
 
   const restoreDurableOutboxBackup = async (documentId: string, isCurrent = () => true) => {
@@ -1502,8 +1530,9 @@ const init = async () => {
         if (Array.isArray(inspection.backup.__sources))
           existingSources = inspection.backup.__sources as WorkspaceSource[]
       }
-      const sources =
-        existingSources ?? (Array.isArray(record.payload.sources) ? record.payload.sources : [])
+      const sources = redactWorkspaceSourcesForRecovery(
+        existingSources ?? (Array.isArray(record.payload.sources) ? record.payload.sources : []),
+      )
       const backup = addEditorBackupMetadata(
         { ...payloadForm, __sources: sources },
         ownerId,
@@ -1584,6 +1613,13 @@ const init = async () => {
     )[0]!.backup
   }
 
+  const redactEditorBackupSources = (backup: EditorBackup): EditorBackup => ({
+    ...backup,
+    __sources: Array.isArray(backup.__sources)
+      ? redactWorkspaceSourcesForRecovery(backup.__sources as WorkspaceSource[])
+      : [],
+  })
+
   const archiveEditorConflict = (
     conflict: NonNullable<typeof editorConflict>,
     backup = recoverableConflictBackup(conflict),
@@ -1591,7 +1627,7 @@ const init = async () => {
     if (!currentUser || currentUser.id !== conflict.ownerId) return false
     try {
       const archiveKey = `wouldkeep:editor-conflict-archive:${conflict.ownerId}:${conflict.documentId}:${Date.now()}`
-      localStorage.setItem(archiveKey, JSON.stringify(backup))
+      localStorage.setItem(archiveKey, JSON.stringify(redactEditorBackupSources(backup)))
       return true
     } catch {
       setStatus(
@@ -1638,7 +1674,10 @@ const init = async () => {
     const frozenBackup =
       reason === "remote-write" && liveForm && (liveForm.documentId || "new") === documentId
         ? addEditorBackupMetadata(
-            { ...liveForm, __sources: collectSources() },
+            {
+              ...liveForm,
+              __sources: redactWorkspaceSourcesForRecovery(collectSources()),
+            },
             ownerId,
             documentId,
             Number(backup.__editorRecovery?.baseRevision ?? liveForm.revision),
@@ -1646,7 +1685,9 @@ const init = async () => {
         : backup
     const cloudSnapshot: WorkspaceConflictSnapshot = {
       ...cloud,
-      __sources: Array.isArray(cloud.__sources) ? cloud.__sources : collectSources(),
+      __sources: Array.isArray(cloud.__sources)
+        ? redactWorkspaceSourcesForRecovery(cloud.__sources)
+        : redactWorkspaceSourcesForRecovery(collectSources()),
       organizationLoaded: cloud.organizationLoaded !== false,
     }
     editorConflict = { ownerId, documentId, backup: frozenBackup, reason, cloud: cloudSnapshot }
@@ -1848,13 +1889,18 @@ const init = async () => {
     return true
   }
 
-  const loadLinkOptions = async (currentDocumentId = "", isCurrent = () => true) => {
-    if (!client || !currentUser) return false
+  const loadLinkOptions = async (
+    currentDocumentId: string,
+    knowledgeBaseId: string,
+    isCurrent = () => true,
+  ) => {
+    if (!client || !currentUser || !knowledgeBaseId) return false
     const context = captureAuthContext()
     const result = await context.client
       .from("documents")
       .select("id,title,topic,visibility,updated_at")
       .eq("owner_id", context.ownerId)
+      .eq("knowledge_base_id", knowledgeBaseId)
       .neq("id", currentDocumentId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
@@ -1879,6 +1925,28 @@ const init = async () => {
     for (const relationType of ["prerequisite", "related"] as const)
       syncRelationEditorFromField(relationType)
     return true
+  }
+
+  const clearRelationDocumentOptions = () => {
+    relationDocumentOptions = []
+    relationEditors.forEach(renderRelationOptions)
+  }
+
+  const prepareNewDocumentRelationOptions = async () => {
+    if (!client || !currentUser) return false
+    const ownerId = String(currentUser.id)
+    const contextClient = client
+    const contextEpoch = authEpoch
+    const isCurrentNewDocument = () =>
+      !disposed &&
+      authEpoch === contextEpoch &&
+      currentUser?.id === ownerId &&
+      client === contextClient &&
+      (readForm().documentId || "new") === "new" &&
+      editorKnowledgeBaseBinding === null
+    const knowledgeBaseId = await ensureKnowledgeBase(isCurrentNewDocument)
+    if (!knowledgeBaseId || !isCurrentNewDocument()) return false
+    return loadLinkOptions("", knowledgeBaseId, isCurrentNewDocument)
   }
 
   const loadTagOptions = async (isCurrent = () => true) => {
@@ -1926,13 +1994,14 @@ const init = async () => {
     documentId: string,
     rawSelections: string,
     relationType: "prerequisite" | "related",
+    knowledgeBaseId: string,
     ownerId: string,
     saveClient: any,
   ) => {
     if (!saveClient) return false
     const parsed = parseWorkspaceRelations(rawSelections, {
       currentDocumentId: documentId,
-      documents: relationDocumentOptions,
+      documents: relationDocumentsForParsing(relationType, documentId),
     })
     if (!parsed.ok) {
       const status =
@@ -1941,15 +2010,19 @@ const init = async () => {
       return false
     }
     const targetIds = parsed.value.map((selection) => selection.documentId)
-    if (targetIds.length) {
+    const activeTargetIds = targetIds.filter(
+      (targetId) => !retainedUnavailableRelationTargetIds[relationType].has(targetId),
+    )
+    if (activeTargetIds.length) {
       const targets = await saveClient
         .from("documents")
         .select("id")
         .eq("owner_id", ownerId)
-        .in("id", targetIds)
+        .eq("knowledge_base_id", knowledgeBaseId)
+        .in("id", activeTargetIds)
         .is("deleted_at", null)
-      if (targets.error || (targets.data ?? []).length !== targetIds.length) return false
-      const rows = targetIds.map((toDocumentId) => ({
+      if (targets.error || (targets.data ?? []).length !== activeTargetIds.length) return false
+      const rows = activeTargetIds.map((toDocumentId) => ({
         from_document_id: documentId,
         to_document_id: toDocumentId,
         owner_id: ownerId,
@@ -1988,30 +2061,47 @@ const init = async () => {
     const context = captureAuthContext()
     const result = await context.client
       .from("document_links")
-      .select("relation_type,to_document_id,documents!document_links_to_document_id_fkey(title)")
+      .select(
+        "relation_type,to_document_id,documents!document_links_to_document_id_fkey(title,deleted_at)",
+      )
       .eq("from_document_id", documentId)
       .eq("owner_id", context.ownerId)
+      .in("relation_type", ["prerequisite", "related"])
     if (!authContextIsCurrent(context) || !isCurrent()) return false
     if (result.error) return false
     const groups: Record<"prerequisite" | "related", WorkspaceRelationSelection[]> = {
       prerequisite: [],
       related: [],
     }
+    const unavailableCounts: Record<"prerequisite" | "related", number> = {
+      prerequisite: 0,
+      related: 0,
+    }
+    clearRetainedUnavailableRelationTargets()
+    retainedUnavailableRelationDocumentId = documentId
     ;(result.data ?? []).forEach(
       (item: {
         relation_type: string
         to_document_id?: string
-        documents?: { title?: string } | null
+        documents?: { title?: string; deleted_at?: string | null } | null
       }) => {
-        const title = item.documents?.title || "原关联知识已删除或无法识别"
         const relationType =
           item.relation_type === "prerequisite"
             ? "prerequisite"
             : item.relation_type === "related"
               ? "related"
               : null
-        if (item.to_document_id && relationType)
+        if (item.to_document_id && relationType) {
+          const title = workspaceRelationDisplayTitle(
+            item.documents?.title,
+            item.documents?.deleted_at,
+          )
+          if (title === WORKSPACE_MISSING_RELATION_TITLE) {
+            unavailableCounts[relationType] += 1
+            retainedUnavailableRelationTargetIds[relationType].add(String(item.to_document_id))
+          }
           groups[relationType].push({ documentId: String(item.to_document_id), title })
+        }
       },
     )
     for (const relationType of ["prerequisite", "related"] as const) {
@@ -2019,6 +2109,11 @@ const init = async () => {
       const hidden = editor?.querySelector<HTMLInputElement>("[data-relation-values]")
       if (hidden) hidden.value = serializeWorkspaceRelations(groups[relationType])
       renderRelationSelections(relationType, groups[relationType])
+      if (unavailableCounts[relationType] > 0) {
+        const status = editor?.querySelector<HTMLElement>("[data-relation-status]")
+        if (status)
+          status.textContent = `有 ${unavailableCounts[relationType]} 条关系指向已删除或无法访问的知识；请移除后保存草稿。`
+      }
     }
     return true
   }
@@ -2097,10 +2192,16 @@ const init = async () => {
     }
     const audience = publication.audience === "public" ? "已公开到知识网络" : "已通过链接分享"
     const pending = currentRevision > Number(publication.source_revision)
+    const privateDraftWarning =
+      readForm().visibility === "private"
+        ? "；当前草稿已改为仅自己可见，但此前发布版本仍在线，需点击“撤回发布”才能下线。"
+        : ""
     if (publicationStatus)
-      publicationStatus.textContent = pending
-        ? `${audience}；公开页仍是第 ${publication.source_revision} 版，当前修改尚未更新。`
-        : `${audience}；读者看到的是第 ${publication.source_revision} 版。`
+      publicationStatus.textContent = `${
+        pending
+          ? `${audience}；公开页仍是第 ${publication.source_revision} 版，当前修改尚未更新。`
+          : `${audience}；读者看到的是第 ${publication.source_revision} 版。`
+      }${privateDraftWarning}`
     if (publishButton) {
       publishButton.hidden = false
       publishButton.textContent = pending ? "更新公开版本" : "重新发布当前版本"
@@ -2128,7 +2229,7 @@ const init = async () => {
       currentPublication = null
       if (publicationStatus)
         publicationStatus.textContent =
-          "正式发布功能尚未启用；请执行 20260718000500_publication_flow.sql。"
+          "正式发布功能暂不可用；私人草稿不受影响，请稍后重试或联系站点管理员。"
       return false
     }
     updatePublicationUI(result.data as PublicationState | null, revision)
@@ -2170,7 +2271,7 @@ const init = async () => {
       if (result.error || !result.data) {
         if (publicationStatus)
           publicationStatus.textContent = result.error?.message?.includes("does not exist")
-            ? "发布迁移尚未执行；请运行 20260718000500_publication_flow.sql。"
+            ? "正式发布功能暂不可用；私人草稿已安全保存，请稍后重试或联系站点管理员。"
             : "发布失败，私人草稿仍已安全保存。请稍后重试。"
         return
       }
@@ -2246,11 +2347,11 @@ const init = async () => {
     }
     const parsedPrerequisites = parseWorkspaceRelations(data.prerequisites, {
       currentDocumentId: data.documentId,
-      documents: relationDocumentOptions,
+      documents: relationDocumentsForParsing("prerequisite"),
     })
     const parsedRelated = parseWorkspaceRelations(data.related, {
       currentDocumentId: data.documentId,
-      documents: relationDocumentOptions,
+      documents: relationDocumentsForParsing("related"),
     })
     if (!parsedPrerequisites.ok) {
       const editor = relationEditorFor("prerequisite")
@@ -2305,8 +2406,61 @@ const init = async () => {
     if (!outboxClaim) writeLocalBackup()
     const backupTokenAtStart = editorTabDrafts.backupToken(documentIdentity)
     let boundBackupToken: string | null = null
-    const knowledgeBaseId = await ensureKnowledgeBase()
+    let knowledgeBaseId = ""
+    if (data.documentId) {
+      if (editorKnowledgeBaseBinding?.documentId === data.documentId) {
+        knowledgeBaseId = editorKnowledgeBaseBinding.knowledgeBaseId
+      } else {
+        const knowledgeBase = await saveClient
+          .from("documents")
+          .select("knowledge_base_id")
+          .eq("id", data.documentId)
+          .eq("owner_id", ownerId)
+          .single()
+        if (knowledgeBase.error || !knowledgeBase.data?.knowledge_base_id) return false
+        knowledgeBaseId = String(knowledgeBase.data.knowledge_base_id)
+      }
+    } else if (editorKnowledgeBaseBinding?.documentId === "new") {
+      knowledgeBaseId = editorKnowledgeBaseBinding.knowledgeBaseId
+    } else {
+      knowledgeBaseId = String((await ensureKnowledgeBase()) ?? "")
+    }
     if (!knowledgeBaseId || !saveTargetIsCurrent()) return false
+    if (data.documentId)
+      editorKnowledgeBaseBinding = { documentId: data.documentId, knowledgeBaseId }
+    const activeRelationshipTargetIds = [
+      ...parsedPrerequisites.value
+        .filter(
+          (selection) =>
+            retainedUnavailableRelationDocumentId !== documentIdentity ||
+            !retainedUnavailableRelationTargetIds.prerequisite.has(selection.documentId),
+        )
+        .map((selection) => selection.documentId),
+      ...parsedRelated.value
+        .filter(
+          (selection) =>
+            retainedUnavailableRelationDocumentId !== documentIdentity ||
+            !retainedUnavailableRelationTargetIds.related.has(selection.documentId),
+        )
+        .map((selection) => selection.documentId),
+    ].filter((targetId, index, targetIds) => targetIds.indexOf(targetId) === index)
+    if (activeRelationshipTargetIds.length) {
+      const relationshipTargets = await saveClient
+        .from("documents")
+        .select("id")
+        .eq("owner_id", ownerId)
+        .eq("knowledge_base_id", knowledgeBaseId)
+        .in("id", activeRelationshipTargetIds)
+        .is("deleted_at", null)
+      if (
+        relationshipTargets.error ||
+        (relationshipTargets.data ?? []).length !== activeRelationshipTargetIds.length ||
+        !saveTargetIsCurrent()
+      ) {
+        setStatus("关系目标已失效或不属于当前知识库；正文尚未写入，请移除该关系后重试。", "error")
+        return false
+      }
+    }
     const visibility =
       data.visibility === "public" ||
       data.visibility === "unlisted" ||
@@ -2331,6 +2485,7 @@ const init = async () => {
           .update({ ...payload, revision: data.revision + 1 })
           .eq("id", data.documentId)
           .eq("owner_id", ownerId)
+          .eq("knowledge_base_id", knowledgeBaseId)
           .eq("revision", data.revision)
           .select("id,revision")
           .maybeSingle()
@@ -2424,6 +2579,7 @@ const init = async () => {
         editorSaveReadyDocumentId = boundDocumentIdentity
       const field = form.elements.namedItem("documentId") as HTMLInputElement | null
       if (field) field.value = result.data.id
+      editorKnowledgeBaseBinding = { documentId: String(result.data.id), knowledgeBaseId }
       const revisionField = form.elements.namedItem("revision") as HTMLInputElement | null
       if (revisionField) revisionField.value = String(result.data.revision ?? 0)
       const newBackupTokenAtBind = editorTabDrafts.backupToken("new")
@@ -2502,6 +2658,7 @@ const init = async () => {
         result.data.id,
         data.prerequisites ?? "",
         "prerequisite",
+        knowledgeBaseId,
         ownerId,
         saveClient,
       )
@@ -2510,6 +2667,7 @@ const init = async () => {
         result.data.id,
         data.related ?? "",
         "related",
+        knowledgeBaseId,
         ownerId,
         saveClient,
       )
@@ -2732,6 +2890,7 @@ const init = async () => {
     backup: EditorBackup,
     latest: EditorOutboxRecord | null,
   ) => {
+    const redactedBackup = redactEditorBackupSources(backup)
     const rememberBackup = (nextBackup: EditorBackup) => {
       if (editorConflict !== conflict) return
       editorConflict.backup = nextBackup
@@ -2743,7 +2902,7 @@ const init = async () => {
           nextBackup as Record<string, unknown>,
         )
     }
-    rememberBackup(backup)
+    rememberBackup(redactedBackup)
     if (!editorOutbox) return
     try {
       const frozen = await editorOutbox.restoreConflict({
@@ -2751,13 +2910,13 @@ const init = async () => {
         documentId: conflict.documentId,
         baseRevision: Number(
           latest?.baseRevision ??
-            backup.__editorRecovery?.baseRevision ??
+            redactedBackup.__editorRecovery?.baseRevision ??
             conflict.cloud.revision ??
             0,
         ),
         payload: {
-          form: backup,
-          sources: Array.isArray(backup.__sources) ? backup.__sources : [],
+          form: redactedBackup,
+          sources: Array.isArray(redactedBackup.__sources) ? redactedBackup.__sources : [],
         },
       })
       if (editorConflict === conflict) {
@@ -2868,11 +3027,33 @@ const init = async () => {
       const privateVisibility = form.querySelector<HTMLInputElement>(
         "[name=visibility][value=private]",
       )
+      let sourceKnowledgeBaseId =
+        editorKnowledgeBaseBinding?.documentId === conflict.documentId
+          ? editorKnowledgeBaseBinding.knowledgeBaseId
+          : ""
+      if (!sourceKnowledgeBaseId) {
+        const sourceDocument = await client
+          .from("documents")
+          .select("knowledge_base_id")
+          .eq("id", conflict.documentId)
+          .eq("owner_id", conflict.ownerId)
+          .single()
+        if (
+          sourceDocument.error ||
+          !sourceDocument.data?.knowledge_base_id ||
+          editorConflict !== conflict
+        ) {
+          setStatus("无法确认原文档所属知识库；尚未创建冲突副本，请稍后重试。", "error")
+          return
+        }
+        sourceKnowledgeBaseId = String(sourceDocument.data.knowledge_base_id)
+      }
       if (title && !title.value.endsWith("（冲突副本）")) title.value += "（冲突副本）"
       if (documentId) documentId.value = ""
       if (revision) revision.value = "0"
       if (statusField) statusField.value = "draft"
       if (privateVisibility) privateVisibility.checked = true
+      editorKnowledgeBaseBinding = { documentId: "new", knowledgeBaseId: sourceKnowledgeBaseId }
       clearEditorConflict()
       allowEditorSaves("new")
       updatePublicationUI(null)
@@ -2920,6 +3101,8 @@ const init = async () => {
     clearEditorConflict()
     form?.reset()
     relationDocumentOptions = []
+    editorKnowledgeBaseBinding = null
+    clearRetainedUnavailableRelationTargets()
     syncOrganizationEditorsFromFields()
     if (form) {
       form.inert = false
@@ -2979,7 +3162,7 @@ const init = async () => {
       }
       const result = await openClient
         .from("documents")
-        .select("id,title,body,topic,maturity,status,visibility,revision")
+        .select("id,title,body,topic,maturity,status,visibility,revision,knowledge_base_id")
         .eq("id", documentId)
         .eq("owner_id", ownerId)
         .single()
@@ -3001,6 +3184,10 @@ const init = async () => {
         setOpenBusy(false)
         return false
       }
+      editorKnowledgeBaseBinding = {
+        documentId: String(result.data.id),
+        knowledgeBaseId: String(result.data.knowledge_base_id),
+      }
       fillForm({
         ...(result.data ?? {}),
         documentId: result.data?.id ?? documentId,
@@ -3018,7 +3205,11 @@ const init = async () => {
       if (state) state.textContent = "正文已载入，正在加载标签、关系与来源…"
       await loadVersions(documentId, isCurrentOpen)
       if (!isCurrentOpen()) return false
-      const linkOptionsLoaded = await loadLinkOptions(documentId, isCurrentOpen)
+      const linkOptionsLoaded = await loadLinkOptions(
+        documentId,
+        String(result.data.knowledge_base_id),
+        isCurrentOpen,
+      )
       if (!isCurrentOpen()) return false
       const tagsLoaded = await loadDocumentTags(documentId, isCurrentOpen)
       if (!isCurrentOpen()) return false
@@ -3223,7 +3414,7 @@ const init = async () => {
               restoreLocalBackup()
             }
             void flushDurableOutboxForCurrentDocument()
-            await loadLinkOptions("", isCurrentSync)
+            if (knowledgeBaseId) await loadLinkOptions("", knowledgeBaseId, isCurrentSync)
             if (!isCurrentSync()) return
             await loadTagOptions(isCurrentSync)
             if (!isCurrentSync()) return
@@ -3822,6 +4013,9 @@ const init = async () => {
     clearEditorConflict()
     editorTabDrafts.clearDocument("new")
     form?.reset()
+    editorKnowledgeBaseBinding = null
+    clearRelationDocumentOptions()
+    clearRetainedUnavailableRelationTargets()
     const documentId = form?.elements.namedItem("documentId") as HTMLInputElement | null
     if (documentId) documentId.value = ""
     const revision = form?.elements.namedItem("revision") as HTMLInputElement | null
@@ -3837,6 +4031,7 @@ const init = async () => {
     if (history) history.hidden = true
     allowEditorSaves("new")
     if (state) state.textContent = "新建云端草稿"
+    void prepareNewDocumentRelationOptions()
     if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
   root
@@ -4553,7 +4748,7 @@ const init = async () => {
             [...selectedRelations[relationType].map((item) => item.documentId), targetId],
             {
               currentDocumentId: readForm().documentId,
-              documents: relationDocumentOptions,
+              documents: relationDocumentsForParsing(relationType),
             },
           )
           if (!parsed.ok) {
@@ -4720,6 +4915,9 @@ const init = async () => {
       invalidateEditorSaves()
       editorTabDrafts.clearDocument(activeDocumentId)
       form.reset()
+      editorKnowledgeBaseBinding = null
+      clearRelationDocumentOptions()
+      clearRetainedUnavailableRelationTargets()
       const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
       if (documentId) documentId.value = ""
       const revision = form.elements.namedItem("revision") as HTMLInputElement | null
@@ -4731,6 +4929,7 @@ const init = async () => {
       renderSources()
       allowEditorSaves("new")
       if (state) state.textContent = "尚未保存"
+      void prepareNewDocumentRelationOptions()
     })
   }
 
