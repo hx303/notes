@@ -22,6 +22,7 @@ const initAccountMenu = async () => {
   let client: any = null
   let closeTimer: number | undefined
   let toggleWasOpenOnPointerDown: boolean | null = null
+  let accountSyncEpoch = 0
 
   const safeAvatarUrl = (value = "") => {
     try {
@@ -79,7 +80,10 @@ const initAccountMenu = async () => {
   }
 
   const syncAccount = async () => {
+    const syncEpoch = ++accountSyncEpoch
+    if (operationsLink) operationsLink.hidden = true
     const user = client ? ((await client.auth.getUser()).data?.user ?? null) : null
+    if (syncEpoch !== accountSyncEpoch) return
     root.dataset.accountState = user ? "signed-in" : "signed-out"
     if (loginLink) loginLink.hidden = Boolean(user)
     if (userSurface) userSurface.hidden = !user
@@ -94,14 +98,17 @@ const initAccountMenu = async () => {
       .select("display_name,avatar_url,signature")
       .eq("id", user.id)
       .maybeSingle()
+    if (syncEpoch !== accountSyncEpoch) return
     if (profileResult.error)
       profileResult = await client
         .from("profiles")
         .select("display_name,avatar_url")
         .eq("id", user.id)
         .maybeSingle()
+    if (syncEpoch !== accountSyncEpoch) return
     renderProfile(profileResult.data ?? null, user.email ?? "")
     const capabilityResult = await client.rpc("current_account_capabilities")
+    if (syncEpoch !== accountSyncEpoch) return
     const capabilities = capabilityResult.data as {
       can_edit_site?: boolean
       can_manage_roles?: boolean

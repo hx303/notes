@@ -844,7 +844,14 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
             <span>权限确认前不会读取反馈、账户目录或运营状态。</span>
           </div>
 
-          <section class="site-access-denied" data-site-access-denied hidden>
+          <section
+            class="site-access-denied"
+            data-site-access-denied
+            role="alert"
+            aria-live="assertive"
+            tabIndex={-1}
+            hidden
+          >
             <p class="account-kicker">ACCESS / 访问范围</p>
             <h3>当前账户没有站点运营权限</h3>
             <p data-site-access-message>

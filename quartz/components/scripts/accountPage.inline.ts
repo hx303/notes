@@ -1199,6 +1199,9 @@ const init = async () => {
       }
       if (siteReviewSection) siteReviewSection.hidden = true
       if (siteRoleSection) siteRoleSection.hidden = true
+      queueMicrotask(() => {
+        if (siteAccessDenied && !siteAccessDenied.hidden) siteAccessDenied.focus()
+      })
       return
     }
 
@@ -1331,8 +1334,10 @@ const init = async () => {
             .update({ is_deleted: true })
             .eq("id", row.id)
             .eq("is_deleted", false)
+            .select("id")
+            .maybeSingle()
           if (!authContextIsCurrent(deleteContext) || !isCurrent()) return
-          if (deletion.error) {
+          if (deletion.error || !deletion.data?.id) {
             setSiteInlineStatus(siteReviewStatus, "操作失败；反馈仍保持原状。", "error")
             return
           }

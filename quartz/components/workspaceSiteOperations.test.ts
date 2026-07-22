@@ -8,6 +8,10 @@ const accountScript = readFileSync(
   "utf8",
 )
 const accountMenu = readFileSync(new URL("./AccountMenu.tsx", import.meta.url), "utf8")
+const accountMenuScript = readFileSync(
+  new URL("./scripts/accountMenu.inline.ts", import.meta.url),
+  "utf8",
+)
 const folderContent = readFileSync(new URL("./pages/FolderContent.tsx", import.meta.url), "utf8")
 const adminAssets = readFileSync(
   new URL("../plugins/emitters/adminAssets.ts", import.meta.url),
@@ -34,14 +38,22 @@ test("site operations is a first-class personal-workspace route", () => {
 
 test("site operations fails closed before reading protected queues", () => {
   assert.match(accountScript, /rpc\("current_account_capabilities"\)/)
+  assert.match(accountMenuScript, /const syncEpoch = \+\+accountSyncEpoch/)
+  assert.match(accountMenuScript, /if \(syncEpoch !== accountSyncEpoch\) return/)
+  assert.match(accountMenuScript, /if \(operationsLink\) operationsLink\.hidden = true/)
   assert.match(accountScript, /renderSiteAccess\(null, "verification"\)/)
   assert.match(accountScript, /if \(!canAccessSiteOperations\(currentCapabilities\)\) return/)
   assert.match(accountScript, /can_read_other_private_documents\?: boolean/)
   assert.doesNotMatch(accountScript, /can_read_other_private_documents\s*===\s*true/)
+  assert.match(accountPage, /data-site-access-denied[\s\S]{0,160}role="alert"/)
+  assert.match(accountPage, /data-site-access-denied[\s\S]{0,200}tabIndex=\{-1\}/)
+  assert.match(accountScript, /siteAccessDenied\.focus\(\)/)
 })
 
 test("moderation remains soft-delete and role changes use hardened RPCs", () => {
   assert.match(accountScript, /\.update\(\{ is_deleted: true \}\)/)
+  assert.match(accountScript, /\.select\("id"\)\s*\.maybeSingle\(\)/)
+  assert.match(accountScript, /deletion\.error \|\| !deletion\.data\?\.id/)
   assert.match(accountScript, /\.eq\("is_deleted", false\)/)
   assert.match(accountScript, /rpc\("list_roles"/)
   assert.match(accountScript, /rpc\("grant_role"/)
