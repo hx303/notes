@@ -47,6 +47,16 @@ import {
   type WorkspaceRelationSelection,
   type WorkspaceTag,
 } from "./workspaceOrganization.ts"
+import {
+  aiSelectionSnapshotIsCurrent,
+  applyAiSuggestion,
+  captureAiSelection,
+  parseAiSuggestionGatewayResponse,
+  type AiSelectionSnapshot,
+  type AiSuggestionAction,
+  type AiSuggestionApplyMode,
+  type AiSuggestionPreview,
+} from "./workspaceAiSuggestion.ts"
 
 const localDraftKey = (userId: string, documentId = "new") =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
@@ -389,6 +399,25 @@ const init = async () => {
   const history = root.querySelector<HTMLElement>("[data-editor-history]")
   const historyList = root.querySelector<HTMLElement>("[data-editor-history-list]")
   const form = root.querySelector<HTMLFormElement>("[data-editor-form]")
+  const aiSuggestionAssist = root.querySelector<HTMLElement>("[data-ai-suggestion-assist]")
+  const aiSuggestionAvailability = root.querySelector<HTMLElement>(
+    "[data-ai-suggestion-availability]",
+  )
+  const aiSuggestionAction = root.querySelector<HTMLSelectElement>("[data-ai-suggestion-action]")
+  const aiSuggestionGenerate = root.querySelector<HTMLButtonElement>(
+    "[data-ai-suggestion-generate]",
+  )
+  const aiSuggestionStatus = root.querySelector<HTMLElement>("[data-ai-suggestion-status]")
+  const aiSuggestionPreview = root.querySelector<HTMLElement>("[data-ai-suggestion-preview]")
+  const aiSuggestionMode = root.querySelector<HTMLElement>("[data-ai-suggestion-mode]")
+  const aiSuggestionOriginal = root.querySelector<HTMLElement>("[data-ai-suggestion-original]")
+  const aiSuggestionOutput = root.querySelector<HTMLElement>("[data-ai-suggestion-output]")
+  const aiSuggestionReplace = root.querySelector<HTMLButtonElement>("[data-ai-suggestion-replace]")
+  const aiSuggestionInsert = root.querySelector<HTMLButtonElement>("[data-ai-suggestion-insert]")
+  const aiSuggestionRegenerate = root.querySelector<HTMLButtonElement>(
+    "[data-ai-suggestion-regenerate]",
+  )
+  const aiSuggestionDiscard = root.querySelector<HTMLButtonElement>("[data-ai-suggestion-discard]")
   const state = root.querySelector<HTMLElement>("[data-editor-state]")
   const editorLoadRecovery = root.querySelector<HTMLElement>("[data-editor-load-recovery]")
   const editorLoadRecoveryMessage = root.querySelector<HTMLElement>(
@@ -442,6 +471,15 @@ const init = async () => {
   let authEpoch = 0
   let autosaveTimer: number | undefined
   let editorChangeGeneration = 0
+  let aiSuggestionRequestEpoch = 0
+  let aiSuggestionGenerationInFlight = false
+  let activeAiSelection: AiSelectionSnapshot | null = null
+  let activeAiSuggestion: AiSuggestionPreview | null = null
+  let aiSuggestionPreferences: {
+    allowPrivateContent: boolean
+    enabled: boolean
+    monthlyBudgetCents: number
+  } | null = null
   const editorTabDrafts = createEditorTabDraftState()
   const pendingNewBackupCleanup = new Map<string, string>()
   let editorConflictResolutionPending = false
@@ -1795,6 +1833,348 @@ const init = async () => {
     }
   }
 
+  const editorBodyField = () =>
+    form?.elements.namedItem("body") instanceof HTMLTextAreaElement
+      ? (form.elements.namedItem("body") as HTMLTextAreaElement)
+      : null
+
+  const setAiSuggestionStatus = (message: string, type: "" | "error" | "success" = "") => {
+    if (!aiSuggestionStatus) return
+    aiSuggestionStatus.textContent = message
+    aiSuggestionStatus.dataset.state = type
+    aiSuggestionStatus.setAttribute("role", type === "error" ? "alert" : "status")
+    aiSuggestionStatus.setAttribute("aria-live", type === "error" ? "assertive" : "polite")
+  }
+
+  const updateAiSuggestionAvailability = () => {
+    if (!aiSuggestionAvailability) return
+    const data = readForm()
+    let label = "正在检查使用边界"
+    let stateName = ""
+    if (!currentUser) label = "登录后可用"
+    else if (!aiSuggestionPreferences) {
+      label = "设置暂不可用"
+      stateName = "error"
+    } else if (!aiSuggestionPreferences.enabled) {
+      label = "AI 已关闭"
+      stateName = "off"
+    } else if (aiSuggestionPreferences.monthlyBudgetCents <= 0) {
+      label = "预算为 0"
+      stateName = "off"
+    } else if (data.visibility !== "public" && !aiSuggestionPreferences.allowPrivateContent) {
+      label = "私密内容未授权"
+      stateName = "off"
+    } else {
+      label = "已开启 · 安全预览"
+      stateName = "ready"
+    }
+    aiSuggestionAvailability.textContent = label
+    aiSuggestionAvailability.dataset.state = stateName
+  }
+
+  const aiSuggestionGate = (data = readForm()) => {
+    if (!currentUser || !client) return "请先登录，再使用 AI 建议。"
+    if (!aiSuggestionPreferences) return "AI 设置暂时无法读取，请检查网络后重试。"
+    if (!aiSuggestionPreferences.enabled) return "AI 助手当前关闭；请先在 AI 设置中明确开启。"
+    if (aiSuggestionPreferences.monthlyBudgetCents <= 0)
+      return "当前月预算为 0；保持关闭，不会发起模型请求。"
+    if (data.visibility !== "public" && !aiSuggestionPreferences.allowPrivateContent)
+      return "这条知识不是公开内容，且你没有允许 AI 处理私密内容。"
+    return ""
+  }
+
+  const activeAiSelectionIsCurrent = () => {
+    if (!activeAiSelection) return false
+    const data = readForm()
+    return aiSelectionSnapshotIsCurrent(activeAiSelection, {
+      documentId: data.documentId,
+      baseVersion: data.revision,
+      body: data.body,
+    })
+  }
+
+  const setAiSuggestionActionability = (actionable: boolean) => {
+    if (aiSuggestionReplace) aiSuggestionReplace.disabled = !actionable
+    if (aiSuggestionInsert) aiSuggestionInsert.disabled = !actionable
+  }
+
+  const discardAiSuggestion = (
+    message = "已放弃建议；正文没有改变。",
+    options: { invalidateRequest?: boolean } = {},
+  ) => {
+    if (options.invalidateRequest !== false) aiSuggestionRequestEpoch += 1
+    activeAiSelection = null
+    activeAiSuggestion = null
+    aiSuggestionAssist?.removeAttribute("aria-busy")
+    if (aiSuggestionRegenerate) aiSuggestionRegenerate.disabled = false
+    if (aiSuggestionPreview) aiSuggestionPreview.hidden = true
+    if (aiSuggestionOriginal) aiSuggestionOriginal.textContent = ""
+    if (aiSuggestionOutput) aiSuggestionOutput.textContent = ""
+    setAiSuggestionActionability(false)
+    setAiSuggestionStatus(message)
+  }
+
+  const markAiSuggestionStale = () => {
+    if (!activeAiSelection || activeAiSelectionIsCurrent()) return false
+    aiSuggestionRequestEpoch += 1
+    activeAiSelection = null
+    activeAiSuggestion = null
+    aiSuggestionAssist?.removeAttribute("aria-busy")
+    if (aiSuggestionRegenerate) aiSuggestionRegenerate.disabled = false
+    setAiSuggestionActionability(false)
+    if (aiSuggestionMode) aiSuggestionMode.textContent = "正文或版本已变化"
+    setAiSuggestionStatus("这条建议已过期，没有写回正文；请重新选择文字并生成。", "error")
+    return true
+  }
+
+  const refreshAiSelectionStatus = (preserveMessage = false) => {
+    updateAiSuggestionAvailability()
+    if (markAiSuggestionStale()) return
+    const body = editorBodyField()
+    const data = readForm()
+    const gate = aiSuggestionGate(data)
+    const action = (aiSuggestionAction?.value || "rewrite") as AiSuggestionAction
+    const capture = body
+      ? captureAiSelection({
+          action,
+          baseVersion: data.revision,
+          body: body.value,
+          documentId: data.documentId,
+          start: body.selectionStart ?? 0,
+          end: body.selectionEnd ?? 0,
+        })
+      : { ok: false as const, code: "invalid_range" as const }
+    if (aiSuggestionGenerate)
+      aiSuggestionGenerate.disabled = aiSuggestionGenerationInFlight || Boolean(gate) || !capture.ok
+    if (preserveMessage) return
+    if (gate) {
+      setAiSuggestionStatus(gate, currentUser && !aiSuggestionPreferences ? "error" : "")
+      return
+    }
+    if (!capture.ok) {
+      setAiSuggestionStatus(
+        capture.code === "selection_too_large"
+          ? "选区超过 12,000 个字符，请缩小范围。"
+          : "先在正文中选择 1–12,000 个字符。",
+        capture.code === "selection_too_large" ? "error" : "",
+      )
+      return
+    }
+    setAiSuggestionStatus(
+      `已选择 ${capture.snapshot.selection.length} 个字符；生成前正文不会改变。`,
+    )
+  }
+
+  const loadAiSuggestionPreferences = async (isCurrent = () => true) => {
+    if (!client || !currentUser || !aiSuggestionAssist) return false
+    const context = captureAuthContext()
+    const result = await context.client
+      .from("ai_preferences")
+      .select("enabled,allow_private_content,monthly_budget_cents")
+      .eq("owner_id", context.ownerId)
+      .maybeSingle()
+    if (!authContextIsCurrent(context) || !isCurrent()) return false
+    if (result.error) {
+      aiSuggestionPreferences = null
+      updateAiSuggestionAvailability()
+      refreshAiSelectionStatus()
+      return false
+    }
+    aiSuggestionPreferences = {
+      enabled: Boolean(result.data?.enabled),
+      allowPrivateContent: Boolean(result.data?.allow_private_content),
+      monthlyBudgetCents: Number(result.data?.monthly_budget_cents ?? 0),
+    }
+    updateAiSuggestionAvailability()
+    refreshAiSelectionStatus()
+    return true
+  }
+
+  const showAiSuggestionPreview = (options: {
+    actionable: boolean
+    mode: string
+    output: string
+    selection: AiSelectionSnapshot
+  }) => {
+    activeAiSelection = options.selection
+    if (aiSuggestionOriginal) aiSuggestionOriginal.textContent = options.selection.selection
+    if (aiSuggestionOutput) aiSuggestionOutput.textContent = options.output
+    if (aiSuggestionMode) aiSuggestionMode.textContent = options.mode
+    if (aiSuggestionPreview) aiSuggestionPreview.hidden = false
+    setAiSuggestionActionability(options.actionable)
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+    aiSuggestionPreview?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "nearest",
+    })
+  }
+
+  const generateAiSuggestion = async (selectionToReuse?: AiSelectionSnapshot) => {
+    if (aiSuggestionGenerationInFlight) return
+    const body = editorBodyField()
+    if (!body || !form || !currentUser || !client) {
+      setAiSuggestionStatus("请先登录并打开一条知识。", "error")
+      return
+    }
+    aiSuggestionGenerationInFlight = true
+    if (aiSuggestionGenerate) aiSuggestionGenerate.disabled = true
+    if (aiSuggestionRegenerate) aiSuggestionRegenerate.disabled = true
+    aiSuggestionAssist?.setAttribute("aria-busy", "true")
+    try {
+      const preferencesLoaded = await loadAiSuggestionPreferences()
+      if (!preferencesLoaded) {
+        setAiSuggestionStatus("AI 设置暂时无法读取；没有发送任何正文。", "error")
+        return
+      }
+      const data = readForm()
+      const gate = aiSuggestionGate(data)
+      if (gate) {
+        setAiSuggestionStatus(gate, "error")
+        return
+      }
+      const action = (aiSuggestionAction?.value || "rewrite") as AiSuggestionAction
+      const capture = selectionToReuse
+        ? aiSelectionSnapshotIsCurrent(selectionToReuse, {
+            documentId: data.documentId,
+            baseVersion: data.revision,
+            body: data.body,
+          })
+          ? { ok: true as const, snapshot: { ...selectionToReuse, action } }
+          : { ok: false as const, code: "invalid_range" as const }
+        : captureAiSelection({
+            action,
+            baseVersion: data.revision,
+            body: body.value,
+            documentId: data.documentId,
+            start: body.selectionStart ?? 0,
+            end: body.selectionEnd ?? 0,
+          })
+      if (!capture.ok) {
+        setAiSuggestionStatus("选区或正文已经变化，请重新选择后再生成。", "error")
+        return
+      }
+      const snapshot = capture.snapshot
+      const requestEpoch = ++aiSuggestionRequestEpoch
+      activeAiSelection = snapshot
+      activeAiSuggestion = null
+      setAiSuggestionActionability(false)
+      setAiSuggestionStatus("正在验证使用边界并请求可审阅预览…")
+      try {
+        const result = await client.functions.invoke("ai-write", {
+          body: {
+            action: snapshot.action,
+            selection: snapshot.selection,
+            context: "",
+            // Deliberately omit the document authority until a separately approved
+            // selection-scoped live contract exists. This prevents a paid whole-document call.
+            document_id: null,
+            base_version: snapshot.baseVersion,
+          },
+        })
+        if (requestEpoch !== aiSuggestionRequestEpoch || disposed) return
+        if (result.error) {
+          discardAiSuggestion("", { invalidateRequest: false })
+          setAiSuggestionStatus(
+            "当前没有获准的选区模型；没有把结果写入正文，也没有产生本次模型费用。",
+            "error",
+          )
+          return
+        }
+        if (
+          !aiSelectionSnapshotIsCurrent(snapshot, {
+            documentId: readForm().documentId,
+            baseVersion: readForm().revision,
+            body: readForm().body,
+          })
+        ) {
+          discardAiSuggestion("", { invalidateRequest: false })
+          setAiSuggestionStatus(
+            "生成期间正文或版本发生了变化；响应已丢弃，请重新选择文字。",
+            "error",
+          )
+          return
+        }
+        const parsed = parseAiSuggestionGatewayResponse(result.data, snapshot)
+        if (!parsed.ok) {
+          discardAiSuggestion("", { invalidateRequest: false })
+          setAiSuggestionStatus(
+            parsed.code === "unsafe_scope"
+              ? "服务器返回的不是选区建议，已安全拒绝，正文没有改变。"
+              : "网关响应与当前选区或版本不一致，已安全拒绝。",
+            "error",
+          )
+          return
+        }
+        if (parsed.kind === "gateway_check") {
+          activeAiSuggestion = null
+          showAiSuggestionPreview({
+            actionable: false,
+            mode: "安全网关检查 · 未调用模型",
+            output: parsed.preview,
+            selection: snapshot,
+          })
+          setAiSuggestionStatus(
+            "安全网关已验证；这是原文回显，不是 AI 改写，不能写回正文。",
+            "success",
+          )
+          return
+        }
+        activeAiSuggestion = parsed.preview
+        showAiSuggestionPreview({
+          actionable: true,
+          mode: "选区建议 · 等待你的决定",
+          output: parsed.preview.suggestion,
+          selection: snapshot,
+        })
+        setAiSuggestionStatus("建议已生成；接受前仍会再次核对正文和云端基础版本。", "success")
+      } catch {
+        if (requestEpoch !== aiSuggestionRequestEpoch || disposed) return
+        discardAiSuggestion("", { invalidateRequest: false })
+        setAiSuggestionStatus("网络中断；没有修改正文，请稍后重试。", "error")
+      }
+    } finally {
+      aiSuggestionGenerationInFlight = false
+      if (!disposed) {
+        aiSuggestionAssist?.removeAttribute("aria-busy")
+        if (aiSuggestionRegenerate) aiSuggestionRegenerate.disabled = false
+        refreshAiSelectionStatus(true)
+      }
+    }
+  }
+
+  const applyActiveAiSuggestion = async (mode: AiSuggestionApplyMode) => {
+    if (!activeAiSelection || !activeAiSuggestion || !form) return
+    if (!activeAiSelectionIsCurrent()) {
+      markAiSuggestionStale()
+      return
+    }
+    const body = editorBodyField()
+    if (!body) return
+    const applied = applyAiSuggestion(activeAiSelection, activeAiSuggestion.suggestion, mode)
+    activeAiSelection = null
+    activeAiSuggestion = null
+    if (aiSuggestionPreview) aiSuggestionPreview.hidden = true
+    setAiSuggestionActionability(false)
+    body.value = applied.body
+    body.focus()
+    body.setSelectionRange(applied.selectionStart, applied.selectionEnd)
+    body.dispatchEvent(new Event("input", { bubbles: true }))
+    if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    writeLocalBackup()
+    if (!currentUser || !client) {
+      setAiSuggestionStatus("建议已放入本地草稿；登录恢复后再保存到云端。", "success")
+      return
+    }
+    if (state) state.textContent = "正在保存 AI 修改的新版本…"
+    const saved = await requestDocumentSave()
+    setAiSuggestionStatus(
+      saved
+        ? "修改已接受并保存为新的文档版本，可在版本历史中回退。"
+        : "修改保留在本地，但云端保存尚未完成；请按页面提示处理。",
+      saved ? "success" : "error",
+    )
+  }
+
   const workspaceFormFromOutboxClaim = (claim: EditorOutboxClaim | undefined) => {
     const value = claim?.record.payload.form
     if (!claim) return null
@@ -3099,6 +3479,8 @@ const init = async () => {
     pendingNewBackupCleanup.clear()
     hideEditorLoadRecovery()
     clearEditorConflict()
+    aiSuggestionPreferences = null
+    discardAiSuggestion("")
     form?.reset()
     relationDocumentOptions = []
     editorKnowledgeBaseBinding = null
@@ -3141,6 +3523,7 @@ const init = async () => {
       form.setAttribute("aria-busy", String(busy))
       if (state && busy) state.textContent = "正在安全切换文档…"
     }
+    discardAiSuggestion("")
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     invalidateEditorSaves()
     setOpenBusy(true)
@@ -3192,6 +3575,7 @@ const init = async () => {
         ...(result.data ?? {}),
         documentId: result.data?.id ?? documentId,
       })
+      refreshAiSelectionStatus()
       for (const name of ["tags", "prerequisites", "related"]) {
         const field = form.elements.namedItem(name) as HTMLInputElement | null
         if (field) field.value = ""
@@ -3418,6 +3802,10 @@ const init = async () => {
             if (!isCurrentSync()) return
             await loadTagOptions(isCurrentSync)
             if (!isCurrentSync()) return
+            if (workspaceSection === "write") {
+              await loadAiSuggestionPreferences(isCurrentSync)
+              if (!isCurrentSync()) return
+            }
             if (workspaceSection === "settings") {
               await loadProfileSettings(isCurrentSync)
               if (!isCurrentSync()) return
@@ -3975,6 +4363,7 @@ const init = async () => {
     const previousSaveReadyDocumentId = editorSaveReadyDocumentId
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     invalidateEditorSaves()
+    discardAiSuggestion("")
     openDocumentRequests.invalidate()
     hideEditorLoadRecovery()
     if (form) {
@@ -3989,6 +4378,7 @@ const init = async () => {
       if (flatWorkbench && showEditor) flatWorkbench.hidden = true
       if (editor) editor.hidden = !showEditor
       if (state) state.textContent = "已恢复尚未保存的新知识草稿"
+      refreshAiSelectionStatus()
       if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
       return
     }
@@ -4031,6 +4421,7 @@ const init = async () => {
     if (history) history.hidden = true
     allowEditorSaves("new")
     if (state) state.textContent = "新建云端草稿"
+    refreshAiSelectionStatus()
     void prepareNewDocumentRelationOptions()
     if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
@@ -4838,9 +5229,29 @@ const init = async () => {
         connections?.scrollIntoView({ behavior: "smooth", block: "nearest" })
       })
     })
+    const aiBody = editorBodyField()
+    for (const eventName of ["select", "mouseup", "keyup"] as const) {
+      aiBody?.addEventListener(eventName, () => refreshAiSelectionStatus())
+    }
+    aiSuggestionAction?.addEventListener("change", () => {
+      discardAiSuggestion("")
+      refreshAiSelectionStatus()
+    })
+    aiSuggestionGenerate?.addEventListener("click", () => void generateAiSuggestion())
+    aiSuggestionRegenerate?.addEventListener("click", () => {
+      if (activeAiSelection) void generateAiSuggestion(activeAiSelection)
+      else refreshAiSelectionStatus()
+    })
+    aiSuggestionDiscard?.addEventListener("click", () => {
+      discardAiSuggestion()
+      refreshAiSelectionStatus(true)
+    })
+    aiSuggestionReplace?.addEventListener("click", () => void applyActiveAiSuggestion("replace"))
+    aiSuggestionInsert?.addEventListener("click", () => void applyActiveAiSuggestion("insert"))
     form.addEventListener("input", (event) => {
       const target = event.target as HTMLElement | null
       if (target?.matches("[data-tag-input],[data-relation-search]")) return
+      if (target === aiBody || target?.matches("[name=visibility]")) refreshAiSelectionStatus()
       editorChangeGeneration += 1
       const documentIdentity = readForm().documentId || "new"
       editorTabDrafts.markDirty(documentIdentity, editorChangeGeneration)
@@ -4913,6 +5324,7 @@ const init = async () => {
       }
       if (autosaveTimer) window.clearTimeout(autosaveTimer)
       invalidateEditorSaves()
+      discardAiSuggestion("")
       editorTabDrafts.clearDocument(activeDocumentId)
       form.reset()
       editorKnowledgeBaseBinding = null
@@ -4929,6 +5341,7 @@ const init = async () => {
       renderSources()
       allowEditorSaves("new")
       if (state) state.textContent = "尚未保存"
+      refreshAiSelectionStatus()
       void prepareNewDocumentRelationOptions()
     })
   }

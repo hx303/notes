@@ -1172,6 +1172,103 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                   placeholder="先用自己的话写下问题、理解或经验。不必一开始就整理完整。"
                 />
               </label>
+              <section
+                class="editor-ai-assist"
+                data-ai-suggestion-assist
+                aria-labelledby="editor-ai-title"
+              >
+                <div class="editor-ai-heading">
+                  <div>
+                    <p class="account-kicker">AI / 先预览，再决定</p>
+                    <h4 id="editor-ai-title">只改你选中的这一段</h4>
+                  </div>
+                  <span class="editor-ai-availability" data-ai-suggestion-availability>
+                    正在检查使用边界
+                  </span>
+                </div>
+                <p class="editor-ai-intro">
+                  先在正文中选择文字。建议会出现在正文旁边；没有你的确认，不会替换、插入或发布内容。
+                </p>
+                <div class="editor-ai-toolbar">
+                  <label>
+                    <span>想怎么改</span>
+                    <select data-ai-suggestion-action>
+                      <option value="rewrite">润色表达</option>
+                      <option value="shorten">缩短一点</option>
+                      <option value="expand">补充说明</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    class="account-secondary"
+                    data-ai-suggestion-generate
+                    disabled
+                  >
+                    AI 帮我改
+                  </button>
+                </div>
+                <p
+                  class="editor-ai-status"
+                  data-ai-suggestion-status
+                  role="status"
+                  aria-live="polite"
+                >
+                  先选择 1–12,000 个字符。
+                </p>
+                <p class="editor-ai-boundary" data-ai-suggestion-boundary>
+                  当前阶段不会扩大 DeepSeek
+                  的内容范围；未开放选区模型时，只验证安全网关且不产生费用。{" "}
+                  <a href="/workspace/settings/ai/">查看 AI 设置</a>
+                </p>
+                <section
+                  class="editor-ai-preview"
+                  data-ai-suggestion-preview
+                  aria-labelledby="editor-ai-preview-title"
+                  hidden
+                >
+                  <div class="editor-ai-preview-heading">
+                    <div>
+                      <p class="account-kicker">REVIEW / 修改预览</p>
+                      <h5 id="editor-ai-preview-title">先比较，再写回正文</h5>
+                    </div>
+                    <span data-ai-suggestion-mode>安全网关检查</span>
+                  </div>
+                  <div class="editor-ai-comparison">
+                    <div>
+                      <strong>原选区</strong>
+                      <pre data-ai-suggestion-original tabIndex={0} aria-label="原选区全文" />
+                    </div>
+                    <div>
+                      <strong>建议</strong>
+                      <pre data-ai-suggestion-output tabIndex={0} aria-label="AI 建议全文" />
+                    </div>
+                  </div>
+                  <div class="editor-ai-actions">
+                    <button
+                      type="button"
+                      class="account-primary"
+                      data-ai-suggestion-replace
+                      disabled
+                    >
+                      替换选区
+                    </button>
+                    <button
+                      type="button"
+                      class="account-secondary"
+                      data-ai-suggestion-insert
+                      disabled
+                    >
+                      插入下方
+                    </button>
+                    <button type="button" class="account-secondary" data-ai-suggestion-regenerate>
+                      重新生成
+                    </button>
+                    <button type="button" class="editor-ai-discard" data-ai-suggestion-discard>
+                      放弃这条建议
+                    </button>
+                  </div>
+                </section>
+              </section>
               <div class="editor-modules" aria-label="快速添加内容">
                 <button type="button" data-module="question">
                   ＋ 待解决问题
