@@ -8,6 +8,7 @@ import { toHtml } from "hast-util-to-html"
 import { write } from "./helpers"
 import { i18n } from "../../i18n"
 import type { KnowledgeMetadata } from "../../util/knowledgeMetadata"
+import { isPublicDiscoveryRecord } from "../../util/publicDiscovery"
 
 export type ContentIndexMap = Map<FullSlug, ContentDetails>
 export type ContentDetails = {
@@ -94,6 +95,18 @@ function generateRSSFeed(cfg: GlobalConfiguration, idx: ContentIndexMap, limit?:
   </rss>`
 }
 
+export function publicDiscoveryContentIndex(idx: ContentIndexMap): ContentIndexMap {
+  return new Map(
+    [...idx].filter(([slug, content]) =>
+      isPublicDiscoveryRecord({
+        slug,
+        title: content.title,
+        knowledgeMetadata: content.knowledgeMetadata,
+      }),
+    ),
+  )
+}
+
 export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
   opts = { ...defaultOptions, ...opts }
   return {
@@ -134,7 +147,7 @@ export const ContentIndex: QuartzEmitterPlugin<Partial<Options>> = (opts) => {
       if (opts?.enableRSS) {
         yield write({
           ctx,
-          content: generateRSSFeed(cfg, linkIndex, opts.rssLimit),
+          content: generateRSSFeed(cfg, publicDiscoveryContentIndex(linkIndex), opts.rssLimit),
           slug: (opts?.rssSlug ?? "index") as FullSlug,
           ext: ".xml",
         })
