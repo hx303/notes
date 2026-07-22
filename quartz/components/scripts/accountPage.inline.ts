@@ -325,6 +325,34 @@ type PublicationState = {
   published_at: string
 }
 
+type AccountCapabilities = {
+  role?: string
+  is_site_owner?: boolean
+  can_edit_site?: boolean
+  can_manage_roles?: boolean
+  can_moderate_comments?: boolean
+  can_moderate_publications?: boolean
+  can_read_other_private_documents?: boolean
+}
+
+type SiteReviewRow = {
+  id: string
+  file_path: string
+  section_title?: string | null
+  content: string
+  user_id: string
+  created_at: string
+  profiles?: { display_name?: string | null } | null
+}
+
+type SiteRoleRow = {
+  user_id: string
+  email: string
+  role: string
+  display_name?: string | null
+  granted_at?: string | null
+}
+
 const init = async () => {
   const root = document.querySelector<HTMLElement>("[data-account-page]")
   if (!root || root.dataset.ready === "true") return
@@ -342,7 +370,7 @@ const init = async () => {
   const recoverySuccess = root.querySelector<HTMLElement>("[data-account-recovery-success]")
   const session = root.querySelector<HTMLElement>("[data-account-session]")
   const email = root.querySelector<HTMLElement>("[data-account-email]")
-  const siteOwnerNavItems = root.querySelectorAll<HTMLElement>("[data-site-owner-nav]")
+  const siteOperationsNavItems = root.querySelectorAll<HTMLElement>("[data-site-operations-nav]")
   const accountMode = root.dataset.accountMode ?? "signin"
   const workspace = accountMode === "workspace"
   const workspaceSection = root.dataset.workspaceSection ?? "overview"
@@ -359,6 +387,32 @@ const init = async () => {
   const aiSave = root.querySelector<HTMLButtonElement>("[data-ai-save]")
   const aiTestGateway = root.querySelector<HTMLButtonElement>("[data-ai-test-gateway]")
   const aiGatewayStatus = root.querySelector<HTMLElement>("[data-ai-gateway-status]")
+  const siteOperations = root.querySelector<HTMLElement>("[data-site-operations]")
+  const siteRefresh = root.querySelector<HTMLButtonElement>("[data-site-refresh]")
+  const siteAccessLoading = root.querySelector<HTMLElement>("[data-site-access-loading]")
+  const siteAccessDenied = root.querySelector<HTMLElement>("[data-site-access-denied]")
+  const siteAccessMessage = root.querySelector<HTMLElement>("[data-site-access-message]")
+  const siteOperationsContent = root.querySelector<HTMLElement>("[data-site-operations-content]")
+  const siteRoleLabel = root.querySelector<HTMLElement>("[data-site-role-label]")
+  const siteScopeCopy = root.querySelector<HTMLElement>("[data-site-scope-copy]")
+  const siteReviewSection = root.querySelector<HTMLElement>("[data-site-review-section]")
+  const siteReviewRefresh = root.querySelector<HTMLButtonElement>("[data-site-review-refresh]")
+  const siteReviewLimit = root.querySelector<HTMLSelectElement>("[data-site-review-limit]")
+  const siteReviewSummary = root.querySelector<HTMLElement>("[data-site-review-summary]")
+  const siteReviewStatus = root.querySelector<HTMLElement>("[data-site-review-status]")
+  const siteReviewList = root.querySelector<HTMLElement>("[data-site-review-list]")
+  const siteRoleSection = root.querySelector<HTMLElement>("[data-site-role-section]")
+  const siteRoleRefresh = root.querySelector<HTMLButtonElement>("[data-site-role-refresh]")
+  const siteRoleForm = root.querySelector<HTMLFormElement>("[data-site-role-form]")
+  const siteRoleEmail = root.querySelector<HTMLInputElement>("[data-site-role-email]")
+  const siteRoleSelect = root.querySelector<HTMLSelectElement>("[data-site-role-select]")
+  const siteRoleConsequence = root.querySelector<HTMLElement>("[data-site-role-consequence]")
+  const siteRoleSubmit = root.querySelector<HTMLButtonElement>("[data-site-role-submit]")
+  const siteRoleStatus = root.querySelector<HTMLElement>("[data-site-role-status]")
+  const siteRoleList = root.querySelector<HTMLElement>("[data-site-role-list]")
+  const siteSystemSection = root.querySelector<HTMLElement>("[data-site-system-section]")
+  const siteStatusTime = root.querySelector<HTMLTimeElement>("[data-site-status-time]")
+  const siteStatusList = root.querySelector<HTMLElement>("[data-site-status-list]")
   const profileSettingsForm = root.querySelector<HTMLFormElement>("[data-profile-settings-form]")
   const profileAvatarInput = root.querySelector<HTMLInputElement>("[data-profile-avatar-input]")
   const profileAvatarPreview = root.querySelector<HTMLImageElement>("[data-profile-avatar-preview]")
@@ -468,6 +522,7 @@ const init = async () => {
   const flatSave = root.querySelector<HTMLButtonElement>("[data-flat-save]")
   let client: any = null
   let currentUser: any = null
+  let currentCapabilities: AccountCapabilities | null = null
   let authEpoch = 0
   let autosaveTimer: number | undefined
   let editorChangeGeneration = 0
@@ -1081,17 +1136,524 @@ const init = async () => {
     renderDocuments((result.data ?? []) as WorkspaceDocument[])
   }
 
-  const loadCapabilities = async (isCurrent = () => true) => {
-    if (!client || !currentUser || !workspace) return
-    const context = captureAuthContext()
-    const result = await context.client.rpc("current_account_capabilities")
-    if (!authContextIsCurrent(context) || !isCurrent()) return
-    const capabilities = result.data as { is_site_owner?: boolean; role?: string } | null
-    const isSiteOwner = !result.error && capabilities?.is_site_owner === true
-    siteOwnerNavItems.forEach((item) => {
-      item.hidden = !isSiteOwner
-    })
+  const canAccessSiteOperations = (capabilities: AccountCapabilities | null) =>
+    Boolean(
+      capabilities?.can_edit_site ||
+      capabilities?.can_manage_roles ||
+      capabilities?.can_moderate_comments ||
+      capabilities?.can_moderate_publications,
+    )
+
+  const setSiteInlineStatus = (
+    target: HTMLElement | null,
+    message: string,
+    state: "info" | "error" | "success" = "info",
+  ) => {
+    if (!target) return
+    target.textContent = message
+    target.dataset.state = message ? state : ""
+    target.setAttribute("role", state === "error" ? "alert" : "status")
+    target.setAttribute("aria-live", state === "error" ? "assertive" : "polite")
   }
+
+  const siteRoleName = (role: string | undefined, isOwner = false) => {
+    if (isOwner) return "站长"
+    if (role === "admin") return "管理员"
+    if (role === "editor") return "编辑者"
+    return "普通用户"
+  }
+
+  const resetSiteOperations = () => {
+    currentCapabilities = null
+    siteOperationsNavItems.forEach((item) => {
+      item.hidden = true
+    })
+    if (siteRefresh) siteRefresh.hidden = true
+    if (siteAccessLoading) siteAccessLoading.hidden = false
+    if (siteAccessDenied) siteAccessDenied.hidden = true
+    if (siteOperationsContent) siteOperationsContent.hidden = true
+    if (siteReviewSection) siteReviewSection.hidden = true
+    if (siteRoleSection) siteRoleSection.hidden = true
+    siteReviewList?.replaceChildren()
+    siteRoleList?.replaceChildren()
+    siteStatusList?.replaceChildren()
+    setSiteInlineStatus(siteReviewStatus, "")
+    setSiteInlineStatus(siteRoleStatus, "")
+  }
+
+  const renderSiteAccess = (
+    capabilities: AccountCapabilities | null,
+    failure: "none" | "verification" = "none",
+  ) => {
+    const allowed = failure === "none" && canAccessSiteOperations(capabilities)
+    if (siteAccessLoading) siteAccessLoading.hidden = true
+    if (siteRefresh) siteRefresh.hidden = false
+    if (siteAccessDenied) siteAccessDenied.hidden = allowed
+    if (siteOperationsContent) siteOperationsContent.hidden = !allowed
+    if (!allowed) {
+      if (siteAccessMessage) {
+        siteAccessMessage.textContent =
+          failure === "verification"
+            ? "暂时无法验证当前账户的站点权限。为保护站点数据，本页已保持关闭；请检查网络后刷新。"
+            : "你仍然可以正常管理自己的知识库；站点运营仅对经过授权的协作者开放。"
+      }
+      if (siteReviewSection) siteReviewSection.hidden = true
+      if (siteRoleSection) siteRoleSection.hidden = true
+      return
+    }
+
+    const isOwner = capabilities?.is_site_owner === true
+    if (siteRoleLabel) siteRoleLabel.textContent = siteRoleName(capabilities?.role, isOwner)
+    if (siteScopeCopy) {
+      siteScopeCopy.textContent = isOwner
+        ? "可处理公开反馈与协作者角色；任何站点角色都不能读取其他账户的私密草稿。"
+        : capabilities?.can_moderate_comments
+          ? "可处理公开反馈并查看非敏感状态；不能查看其他账户的私密草稿或管理角色。"
+          : "可查看非敏感发布状态；不能处理反馈、管理角色或读取其他账户的私密草稿。"
+    }
+    if (siteReviewSection) siteReviewSection.hidden = capabilities?.can_moderate_comments !== true
+    if (siteRoleSection)
+      siteRoleSection.hidden = !(isOwner && capabilities?.can_manage_roles === true)
+    if (siteSystemSection) siteSystemSection.hidden = false
+  }
+
+  const renderSiteEmptyState = (target: HTMLElement | null, message: string) => {
+    if (!target) return
+    const empty = globalThis.document.createElement("p")
+    empty.className = "site-empty-state"
+    empty.textContent = message
+    target.replaceChildren(empty)
+  }
+
+  const loadSiteReviewQueue = async (isCurrent = () => true) => {
+    if (!client || !currentUser || currentCapabilities?.can_moderate_comments !== true) return
+    const context = captureAuthContext()
+    const limit = Number(siteReviewLimit?.value) === 50 ? 50 : 20
+    setSiteInlineStatus(siteReviewStatus, "正在读取公开反馈……")
+    let result: any
+    try {
+      result = await context.client
+        .from("comments")
+        .select("id,file_path,section_title,content,user_id,created_at,profiles(display_name)", {
+          count: "exact",
+        })
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(limit)
+      if (result.error) {
+        result = await context.client
+          .from("comments")
+          .select("id,file_path,section_title,content,user_id,created_at", { count: "exact" })
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false })
+          .limit(limit)
+      }
+    } catch {
+      if (!authContextIsCurrent(context) || !isCurrent()) return
+      setSiteInlineStatus(siteReviewStatus, "公开反馈读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteReviewList, "暂时无法显示反馈；页面不会改为读取私密内容。")
+      return
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (result.error) {
+      setSiteInlineStatus(siteReviewStatus, "公开反馈读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteReviewList, "暂时无法显示反馈；页面不会改为读取私密内容。")
+      return
+    }
+
+    const rows = (result.data ?? []) as SiteReviewRow[]
+    const total = typeof result.count === "number" ? result.count : rows.length
+    if (siteReviewSummary) {
+      siteReviewSummary.textContent = total
+        ? `共 ${total} 条公开反馈，当前显示最近 ${rows.length} 条。`
+        : "目前没有待查看的公开反馈。"
+    }
+    setSiteInlineStatus(siteReviewStatus, "")
+    if (!rows.length) {
+      renderSiteEmptyState(siteReviewList, "暂时没有评论或纠错建议。新的公开反馈会出现在这里。")
+      return
+    }
+
+    const fragment = globalThis.document.createDocumentFragment()
+    rows.forEach((row) => {
+      const article = globalThis.document.createElement("article")
+      article.className = "site-review-item"
+
+      const meta = globalThis.document.createElement("div")
+      meta.className = "site-review-meta"
+      const author = globalThis.document.createElement("strong")
+      author.textContent = row.profiles?.display_name || "wouldkeep 用户"
+      const kind = globalThis.document.createElement("span")
+      kind.className = "site-review-kind"
+      kind.textContent = row.section_title?.startsWith("纠错建议") ? "纠错建议" : "公开评论"
+      const time = globalThis.document.createElement("time")
+      time.dateTime = row.created_at
+      const createdAt = new Date(row.created_at)
+      time.textContent = Number.isNaN(createdAt.getTime())
+        ? "时间未知"
+        : createdAt.toLocaleString("zh-CN", {
+            month: "numeric",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+      meta.append(author, kind, time)
+
+      const body = globalThis.document.createElement("div")
+      body.className = "site-review-body"
+      const location = globalThis.document.createElement("strong")
+      location.textContent = `${row.file_path} · ${row.section_title || "整篇知识记录"}`
+      const content = globalThis.document.createElement("p")
+      content.textContent = row.content
+      body.append(location, content)
+
+      const remove = globalThis.document.createElement("button")
+      remove.type = "button"
+      remove.className = "site-review-remove"
+      remove.textContent = "移出公开讨论"
+      remove.addEventListener("click", async () => {
+        if (currentCapabilities?.can_moderate_comments !== true) {
+          setSiteInlineStatus(siteReviewStatus, "权限已变化，请刷新后重试。", "error")
+          return
+        }
+        if (
+          !window.confirm(
+            `将这条来自“${row.file_path}”的公开反馈移出公开页面？\n\n此操作只会将记录标记为已删除，不会物理删除数据。`,
+          )
+        )
+          return
+        remove.disabled = true
+        setSiteInlineStatus(siteReviewStatus, "正在将反馈移出公开页面……")
+        const deleteContext = captureAuthContext()
+        try {
+          const deletion = await deleteContext.client
+            .from("comments")
+            .update({ is_deleted: true })
+            .eq("id", row.id)
+            .eq("is_deleted", false)
+          if (!authContextIsCurrent(deleteContext) || !isCurrent()) return
+          if (deletion.error) {
+            setSiteInlineStatus(siteReviewStatus, "操作失败；反馈仍保持原状。", "error")
+            return
+          }
+          setSiteInlineStatus(siteReviewStatus, "已从公开讨论中移除，原记录仍保留。", "success")
+          await loadSiteReviewQueue(isCurrent)
+        } catch {
+          if (authContextIsCurrent(deleteContext) && isCurrent())
+            setSiteInlineStatus(siteReviewStatus, "操作失败；反馈仍保持原状。", "error")
+        } finally {
+          remove.disabled = false
+        }
+      })
+
+      article.append(meta, body, remove)
+      fragment.append(article)
+    })
+    siteReviewList?.replaceChildren(fragment)
+  }
+
+  const updateSiteRoleConsequence = () => {
+    if (!siteRoleConsequence) return
+    const messages: Record<string, string> = {
+      user: "对方将只能访问自己的账户与个人知识工作区，不能再进入站点运营。",
+      editor: "对方可进入站点运营并查看非敏感状态；不能处理反馈、管理角色或读取他人私密草稿。",
+      admin: "对方可查看非敏感状态并软删除公开反馈；不能管理角色或读取他人私密草稿。",
+    }
+    siteRoleConsequence.textContent = messages[siteRoleSelect?.value ?? "user"] ?? messages.user
+  }
+
+  const loadSiteRoles = async (isCurrent = () => true) => {
+    if (
+      !client ||
+      !currentUser ||
+      currentCapabilities?.is_site_owner !== true ||
+      currentCapabilities?.can_manage_roles !== true
+    )
+      return
+    const context = captureAuthContext()
+    setSiteInlineStatus(siteRoleStatus, "正在读取账户目录……")
+    let result: any
+    try {
+      result = await context.client.rpc("list_roles", { admin_uid: context.ownerId })
+    } catch {
+      if (!authContextIsCurrent(context) || !isCurrent()) return
+      setSiteInlineStatus(siteRoleStatus, "账户目录读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteRoleList, "目录保持关闭；没有回退到公开账户查询。")
+      return
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (result.error) {
+      setSiteInlineStatus(siteRoleStatus, "账户目录读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteRoleList, "目录保持关闭；没有回退到公开账户查询。")
+      return
+    }
+    const rows = (result.data ?? []) as SiteRoleRow[]
+    setSiteInlineStatus(siteRoleStatus, `${rows.length} 个账户；角色目录仅站长可见。`)
+    if (!rows.length) {
+      renderSiteEmptyState(siteRoleList, "当前没有可显示的账户。")
+      return
+    }
+    const fragment = globalThis.document.createDocumentFragment()
+    rows.forEach((row) => {
+      const isOwner = row.user_id === context.ownerId
+      const item = globalThis.document.createElement("div")
+      item.className = "site-role-row"
+      const identity = globalThis.document.createElement("div")
+      identity.className = "site-role-identity"
+      const name = globalThis.document.createElement("strong")
+      name.textContent = row.display_name || row.email
+      const address = globalThis.document.createElement("small")
+      address.textContent = row.email
+      identity.append(name, address)
+      const badge = globalThis.document.createElement("span")
+      badge.className = "site-role-badge"
+      badge.textContent = siteRoleName(row.role, isOwner)
+      const action = globalThis.document.createElement("button")
+      action.type = "button"
+      action.className = "account-secondary"
+      action.disabled = isOwner
+      action.textContent = isOwner ? "站长角色受保护" : "更改角色"
+      if (!isOwner) {
+        action.addEventListener("click", () => {
+          if (siteRoleEmail) siteRoleEmail.value = row.email
+          if (siteRoleSelect) siteRoleSelect.value = row.role || "user"
+          updateSiteRoleConsequence()
+          siteRoleEmail?.focus()
+        })
+      }
+      item.append(identity, badge, action)
+      fragment.append(item)
+    })
+    siteRoleList?.replaceChildren(fragment)
+  }
+
+  const appendSiteStatus = (
+    label: string,
+    detail: string,
+    state: "ok" | "error",
+    checkedAt: Date,
+  ) => {
+    if (!siteStatusList) return
+    const row = globalThis.document.createElement("div")
+    row.className = "site-status-row"
+    const dot = globalThis.document.createElement("span")
+    dot.className = "site-status-dot"
+    dot.dataset.state = state
+    dot.setAttribute("aria-hidden", "true")
+    const copy = globalThis.document.createElement("div")
+    copy.className = "site-status-copy"
+    const name = globalThis.document.createElement("strong")
+    name.textContent = label
+    const description = globalThis.document.createElement("small")
+    description.textContent = detail
+    copy.append(name, description)
+    const time = globalThis.document.createElement("time")
+    time.dateTime = checkedAt.toISOString()
+    time.textContent = checkedAt.toLocaleTimeString("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    row.append(dot, copy, time)
+    siteStatusList.append(row)
+  }
+
+  const loadSiteSystemStatus = async (isCurrent = () => true) => {
+    if (!client || !currentUser || !canAccessSiteOperations(currentCapabilities)) return
+    const context = captureAuthContext()
+    const startedAt = new Date()
+    siteStatusList?.replaceChildren()
+    appendSiteStatus(
+      "登录会话",
+      `已确认当前账户 ${currentUser.email || "（未公开邮箱）"}`,
+      "ok",
+      startedAt,
+    )
+    appendSiteStatus("权限服务", "能力范围已由 current_account_capabilities 确认", "ok", startedAt)
+
+    let publicationResult: any
+    try {
+      publicationResult = await context.client.rpc("list_public_documents", {
+        p_limit: 1,
+        p_offset: 0,
+      })
+    } catch {
+      publicationResult = { error: true }
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return
+    const checkedAt = new Date()
+    appendSiteStatus(
+      "公开发布读取",
+      publicationResult.error
+        ? "公开摘要读取失败；未尝试读取任何私密正文"
+        : "公开摘要 RPC 响应正常；本检查不显示正文",
+      publicationResult.error ? "error" : "ok",
+      checkedAt,
+    )
+    if (siteStatusTime) {
+      siteStatusTime.dateTime = checkedAt.toISOString()
+      siteStatusTime.textContent = `检查于 ${checkedAt.toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`
+    }
+  }
+
+  const loadCapabilities = async (isCurrent = () => true) => {
+    if (!client || !currentUser || !workspace) {
+      resetSiteOperations()
+      return null
+    }
+    const context = captureAuthContext()
+    let result: any
+    try {
+      result = await context.client.rpc("current_account_capabilities")
+    } catch {
+      if (!authContextIsCurrent(context) || !isCurrent()) return null
+      currentCapabilities = null
+      siteOperationsNavItems.forEach((item) => {
+        item.hidden = true
+      })
+      if (workspaceSection === "site") renderSiteAccess(null, "verification")
+      return null
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return null
+    if (result.error || !result.data) {
+      currentCapabilities = null
+      siteOperationsNavItems.forEach((item) => {
+        item.hidden = true
+      })
+      if (workspaceSection === "site") renderSiteAccess(null, "verification")
+      return null
+    }
+    currentCapabilities = result.data as AccountCapabilities
+    const allowed = canAccessSiteOperations(currentCapabilities)
+    siteOperationsNavItems.forEach((item) => {
+      item.hidden = !allowed
+    })
+    if (workspaceSection === "site") renderSiteAccess(currentCapabilities)
+    return currentCapabilities
+  }
+
+  const loadSiteOperations = async (isCurrent = () => true) => {
+    if (!canAccessSiteOperations(currentCapabilities)) return
+    await Promise.all([
+      currentCapabilities?.can_moderate_comments ? loadSiteReviewQueue(isCurrent) : undefined,
+      currentCapabilities?.is_site_owner && currentCapabilities.can_manage_roles
+        ? loadSiteRoles(isCurrent)
+        : undefined,
+      loadSiteSystemStatus(isCurrent),
+    ])
+  }
+
+  siteRoleSelect?.addEventListener("change", updateSiteRoleConsequence)
+  updateSiteRoleConsequence()
+
+  siteReviewRefresh?.addEventListener("click", async () => {
+    siteReviewRefresh.disabled = true
+    try {
+      await loadSiteReviewQueue()
+    } catch {
+      setSiteInlineStatus(siteReviewStatus, "公开反馈刷新失败，请稍后重试。", "error")
+    } finally {
+      siteReviewRefresh.disabled = false
+    }
+  })
+  siteReviewLimit?.addEventListener("change", async () => {
+    siteReviewLimit.disabled = true
+    try {
+      await loadSiteReviewQueue()
+    } catch {
+      setSiteInlineStatus(siteReviewStatus, "公开反馈刷新失败，请稍后重试。", "error")
+    } finally {
+      siteReviewLimit.disabled = false
+    }
+  })
+  siteRoleRefresh?.addEventListener("click", async () => {
+    siteRoleRefresh.disabled = true
+    try {
+      await loadSiteRoles()
+    } catch {
+      setSiteInlineStatus(siteRoleStatus, "账户目录刷新失败，请稍后重试。", "error")
+    } finally {
+      siteRoleRefresh.disabled = false
+    }
+  })
+  siteRefresh?.addEventListener("click", async () => {
+    siteRefresh.disabled = true
+    if (siteAccessLoading) siteAccessLoading.hidden = false
+    if (siteAccessDenied) siteAccessDenied.hidden = true
+    if (siteOperationsContent) siteOperationsContent.hidden = true
+    try {
+      await loadCapabilities()
+      await loadSiteOperations()
+    } catch {
+      renderSiteAccess(null, "verification")
+    } finally {
+      siteRefresh.disabled = false
+    }
+  })
+
+  siteRoleForm?.addEventListener("submit", async (event) => {
+    event.preventDefault()
+    if (
+      !client ||
+      !currentUser ||
+      currentCapabilities?.is_site_owner !== true ||
+      currentCapabilities?.can_manage_roles !== true
+    ) {
+      setSiteInlineStatus(siteRoleStatus, "当前账户不能管理角色，请刷新后重试。", "error")
+      return
+    }
+    const targetEmail = siteRoleEmail?.value.trim() ?? ""
+    const targetRole = siteRoleSelect?.value ?? "user"
+    if (!targetEmail || !siteRoleEmail?.checkValidity()) {
+      siteRoleEmail?.reportValidity()
+      return
+    }
+    if (
+      targetEmail.toLocaleLowerCase("en-US") ===
+      String(currentUser.email ?? "").toLocaleLowerCase("en-US")
+    ) {
+      setSiteInlineStatus(siteRoleStatus, "站长角色受服务端保护，不能在这里更改。", "error")
+      return
+    }
+    const consequence = siteRoleConsequence?.textContent?.trim() ?? "角色权限将立即变化。"
+    if (
+      !window.confirm(`确认将 ${targetEmail} 设为“${siteRoleName(targetRole)}”？\n\n${consequence}`)
+    )
+      return
+
+    if (siteRoleSubmit) siteRoleSubmit.disabled = true
+    setSiteInlineStatus(siteRoleStatus, "正在应用角色变更……")
+    const context = captureAuthContext()
+    try {
+      const result =
+        targetRole === "user"
+          ? await context.client.rpc("revoke_role", {
+              admin_uid: context.ownerId,
+              target_email: targetEmail,
+            })
+          : await context.client.rpc("grant_role", {
+              admin_uid: context.ownerId,
+              target_email: targetEmail,
+              target_role: targetRole,
+            })
+      if (!authContextIsCurrent(context)) return
+      if (result.error) {
+        setSiteInlineStatus(siteRoleStatus, "角色变更失败；原权限保持不变。", "error")
+        return
+      }
+      setSiteInlineStatus(siteRoleStatus, "角色已更新并立即生效。", "success")
+      siteRoleForm.reset()
+      updateSiteRoleConsequence()
+      await loadSiteRoles()
+    } catch {
+      if (authContextIsCurrent(context))
+        setSiteInlineStatus(siteRoleStatus, "角色变更失败；原权限保持不变。", "error")
+    } finally {
+      if (siteRoleSubmit) siteRoleSubmit.disabled = false
+    }
+  })
 
   const fillForm = (data: Record<string, unknown>) => {
     if (!form) return
@@ -3743,6 +4305,7 @@ const init = async () => {
           currentUser = null
           authEpoch += 1
           clearSensitiveEditorState()
+          resetSiteOperations()
           editorCoordinator?.close()
           editorCoordinator = null
         }
@@ -3757,6 +4320,7 @@ const init = async () => {
       if (nextOwnerId !== previousOwnerId) {
         authEpoch += 1
         clearSensitiveEditorState()
+        resetSiteOperations()
       }
       if (currentUser) {
         await prepareEditorPersistence(String(currentUser.id))
@@ -3775,10 +4339,8 @@ const init = async () => {
         if (writeLauncher && !preserveWriteSurface) writeLauncher.hidden = !currentUser
         if (profileSettings) profileSettings.hidden = !currentUser
         if (aiSettings) aiSettings.hidden = !currentUser
-        if (!currentUser)
-          siteOwnerNavItems.forEach((item) => {
-            item.hidden = true
-          })
+        if (siteOperations) siteOperations.hidden = !currentUser
+        if (!currentUser) resetSiteOperations()
         if (!preserveWriteSurface) {
           if (editor) editor.hidden = true
           if (flatWorkbench) flatWorkbench.hidden = true
@@ -3787,6 +4349,11 @@ const init = async () => {
           try {
             await loadCapabilities(isCurrentSync)
             if (!isCurrentSync()) return
+            if (workspaceSection === "site") {
+              await loadSiteOperations(isCurrentSync)
+              if (!isCurrentSync()) return
+              return
+            }
             const knowledgeBaseId = await ensureKnowledgeBase(isCurrentSync)
             if (!isCurrentSync()) return
             if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
@@ -3815,8 +4382,10 @@ const init = async () => {
               if (!isCurrentSync()) return
             }
           } catch {
-            if (isCurrentSync())
+            if (isCurrentSync()) {
+              if (workspaceSection === "site") renderSiteAccess(null, "verification")
               setStatus("登录已确认，但工作区数据暂时无法加载；请检查网络后刷新重试。", "error")
+            }
           }
         }
       }
@@ -3841,6 +4410,7 @@ const init = async () => {
         authEpoch += 1
         currentUser = null
         clearSensitiveEditorState()
+        resetSiteOperations()
         editorCoordinator?.close()
         editorCoordinator = null
         void sync()

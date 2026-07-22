@@ -70,9 +70,9 @@ const AccountMenu: QuartzComponent = ({ displayClass }: QuartzComponentProps) =>
             <span>个人设置</span>
             <small>头像与显示名称</small>
           </a>
-          <a href="/admin/" data-account-owner-link hidden>
-            <span>站点管理</span>
-            <small>站长专用工具</small>
+          <a href="/workspace/site/" data-account-operations-link hidden>
+            <span>站点运营</span>
+            <small>反馈、权限与发布状态</small>
           </a>
         </nav>
         <button class="account-menu-signout" type="button" data-account-menu-signout>

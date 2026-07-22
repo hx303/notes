@@ -71,7 +71,9 @@ State: PR #16 merged baseline with the reviewed DeepSeek/A20 production boundary
 
 ## Routes and shared hooks
 
-- `/workspace/`, `/workspace/knowledge/`, `/workspace/write/`, `/workspace/settings/`, `/workspace/settings/ai/` remain stable.
+- `/workspace/`, `/workspace/knowledge/`, `/workspace/write/`, `/workspace/settings/`, `/workspace/settings/ai/`, and `/workspace/site/` remain stable.
+- `/workspace/site/` must fail closed on `current_account_capabilities`. Editors may read only non-sensitive status, admins may additionally soft-delete public comments/corrections, and only the site owner may list accounts or grant/revoke roles through the hardened RPCs. No site capability permits reading another user's private documents.
+- `/admin/` is a dependency-free migration entry only. It clears `wouldkeep-admin-*` caches, unregisters its cleanup worker, and redirects to `/workspace/site/`; no legacy editor/admin assets are emitted.
 - Later AI routes are reserved as `/workspace/organize/` and `/workspace/ask/`.
 - Public discovery keeps `/knowledge/`, `/topics/`, `/paths/`, `/map/`, `/changes/`, `/build/`, and stable canonical article URLs.
 - Shared route registration and layout hookups in `FolderContent.tsx`, `quartz.layout.ts`, and component exports are commander-owned.

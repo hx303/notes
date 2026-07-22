@@ -17,7 +17,7 @@ const initAccountMenu = async () => {
   const panel = root.querySelector<HTMLElement>("[data-account-menu-panel]")
   const name = root.querySelector<HTMLElement>("[data-account-menu-name]")
   const email = root.querySelector<HTMLElement>("[data-account-menu-email]")
-  const ownerLink = root.querySelector<HTMLElement>("[data-account-owner-link]")
+  const operationsLink = root.querySelector<HTMLElement>("[data-account-operations-link]")
   const signout = root.querySelector<HTMLButtonElement>("[data-account-menu-signout]")
   let client: any = null
   let closeTimer: number | undefined
@@ -84,7 +84,7 @@ const initAccountMenu = async () => {
     if (loginLink) loginLink.hidden = Boolean(user)
     if (userSurface) userSurface.hidden = !user
     if (!user) {
-      if (ownerLink) ownerLink.hidden = true
+      if (operationsLink) operationsLink.hidden = true
       closeMenu()
       return
     }
@@ -102,9 +102,20 @@ const initAccountMenu = async () => {
         .maybeSingle()
     renderProfile(profileResult.data ?? null, user.email ?? "")
     const capabilityResult = await client.rpc("current_account_capabilities")
-    const capabilities = capabilityResult.data as { is_site_owner?: boolean } | null
-    if (ownerLink)
-      ownerLink.hidden = Boolean(capabilityResult.error || capabilities?.is_site_owner !== true)
+    const capabilities = capabilityResult.data as {
+      can_edit_site?: boolean
+      can_manage_roles?: boolean
+      can_moderate_comments?: boolean
+      can_moderate_publications?: boolean
+    } | null
+    const canUseOperations = Boolean(
+      !capabilityResult.error &&
+      (capabilities?.can_edit_site ||
+        capabilities?.can_manage_roles ||
+        capabilities?.can_moderate_comments ||
+        capabilities?.can_moderate_publications),
+    )
+    if (operationsLink) operationsLink.hidden = !canUseOperations
   }
 
   root.addEventListener("mouseenter", openMenu)

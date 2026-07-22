@@ -5,9 +5,9 @@ import test from "node:test"
 const baseStyles = readFileSync(new URL("../styles/base.scss", import.meta.url), "utf8")
 const workspaceStyles = readFileSync(new URL("./styles/accountPage.scss", import.meta.url), "utf8")
 const adminMarkup = readFileSync(new URL("../../static/admin/index.html", import.meta.url), "utf8")
-const adminStyles = readFileSync(new URL("../../static/admin/admin.css", import.meta.url), "utf8")
+const adminWorker = readFileSync(new URL("../../static/admin/sw.js", import.meta.url), "utf8")
 
-test("admin inline scripts remain syntactically valid", () => {
+test("admin migration inline scripts remain syntactically valid", () => {
   const scripts = [...adminMarkup.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
   assert.ok(scripts.length > 0)
   scripts.forEach(([, source]) => assert.doesNotThrow(() => new Function(source)))
@@ -47,28 +47,11 @@ test("workspace navigation scrolls only while it is sticky", () => {
   )
 })
 
-test("admin file navigation has a reliable scroll boundary and visible scrollbar", () => {
-  assert.match(adminMarkup, /body\{[^}]*height:100dvh;[^}]*overflow:hidden\}/)
-  assert.match(adminMarkup, /\.main\{[^}]*min-height:0;[^}]*overflow:hidden/)
-  assert.match(
-    adminMarkup,
-    /\.sidebar-files\{[^}]*overflow-y:auto;[^}]*overscroll-behavior-y:contain;[^}]*scrollbar-gutter:stable;[^}]*touch-action:pan-y;[^}]*min-height:0/,
-  )
-  assert.match(adminStyles, /\.sidebar-files::\-webkit-scrollbar \{\s*width: 10px;/)
-})
-
-test("admin file navigation avoids the all-expanded layout and preserves real file identities", () => {
-  assert.match(adminMarkup, /open: false/)
-  assert.match(adminMarkup, /\.folder \.files\{display:none\}/)
-  assert.match(adminMarkup, /\.folder\.open>\.files\{display:block\}/)
-  assert.match(adminMarkup, /id="file'\+realFi\+'_'\+realFi2/)
-  assert.match(
-    adminMarkup,
-    /function openRecentFile\(button\)[\s\S]*files\[fi\]\.files\[i2\]\.path === path/,
-  )
-  assert.match(adminMarkup, /role="button" tabindex="0" aria-expanded=/)
-  assert.match(
-    adminMarkup,
-    /function handleFolderKey[\s\S]*event\.key !== "Enter"[\s\S]*event\.key !== " "/,
-  )
+test("retired admin route always leaves for workspace operations and clears old caches", () => {
+  assert.match(adminMarkup, /http-equiv="refresh" content="3;url=\/workspace\/site\/"/)
+  assert.match(adminMarkup, /Promise\.race\([\s\S]*1200/)
+  assert.match(adminMarkup, /finally \{\s*location\.replace\("\/workspace\/site\/"\)/)
+  assert.match(adminMarkup, /<noscript>/)
+  assert.match(adminWorker, /key\.startsWith\("wouldkeep-admin-"\)/)
+  assert.match(adminWorker, /self\.registration\.unregister\(\)/)
 })

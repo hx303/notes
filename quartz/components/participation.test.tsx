@@ -27,6 +27,7 @@ describe("R05 correction and discussion participation", () => {
     assert.match(html, /name="location"/)
     assert.match(html, /role="status" aria-live="polite" aria-atomic="true"/)
     assert.match(html, /提交失败或离线时，草稿会保存在当前浏览器/)
+    assert.match(html, /href="\/account\/" data-auth-link/)
   })
 
   test("renders visible loading, empty-capable discussion region and accessible form feedback", () => {
@@ -41,6 +42,7 @@ describe("R05 correction and discussion participation", () => {
     assert.match(html, /正在载入讨论/)
     assert.match(html, /data-participation-form="discussion"/)
     assert.match(html, /data-retry-submit/)
+    assert.match(html, /href="\/account\/" data-auth-link/)
     assert.match(html, /data-comment-key="content\/[^"]+\.md"/)
   })
 

@@ -135,3 +135,10 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 1. Finish N04 only when the full integration/reference/platform/workspace/public worktree set is needed; the DeepSeek implementation/review worktrees already use the merged baseline and do not disturb occupied worktrees.
 2. PR #27 has completed signed-in preview acceptance and the production operation record; wait for all Vercel checks, then require fresh owner authorization before Ready/merge.
 3. Treat the production migration ledger as normalized at 18 aligned versions with zero pending migrations. Any new business change must be a reviewed forward migration with a version greater than `20260721000100` and requires separate production deployment approval.
+
+## Workspace site-operations candidate on 2026-07-22
+
+- `/workspace/site/` now contains capability-scoped public feedback moderation, site-owner role management, and non-sensitive session/permission/publication checks. Direct ordinary-user access is denied and capability RPC failure is fail-closed.
+- Public comments/corrections are read without private document access and moderated only by soft deletion. The author-profile embed has an anonymous-label fallback. Role listing/grant/revoke uses the existing hardened RPCs; no new migration is included.
+- `/admin/` is reduced to a dependency-free migration page and cleanup service worker. Quartz emits only `admin/index.html` and `admin/sw.js`; deployment scripts no longer copy the old application.
+- This is a local candidate only. It has not been committed, pushed, deployed, or browser-accepted, and it does not authorize AI enablement or any production operation.
