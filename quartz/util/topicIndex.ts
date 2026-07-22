@@ -1,6 +1,7 @@
 import type { QuartzPluginData } from "../plugins/vfile"
 import type { FullSlug } from "./path"
 import { KnowledgeTopic, knowledgeTopicLabels } from "./knowledgeMetadata"
+import { isPublicDiscoveryRecord } from "./publicDiscovery"
 
 export type TopicDefinition = {
   key: KnowledgeTopic
@@ -97,12 +98,8 @@ export const topicDefinitions: TopicDefinition[] = [
   },
 ]
 
-const structuralRoots = new Set(["build", "map", "paths", "search", "topics"])
-
 export function isPublicKnowledgeRecord(file: QuartzPluginData): boolean {
-  if (!file.slug) return false
-  const root = file.slug.split("/")[0]
-  return !structuralRoots.has(root) && file.knowledgeMetadata?.publish !== false
+  return isPublicDiscoveryRecord(file)
 }
 
 export function buildTopicSummaries(allFiles: QuartzPluginData[]): TopicSummary[] {

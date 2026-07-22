@@ -1,54 +1,30 @@
-import GraphConstructor from "./Graph";
-import { knowledgeTopicLabels } from "../util/knowledgeMetadata";
-import { FullSlug, resolveRelative } from "../util/path";
-import {
-  QuartzComponent,
-  QuartzComponentConstructor,
-  QuartzComponentProps,
-} from "./types";
-import style from "./styles/mapPage.scss";
+import GraphConstructor from "./Graph"
+import { knowledgeTopicLabels } from "../util/knowledgeMetadata"
+import { FullSlug, resolveRelative } from "../util/path"
+import { isPublicDiscoveryRecord } from "../util/publicDiscovery"
+import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
+import style from "./styles/mapPage.scss"
 // @ts-ignore
-import script from "./scripts/mapPage.inline";
+import script from "./scripts/mapPage.inline"
 
 const Graph = GraphConstructor({
-  localGraph: { depth: -1, enableRadial: true },
-  globalGraph: { depth: -1, enableRadial: true },
-});
-const structuralRoots = new Set(["build", "map", "paths", "search", "topics"]);
-
+  localGraph: { depth: -1, enableRadial: true, publicDiscoveryOnly: true },
+  globalGraph: { depth: -1, enableRadial: true, publicDiscoveryOnly: true },
+})
 const MapPage: QuartzComponent = (props: QuartzComponentProps) => {
-  const { fileData, allFiles } = props;
+  const { fileData, allFiles } = props
   const records = allFiles
-    .filter((file) => {
-      const root = file.slug?.split("/")[0];
-      return Boolean(
-        file.slug &&
-        file.frontmatter?.title &&
-        !file.slug.startsWith("tags/") &&
-        root &&
-        !structuralRoots.has(root) &&
-        file.slug !== "index",
-      );
-    })
+    .filter(isPublicDiscoveryRecord)
     .sort((a, b) =>
-      String(a.frontmatter?.title).localeCompare(
-        String(b.frontmatter?.title),
-        "zh-CN",
-      ),
-    );
+      String(a.frontmatter?.title).localeCompare(String(b.frontmatter?.title), "zh-CN"),
+    )
 
   const topics = [
-    ...new Set(
-      records
-        .map((file) => file.knowledgeMetadata?.primaryTopic)
-        .filter(Boolean),
-    ),
-  ];
+    ...new Set(records.map((file) => file.knowledgeMetadata?.primaryTopic).filter(Boolean)),
+  ]
   const maturities = [
-    ...new Set(
-      records.map((file) => file.knowledgeMetadata?.maturity).filter(Boolean),
-    ),
-  ];
+    ...new Set(records.map((file) => file.knowledgeMetadata?.maturity).filter(Boolean)),
+  ]
 
   return (
     <div class="map-page" data-map-page>
@@ -80,9 +56,7 @@ const MapPage: QuartzComponent = (props: QuartzComponentProps) => {
               <select name="topic">
                 <option value="">全部主题</option>
                 {topics.map((topic) => (
-                  <option value={topic!}>
-                    {knowledgeTopicLabels[topic!] ?? topic}
-                  </option>
+                  <option value={topic!}>{knowledgeTopicLabels[topic!] ?? topic}</option>
                 ))}
               </select>
             </label>
@@ -102,7 +76,7 @@ const MapPage: QuartzComponent = (props: QuartzComponentProps) => {
         </p>
         <ul class="map-record-list">
           {records.map((record) => {
-            const metadata = record.knowledgeMetadata;
+            const metadata = record.knowledgeMetadata
             return (
               <li
                 data-map-record
@@ -111,31 +85,24 @@ const MapPage: QuartzComponent = (props: QuartzComponentProps) => {
                 data-title={record.frontmatter?.title ?? ""}
                 data-slug={record.slug}
               >
-                <a
-                  class="internal"
-                  href={resolveRelative(
-                    fileData.slug!,
-                    record.slug as FullSlug,
-                  )}
-                >
+                <a class="internal" href={resolveRelative(fileData.slug!, record.slug as FullSlug)}>
                   {record.frontmatter?.title}
                 </a>
                 <span>
                   {metadata?.primaryTopic
-                    ? (knowledgeTopicLabels[metadata.primaryTopic] ??
-                      metadata.primaryTopic)
+                    ? (knowledgeTopicLabels[metadata.primaryTopic] ?? metadata.primaryTopic)
                     : "知识记录"}
                 </span>
               </li>
-            );
+            )
           })}
         </ul>
       </section>
     </div>
-  );
-};
+  )
+}
 
-MapPage.css = style;
-MapPage.afterDOMLoaded = script;
+MapPage.css = style
+MapPage.afterDOMLoaded = script
 
-export default (() => MapPage) satisfies QuartzComponentConstructor;
+export default (() => MapPage) satisfies QuartzComponentConstructor

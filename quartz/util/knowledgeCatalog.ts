@@ -6,6 +6,7 @@ import {
   knowledgeTopicLabels,
   knowledgeTypeLabels,
 } from "./knowledgeMetadata"
+import { isPublicDiscoveryRecord } from "./publicDiscovery"
 
 export type KnowledgeDirectoryView = "topic" | "type"
 
@@ -32,12 +33,10 @@ export type KnowledgeCatalogGroup = {
 
 export type KnowledgeCatalogNode = KnowledgeCatalogGroup | KnowledgeCatalogRecord
 
-const structuralRoots = new Set(["build", "map", "paths", "search", "topics"])
 const fallbackTopic = "unclassified"
 
 function isKnowledgeRecord(entry: KnowledgeCatalogEntry): boolean {
-  const root = entry.slug.split("/")[0]
-  return !structuralRoots.has(root) && entry.knowledgeMetadata?.publish !== false
+  return isPublicDiscoveryRecord(entry)
 }
 
 function compareLabels(a: { label: string }, b: { label: string }): number {
