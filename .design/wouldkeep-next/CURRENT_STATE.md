@@ -139,12 +139,12 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 ## Remaining orchestration and production gates
 
 1. Finish N04 only when the full integration/reference/platform/workspace/public worktree set is needed; the DeepSeek implementation/review worktrees already use the merged baseline and do not disturb occupied worktrees.
-2. PR #27 and PR #28 are merged. P1A now has a 17/17 disposable two-profile database run and rollback-residue check, but remains evidence for the publication boundary rather than the atomic product save path. The proposed atomic-save RPC requires a separate reviewed implementation and separate production deployment authorization.
+2. PR #27 and PR #28 are merged. P1A now has a 17/17 disposable two-profile database run and rollback-residue check, but remains evidence for the publication boundary rather than the atomic product save path. The atomic-save RPC is implemented locally as `20260722000200_atomic_document_snapshot_save.sql` and independently passes the Draft gate; it is not wired into the editor, pushed, or deployed, and still requires separate production deployment authorization after `20260722000100` is verified.
 3. Treat the production migration ledger as normalized at 18 aligned versions with zero pending migrations. Any new business change must be a reviewed forward migration with a version greater than `20260721000100` and requires separate production deployment approval.
 
 ## Workspace site-operations candidate on 2026-07-22
 
 - `/workspace/site/` now contains capability-scoped public feedback moderation, site-owner role management, and non-sensitive session/permission/publication checks. Direct ordinary-user access is denied and capability RPC failure is fail-closed.
-- Public comments/corrections are read without private document access and moderated only by soft deletion. The author-profile embed has an anonymous-label fallback. Role listing/grant/revoke uses the existing hardened RPCs; no new migration is included.
+- Public comments/corrections are read without private document access and moderated only by soft deletion. The author-profile embed has an anonymous-label fallback. Role listing/grant/revoke uses the existing hardened RPCs; `20260722000100_site_owner_role_invariant.sql` adds the required site-owner role invariant.
 - `/admin/` is reduced to a dependency-free migration page and cleanup service worker. Quartz emits only `admin/index.html` and `admin/sw.js`; deployment scripts no longer copy the old application.
-- This is a local candidate only. It has not been committed, pushed, deployed, or browser-accepted, and it does not authorize AI enablement or any production operation.
+- This is a committed local integration candidate only. It has not been pushed, deployed, or browser-accepted, and it does not authorize AI enablement or any production operation.
