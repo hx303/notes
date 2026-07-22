@@ -2,7 +2,7 @@
 
 Last reconciled: 2026-07-22 (Asia/Shanghai)
 
-Working baseline: merged `main` at `1fccf318e4a2d2077589768bf8854810947092c9`
+Working baseline: merged `main` at `bba87fe29ba1432d3cbe99b54d14f570633ea01f`
 
 Merged foundation PR: [#11](https://github.com/hx303/notes/pull/11)
 
@@ -28,6 +28,10 @@ Merged novice import and refresh-recovery PR: [#24](https://github.com/hx303/not
 
 Merged editor recovery PR: [#26](https://github.com/hx303/notes/pull/26)
 
+Merged knowledge-organization PR: [#27](https://github.com/hx303/notes/pull/27)
+
+Merged AI suggestion-preview PR: [#28](https://github.com/hx303/notes/pull/28)
+
 Status vocabulary: **complete**, **partial**, **not started**, **not deployed**, **stale status**, **unverified online**.
 
 ## 2026-07-17 reconciliation after PR #16
@@ -48,6 +52,8 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 
 ## Executive status
 
+- P1A has a source-level candidate from merged `main` `bba87fe2` plus one disposable local-database execution. Supabase CLI 2.109.1 initialized PostgreSQL 17.6 from `schema.sql`, two local-only identities, and repository migrations through `20260721000100`; `psql -X -v ON_ERROR_STOP=1` then passed all 17 rollback-only owner/other/anonymous, private/unlisted/public, stale-predicate, duplicate publish, last-success, soft-delete, withdrawal, and republish probes. A post-run query found zero P1A knowledge-base/document fixtures and confirmed the transaction-local authenticated grant did not persist. This is local runtime evidence for the publication/RLS/ACL matrix, not production evidence and not proof of the product save path. The slice adds no migration and changes no production state.
+- The evidence also records current limits instead of overstating reliability: publication is synchronous and has no queue; repeated publish has no server operation ID and refreshes `published_at`; a second withdrawal returns `false`; editor saves still update the core document before versions and organization metadata. The next reviewed P1 change is the additive `save_document_snapshot_v1` atomic/idempotent RPC described in `CONTRACTS.md`, followed by separate deployment authorization and a no-fallback frontend switch.
 - P06 hardening at PR #27 head `c688045d` adds soft-delete relationship tombstones that remain removable, complete browser-recovery source URL redaction (including fragments and conflict archives), actual-knowledge-base binding for existing documents, safe new/conflict-copy knowledge-base transitions, pre-core-write relationship validation, friendly publication errors/warnings, and forward `document_links` integrity migration `20260721000100`. Focused 43/43, full 303/303, TypeScript, migration guard, diff check, and the 284-input/1,051-output build pass; independent frontend review reports no P0/P1.
 - The latest PR-preview baseline was rechecked signed-in on exact document `095dbe7c-0600-46d7-8864-1eb68db5e3c2`: complete content, private visibility, original PR26 relationship, one safe web source, and no personal test source. Chrome extension timeouts then prevented safe write-round-trip acceptance, so the agent stopped without relationship/source/publication writes and left that gate open.
 - After a user hard refresh, independent signed-in acceptance completed: PR26 relation delete/refresh/re-add/refresh and personal-source add/refresh/delete/refresh all passed. Final revision 14 is private with the original relationship and only the original safe web source; page-source console errors were zero. A redundant relation-selection autosave remains P2.
@@ -57,7 +63,7 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 | ------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Public discovery redesign       | partial                          | `DiscoverHome`, `MapPage`, `RecentGrowth`, topic/path/search components and routes exist. Old redesign task checkboxes understate the implementation. Production behavior still needs Wave 0 online reconciliation.                                                                                                                                                                                                                                                                 |
 | Account and private workspace   | partial                          | Password auth, account/workspace routes, private knowledge bases/documents, editor, tags, links, sources, versions, publication snapshot UI and admin shell exist. A multi-agent hotfix now covers stable auth loading, retry after SDK/network failure, duplicate-submit protection, SPA cleanup, and responsive account/workspace layouts. The 39 unchecked account tasks are stale as a source of truth; Wave 1 must test remaining flows and fix gaps rather than rebuild them. |
-| Publication and public snapshot | partial                          | `document_publications`, `publish_document`, `unpublish_document`, `read_published_document`, and `list_public_documents` exist in migrations. Idempotent job/retry/last-success failure semantics still require P01/P02 reconciliation and production verification.                                                                                                                                                                                                                |
+| Publication and public snapshot | partial                          | `document_publications`, `publish_document`, `unpublish_document`, `read_published_document`, and `list_public_documents` exist. P1A supplies a rollback-only matrix, static guards, and one 17/17 disposable local run with zero post-rollback residue; production drift remains unverified, and the stale-revision probe does not test the product save path. Strict operation-id idempotency remains open; no publication job/queue exists or is claimed.                        |
 | AI consent and data foundation  | complete                         | Default-off settings, zero budget, four AI tables with owner RLS, browser write restrictions, and authenticated mock `ai-write` code exist. Migration deployment, unauthenticated `401`, four real-account RLS assertions, and the signed-in no-model/no-cost response have all been accepted.                                                                                                                                                                                      |
 | AI provider preparation         | complete; deployed default-off   | PR #12/#13 merged the server boundary and guarded DeepSeek path. A20, server Secrets, and `ai-write` v4 are deployed; both live gates remain off and no production paid request has run.                                                                                                                                                                                                                                                                                            |
 | AI paid/model features          | narrow canary deployed; disabled | Only an authenticated owner's verified public publication snapshot is eligible, and only when both environment and database flags allow it. Client selection/context is ignored. A local synthetic canary passed; production paid canary and broad rollout remain closed.                                                                                                                                                                                                           |
@@ -119,7 +125,7 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
   - `C:/Users/23012/Desktop/wouldkeep/_repo` — `agent/ai-knowledge-assistant-plan`, with untracked `supabase/generated/`.
   - `.../admin-publish` — `agent/admin-editorial-workspace`.
   - `.../work/ai-assistant-foundation` — `agent/ai-assistant-foundation`, clean at reconciliation time.
-- Remote `main` was last reconciled at `1fccf318e4a2d2077589768bf8854810947092c9` after PR #26; the earlier PR #11 baseline was `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`.
+- Remote `main` was last reconciled at `bba87fe29ba1432d3cbe99b54d14f570633ea01f` after PR #28; the earlier PR #11 baseline was `72ea5f96cfaa2601fd96a8923ce2635caa972a9d`.
 - Because the local repository is shallow, local merge-base/diff counts against `origin/main` are not authoritative. GitHub's PR mergeability is the current authoritative merge signal until history is deepened.
 
 ## Legacy task-file reconciliation
@@ -133,7 +139,7 @@ Status vocabulary: **complete**, **partial**, **not started**, **not deployed**,
 ## Remaining orchestration and production gates
 
 1. Finish N04 only when the full integration/reference/platform/workspace/public worktree set is needed; the DeepSeek implementation/review worktrees already use the merged baseline and do not disturb occupied worktrees.
-2. PR #27 has completed signed-in preview acceptance and the production operation record; wait for all Vercel checks, then require fresh owner authorization before Ready/merge.
+2. PR #27 and PR #28 are merged. P1A now has a 17/17 disposable two-profile database run and rollback-residue check, but remains evidence for the publication boundary rather than the atomic product save path. The proposed atomic-save RPC requires a separate reviewed implementation and separate production deployment authorization.
 3. Treat the production migration ledger as normalized at 18 aligned versions with zero pending migrations. Any new business change must be a reviewed forward migration with a version greater than `20260721000100` and requires separate production deployment approval.
 
 ## Workspace site-operations candidate on 2026-07-22

@@ -24,7 +24,18 @@ State: PR #16 merged baseline with the reviewed DeepSeek/A20 production boundary
 - `unpublish_document(document_id)` revokes the publication and restores private draft state.
 - `read_published_document(document_id?, share_token?)` exposes public documents by ID or unlisted documents by token and returns only snapshot data.
 - `list_public_documents(limit, offset)` returns public summary fields only; limit remains bounded to 50.
-- Wave 1 may add job/retry state, but it must preserve the last successful snapshot and revocation semantics.
+- Publication is currently a synchronous PostgreSQL transaction. `document_publications` is the current last-success pointer, not a task, build, or delivery queue; UI must not claim `queued`, `building`, or eventual background publication states that do not exist.
+- A repeated `publish_document` call converges on the single `document_id` row and preserves its share token, but the ABI is not strictly idempotent: it has no operation ID and its conflict path writes `published_at = NOW()` again. A repeated `unpublish_document` after a lost acknowledgement returns `false` once the row is already absent.
+- A validation or SQL failure during `publish_document` rolls the function transaction back and leaves the previous successful snapshot readable. Soft deletion and explicit withdrawal revoke the current pointer; restoring a soft-deleted source does not republish it. Unlisted withdrawal followed by republish rotates the revoked bearer token.
+- Any future publication retry contract must be additive and versioned, preserve the current last-success pointer and immediate revocation semantics, and make a same-operation retry return the original success result. Do not introduce or imply an asynchronous queue without a separately reviewed storage, worker, retry, observability, and recovery contract.
+
+### Proposed atomic-save contract (not implemented or deployed)
+
+- The next P1 reliability change is an additive RPC proposal: `save_document_snapshot_v1(p_operation_id text, p_document_id uuid, p_knowledge_base_id uuid, p_expected_revision bigint, p_snapshot jsonb) -> jsonb`.
+- One server transaction must validate the authenticated owner, live document, knowledge-base binding, expected revision, normalized snapshot limits, tags, prerequisite/related links, sources, and endpoint ownership before writing. It then updates the document revision and writes the matching version, tags, links, and sources atomically.
+- `p_operation_id` is owner-scoped. Repeating the same ID with the same normalized request fingerprint returns the original committed result; reusing it with a different fingerprint is rejected. A stale revision returns a structured conflict result and performs zero business writes.
+- The current editor updates `documents` before versions and organization metadata, and its outbox operation ID is browser-local only. Therefore a core save can currently succeed while later metadata synchronization fails; the UI may accurately report that partial state but must not call it an atomic save.
+- Rollout order is: reviewed additive migration and rollback-only owner/other/anonymous/concurrency evidence; separate explicit authorization for backup, preflight, and production deployment; then a frontend switch to the versioned RPC. The switched client must not silently fall back to the legacy multi-write sequence.
 
 ## AI foundation
 
