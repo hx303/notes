@@ -472,6 +472,7 @@ const init = async () => {
   let autosaveTimer: number | undefined
   let editorChangeGeneration = 0
   let aiSuggestionRequestEpoch = 0
+  let aiSuggestionGenerationInFlight = false
   let activeAiSelection: AiSelectionSnapshot | null = null
   let activeAiSuggestion: AiSuggestionPreview | null = null
   let aiSuggestionPreferences: {
@@ -1910,7 +1911,7 @@ const init = async () => {
     if (aiSuggestionOriginal) aiSuggestionOriginal.textContent = ""
     if (aiSuggestionOutput) aiSuggestionOutput.textContent = ""
     setAiSuggestionActionability(false)
-    if (message) setAiSuggestionStatus(message)
+    setAiSuggestionStatus(message)
   }
 
   const markAiSuggestionStale = () => {
@@ -1943,7 +1944,8 @@ const init = async () => {
           end: body.selectionEnd ?? 0,
         })
       : { ok: false as const, code: "invalid_range" as const }
-    if (aiSuggestionGenerate) aiSuggestionGenerate.disabled = Boolean(gate) || !capture.ok
+    if (aiSuggestionGenerate)
+      aiSuggestionGenerate.disabled = aiSuggestionGenerationInFlight || Boolean(gate) || !capture.ok
     if (preserveMessage) return
     if (gate) {
       setAiSuggestionStatus(gate, currentUser && !aiSuggestionPreferences ? "error" : "")
@@ -2008,123 +2010,131 @@ const init = async () => {
   }
 
   const generateAiSuggestion = async (selectionToReuse?: AiSelectionSnapshot) => {
+    if (aiSuggestionGenerationInFlight) return
     const body = editorBodyField()
     if (!body || !form || !currentUser || !client) {
       setAiSuggestionStatus("请先登录并打开一条知识。", "error")
       return
     }
-    const preferencesLoaded = await loadAiSuggestionPreferences()
-    if (!preferencesLoaded) {
-      setAiSuggestionStatus("AI 设置暂时无法读取；没有发送任何正文。", "error")
-      return
-    }
-    const data = readForm()
-    const gate = aiSuggestionGate(data)
-    if (gate) {
-      setAiSuggestionStatus(gate, "error")
-      return
-    }
-    const action = (aiSuggestionAction?.value || "rewrite") as AiSuggestionAction
-    const capture = selectionToReuse
-      ? aiSelectionSnapshotIsCurrent(selectionToReuse, {
-          documentId: data.documentId,
-          baseVersion: data.revision,
-          body: data.body,
-        })
-        ? { ok: true as const, snapshot: { ...selectionToReuse, action } }
-        : { ok: false as const, code: "invalid_range" as const }
-      : captureAiSelection({
-          action,
-          baseVersion: data.revision,
-          body: body.value,
-          documentId: data.documentId,
-          start: body.selectionStart ?? 0,
-          end: body.selectionEnd ?? 0,
-        })
-    if (!capture.ok) {
-      setAiSuggestionStatus("选区或正文已经变化，请重新选择后再生成。", "error")
-      return
-    }
-    const snapshot = capture.snapshot
-    const requestEpoch = ++aiSuggestionRequestEpoch
-    activeAiSelection = snapshot
-    activeAiSuggestion = null
-    setAiSuggestionActionability(false)
+    aiSuggestionGenerationInFlight = true
     if (aiSuggestionGenerate) aiSuggestionGenerate.disabled = true
     if (aiSuggestionRegenerate) aiSuggestionRegenerate.disabled = true
     aiSuggestionAssist?.setAttribute("aria-busy", "true")
-    setAiSuggestionStatus("正在验证使用边界并请求可审阅预览…")
     try {
-      const result = await client.functions.invoke("ai-write", {
-        body: {
-          action: snapshot.action,
-          selection: snapshot.selection,
-          context: "",
-          // Deliberately omit the document authority until a separately approved
-          // selection-scoped live contract exists. This prevents a paid whole-document call.
-          document_id: null,
-          base_version: snapshot.baseVersion,
-        },
-      })
-      if (requestEpoch !== aiSuggestionRequestEpoch || disposed) return
-      if (result.error) {
-        discardAiSuggestion("", { invalidateRequest: false })
-        setAiSuggestionStatus(
-          "当前没有获准的选区模型；没有把结果写入正文，也没有产生本次模型费用。",
-          "error",
-        )
+      const preferencesLoaded = await loadAiSuggestionPreferences()
+      if (!preferencesLoaded) {
+        setAiSuggestionStatus("AI 设置暂时无法读取；没有发送任何正文。", "error")
         return
       }
-      if (
-        !aiSelectionSnapshotIsCurrent(snapshot, {
-          documentId: readForm().documentId,
-          baseVersion: readForm().revision,
-          body: readForm().body,
+      const data = readForm()
+      const gate = aiSuggestionGate(data)
+      if (gate) {
+        setAiSuggestionStatus(gate, "error")
+        return
+      }
+      const action = (aiSuggestionAction?.value || "rewrite") as AiSuggestionAction
+      const capture = selectionToReuse
+        ? aiSelectionSnapshotIsCurrent(selectionToReuse, {
+            documentId: data.documentId,
+            baseVersion: data.revision,
+            body: data.body,
+          })
+          ? { ok: true as const, snapshot: { ...selectionToReuse, action } }
+          : { ok: false as const, code: "invalid_range" as const }
+        : captureAiSelection({
+            action,
+            baseVersion: data.revision,
+            body: body.value,
+            documentId: data.documentId,
+            start: body.selectionStart ?? 0,
+            end: body.selectionEnd ?? 0,
+          })
+      if (!capture.ok) {
+        setAiSuggestionStatus("选区或正文已经变化，请重新选择后再生成。", "error")
+        return
+      }
+      const snapshot = capture.snapshot
+      const requestEpoch = ++aiSuggestionRequestEpoch
+      activeAiSelection = snapshot
+      activeAiSuggestion = null
+      setAiSuggestionActionability(false)
+      setAiSuggestionStatus("正在验证使用边界并请求可审阅预览…")
+      try {
+        const result = await client.functions.invoke("ai-write", {
+          body: {
+            action: snapshot.action,
+            selection: snapshot.selection,
+            context: "",
+            // Deliberately omit the document authority until a separately approved
+            // selection-scoped live contract exists. This prevents a paid whole-document call.
+            document_id: null,
+            base_version: snapshot.baseVersion,
+          },
         })
-      ) {
-        discardAiSuggestion("", { invalidateRequest: false })
-        setAiSuggestionStatus("生成期间正文或版本发生了变化；响应已丢弃，请重新选择文字。", "error")
-        return
-      }
-      const parsed = parseAiSuggestionGatewayResponse(result.data, snapshot)
-      if (!parsed.ok) {
-        discardAiSuggestion("", { invalidateRequest: false })
-        setAiSuggestionStatus(
-          parsed.code === "unsafe_scope"
-            ? "服务器返回的不是选区建议，已安全拒绝，正文没有改变。"
-            : "网关响应与当前选区或版本不一致，已安全拒绝。",
-          "error",
-        )
-        return
-      }
-      if (parsed.kind === "gateway_check") {
-        activeAiSuggestion = null
+        if (requestEpoch !== aiSuggestionRequestEpoch || disposed) return
+        if (result.error) {
+          discardAiSuggestion("", { invalidateRequest: false })
+          setAiSuggestionStatus(
+            "当前没有获准的选区模型；没有把结果写入正文，也没有产生本次模型费用。",
+            "error",
+          )
+          return
+        }
+        if (
+          !aiSelectionSnapshotIsCurrent(snapshot, {
+            documentId: readForm().documentId,
+            baseVersion: readForm().revision,
+            body: readForm().body,
+          })
+        ) {
+          discardAiSuggestion("", { invalidateRequest: false })
+          setAiSuggestionStatus(
+            "生成期间正文或版本发生了变化；响应已丢弃，请重新选择文字。",
+            "error",
+          )
+          return
+        }
+        const parsed = parseAiSuggestionGatewayResponse(result.data, snapshot)
+        if (!parsed.ok) {
+          discardAiSuggestion("", { invalidateRequest: false })
+          setAiSuggestionStatus(
+            parsed.code === "unsafe_scope"
+              ? "服务器返回的不是选区建议，已安全拒绝，正文没有改变。"
+              : "网关响应与当前选区或版本不一致，已安全拒绝。",
+            "error",
+          )
+          return
+        }
+        if (parsed.kind === "gateway_check") {
+          activeAiSuggestion = null
+          showAiSuggestionPreview({
+            actionable: false,
+            mode: "安全网关检查 · 未调用模型",
+            output: parsed.preview,
+            selection: snapshot,
+          })
+          setAiSuggestionStatus(
+            "安全网关已验证；这是原文回显，不是 AI 改写，不能写回正文。",
+            "success",
+          )
+          return
+        }
+        activeAiSuggestion = parsed.preview
         showAiSuggestionPreview({
-          actionable: false,
-          mode: "安全网关检查 · 未调用模型",
-          output: parsed.preview,
+          actionable: true,
+          mode: "选区建议 · 等待你的决定",
+          output: parsed.preview.suggestion,
           selection: snapshot,
         })
-        setAiSuggestionStatus(
-          "安全网关已验证；这是原文回显，不是 AI 改写，不能写回正文。",
-          "success",
-        )
-        return
+        setAiSuggestionStatus("建议已生成；接受前仍会再次核对正文和云端基础版本。", "success")
+      } catch {
+        if (requestEpoch !== aiSuggestionRequestEpoch || disposed) return
+        discardAiSuggestion("", { invalidateRequest: false })
+        setAiSuggestionStatus("网络中断；没有修改正文，请稍后重试。", "error")
       }
-      activeAiSuggestion = parsed.preview
-      showAiSuggestionPreview({
-        actionable: true,
-        mode: "选区建议 · 等待你的决定",
-        output: parsed.preview.suggestion,
-        selection: snapshot,
-      })
-      setAiSuggestionStatus("建议已生成；接受前仍会再次核对正文和云端基础版本。", "success")
-    } catch {
-      if (requestEpoch !== aiSuggestionRequestEpoch || disposed) return
-      discardAiSuggestion("", { invalidateRequest: false })
-      setAiSuggestionStatus("网络中断；没有修改正文，请稍后重试。", "error")
     } finally {
-      if (requestEpoch === aiSuggestionRequestEpoch && !disposed) {
+      aiSuggestionGenerationInFlight = false
+      if (!disposed) {
         aiSuggestionAssist?.removeAttribute("aria-busy")
         if (aiSuggestionRegenerate) aiSuggestionRegenerate.disabled = false
         refreshAiSelectionStatus(true)
@@ -3565,6 +3575,7 @@ const init = async () => {
         ...(result.data ?? {}),
         documentId: result.data?.id ?? documentId,
       })
+      refreshAiSelectionStatus()
       for (const name of ["tags", "prerequisites", "related"]) {
         const field = form.elements.namedItem(name) as HTMLInputElement | null
         if (field) field.value = ""
@@ -4367,6 +4378,7 @@ const init = async () => {
       if (flatWorkbench && showEditor) flatWorkbench.hidden = true
       if (editor) editor.hidden = !showEditor
       if (state) state.textContent = "已恢复尚未保存的新知识草稿"
+      refreshAiSelectionStatus()
       if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
       return
     }
@@ -4409,6 +4421,7 @@ const init = async () => {
     if (history) history.hidden = true
     allowEditorSaves("new")
     if (state) state.textContent = "新建云端草稿"
+    refreshAiSelectionStatus()
     void prepareNewDocumentRelationOptions()
     if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
@@ -5238,7 +5251,7 @@ const init = async () => {
     form.addEventListener("input", (event) => {
       const target = event.target as HTMLElement | null
       if (target?.matches("[data-tag-input],[data-relation-search]")) return
-      if (target === aiBody) refreshAiSelectionStatus()
+      if (target === aiBody || target?.matches("[name=visibility]")) refreshAiSelectionStatus()
       editorChangeGeneration += 1
       const documentIdentity = readForm().documentId || "new"
       editorTabDrafts.markDirty(documentIdentity, editorChangeGeneration)
@@ -5328,6 +5341,7 @@ const init = async () => {
       renderSources()
       allowEditorSaves("new")
       if (state) state.textContent = "尚未保存"
+      refreshAiSelectionStatus()
       void prepareNewDocumentRelationOptions()
     })
   }

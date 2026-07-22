@@ -41,6 +41,47 @@ test("AI preferences and the current document boundary gate generation", () => {
   )
 })
 
+test("AI generation locks synchronously before preference or gateway requests", () => {
+  const generation = script.slice(
+    script.indexOf("const generateAiSuggestion"),
+    script.indexOf("const applyActiveAiSuggestion"),
+  )
+  assert.ok(
+    generation.indexOf("if (aiSuggestionGenerationInFlight) return") <
+      generation.indexOf("await loadAiSuggestionPreferences()"),
+  )
+  assert.match(generation, /aiSuggestionGenerationInFlight = true/)
+  assert.match(generation, /aiSuggestionGenerate\.disabled = true/)
+  assert.match(generation, /aiSuggestionGenerationInFlight = false/)
+  assert.match(
+    script,
+    /aiSuggestionGenerate\.disabled =\s*aiSuggestionGenerationInFlight \|\| Boolean\(gate\) \|\| !capture\.ok/,
+  )
+})
+
+test("gate-sensitive document transitions refresh the AI availability copy", () => {
+  assert.match(script, /target === aiBody \|\| target\?\.matches\("\[name=visibility\]"\)/)
+
+  const openDocument = script.slice(
+    script.indexOf("const openDocumentOnce"),
+    script.indexOf("const openDocument ="),
+  )
+  assert.match(openDocument, /fillForm\(\{[\s\S]*?\}\)\s*refreshAiSelectionStatus\(\)/)
+
+  const startNewDocument = script.slice(
+    script.indexOf("const startNewDocument"),
+    script.indexOf("[data-new-document]"),
+  )
+  assert.equal((startNewDocument.match(/refreshAiSelectionStatus\(\)/g) ?? []).length, 2)
+
+  const clearDocument = script.slice(
+    script.indexOf('root.querySelector("[data-editor-clear]")'),
+    script.indexOf("if (workspace && workspaceSection"),
+  )
+  assert.match(clearDocument, /allowEditorSaves\("new"\)[\s\S]*?refreshAiSelectionStatus\(\)/)
+  assert.match(script, /setAiSuggestionStatus\(message\)/)
+})
+
 test("accepting a current suggestion uses versioned document save while edits stale it", () => {
   assert.match(script, /aiSelectionSnapshotIsCurrent\(activeAiSelection/)
   assert.match(script, /生成期间正文或版本发生了变化；响应已丢弃/)
