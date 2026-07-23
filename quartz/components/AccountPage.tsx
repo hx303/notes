@@ -2,6 +2,7 @@ import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } fro
 import style from "./styles/accountPage.scss"
 // @ts-ignore
 import script from "./scripts/accountPage.inline"
+import { EDITOR_ATOMIC_SAVE_PROTOCOL } from "./scripts/editorAtomicSave"
 
 const supabaseUrl = "https://agocyybolrisqujvjqdj.supabase.co"
 const supabaseAnonKey = "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc"
@@ -79,6 +80,9 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
       data-account-mode={mode}
       data-auth-state="loading"
       data-workspace-section={workspace ? workspaceView : undefined}
+      data-editor-save-protocol={
+        workspaceView === "write" ? EDITOR_ATOMIC_SAVE_PROTOCOL : undefined
+      }
       data-supabase-url={supabaseUrl}
       data-supabase-anon-key={supabaseAnonKey}
     >
@@ -1316,7 +1320,7 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
           </div>
           <section class="editor-load-recovery" data-editor-load-recovery role="alert" hidden>
             <div>
-              <strong>这条知识还没有完整载入</strong>
+              <strong data-editor-load-recovery-title>这条知识还没有完整载入</strong>
               <p data-editor-load-recovery-message>
                 编辑器已暂停，避免用不完整的数据覆盖标签、关系、来源或发布状态。
               </p>
@@ -1324,6 +1328,17 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
             <button type="button" class="account-secondary" data-editor-retry-load>
               重新加载文档
             </button>
+            <div class="editor-recovery-actions" data-editor-manual-recovery-actions hidden>
+              <button type="button" class="account-secondary" data-editor-recovery-export>
+                导出旧版恢复包
+              </button>
+              <button type="button" class="account-secondary" data-editor-recovery-archive disabled>
+                已保存导出文件，归档并清除旧记录
+              </button>
+              <small data-editor-manual-recovery-status>
+                必须先导出；只有再次明确确认后才会清除原记录。
+              </small>
+            </div>
           </section>
           <form class="editor-form" data-editor-form>
             <input type="hidden" name="documentId" />
@@ -1795,6 +1810,9 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                 </button>
                 <button type="button" class="account-secondary" data-conflict-save-copy>
                   另存为私密副本
+                </button>
+                <button type="button" class="account-secondary" data-conflict-export-local>
+                  导出本地恢复稿
                 </button>
               </div>
               <small>选择前不会写入云端；采用云端时，本地稿仍会保留为恢复副本。</small>

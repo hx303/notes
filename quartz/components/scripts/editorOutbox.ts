@@ -66,6 +66,11 @@ export type EditorOutboxClaim = {
   updatedAt: number
 }
 
+export type EditorOutboxConflictResolutionToken = Pick<
+  EditorOutboxRecord,
+  "operationId" | "updatedAt"
+>
+
 export class EditorOutboxOwnershipError extends Error {
   constructor() {
     super("Editor outbox operation belongs to another account")
@@ -1084,7 +1089,11 @@ const createEditorOutboxWithAcknowledgementMode = (
         return true
       }),
 
-    resolveDocumentConflict: (ownerId: string, documentScopeId: string) =>
+    resolveDocumentConflict: (
+      ownerId: string,
+      documentScopeId: string,
+      expectedLatest?: EditorOutboxConflictResolutionToken | null,
+    ) =>
       serialize(async () => {
         if (!isNonemptyString(ownerId)) throw new TypeError("ownerId is required")
         if (!isNonemptyString(documentScopeId)) throw new TypeError("documentScopeId is required")
@@ -1096,6 +1105,13 @@ const createEditorOutboxWithAcknowledgementMode = (
           records.filter((record) => record.status === "queued").sort(newestIntentFirst)[0] ??
           records.sort(newestIntentFirst)[0] ??
           null
+        const expectationMatches =
+          expectedLatest === undefined ||
+          (expectedLatest === null
+            ? latest === null
+            : latest?.operationId === expectedLatest.operationId &&
+              latest.updatedAt === expectedLatest.updatedAt)
+        if (!expectationMatches) return latest ? clone(latest) : null
         await repository.replace(
           [],
           records.map((record) => record.operationId),

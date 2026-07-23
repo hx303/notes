@@ -589,6 +589,56 @@ test("conflicts freeze payload, cannot be claimed, migrated, or deleted by succe
   assert.deepEqual(await outbox.listForOwner("owner-a"), [])
 })
 
+test("guarded document resolution preserves cross-tab intent created or updated after prepare", async () => {
+  const repository = createMemoryEditorOutboxRepository()
+  const runExclusiveMutation = createSharedMutationLock()
+  const resolver = createEditorOutbox(repository, { runExclusiveMutation })
+  const otherTab = createEditorOutbox(repository, {
+    now: clock(20, 40),
+    createOperationId: () => "operation-cross-tab",
+    runExclusiveMutation,
+  })
+
+  const crossTab = await otherTab.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 3,
+    payload: { title: "created after empty prepare" },
+  })
+  const appearedAfterPrepare = await resolver.resolveDocumentConflict("owner-a", "document-a", null)
+  assert.equal(appearedAfterPrepare?.operationId, crossTab.operationId)
+  assert.equal((await resolver.listForOwner("owner-a")).length, 1)
+
+  const preparedToken = {
+    operationId: crossTab.operationId,
+    updatedAt: crossTab.updatedAt,
+  }
+  const updatedCrossTab = await otherTab.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 3,
+    payload: { title: "updated after prepare" },
+  })
+  assert.equal(updatedCrossTab.operationId, crossTab.operationId)
+  assert.ok(updatedCrossTab.updatedAt > preparedToken.updatedAt)
+
+  const changedAfterPrepare = await resolver.resolveDocumentConflict(
+    "owner-a",
+    "document-a",
+    preparedToken,
+  )
+  assert.deepEqual(changedAfterPrepare?.payload, { title: "updated after prepare" })
+  assert.deepEqual((await resolver.listForOwner("owner-a"))[0]?.payload, {
+    title: "updated after prepare",
+  })
+
+  await resolver.resolveDocumentConflict("owner-a", "document-a", {
+    operationId: updatedCrossTab.operationId,
+    updatedAt: updatedCrossTab.updatedAt,
+  })
+  assert.deepEqual(await resolver.listForOwner("owner-a"), [])
+})
+
 test("restoring a conflict atomically replaces every prior row without exposing queued work", async () => {
   const repository = createMemoryEditorOutboxRepository()
   const outbox = createEditorOutbox(repository, {

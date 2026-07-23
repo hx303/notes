@@ -61,10 +61,23 @@ const createSharedExclusiveLock = () => {
   }
 }
 
-test("the replay-safe foundation stays disconnected from the legacy multi-write save path", () => {
-  assert.match(accountScript, /createEditorOutbox\(createIndexedDbEditorOutboxRepository\(\)\)/)
-  assert.doesNotMatch(accountScript, /createReplaySafeEditorOutbox/)
-  assert.doesNotMatch(accountScript, /save_document_snapshot_v1/)
+test("the editor entry point is connected only to replay-safe atomic saving", () => {
+  assert.match(accountScript, /createReplaySafeEditorOutbox/)
+  assert.match(accountScript, /createEditorSaveController/)
+  assert.doesNotMatch(accountScript, /\bcreateEditorOutbox\(/)
+
+  const saveStart = accountScript.indexOf("async function saveDocumentOnce")
+  const saveEnd = accountScript.indexOf("const requestDocumentSave", saveStart)
+  assert.ok(saveStart > 0)
+  assert.ok(saveEnd > saveStart)
+  const liveSave = accountScript.slice(saveStart, saveEnd)
+  assert.match(liveSave, /editorSaveController\.enqueueAndSave/)
+  assert.match(liveSave, /editorSaveController\.flush/)
+  assert.doesNotMatch(liveSave, /\.from\("documents"\)\s*\.(?:insert|update)/)
+  assert.doesNotMatch(liveSave, /\.from\("document_versions"\)/)
+  assert.doesNotMatch(liveSave, /\bsaveTags\(/)
+  assert.doesNotMatch(liveSave, /\bsaveLinks\(/)
+  assert.doesNotMatch(liveSave, /\bsaveDocumentSources\(/)
 })
 
 test("legacy and snapshot-v1 operations stay physically isolated during old/new coexistence", async () => {
