@@ -5,7 +5,7 @@
 - Worktree: `worktrees-next/p1-rpc-only-acl`
 - Branch: `agent/p1-rpc-only-acl`
 - Baseline SHA: `a44a5118`
-- Current SHA: `c48d55e2` plus the uncommitted RLS fingerprint gate below
+- Current SHA: `15e64917` (ACL plus the committed RLS fingerprint gate)
 - Demonstrable slice: browser snapshot writes are RPC-only while publication and document lifecycle permissions remain narrowly available
 - Approved research brief (or why none is needed): No external research was needed; this slice implements the reviewed repository ACL, atomic-save, publication, and lifecycle contracts.
 
@@ -101,4 +101,4 @@
   - Re-granting legacy document/child-table writes or `replace_document_sources` reopens the partial-multiwrite/lost-ack P1 and requires fresh incident authorization. If unavoidable, use the narrowest temporary grant and never expose the private schema, receipt ledger, or service-only RPCs.
   - There is no destructive data rollback. Any ACL reversal must be a separately reviewed forward migration with explicit expiration and post-incident removal.
 - Blockers: four isolated release slices; production backup/ledger/preflight/deployment authorization; release of the independently verified save-controller slice; signed-in preview acceptance.
-- Next task prerequisites: final diff review, formatting/migration guard rerun, independent acceptance, then explicit authorization to commit/push/open a PR. No production connection or mutation occurred.
+- Next task prerequisites: the completed independent acceptance, then explicit authorization to push/open the stacked release PRs. No production connection or mutation occurred.
