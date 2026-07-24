@@ -5,7 +5,7 @@
 - Worktree: `worktrees-next/p1-rpc-only-acl`
 - Branch: `agent/p1-rpc-only-acl`
 - Baseline SHA: `a44a5118`
-- Current SHA: `a44a5118` plus the uncommitted files below
+- Current SHA: `c48d55e2` plus the uncommitted RLS fingerprint gate below
 - Demonstrable slice: browser snapshot writes are RPC-only while publication and document lifecycle permissions remain narrowly available
 - Approved research brief (or why none is needed): No external research was needed; this slice implements the reviewed repository ACL, atomic-save, publication, and lifecycle contracts.
 
@@ -18,6 +18,7 @@
 - Kept `wouldkeep_private` hidden from `PUBLIC`, `anon`, `authenticated`, and `service_role`; the private receipt ledger remains callable only through the owner-controlled atomic RPC.
 - Added a fail-closed service-role baseline: all six public target tables must already grant effective `SELECT`, `INSERT`, `UPDATE`, and `DELETE` to `service_role` before the migration may make those permissions direct. A drifted environment cannot use this migration to widen trusted-service access.
 - Added production-safe preflight/postflight, rollback-only behavior and residue checks, and a static guard for dependency order, ACL shape, inherited/direct grants, service baseline, publication fingerprints, and rollback discipline.
+- Pinned the complete `public.documents` policy catalog before the first ACL mutation and again in production preflight/postflight. The gate requires exactly four permissive `PUBLIC` owner policies, their exact commands and predicates, and PostgreSQL 17 fingerprint `d2447c03b8963da71b4b0f6a3f3c43c4`; a same-name `USING (true)` drift now fails closed.
 - Audited the current uncommitted `agent/p1-save-controller` integration. Every active editor save entry point reaches `createEditorSaveController` and `save_document_snapshot_v1`; no legacy document/child-table write or `replace_document_sources` call remains. The document, version, tag, link, and source queries in the controller are reads. Publish/unpublish remain RPC calls. No separate product write entry for tags, links, or sources was found.
 - The currently inspected controller exposes no soft-delete, restore, or hard-delete UI entry. The ACL intentionally preserves only those lifecycle capabilities for an existing or future owner-scoped flow; it does not add a new product entry.
 
@@ -37,7 +38,7 @@
 ## Evidence
 
 - Commands run and raw result summary:
-  - Focused ACL static guard: 9/9 passed after the final service-role baseline addition.
+  - Focused ACL static guard: 10/10 passed after the owner-RLS fingerprint addition.
   - Supabase migration normalization guard: passed after the final documentation pass.
   - Full Quartz suite: 372/372 passed after the final service-role baseline assertion.
   - `tsc --noEmit`: passed.
@@ -48,6 +49,8 @@
   - The disposable bootstrap omits managed production service-table defaults. After explicitly installing those 24 permissions as local-only test baseline, the five segments were actually executed in order: preflight passed with zero business rows; exact migration passed; postflight contract passed with zero business rows; rollback-only behavior matrix passed 14/14; residue probe returned zero users, knowledge bases, documents, and receipts.
   - Existing atomic-save regression matrix after ACL: 30/30 passed and rolled back.
   - Two-session concurrency harness after ACL: `same-op new exactly once, different-op CAS, and knowledge-base delete lock order passed`; fixtures were removed.
+  - Fresh PostgreSQL 17 policy replay produced the pinned four-policy fingerprint `d2447c03b8963da71b4b0f6a3f3c43c4` from the repository foundation migration.
+  - Restored disposable `supabase_db_wouldkeep-p1b-local` then passed a rollback-only preflight → exact patched migration → postflight sequence with zero business rows. A separate same-name `UPDATE USING (true)` negative case was rejected by the preflight before any ACL mutation, and the closing failed session rolled back to the original fingerprint and post-ACL state.
   - Representative local commands, with no credential output retained:
 
     ```powershell
@@ -86,15 +89,16 @@
   - A stale browser tab using the removed legacy writes will receive `42501` by design. The active client must keep its local/outbox recovery data and show a useful recovery path.
   - The sibling `agent/p1-save-controller` slice now freezes deterministic `42501`, `22*`, and `23*` rejection, exposes export/local/private-copy recovery, blocks automatic and reconnect replay until an explicit form submit, and conditionally resolves only the exact durable snapshot that was archived. It must still be released and accepted before this ACL migration; never deploy the ACL first.
   - Production must independently prove the 24 effective service-role baseline permissions. If any are absent, preflight must stop; do not bypass the gate or apply the direct grant manually.
+  - Production currently ends at `20260721000100`. A branch containing `220001`, `220002`, frontend controller, and `230001` must not be deployed with one `db push`; each database slice needs an exact one-pending dry-run and ledger check.
 - Release order:
-  1. Independently review and merge the no-legacy-fallback save controller and this ACL change as separate slices.
-  2. Take a production backup, prove a zero-pending migration ledger, and run the exact `20260722000200` preflight/contract. Deploy and verify `20260722000200` first if it is not already present.
-  3. Release the no-fallback frontend while broad legacy ACL still exists. Complete signed-in preview/production acceptance for existing save, new save, replay, conflict recovery, publication, and lifecycle behavior.
-  4. Only after the new frontend is active, take another backup, run `20260723_rpc_only_document_snapshot_preflight.sql`, and deploy only `20260723000100` with separate explicit production authorization.
-  5. Run the read-only postflight and ledger check. Treat `42501` from old tabs as expected recovery telemetry. Do not run fixture/rollback matrices against production without separate authorization.
+  1. Slice A contains only `20260722000100` and its database/static gate. Backup, require a dry-run with only that version, deploy, contract-check its unique ledger row, and return to zero pending.
+  2. Slice B contains only the `20260722000200` atomic RPC and its SQL/static/concurrency evidence. Run its preflight, require one pending version, deploy, run its contract, and return to zero pending.
+  3. Slice C releases the no-legacy-fallback frontend/controller without `20260723000100`, while broad legacy ACL still exists. Complete signed-in preview/production acceptance for existing save, new save, replay, conflict recovery, publication, and lifecycle behavior; network writes must use only `save_document_snapshot_v1`.
+  4. After a stability window, Slice D contains only this ACL migration and tests. Take another backup, run the exact RLS-fingerprinted preflight, require a dry-run with only `20260723000100`, and deploy with separate explicit production authorization.
+  5. Run only the read-only postflight and ledger/dry-run checks in production. Do not run the rollback fixture or residue matrix there. Treat `42501` from old tabs as expected recovery telemetry.
 - Rollback or forward-fix path:
   - Preferred incident response is a controller/RPC forward fix while the ACL remains closed; this migration does not mutate business data.
   - Re-granting legacy document/child-table writes or `replace_document_sources` reopens the partial-multiwrite/lost-ack P1 and requires fresh incident authorization. If unavoidable, use the narrowest temporary grant and never expose the private schema, receipt ledger, or service-only RPCs.
   - There is no destructive data rollback. Any ACL reversal must be a separately reviewed forward migration with explicit expiration and post-incident removal.
-- Blockers: production backup/ledger/preflight/deployment authorization; release of the independently verified save-controller slice; signed-in preview acceptance.
+- Blockers: four isolated release slices; production backup/ledger/preflight/deployment authorization; release of the independently verified save-controller slice; signed-in preview acceptance.
 - Next task prerequisites: final diff review, formatting/migration guard rerun, independent acceptance, then explicit authorization to commit/push/open a PR. No production connection or mutation occurred.

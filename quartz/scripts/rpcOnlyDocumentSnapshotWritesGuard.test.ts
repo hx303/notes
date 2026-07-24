@@ -161,11 +161,32 @@ test("the ACL migration hard-depends on the reviewed 22000200 boundary before re
     "service_role effective public-table baseline drifted",
     "documents column ABI changed",
     "unexpected API column-level write grant exists",
+    "documents owner RLS policy set or expressions drifted",
   ]) {
     const prerequisiteIndex = migration.indexOf(prerequisite)
     assert.ok(prerequisiteIndex >= 0, `missing prerequisite: ${prerequisite}`)
     assert.ok(prerequisiteIndex < firstAclChange, `${prerequisite} must precede the first REVOKE`)
   }
+})
+
+test("retained lifecycle writes are pinned to the exact owner RLS policy catalog", () => {
+  const expectedFingerprint = "d2447c03b8963da71b4b0f6a3f3c43c4"
+  const firstAclChange = migration.indexOf("REVOKE INSERT, UPDATE ON TABLE public.documents")
+
+  for (const sql of [migration, productionPreflight, productionContract]) {
+    assert.match(sql, new RegExp(expectedFingerprint))
+    assert.match(sql, /pg_catalog\.set_config\('search_path', 'public, pg_catalog', true\)/)
+    assert.match(sql, /SELECT count\(\*\)[\s\S]*policy\.tablename = 'documents'[\s\S]*\) <> 4/)
+    assert.match(sql, /policy\.roles = ARRAY\['public'\]::NAME\[\]/)
+    assert.match(sql, /policy\.qual = '\(auth\.uid\(\) = owner_id\)'/)
+    assert.match(sql, /kb\.id=documents\.knowledge_base_id/)
+    assert.match(sql, /kb\.owner_id=auth\.uid\(\)/)
+    assert.match(sql, /policy\.with_check !~\* '\(\^\|\[\^\[:alnum:\]_\]\)OR/)
+    assert.match(sql, /documents owner RLS policy set or expressions drifted/)
+  }
+
+  assert.ok(migration.indexOf(expectedFingerprint) > 0)
+  assert.ok(migration.indexOf(expectedFingerprint) < firstAclChange)
 })
 
 test("publication invoker fingerprints are derived from the reviewed source migrations", () => {

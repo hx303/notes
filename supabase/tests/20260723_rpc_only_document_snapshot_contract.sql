@@ -267,23 +267,73 @@ BEGIN
     RAISE EXCEPTION 'publication RPC behavior or authenticated execution changed';
   END IF;
 
+  PERFORM pg_catalog.set_config('search_path', 'public, pg_catalog', true);
+
   IF (
     SELECT count(*)
     FROM pg_catalog.pg_policies policy
     WHERE policy.schemaname = 'public'
       AND policy.tablename = 'documents'
-      AND policy.policyname IN (
-        'Owners can read own documents',
-        'Owners can create own documents',
-        'Owners can update own documents',
-        'Owners can delete own documents'
-      )
-  ) <> 4 OR NOT (
+  ) <> 4 OR (
+    SELECT md5(string_agg(
+      policy.policyname || chr(31) ||
+      policy.permissive || chr(31) ||
+      array_to_string(policy.roles, ',') || chr(31) ||
+      policy.cmd || chr(31) ||
+      COALESCE(policy.qual, '<null>') || chr(31) ||
+      COALESCE(policy.with_check, '<null>'),
+      chr(30) ORDER BY policy.policyname
+    ))
+    FROM pg_catalog.pg_policies policy
+    WHERE policy.schemaname = 'public'
+      AND policy.tablename = 'documents'
+  ) IS DISTINCT FROM 'd2447c03b8963da71b4b0f6a3f3c43c4' OR (
+    SELECT bool_and(
+      policy.permissive = 'PERMISSIVE'
+      AND policy.roles = ARRAY['public']::NAME[]
+      AND CASE policy.policyname
+        WHEN 'Owners can read own documents' THEN
+          policy.cmd = 'SELECT'
+          AND policy.qual = '(auth.uid() = owner_id)'
+          AND policy.with_check IS NULL
+        WHEN 'Owners can create own documents' THEN
+          policy.cmd = 'INSERT'
+          AND policy.qual IS NULL
+          AND policy.with_check IS NOT NULL
+          AND regexp_replace(policy.with_check, '[[:space:]]+', '', 'g') LIKE
+            '%auth.uid()=owner_id%'
+          AND regexp_replace(policy.with_check, '[[:space:]]+', '', 'g') LIKE
+            '%kb.id=documents.knowledge_base_id%'
+          AND regexp_replace(policy.with_check, '[[:space:]]+', '', 'g') LIKE
+            '%kb.owner_id=auth.uid()%'
+          AND policy.with_check !~* '(^|[^[:alnum:]_])OR([^[:alnum:]_]|$)'
+        WHEN 'Owners can update own documents' THEN
+          policy.cmd = 'UPDATE'
+          AND policy.qual = '(auth.uid() = owner_id)'
+          AND policy.with_check IS NOT NULL
+          AND regexp_replace(policy.with_check, '[[:space:]]+', '', 'g') LIKE
+            '%auth.uid()=owner_id%'
+          AND regexp_replace(policy.with_check, '[[:space:]]+', '', 'g') LIKE
+            '%kb.id=documents.knowledge_base_id%'
+          AND regexp_replace(policy.with_check, '[[:space:]]+', '', 'g') LIKE
+            '%kb.owner_id=auth.uid()%'
+          AND policy.with_check !~* '(^|[^[:alnum:]_])OR([^[:alnum:]_]|$)'
+        WHEN 'Owners can delete own documents' THEN
+          policy.cmd = 'DELETE'
+          AND policy.qual = '(auth.uid() = owner_id)'
+          AND policy.with_check IS NULL
+        ELSE false
+      END
+    )
+    FROM pg_catalog.pg_policies policy
+    WHERE policy.schemaname = 'public'
+      AND policy.tablename = 'documents'
+  ) IS DISTINCT FROM true OR NOT (
     SELECT relation.relrowsecurity
     FROM pg_catalog.pg_class relation
     WHERE relation.oid = 'public.documents'::REGCLASS
   ) THEN
-    RAISE EXCEPTION 'documents owner RLS contract changed';
+    RAISE EXCEPTION 'documents owner RLS policy set or expressions drifted';
   END IF;
 
   IF (
