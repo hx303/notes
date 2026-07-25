@@ -18,9 +18,18 @@ const productionPreflight = readRepositoryFile(
 const productionContract = readRepositoryFile(
   "supabase/tests/20260722_site_owner_role_invariant_contract.sql",
 )
+const productionActivityGate = readRepositoryFile(
+  "supabase/tests/20260722_site_owner_role_invariant_activity_gate.sql",
+)
+const productionStateFingerprint = readRepositoryFile(
+  "supabase/tests/20260722_site_owner_role_invariant_state_fingerprint.sql",
+)
 const behaviorMatrix = readRepositoryFile("supabase/tests/20260722_site_owner_role_invariant.sql")
 const residueCheck = readRepositoryFile(
   "supabase/tests/20260722_site_owner_role_invariant_residue.sql",
+)
+const productionRunbook = readRepositoryFile(
+  ".design/wouldkeep-next/runbooks/20260722000100-site-owner-role-invariant.md",
 )
 
 function functionBody(sql: string, functionName: string): string {
@@ -242,17 +251,15 @@ test("production gates are read-only and pin catalog, data, ACL, and ledger stat
     assert.match(sql, /policy\.cmd IN \('INSERT', 'UPDATE', 'DELETE', 'ALL'\)/)
     assert.match(sql, /role\.role = 'admin'/)
     assert.match(sql, /role\.granted_by = protected_owner/)
-    assert.match(sql, /protected_owner_state_fingerprint/)
     assert.match(sql, /actual_ledger IS DISTINCT FROM expected_ledger/)
+    assert.equal(topLevelStatements(sql).length, 1)
   }
 
   assert.match(productionPreflight, /count\(\*\).*schema_migrations[\s\S]*<> 18/)
   assert.match(productionPreflight, /version = '20260721000100'/)
   assert.match(productionPreflight, /version = '20260722000100'/)
-  assert.match(productionPreflight, /site_owner_role_invariant_preflight_passed/)
   assert.match(productionContract, /count\(\*\).*schema_migrations[\s\S]*<> 19/)
   assert.match(productionContract, /name = 'site_owner_role_invariant'/)
-  assert.match(productionContract, /site_owner_role_invariant_contract_passed/)
   assert.throws(() => assertReadOnlyGate("DO $$ BEGIN DELETE FROM public.user_roles; END; $$;"))
   assert.throws(() =>
     assertReadOnlyGate("DO $$ BEGIN EXECUTE 'DELETE FROM public.user_roles'; END; $$;"),
@@ -260,10 +267,10 @@ test("production gates are read-only and pin catalog, data, ACL, and ledger stat
 
   const fingerprintProjection =
     /md5\(COALESCE\(string_agg\([\s\S]*?\), ''\)\) AS protected_owner_state_fingerprint/
-  const preflightProjection = productionPreflight.match(fingerprintProjection)?.[0]
-  const contractProjection = productionContract.match(fingerprintProjection)?.[0]
-  assert.ok(preflightProjection)
-  assert.equal(preflightProjection.replace(/\s+/g, " "), contractProjection?.replace(/\s+/g, " "))
+  assertReadOnlyGate(productionStateFingerprint)
+  assert.equal(topLevelStatements(productionStateFingerprint).length, 1)
+  assert.ok(productionStateFingerprint.match(fingerprintProjection)?.[0])
+  assert.match(productionStateFingerprint, /site_owner_role_invariant_state_fingerprint_passed/)
 })
 
 test("rollback-only runtime evidence covers idempotency and the identity matrix", () => {
@@ -309,6 +316,207 @@ test("a separate read-only residue probe proves rollback cleanup", () => {
   assert.match(residueCheck, /a7220000-0000-4000-8000-000000000101/)
   assert.match(residueCheck, /a7220000-0000-4000-8000-000000000102/)
   assert.match(residueCheck, /site_owner_role_invariant_rollback_residue_zero/)
+})
+
+test("the production activity gate rejects lock waits and long transactions", () => {
+  assertReadOnlyGate(productionActivityGate)
+  assert.match(productionActivityGate, /pg_catalog\.pg_stat_activity/)
+  assert.match(productionActivityGate, /pg_catalog\.pg_locks/)
+  assert.match(productionActivityGate, /activity\.pid <> pg_backend_pid\(\)/)
+  assert.match(productionActivityGate, /activity\.backend_type = 'client backend'/)
+  assert.match(productionActivityGate, /activity\.wait_event_type = 'Lock'/)
+  assert.match(productionActivityGate, /clock_timestamp\(\) - activity\.xact_start/)
+  assert.match(productionActivityGate, /INTERVAL '5 minutes'/)
+  assert.match(productionActivityGate, /NOT waiting_lock\.granted/)
+  assert.match(productionActivityGate, /site_owner_role_invariant_activity_gate_passed/)
+  assert.match(productionActivityGate, /site_owner_role_invariant_activity_gate_failed/)
+  assert.match(productionActivityGate, /300::INTEGER AS max_transaction_age_seconds/)
+  assert.doesNotMatch(productionActivityGate, /pg_(?:terminate|cancel)_backend/)
+})
+
+test("the production runbook pins a reproducible single-migration operation", () => {
+  assert.doesNotMatch(productionRunbook, /[^\x00-\x7f]/)
+  assert.match(productionRunbook, /Validated Supabase CLI: `2\.109\.1`/)
+  assert.match(productionRunbook, /Set-StrictMode -Version Latest/)
+  assert.match(productionRunbook, /\$ErrorActionPreference = "Stop"/)
+  assert.match(productionRunbook, /\$PSVersionTable\.PSVersion\.Major -lt 7/)
+  assert.match(productionRunbook, /function Assert-LocalPostgresUrl/)
+  assert.match(productionRunbook, /\[System\.Net\.IPAddress\]::IsLoopback\(\$Address\)/)
+  assert.match(productionRunbook, /Candidate evidence directory must be outside the repository/)
+  assert.doesNotMatch(productionRunbook, /Host -notin/)
+  assert.match(productionRunbook, /if \(\$GuardExit -ne 3\)/)
+  assert.match(
+    productionRunbook,
+    /--set=wouldkeep_p1a_20260722000100_disposable=true --file=supabase\/tests\/20260722_site_owner_role_invariant\.sql/,
+  )
+  assert.match(productionRunbook, /0,0,0,0,site_owner_role_invariant_rollback_residue_zero/)
+  assert.match(productionRunbook, /\$ActualScenarios\.Count -ne 8/)
+  assert.match(productionRunbook, /explicit ROLLBACK/)
+
+  const guard = productionRunbook.indexOf("$GuardOutput =")
+  const guardExit = productionRunbook.indexOf("if ($GuardExit -ne 3)")
+  const guardResidue = productionRunbook.indexOf("$GuardResidueOutput =")
+  const guardEvidence = productionRunbook.indexOf(
+    'Write-CandidateEvidence -Name "missing-confirmation.txt"',
+  )
+  assert.ok(guard >= 0)
+  assert.ok(guard < guardExit)
+  assert.ok(guardExit < guardResidue)
+  assert.ok(guardResidue < guardEvidence)
+
+  assert.match(productionRunbook, /public-schema\.sql/)
+  assert.match(productionRunbook, /public-data\.sql/)
+  assert.match(productionRunbook, /migration-ledger-data\.sql/)
+  assert.match(productionRunbook, /\$BackupFiles\.Count -ne 3/)
+  assert.match(productionRunbook, /Get-FileHash .* -Algorithm SHA256/)
+  assert.match(productionRunbook, /\$BackupHashRows\.Count -ne 3/)
+  assert.match(productionRunbook, /Write-EvidenceText -Name "sha256\.txt"/)
+  assert.doesNotMatch(productionRunbook, /db dump --linked --role-only/)
+  assert.doesNotMatch(productionRunbook, /restore rehearsal/i)
+  assert.doesNotMatch(productionRunbook, /Tee-Object|Out-File/)
+
+  assert.match(productionRunbook, /function Invoke-SupabaseJsonCapture/)
+  assert.match(productionRunbook, /RedirectStandardOutput = \$true/)
+  assert.match(productionRunbook, /RedirectStandardError = \$true/)
+  assert.match(productionRunbook, /ConvertFrom-Json -Depth 20 -ErrorAction Stop/)
+  assert.match(productionRunbook, /Migration-list JSON root contract changed/)
+  assert.match(productionRunbook, /Migration-list JSON row contract changed/)
+  assert.match(productionRunbook, /function Get-MigrationColumnsFromJson/)
+  assert.doesNotMatch(productionRunbook, /function Get-MigrationColumns \{/)
+  assert.match(
+    productionRunbook,
+    /"migration", "list", "--linked", "--agent", "no", "--output-format", "json"/,
+  )
+  assert.match(
+    productionRunbook,
+    /"db", "push", "--linked", "--dry-run", "--agent", "no", "--output-format", "text"/,
+  )
+  assert.ok(productionRunbook.includes("\\d{8}(?:\\d{6})?"))
+  assert.match(productionRunbook, /function Assert-ExactVersionSet/)
+  assert.match(productionRunbook, /function Assert-PreMigrationList/)
+  assert.match(productionRunbook, /function Assert-PostMigrationList/)
+  assert.match(productionRunbook, /\$ExpectedRemotePre = @\(/)
+  assert.match(productionRunbook, /\$ExpectedRemotePost = @\(\$ExpectedLocalPre\)/)
+  assert.match(
+    productionRunbook,
+    /\$ExpectedMigrationFile = "20260722000100_site_owner_role_invariant\.sql"/,
+  )
+  assert.match(productionRunbook, /\$InitialPendingMigrationFiles\.Count -ne 1/)
+  assert.match(productionRunbook, /\$InitialPendingVersions\.Count -ne 1/)
+
+  for (const version of [
+    "20260712",
+    "20260714",
+    "20260715",
+    "20260716",
+    "20260717",
+    "20260718000100",
+    "20260718000200",
+    "20260718000300",
+    "20260718000400",
+    "20260718000500",
+    "20260718000600",
+    "20260718000700",
+    "20260718000800",
+    "20260718000900",
+    "20260718001000",
+    "20260718001100",
+    "20260718001200",
+    "20260721000100",
+    "20260722000100",
+  ]) {
+    assert.match(productionRunbook, new RegExp(`"${version}"`))
+  }
+
+  assert.match(
+    productionRunbook,
+    /supabase\/tests\/20260722_site_owner_role_invariant_preflight\.sql/,
+  )
+  assert.equal(
+    productionRunbook.match(
+      /supabase\/tests\/20260722_site_owner_role_invariant_activity_gate\.sql/g,
+    )?.length,
+    4,
+  )
+  assert.equal(
+    productionRunbook.match(
+      /supabase\/tests\/20260722_site_owner_role_invariant_state_fingerprint\.sql/g,
+    )?.length,
+    4,
+  )
+  assert.match(productionRunbook, /\$InitialActivityGate = @\(/)
+  assert.match(productionRunbook, /\$ImmediateActivityGate = @\(/)
+  assert.match(productionRunbook, /\$PostActivityGate = @\(/)
+  assert.match(productionRunbook, /Activity gate output changed after approval/)
+  assert.match(productionRunbook, /\$InitialPreflightAssertions = @\(/)
+  assert.match(productionRunbook, /\$ImmediatePreflightAssertions = @\(/)
+  assert.match(productionRunbook, /\$ContractAssertions = @\(/)
+  assert.match(productionRunbook, /site_owner_role_invariant_state_fingerprint_passed/)
+  assert.match(productionRunbook, /\$ApprovedPreflightFingerprint = Get-GateFingerprint/)
+  assert.match(productionRunbook, /\$ImmediatePreflightFingerprint = Get-GateFingerprint/)
+  assert.match(productionRunbook, /\$FingerprintMatches\.Count -ne 1/)
+  assert.doesNotMatch(productionRunbook, /\$Fingerprints.*Sort-Object -Unique/s)
+  assert.match(
+    productionRunbook,
+    /\$ImmediatePreflightFingerprint -cne \$ApprovedPreflightFingerprint/,
+  )
+  assert.match(
+    productionRunbook,
+    /"db", "push", "--linked", "--yes", "--agent", "no", "--output-format", "text"/,
+  )
+  assert.match(
+    productionRunbook,
+    /supabase\/tests\/20260722_site_owner_role_invariant_contract\.sql/,
+  )
+  assert.match(productionRunbook, /\$ContractFingerprint -cne \$ApprovedPreflightFingerprint/)
+  assert.match(productionRunbook, /\$PostMigrationListCapture = Invoke-SupabaseJsonCapture/)
+  assert.match(productionRunbook, /\$PostDryRun = @\(/)
+  assert.match(productionRunbook, /\$PostPendingMigrationFiles\.Count -ne 0/)
+  assert.match(productionRunbook, /\$PostPendingVersions\.Count -ne 0/)
+  assert.match(productionRunbook, /\(\?i\)\\bup to date\\b/)
+
+  assert.match(productionRunbook, /ApprovedSha/)
+  assert.match(productionRunbook, /ApprovedProjectRef/)
+  assert.match(productionRunbook, /\$ImmediateSha -cne \$ApprovedSha/)
+  assert.match(productionRunbook, /\$ImmediateGitStatusExit -ne 0/)
+  assert.match(productionRunbook, /Supabase CLI changed after approval/)
+  assert.match(productionRunbook, /\$ImmediateProjectRef -cne \$ApprovedProjectRef/)
+  assert.match(productionRunbook, /git-sha-immediate\.txt/)
+  assert.match(productionRunbook, /git-status-immediate\.txt/)
+  assert.match(productionRunbook, /supabase-version-immediate\.txt/)
+  assert.match(productionRunbook, /project-ref-immediate\.txt/)
+  assert.match(productionRunbook, /\$FinalPreWriteShaOutput = @\(git rev-parse HEAD/)
+  assert.match(productionRunbook, /\$FinalPreWriteStatusExit -ne 0/)
+  assert.match(productionRunbook, /Supabase CLI changed during immediate gates/)
+  assert.match(productionRunbook, /\$FinalPreWriteProjectRef -cne \$ApprovedProjectRef/)
+  assert.match(productionRunbook, /started-utc\.txt/)
+  assert.match(productionRunbook, /completed-utc\.txt/)
+  assert.match(productionRunbook, /Set-Content .* -ErrorAction Stop/)
+  assert.match(productionRunbook, /Required evidence is missing or empty/)
+  assert.match(productionRunbook, /PRODUCTION_SAFETY\.md/)
+  assert.match(productionRunbook, /Do not pass `--include-all`/)
+  assert.match(productionRunbook, /Never run `migration repair`/)
+  assert.doesNotMatch(
+    productionRunbook,
+    /db query --linked --file supabase\/tests\/20260722_site_owner_role_invariant(?:_residue)?\.sql/,
+  )
+
+  const backup = productionRunbook.indexOf("& $Supabase db dump --linked")
+  const initialPreflight = productionRunbook.indexOf('EvidenceName "preflight-initial"')
+  const immediateIdentity = productionRunbook.indexOf("$ImmediateShaOutput =")
+  const immediatePreflight = productionRunbook.indexOf('EvidenceName "preflight-immediate"')
+  const finalPreWriteIdentity = productionRunbook.indexOf("$FinalPreWriteShaOutput =")
+  const push = productionRunbook.indexOf('EvidenceName "db-push" -Arguments')
+  const contract = productionRunbook.indexOf('EvidenceName "contract"')
+  const postDryRun = productionRunbook.indexOf('EvidenceName "db-push-dry-run-post"')
+  assert.ok(backup >= 0)
+  assert.ok(backup < initialPreflight)
+  assert.ok(initialPreflight < immediateIdentity)
+  assert.ok(immediateIdentity < immediatePreflight)
+  assert.ok(immediatePreflight < finalPreWriteIdentity)
+  assert.ok(finalPreWriteIdentity < push)
+  assert.ok(push < contract)
+  assert.ok(contract < postDryRun)
 })
 
 test("rollback guard rejects aliases, prepared transactions, and forged comments", () => {
