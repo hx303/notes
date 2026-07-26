@@ -180,6 +180,51 @@ function assertRollbackOnlyMatrix(sql: string): void {
   assert.equal(topLevelStatements(sql).at(-1)?.toUpperCase(), "ROLLBACK")
 }
 
+function ordinalLineMultisetCanonical(lines: (string | null)[]): string[] {
+  return lines
+    .map((line) => {
+      if (line === null) throw new TypeError("ordinal line multiset rejects null entries")
+      return line
+    })
+    .sort()
+}
+
+function sameOrdinalLineMultiset(actual: (string | null)[], expected: (string | null)[]): boolean {
+  const actualCanonical = ordinalLineMultisetCanonical(actual)
+  const expectedCanonical = ordinalLineMultisetCanonical(expected)
+  return (
+    actualCanonical.length === expectedCanonical.length &&
+    actualCanonical.every((line, index) => line === expectedCanonical[index])
+  )
+}
+
+function powerShellFunction(source: string, name: string): string {
+  const match = source.match(new RegExp(`function ${name} \\{[\\s\\S]*?^\\}`, "m"))
+  assert.ok(match, `missing PowerShell helper ${name}`)
+  return match[0]
+}
+
+test("ordinal line multiset comparison tolerates only complete-line reordering", () => {
+  const approved = ["header", "", "Alpha ", "duplicate", "duplicate", " omega"]
+
+  assert.equal(
+    sameOrdinalLineMultiset(["duplicate", " omega", "header", "duplicate", "", "Alpha "], approved),
+    true,
+  )
+
+  for (const changed of [
+    ["header", "", "Beta ", "duplicate", "duplicate", " omega"],
+    ["header", "", "Alpha ", "duplicate", " omega"],
+    ["header", "", "Alpha ", "duplicate", "duplicate", "duplicate", " omega"],
+    ["header", "", "alpha ", "duplicate", "duplicate", " omega"],
+    ["header", "", "Alpha", "duplicate", "duplicate", " omega"],
+    ["header", " ", "Alpha ", "duplicate", "duplicate", " omega"],
+  ]) {
+    assert.equal(sameOrdinalLineMultiset(changed, approved), false)
+  }
+  assert.throws(() => sameOrdinalLineMultiset([null], [""]), /rejects null entries/)
+})
+
 test("site-owner role changes fail before the only role upsert", () => {
   const body = functionBody(migration, "grant_role")
   const callerCheck = body.indexOf("admin_uid IS DISTINCT FROM caller")
@@ -404,6 +449,49 @@ test("the production runbook pins a reproducible single-migration operation", ()
   assert.match(productionRunbook, /\$InitialPendingMigrationFiles\.Count -ne 1/)
   assert.match(productionRunbook, /\$InitialPendingVersions\.Count -ne 1/)
 
+  const canonicalHelper = powerShellFunction(productionRunbook, "Get-OrdinalLineMultisetCanonical")
+  const comparisonHelper = powerShellFunction(productionRunbook, "Assert-OrdinalLineMultisetEqual")
+  const ordinalHelpers = `${canonicalHelper}\n${comparisonHelper}`
+  assert.match(canonicalHelper, /\[string\[\]\]::new\(\$Output\.Count\)/)
+  assert.match(canonicalHelper, /\[Array\]::Sort\(\$Canonical, \[StringComparer\]::Ordinal\)/)
+  assert.match(
+    canonicalHelper,
+    /if \(\$null -eq \$Output\[\$Index\]\) \{\s*throw "Ordinal line multiset output contains a null entry"/,
+  )
+  assert.doesNotMatch(canonicalHelper, /\$Canonical\[\$Index\] = ""/)
+  assert.match(
+    comparisonHelper,
+    /\[StringComparer\]::Ordinal\.Equals\([\s\S]*?\$ActualCanonical\[\$Index\],[\s\S]*?\$ExpectedCanonical\[\$Index\]/,
+  )
+  assert.doesNotMatch(ordinalHelpers, /\bUnique\b|Trim/i)
+  assert.match(
+    productionRunbook,
+    /same ordinal line multiset: stdout\/stderr interleaving may change line order, but line contents, duplicates, empty lines, case, and whitespace must remain identical/,
+  )
+  assert.doesNotMatch(productionRunbook, /Require the same raw outputs/)
+
+  const ordinalComparisonCalls = [
+    'Assert-OrdinalLineMultisetEqual -Actual $ImmediateDryRun -Expected $InitialDryRun -Label "Dry-run"',
+    'Assert-OrdinalLineMultisetEqual -Actual $ImmediateActivityGate -Expected $InitialActivityGate -Label "Activity gate"',
+    'Assert-OrdinalLineMultisetEqual -Actual $ImmediatePreflightAssertions -Expected $InitialPreflightAssertions -Label "Preflight assertion"',
+    'Assert-OrdinalLineMultisetEqual -Actual $ImmediateStateFingerprint -Expected $InitialStateFingerprint -Label "State fingerprint"',
+  ]
+  assert.equal(
+    productionRunbook.match(/Assert-OrdinalLineMultisetEqual -Actual/g)?.length,
+    ordinalComparisonCalls.length,
+  )
+  for (const call of ordinalComparisonCalls) {
+    assert.ok(productionRunbook.includes(call))
+  }
+  for (const oldComparison of [
+    '($ImmediateDryRun -join "`n") -cne ($InitialDryRun -join "`n")',
+    '($ImmediateActivityGate -join "`n") -cne ($InitialActivityGate -join "`n")',
+    '($ImmediatePreflightAssertions -join "`n") -cne ($InitialPreflightAssertions -join "`n")',
+    '($ImmediateStateFingerprint -join "`n") -cne ($InitialStateFingerprint -join "`n")',
+  ]) {
+    assert.equal(productionRunbook.includes(oldComparison), false)
+  }
+
   for (const version of [
     "20260712",
     "20260714",
@@ -447,7 +535,7 @@ test("the production runbook pins a reproducible single-migration operation", ()
   assert.match(productionRunbook, /\$InitialActivityGate = @\(/)
   assert.match(productionRunbook, /\$ImmediateActivityGate = @\(/)
   assert.match(productionRunbook, /\$PostActivityGate = @\(/)
-  assert.match(productionRunbook, /Activity gate output changed after approval/)
+  assert.match(productionRunbook, /throw "\$Label output changed after approval"/)
   assert.match(productionRunbook, /\$InitialPreflightAssertions = @\(/)
   assert.match(productionRunbook, /\$ImmediatePreflightAssertions = @\(/)
   assert.match(productionRunbook, /\$ContractAssertions = @\(/)

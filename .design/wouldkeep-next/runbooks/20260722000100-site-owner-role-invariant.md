@@ -420,6 +420,46 @@ function Assert-SentinelOnce {
     throw "$Label did not emit its exact pass sentinel once"
   }
 }
+
+function Get-OrdinalLineMultisetCanonical {
+  param(
+    [Parameter(Mandatory = $true)]
+    [AllowEmptyCollection()]
+    [object[]]$Output
+  )
+
+  $Canonical = [string[]]::new($Output.Count)
+  for ($Index = 0; $Index -lt $Output.Count; $Index++) {
+    if ($null -eq $Output[$Index]) {
+      throw "Ordinal line multiset output contains a null entry"
+    }
+    $Canonical[$Index] = $Output[$Index].ToString()
+  }
+  [Array]::Sort($Canonical, [StringComparer]::Ordinal)
+  return ,$Canonical
+}
+
+function Assert-OrdinalLineMultisetEqual {
+  param(
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Actual,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Expected,
+    [Parameter(Mandatory = $true)][string]$Label
+  )
+
+  $ActualCanonical = Get-OrdinalLineMultisetCanonical -Output $Actual
+  $ExpectedCanonical = Get-OrdinalLineMultisetCanonical -Output $Expected
+  if ($ActualCanonical.Count -ne $ExpectedCanonical.Count) {
+    throw "$Label output changed after approval"
+  }
+  for ($Index = 0; $Index -lt $ActualCanonical.Count; $Index++) {
+    if (-not [StringComparer]::Ordinal.Equals(
+        $ActualCanonical[$Index],
+        $ExpectedCanonical[$Index]
+      )) {
+      throw "$Label output changed after approval"
+    }
+  }
+}
 ```
 
 Prove the clean approved commit, CLI, linked project, and protected evidence path. `git status` is captured once and its exit code is checked immediately:
@@ -568,7 +608,7 @@ Stop here unless a fresh written authorization separately names production deplo
 
 ## 3. Production deployment - separately authorized single write
 
-Do not enter this section without the new explicit authorization. Immediately before the write, re-prove the approved identity and rerun all four read-only gates into separate variables. Require the same raw outputs and compare the separately named fingerprint with `-cne` so the approved value cannot be overwritten:
+Do not enter this section without the new explicit authorization. Immediately before the write, re-prove the approved identity and rerun all four read-only gates into separate variables. Require the same ordinal line multiset: stdout/stderr interleaving may change line order, but line contents, duplicates, empty lines, case, and whitespace must remain identical. Compare the separately named fingerprint with `-cne` so the approved value cannot be overwritten:
 
 ```powershell
 $ImmediateShaOutput = @(git rev-parse HEAD 2>&1)
@@ -613,9 +653,7 @@ $ImmediateDryRun = @(
   )
 )
 Assert-SinglePendingMigration -Output $ImmediateDryRun
-if (($ImmediateDryRun -join "`n") -cne ($InitialDryRun -join "`n")) {
-  throw "Dry-run changed after approval"
-}
+Assert-OrdinalLineMultisetEqual -Actual $ImmediateDryRun -Expected $InitialDryRun -Label "Dry-run"
 
 $ImmediateActivityGate = @(
   Invoke-SupabaseCapture -EvidenceName "activity-gate-immediate" -Arguments @(
@@ -624,9 +662,7 @@ $ImmediateActivityGate = @(
   )
 )
 Assert-SentinelOnce -Output $ImmediateActivityGate -Sentinel "site_owner_role_invariant_activity_gate_passed" -Label "Immediate activity gate"
-if (($ImmediateActivityGate -join "`n") -cne ($InitialActivityGate -join "`n")) {
-  throw "Activity gate output changed after approval"
-}
+Assert-OrdinalLineMultisetEqual -Actual $ImmediateActivityGate -Expected $InitialActivityGate -Label "Activity gate"
 
 $ImmediatePreflightAssertions = @(
   Invoke-SupabaseCapture -EvidenceName "preflight-immediate" -Arguments @(
@@ -634,9 +670,7 @@ $ImmediatePreflightAssertions = @(
     "--agent", "no", "--output-format", "text"
   )
 )
-if (($ImmediatePreflightAssertions -join "`n") -cne ($InitialPreflightAssertions -join "`n")) {
-  throw "Preflight assertion output changed after approval"
-}
+Assert-OrdinalLineMultisetEqual -Actual $ImmediatePreflightAssertions -Expected $InitialPreflightAssertions -Label "Preflight assertion"
 
 $ImmediateStateFingerprint = @(
   Invoke-SupabaseCapture -EvidenceName "state-fingerprint-immediate" -Arguments @(
@@ -648,9 +682,7 @@ $ImmediatePreflightFingerprint = Get-GateFingerprint -Output $ImmediateStateFing
 if ($ImmediatePreflightFingerprint -cne $ApprovedPreflightFingerprint) {
   throw "Protected-owner state changed after approval"
 }
-if (($ImmediateStateFingerprint -join "`n") -cne ($InitialStateFingerprint -join "`n")) {
-  throw "State fingerprint output changed after approval"
-}
+Assert-OrdinalLineMultisetEqual -Actual $ImmediateStateFingerprint -Expected $InitialStateFingerprint -Label "State fingerprint"
 
 $FinalPreWriteShaOutput = @(git rev-parse HEAD 2>&1)
 $FinalPreWriteShaExit = $LASTEXITCODE
