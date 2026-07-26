@@ -1,24 +1,24 @@
-# Handoff: `agent/p1b-atomic-save-rpc`
+# Handoff: `release/p1b-atomic-220002`
 
-- Role: Platform / P1 reliability implementation
+- Role: Platform / P1 reliability implementation and release gating
 - Model / reasoning effort: Codex, high
-- Worktree: `worktrees-next/p1b-atomic-save-rpc`
-- Branch: `agent/p1b-atomic-save-rpc`
-- Baseline SHA: `bba87fe29ba1432d3cbe99b54d14f570633ea01f`
-- Current SHA: `bba87fe29ba1432d3cbe99b54d14f570633ea01f` plus the uncommitted files below
-- Demonstrable slice: authenticated owner-only `save_document_snapshot_v1` with one-transaction core/organization/version writes, CAS, saved-result idempotency, and deterministic local concurrency evidence
-- Approved research brief (or why none is needed): No external research was needed; this slice implements the repository's existing P1 reliability and privacy contracts.
+- Worktree: `worktrees-next/release-p1b-220002`
+- Branch: `release/p1b-atomic-220002`
+- Baseline SHA: `1be357231fc4ffbc71e4b5f8df320500e4179b87`
+- Current SHA: baseline plus the uncommitted hardening described below
+- PR: #31, retargeted to latest `main`, still Draft
+- Demonstrable slice: authenticated owner-only atomic snapshot save plus exact, fail-closed production migration gates
+- Approved research brief (or why none is needed): no external research was needed; this slice implements the repository's existing P1 reliability, privacy, and production-safety contracts.
 
 ## Completed
 
-- Added forward migration `20260722000200` with a hard executable dependency on `20260722000100` before any schema change.
-- Added a strict `SECURITY DEFINER` RPC with fixed `pg_catalog, pg_temp` search path and authenticated-only execute ACL.
-- Added browser-unexposed saved-result receipts with zero API ACL, enabled policy-free/non-forced RLS, an INSERT-only owner/document/knowledge-base validation trigger, owner and knowledge-base cascade lifecycle, and no document FK so a hard-delete/lost-ACK replay cannot create a duplicate.
-- Added canonical request hashing, operation-ID reuse rejection, JS-safe revision limits, bounded snapshots, safe source URLs, NFKC tags, owner/library relationship validation, and unchanged last-success publication snapshots.
-- Added production-safe preflight and post-migration catalog/ACL/owner/FK/trigger/PostgREST-exposure contracts.
-- Added a rollback-only 30-scenario owner/other-user/anonymous/atomicity matrix.
-- Added deterministic two-process `psql` evidence for same-operation new-document exactly-once, different-operation CAS, and knowledge-base delete lock ordering. The harness waits for a named holder's granted advisory lock while it is in a post-RPC sleep barrier, requires a post-COMMIT sentinel from every session, has a 30-second process timeout, and cleans fixtures in `finally`.
-- Kept the RPC unwired. No browser behavior, production object, AI setting, provider call, or paid request changed.
+- Kept the original `20260722000200` atomic save RPC, owner-scoped idempotent receipts, CAS, bounded/canonical request validation, organization synchronization, and unchanged last-success publication snapshots.
+- Added a native global tag tenant invariant: `(knowledge_bases.id, owner_id)` is unique and `tags(knowledge_base_id, owner_id)` references it with validated, immediate, nondeferrable `ON UPDATE RESTRICT` / `ON DELETE CASCADE` behavior.
+- Added exact production-safe preflight and postflight contracts for the 19 -> 20 migration ledger, function bodies, trigger set, receipt schema/constraints, owners, direct ACLs, effective API-role denial, private-schema exposure, and tag ownership.
+- Added finite migration execution bounds before the first check/DDL: `lock_timeout = 5s` and `statement_timeout = 5min`, with explicit successful resets at the end.
+- Expanded the rollback-only matrix to 37 owner/other-user/anonymous/security/reliability scenarios, with a unique disposable opt-in, missing-confirmation exit code `3`, and a separate read-only residue probe.
+- Added read-only activity and business-state fingerprint gates plus an executable production runbook. The runbook pins approved SHA/project/CLI, exact pending migration, exact 19/20 ledgers, one production push, three nonempty structurally validated backups and SHA-256 hashes, immediate gate replay, exact postflight contract, and zero pending afterward.
+- Kept the RPC unwired. No browser behavior, production object, AI flag, provider call, or paid request changed.
 
 ## Changed files and scope
 
@@ -27,46 +27,48 @@
   - `supabase/tests/20260722_atomic_document_snapshot_preflight.sql`
   - `supabase/tests/20260722_atomic_document_snapshot_contract.sql`
   - `supabase/tests/20260722_atomic_document_snapshot_save.sql`
-  - `supabase/tests/run-atomic-save-concurrency.ps1`
-  - `supabase/tests/concurrency/atomic-save-*.sql`
+  - `supabase/tests/20260722_atomic_document_snapshot_activity_gate.sql`
+  - `supabase/tests/20260722_atomic_document_snapshot_state_fingerprint.sql`
+  - `supabase/tests/20260722_atomic_document_snapshot_residue.sql`
+  - `.design/wouldkeep-next/runbooks/20260722000200-atomic-document-snapshot-save.md`
   - `quartz/scripts/atomicDocumentSaveGuard.test.ts`
   - this handoff
+- Existing PR files retained and revalidated:
+  - `supabase/tests/run-atomic-save-concurrency.ps1`
+  - `supabase/tests/concurrency/atomic-save-*.sql`
 - Non-authorized paths touched: none.
-- Commander-owned hookup requested: after reviewed deployment of `20260722000200`, switch the replay-safe outbox/controller to the versioned RPC with no legacy multi-write fallback.
+- Commander-owned hookup requested: only after reviewed production deployment of `20260722000200`, switch the replay-safe outbox/controller to the versioned RPC with no legacy multi-write fallback.
 
 ## Evidence
 
-- Commands run and raw result summary:
-  - Disposable Supabase CLI `2.109.1` / PostgreSQL `17.6` start: complete local chain applied in order through `20260721000100`, then `20260722000100`, then `20260722000200`; health checks passed on isolated ports.
-  - Restored the disposable database to the post-`22000100` state; `20260722_atomic_document_snapshot_preflight.sql`: `atomic_save_preflight_passed`.
-  - Reapplied the exact current `20260722000200` SQL: all `DO`/DDL/ACL statements passed.
-  - `20260722_atomic_document_snapshot_contract.sql`: `DO` passed.
-  - `20260722_atomic_document_snapshot_save.sql`: 30/30 scenarios returned `passed = true`; final assertion passed; transaction ended in `ROLLBACK`.
-  - `run-atomic-save-concurrency.ps1`: `same-op new exactly once, different-op CAS, and knowledge-base delete lock order passed`.
-  - Post-concurrency cleanup query: `t|t|t|t` for absent test schema, absent test account, absent named sessions, and absent related granted locks.
-  - Focused static guard: 8/8 passed.
-  - Full Quartz suite: 323/323 passed.
-  - `tsc --noEmit`: passed.
-  - Supabase migration normalization guard: passed.
-  - changed TypeScript Prettier check: passed.
-  - `git diff --check`: passed.
-  - Disposable `wouldkeep-p1b-local` Supabase project: stopped successfully with `--no-backup`.
-- UI evidence (viewport, theme, state, screenshot path/diff): Not applicable; the RPC is deliberately not wired to the browser in this slice.
-- Security evidence (owner / other user / anonymous): owner save/replay/CAS/atomicity passed; other-user bind/replay/mutation attempts were zero-write; anonymous execute was denied; authenticated direct receipt access was denied; account deletion cascaded receipts.
+- Disposable Supabase CLI `2.109.1` / PostgreSQL `17.6` container only; no production database command was run.
+- Full rollback simulation of the production predecessor shape: exact `20260722000100` state -> current preflight -> current migration -> target ledger row -> current contract passed, including `atomic_save_preflight_passed` and `atomic_document_snapshot_contract_passed`; final `ROLLBACK` restored the container.
+- Missing disposable confirmation: psql exit code `3`; the separate residue probe returned `0,0,0,0` afterward.
+- Full rollback matrix: 37/37 scenarios returned `passed = true`; the separate residue probe again returned `0,0,0,0`.
+- Real two-process concurrency harness: same-operation create exactly once, different-operation CAS, and knowledge-base delete lock ordering passed; cleanup completed.
+- Focused static gate: 12/12 passed.
+- Full Quartz suite: 328/328 passed.
+- `tsc --noEmit`: passed.
+- Supabase migration normalization guard: passed.
+- changed TypeScript and Markdown Prettier check: passed; SQL is not configured with a Prettier parser.
+- `git diff --check`: passed.
+- Production build: 284 inputs -> 1051 outputs, exit code 0; only pre-existing untracked-content date and LaTeX compatibility warnings appeared.
+- Backup marker expressions were checked against existing production backup artifacts without displaying their contents; schema, public-data COPY, and ledger COPY formats matched. A fresh P1B backup must additionally contain predecessor `20260722000100` as enforced by the runbook.
+- UI evidence: not applicable; the RPC remains deliberately unwired in this slice.
 - Migration or Edge Function deployed to production: **No**.
 
 ## Decisions and contracts
 
-- Decision entries affected: no existing decision entry was rewritten.
-- Contract changes requested: saved acknowledgements are persisted only for committed saves; conflicts and not-found results remain read-only/recomputed. Receipt lifetime is account/knowledge-base scoped, not document scoped, to preserve new-document exactly-once after a hard delete.
-- Types, fixtures, and tests synchronized: SQL ABI, static guard, rollback matrix, catalog contract, preflight, and real concurrency harness agree on result version 1 and the receipt lifecycle.
+- Saved acknowledgements exist only for committed saves; conflict and not-found responses stay read-only/recomputed.
+- Receipt lifetime remains account/knowledge-base scoped, not document scoped, so a lost-ack replay after hard deletion cannot create a duplicate document.
+- The global tag owner/knowledge-base owner relationship is now declarative and race-free in both child-write and parent-owner-update directions.
+- Production checks are exact and fail closed: no migration repair, no `--include-all`, no production rollback matrix, no second push, and no credential/database URL in repository evidence.
 
 ## Risk and recovery
 
-- Known risks:
-  - The RPC is intentionally not online until the replay-safe outbox/controller is integrated after deployment.
-  - The owner advisory lock serializes saves for one owner; this is conservative for correctness and may be revisited only with equivalent same-operation new-document proof.
-  - A historical saved acknowledgement can reference a hard-deleted document while its knowledge base remains; this is intentional so replay returns the original outcome instead of creating a duplicate.
-- Rollback or forward-fix path: nothing is deployed. If later deployed, use a reviewed forward migration rather than rewriting this migration. The RPC can remain unwired while a forward fix is prepared.
-- Blockers: `20260722000100` must be merged, backed up, deployed, and verified with a zero-pending ledger before `20260722000200` is considered for production.
-- Next task prerequisites: independent diff review, explicit authorization to push/open a Draft PR, then preview/release review. Production backup/preflight/deployment requires a separate explicit authorization. Real AI remains later and disabled.
+- The owner advisory lock still serializes saves for one owner; this is conservative for correctness and may be narrowed only with equivalent exactly-once/concurrency proof.
+- A historical saved acknowledgement may reference a hard-deleted document while its knowledge base remains; this is intentional replay behavior.
+- The migration creates a validated UNIQUE index and FK. Finite lock/statement timeouts make contention fail closed, but production still requires the activity gate and a fresh uninterrupted evidence session.
+- Nothing is deployed. If later deployed, use a reviewed forward migration rather than rewriting this version.
+- Current blockers: hardening is uncommitted/unpushed; PR #31 must stay Draft until the updated branch and downstream stack are propagated and checks pass. Production requires a separate explicit authorization after merge.
+- Next step: independent final diff review, then obtain explicit authorization to commit/push PR #31 and propagate its commit through the dependent C/D stack without force-pushing. Do not Ready/merge or deploy from this handoff alone.

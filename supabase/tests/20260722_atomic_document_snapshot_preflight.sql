@@ -3,6 +3,15 @@
 
 DO $$
 DECLARE
+  expected_ledger CONSTANT TEXT[] := ARRAY[
+    '20260712', '20260714', '20260715', '20260716', '20260717',
+    '20260718000100', '20260718000200', '20260718000300',
+    '20260718000400', '20260718000500', '20260718000600',
+    '20260718000700', '20260718000800', '20260718000900',
+    '20260718001000', '20260718001100', '20260718001200',
+    '20260721000100', '20260722000100'
+  ]::TEXT[];
+  actual_ledger TEXT[];
   source_record RECORD;
   query_part TEXT;
   fragment_part TEXT;
@@ -26,9 +35,21 @@ BEGIN
     OR to_regprocedure(
       'public.save_document_snapshot_v1(text,uuid,uuid,bigint,jsonb)'
     ) IS NOT NULL
+    OR EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_constraint catalog_constraint
+      WHERE (
+          catalog_constraint.conname = 'knowledge_bases_id_owner_unique'
+          AND catalog_constraint.conrelid = 'public.knowledge_bases'::REGCLASS
+        )
+        OR (
+          catalog_constraint.conname = 'tags_knowledge_base_owner_fkey'
+          AND catalog_constraint.conrelid = 'public.tags'::REGCLASS
+        )
+    )
   THEN
     RAISE EXCEPTION
-      'atomic save schema/function already exists; inspect migration history instead of reapplying';
+      'atomic save schema/function/constraint already exists; inspect migration history instead of reapplying';
   END IF;
 
   IF COALESCE(current_setting('pgrst.db_schemas', TRUE), '')
@@ -91,6 +112,17 @@ BEGIN
       OR tag.name ~ '^[[:punct:][:space:]]+$'
   ) THEN
     RAISE EXCEPTION 'tag NFKC/whitespace/lowercase preflight failed';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.tags tag
+    LEFT JOIN public.knowledge_bases knowledge_base
+      ON knowledge_base.id = tag.knowledge_base_id
+     AND knowledge_base.owner_id = tag.owner_id
+    WHERE knowledge_base.id IS NULL
+  ) THEN
+    RAISE EXCEPTION 'tag owner/knowledge-base owner invariant preflight failed';
   END IF;
 
   IF EXISTS (
@@ -243,13 +275,38 @@ BEGIN
       END LOOP;
     END IF;
   END LOOP;
+
+  SELECT array_agg(version ORDER BY version)
+  INTO actual_ledger
+  FROM supabase_migrations.schema_migrations;
+
+  IF actual_ledger IS DISTINCT FROM expected_ledger
+    OR (SELECT count(*) FROM supabase_migrations.schema_migrations) <> 19
+    OR (
+      SELECT count(DISTINCT version)
+      FROM supabase_migrations.schema_migrations
+    ) <> 19
+    OR (
+      SELECT count(*)
+      FROM supabase_migrations.schema_migrations
+      WHERE version = '20260722000100'
+        AND name = 'site_owner_role_invariant'
+    ) <> 1
+    OR EXISTS (
+      SELECT 1
+      FROM supabase_migrations.schema_migrations
+      WHERE version = '20260722000200'
+    )
+  THEN
+    RAISE EXCEPTION 'pre-deployment migration ledger mismatch';
+  END IF;
+
+  RAISE NOTICE
+    'atomic_save_preflight_passed documents=% versions=% tags=% links=% sources=%',
+    (SELECT count(*) FROM public.documents),
+    (SELECT count(*) FROM public.document_versions),
+    (SELECT count(*) FROM public.tags),
+    (SELECT count(*) FROM public.document_links),
+    (SELECT count(*) FROM public.document_sources);
 END;
 $$;
-
-SELECT
-  (SELECT count(*) FROM public.documents) AS checked_documents,
-  (SELECT count(*) FROM public.document_versions) AS checked_versions,
-  (SELECT count(*) FROM public.tags) AS checked_tags,
-  (SELECT count(*) FROM public.document_links) AS checked_links,
-  (SELECT count(*) FROM public.document_sources) AS checked_sources,
-  'atomic_save_preflight_passed' AS result;
