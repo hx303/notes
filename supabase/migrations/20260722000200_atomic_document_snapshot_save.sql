@@ -4,6 +4,12 @@
 -- and the production migration ledger must be at zero pending. Never deploy this
 -- 20260722000200 migration out of order. The prerequisite stays in its own PR.
 
+-- Fail quickly instead of queuing production writes behind a conflicting lock, and
+-- bound every catalog/data scan in this migration. Successful completion restores
+-- the session defaults explicitly; an error aborts the migration transaction.
+SET lock_timeout = '5s';
+SET statement_timeout = '5min';
+
 DO $$
 BEGIN
   IF to_regprocedure('public.grant_role(uuid,text,text)') IS NULL
@@ -74,6 +80,19 @@ BEGIN
   ) THEN
     RAISE EXCEPTION
       'atomic save preflight found a tag outside the v1 NFKC/whitespace/lowercase contract; review before retrying'
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.tags tag
+    LEFT JOIN public.knowledge_bases knowledge_base
+      ON knowledge_base.id = tag.knowledge_base_id
+     AND knowledge_base.owner_id = tag.owner_id
+    WHERE knowledge_base.id IS NULL
+  ) THEN
+    RAISE EXCEPTION
+      'atomic save preflight found a tag whose owner differs from its knowledge-base owner; review before retrying'
       USING ERRCODE = 'check_violation';
   END IF;
 
@@ -183,6 +202,23 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- Enforce the account boundary in both directions with native referential integrity.
+-- The composite FK blocks cross-account tag inserts/updates, while ON UPDATE RESTRICT
+-- also prevents a knowledge-base owner change from stranding existing tags. The
+-- existing single-column FK continues to document the base relationship; both FKs
+-- intentionally cascade tag deletion when the knowledge base is deleted.
+ALTER TABLE public.knowledge_bases
+  ADD CONSTRAINT knowledge_bases_id_owner_unique
+  UNIQUE (id, owner_id);
+
+ALTER TABLE public.tags
+  ADD CONSTRAINT tags_knowledge_base_owner_fkey
+  FOREIGN KEY (knowledge_base_id, owner_id)
+  REFERENCES public.knowledge_bases(id, owner_id)
+  ON UPDATE RESTRICT
+  ON DELETE CASCADE
+  NOT DEFERRABLE;
 
 -- Receipts intentionally live outside every Supabase/PostgREST exposed schema. The
 -- strict SECURITY DEFINER RPC is the only writer/reader: application roles receive no
@@ -1101,3 +1137,6 @@ COMMENT ON TABLE wouldkeep_private.document_save_receipts IS
   'Append-only owner-scoped saved acknowledgements for save_document_snapshot_v1; conflicts/not-found results are read-only and no document body is stored.';
 COMMENT ON FUNCTION public.save_document_snapshot_v1(TEXT, UUID, UUID, BIGINT, JSONB) IS
   'Atomically saves one owner document snapshot with CAS and owner-scoped idempotent acknowledgement. It does not publish or alter publication snapshots.';
+
+RESET statement_timeout;
+RESET lock_timeout;

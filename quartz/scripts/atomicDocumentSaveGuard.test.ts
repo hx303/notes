@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 
@@ -20,14 +21,53 @@ const productionPreflight = readFileSync(
   "utf8",
 )
 
+const productionContract = readFileSync(
+  new URL("../../supabase/tests/20260722_atomic_document_snapshot_contract.sql", import.meta.url),
+  "utf8",
+)
+
+const productionActivityGate = readFileSync(
+  new URL(
+    "../../supabase/tests/20260722_atomic_document_snapshot_activity_gate.sql",
+    import.meta.url,
+  ),
+  "utf8",
+)
+
+const productionStateFingerprint = readFileSync(
+  new URL(
+    "../../supabase/tests/20260722_atomic_document_snapshot_state_fingerprint.sql",
+    import.meta.url,
+  ),
+  "utf8",
+)
+
+const residueCheck = readFileSync(
+  new URL("../../supabase/tests/20260722_atomic_document_snapshot_residue.sql", import.meta.url),
+  "utf8",
+)
+
+const productionRunbook = readFileSync(
+  new URL(
+    "../../.design/wouldkeep-next/runbooks/20260722000200-atomic-document-snapshot-save.md",
+    import.meta.url,
+  ),
+  "utf8",
+)
+
 const expectedBehaviorScenarios = [
   "account_deletion_cascades_saved_receipts",
   "anonymous_execute_is_denied",
+  "authenticated_cross_account_tag_squat_is_rejected",
   "authenticated_cannot_access_private_receipts_directly",
   "canonical_replay_returns_exact_saved_response",
   "core_and_organization_commit_together",
+  "cross_owner_tag_insert_is_rejected_without_residue",
   "cross_knowledge_base_relationship_is_rejected",
   "downstream_failure_rolls_back_every_table",
+  "historical_cross_owner_tag_is_detected_without_residue",
+  "knowledge_base_owner_change_with_tags_is_rejected",
+  "knowledge_base_deletion_cascades_tag_once",
   "new_deleted_target_relationship_is_rejected",
   "new_document_hard_delete_replay_does_not_recreate",
   "new_document_lost_ack_replay_creates_exactly_once",
@@ -46,14 +86,32 @@ const expectedBehaviorScenarios = [
   "relationship_tombstone_and_continues_are_preserved",
   "saved_receipts_contain_no_document_body",
   "saved_receipts_reject_malformed_inserts",
+  "same_owner_tag_save_preserves_global_owner_invariant",
   "soft_deleted_source_is_not_writable",
   "source_duplicate_ignores_fragment_but_preserves_path_case",
   "stale_revision_returns_read_only_conflict",
+  "tag_owner_and_knowledge_base_updates_are_rejected",
   "unpersisted_conflict_recomputes_without_write_amplification",
   "unsafe_expected_revision_is_rejected",
 ]
 
-function maskNonTopLevelSql(sql: string): string {
+function functionBody(sql: string, schema: string, functionName: string): string {
+  const escapedSchema = schema.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const escapedName = functionName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const match = sql.match(
+    new RegExp(
+      `CREATE FUNCTION ${escapedSchema}\\.${escapedName}\\b[\\s\\S]*?AS \\$\\$(?<body>[\\s\\S]*?)\\$\\$;`,
+    ),
+  )
+  assert.ok(match?.groups?.body, `missing body for ${schema}.${functionName}`)
+  return match.groups.body
+}
+
+function normalizedBodyFingerprint(body: string): string {
+  return createHash("md5").update(body.replace(/\s+/g, " ")).digest("hex")
+}
+
+function maskNonTopLevelSql(sql: string, preserveDollarBodies = false): string {
   let cursor = 0
   let masked = ""
   const mask = (value: string) => value.replace(/[^\r\n]/g, " ")
@@ -129,7 +187,13 @@ function maskNonTopLevelSql(sql: string): string {
         const bodyEnd = sql.indexOf(tag, cursor + tag.length)
         assert.notEqual(bodyEnd, -1, `SQL guard requires a closing ${tag} delimiter`)
         const end = bodyEnd + tag.length
-        masked += mask(sql.slice(cursor, end))
+        if (preserveDollarBodies) {
+          masked += mask(tag)
+          masked += maskNonTopLevelSql(sql.slice(cursor + tag.length, bodyEnd), false)
+          masked += mask(tag)
+        } else {
+          masked += mask(sql.slice(cursor, end))
+        }
         cursor = end
         continue
       }
@@ -142,8 +206,43 @@ function maskNonTopLevelSql(sql: string): string {
   return masked
 }
 
+function topLevelStatements(sql: string): string[] {
+  const withoutPsqlMetaCommands = sql.replace(/^\s*\\[^\r\n]*(?:\r?\n|$)/gm, (line) =>
+    line.replace(/[^\r\n]/g, " "),
+  )
+  return maskNonTopLevelSql(withoutPsqlMetaCommands)
+    .split(";")
+    .map((statement) => statement.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+}
+
+function assertReadOnlyGate(sql: string): void {
+  const topLevel = maskNonTopLevelSql(sql)
+  assert.doesNotMatch(topLevel, /^\s*(?:ALTER|CREATE|DROP|GRANT|REVOKE|COMMENT)\b/im)
+  assert.doesNotMatch(topLevel, /^\s*(?:INSERT|UPDATE|DELETE|MERGE|TRUNCATE|COPY)\b/im)
+  assert.doesNotMatch(
+    topLevel,
+    /^\s*(?:BEGIN|START\s+TRANSACTION|COMMIT|END|ROLLBACK|ABORT|PREPARE\s+TRANSACTION)\b/im,
+  )
+  const executableBodies = maskNonTopLevelSql(sql, true)
+  assert.doesNotMatch(
+    executableBodies,
+    /\b(?:ALTER|CREATE|DROP|GRANT|REVOKE|COMMENT|CALL|EXECUTE|INSERT|UPDATE|DELETE|MERGE|TRUNCATE|COPY)\b/i,
+  )
+  assert.doesNotMatch(sql, /migration\s+repair/i)
+}
+
 function assertRollbackOnlyMatrix(sql: string): void {
-  const statements = maskNonTopLevelSql(sql)
+  const metaCommands = sql.match(/^\s*\\.*$/gm) ?? []
+  const allowedMetaCommand =
+    /^(?:\\set ON_ERROR_STOP on|\\if :\{\?wouldkeep_p1b_20260722000200_disposable\}|\\else|\\set wouldkeep_p1b_20260722000200_disposable false|\\if :wouldkeep_p1b_20260722000200_disposable|\\echo 'Refusing to run: pass the exact disposable-environment confirmation variable\.'|\\endif)$/
+  for (const metaCommand of metaCommands) {
+    assert.match(metaCommand.trim(), allowedMetaCommand, `unsafe psql meta-command: ${metaCommand}`)
+  }
+
+  const maskedSql = maskNonTopLevelSql(sql)
+  const statements = maskedSql
+    .replace(/^\s*\\.*$/gm, "")
     .split(";")
     .map((statement) => statement.replace(/\s+/g, " ").trim())
     .filter(Boolean)
@@ -160,6 +259,15 @@ function assertRollbackOnlyMatrix(sql: string): void {
 }
 
 test("atomic save is a strict authenticated-only definer boundary", () => {
+  const lockTimeout = migration.indexOf("SET lock_timeout = '5s';")
+  const statementTimeout = migration.indexOf("SET statement_timeout = '5min';")
+  const firstDoBlock = migration.indexOf("DO $$")
+  const statementReset = migration.lastIndexOf("RESET statement_timeout;")
+  const lockReset = migration.lastIndexOf("RESET lock_timeout;")
+
+  assert.ok(lockTimeout > -1 && lockTimeout < statementTimeout && statementTimeout < firstDoBlock)
+  assert.ok(statementReset > firstDoBlock && statementReset < lockReset)
+  assert.equal(migration.slice(lockReset).trim(), "RESET lock_timeout;")
   assert.match(
     migration,
     /to_regprocedure\('public\.grant_role\(uuid,text,text\)'\) IS NULL[\s\S]*20260722000100 site-owner invariant is not deployed/,
@@ -183,6 +291,92 @@ test("atomic save is a strict authenticated-only definer boundary", () => {
     migration,
     /GRANT EXECUTE ON FUNCTION public\.save_document_snapshot_v1\(TEXT, UUID, UUID, BIGINT, JSONB\)\s+TO authenticated/,
   )
+})
+
+test("tag ownership is a native bidirectional database invariant", () => {
+  for (const sql of [migration, productionPreflight, productionContract]) {
+    assert.match(sql, /LEFT JOIN public\.knowledge_bases knowledge_base/)
+    assert.match(sql, /knowledge_base\.owner_id = tag\.owner_id/)
+    assert.match(sql, /WHERE knowledge_base\.id IS NULL/)
+  }
+  assert.match(
+    migration,
+    /ADD CONSTRAINT knowledge_bases_id_owner_unique\s+UNIQUE \(id, owner_id\)/,
+  )
+  assert.match(
+    migration,
+    /ADD CONSTRAINT tags_knowledge_base_owner_fkey[\s\S]*FOREIGN KEY \(knowledge_base_id, owner_id\)[\s\S]*REFERENCES public\.knowledge_bases\(id, owner_id\)[\s\S]*ON UPDATE RESTRICT[\s\S]*ON DELETE CASCADE[\s\S]*NOT DEFERRABLE/,
+  )
+  assert.match(productionPreflight, /knowledge_bases_id_owner_unique/)
+  assert.match(productionPreflight, /tags_knowledge_base_owner_fkey/)
+  assert.match(productionContract, /catalog_constraint\.confupdtype = 'r'/)
+  assert.match(productionContract, /catalog_constraint\.confdeltype = 'c'/)
+  assert.match(productionContract, /catalog_constraint\.conkey = ARRAY/)
+  assert.match(productionContract, /catalog_constraint\.confkey = ARRAY/)
+  assert.match(productionContract, /catalog_index\.indisvalid/)
+})
+
+test("catalog fingerprints are derived from every reviewed atomic-save function body", () => {
+  const fingerprints = {
+    decode: normalizedBodyFingerprint(
+      functionBody(migration, "wouldkeep_private", "percent_decode_url_component"),
+    ),
+    secret: normalizedBodyFingerprint(
+      functionBody(migration, "wouldkeep_private", "source_url_has_secret"),
+    ),
+    receipt: normalizedBodyFingerprint(
+      functionBody(migration, "wouldkeep_private", "require_valid_document_save_receipt"),
+    ),
+    save: normalizedBodyFingerprint(functionBody(migration, "public", "save_document_snapshot_v1")),
+  }
+
+  assert.deepEqual(fingerprints, {
+    decode: "e5c327994552b280617a8820e4107d46",
+    secret: "c4881a93b30fe7445f1fadadf17308e6",
+    receipt: "9a6b5a61d9d8e615cee64f05574f5d4d",
+    save: "9eeb474d4151b9639ed2db44d0e6a04c",
+  })
+  assert.match(
+    productionContract,
+    new RegExp(`procedure\\.oid = decode_helper[\\s\\S]*?${fingerprints.decode}`),
+  )
+  assert.match(
+    productionContract,
+    new RegExp(`procedure\\.oid = secret_helper[\\s\\S]*?${fingerprints.secret}`),
+  )
+  assert.match(
+    productionContract,
+    new RegExp(`procedure\\.oid = receipt_guard[\\s\\S]*?${fingerprints.receipt}`),
+  )
+  assert.match(
+    productionContract,
+    new RegExp(`procedure\\.oid = save_rpc[\\s\\S]*?${fingerprints.save}`),
+  )
+  assert.match(productionContract, /6dfbe536863354651eb24e0d6cff6a28/)
+})
+
+test("production contract pins owners, complete ACLs, exposure, and the exact target ledger", () => {
+  for (const sql of [productionPreflight, productionContract]) {
+    assertReadOnlyGate(sql)
+    assert.equal(topLevelStatements(sql).length, 1)
+  }
+  assert.match(productionContract, /owner\.rolname = 'postgres'/)
+  assert.match(
+    productionContract,
+    /procedure\.proconfig = ARRAY\['search_path=pg_catalog, pg_temp'\]/,
+  )
+  assert.match(productionContract, /LATERAL pg_catalog\.aclexplode/g)
+  assert.match(productionContract, /acl\.is_grantable::TEXT/)
+  assert.match(productionContract, /private schema ACL is not owner-only/)
+  assert.match(productionContract, /private receipt table ACL is not owner-only/)
+  assert.match(productionContract, /postgres\|MAINTAIN\|false\|postgres/)
+  assert.match(productionContract, /a1606e84292826e2735ed41a52354a66/)
+  assert.match(productionContract, /current_setting\('pgrst\.db_schemas', TRUE\)/)
+  assert.match(productionContract, /actual_ledger IS DISTINCT FROM expected_ledger/)
+  assert.match(productionContract, /count\(\*\).*schema_migrations[\s\S]*<> 20/)
+  assert.match(productionContract, /name = 'atomic_document_snapshot_save'/)
+  assert.match(productionContract, /atomic_document_snapshot_contract_passed/)
+  assert.match(productionPreflight, /count\(\*\).*schema_migrations[\s\S]*<> 19/)
 })
 
 test("saved receipts are private, exact, append-only, and content-free", () => {
@@ -283,6 +477,10 @@ test("one transaction preserves legacy status and last-success publication metad
 
 test("rollback-only behavior matrix contains the complete security and reliability set", () => {
   assertRollbackOnlyMatrix(behaviorMatrix)
+  assert.match(behaviorMatrix, /^\\set ON_ERROR_STOP on$/m)
+  assert.match(behaviorMatrix, /:\{\?wouldkeep_p1b_20260722000200_disposable\}/)
+  assert.match(behaviorMatrix, /-v wouldkeep_p1b_20260722000200_disposable=true/)
+  assert.match(behaviorMatrix, /Disposable environment confirmation is required/)
   for (const scenario of expectedBehaviorScenarios) {
     assert.match(behaviorMatrix, new RegExp(`'${scenario}'`))
   }
@@ -291,6 +489,47 @@ test("rollback-only behavior matrix contains the complete security and reliabili
   assert.match(behaviorMatrix, /expected_names TEXT\[\]/)
   assert.match(behaviorMatrix, /IF EXISTS \(SELECT 1 FROM atomic_save_results WHERE NOT passed\)/)
   assert.doesNotMatch(behaviorMatrix, /EXCEPTION WHEN OTHERS/i)
+})
+
+test("target-specific activity, fingerprint, residue, and runbook gates are pinned", () => {
+  for (const sql of [productionActivityGate, productionStateFingerprint, residueCheck]) {
+    assertReadOnlyGate(sql)
+    assert.equal(topLevelStatements(sql).length, 1)
+  }
+  assert.match(productionActivityGate, /pg_catalog\.pg_stat_activity/)
+  assert.match(productionActivityGate, /pg_catalog\.pg_locks/)
+  assert.match(productionActivityGate, /INTERVAL '5 minutes'/)
+  assert.match(productionActivityGate, /atomic_document_snapshot_activity_gate_passed/)
+  assert.match(productionStateFingerprint, /md5\(COALESCE\(string_agg\(/)
+  assert.match(productionStateFingerprint, /atomic_document_snapshot_state_fingerprint_passed/)
+  assert.match(residueCheck, /p1b historical cross owner squat/)
+  assert.match(residueCheck, /atomic_document_snapshot_rollback_residue_zero/)
+
+  assert.match(productionRunbook, /Validated Supabase CLI: `2\.109\.1`/)
+  assert.match(productionRunbook, /ApprovedSha/)
+  assert.match(productionRunbook, /ApprovedProjectRef/)
+  assert.match(productionRunbook, /20260722000200_atomic_document_snapshot_save\.sql/)
+  assert.match(productionRunbook, /public-schema\.sql/)
+  assert.match(productionRunbook, /public-data\.sql/)
+  assert.match(productionRunbook, /migration-ledger-data\.sql/)
+  assert.match(productionRunbook, /Assert-DumpArtifact/)
+  assert.match(productionRunbook, /CREATE TABLE\\s\+/)
+  assert.match(productionRunbook, /COPY\\s\+/)
+  assert.match(productionRunbook, /20260722000100/)
+  assert.match(productionRunbook, /Get-FileHash .* -Algorithm SHA256/)
+  assert.match(productionRunbook, /20260722_atomic_document_snapshot_activity_gate\.sql/)
+  assert.match(productionRunbook, /20260722_atomic_document_snapshot_preflight\.sql/)
+  assert.match(productionRunbook, /20260722_atomic_document_snapshot_state_fingerprint\.sql/)
+  assert.match(productionRunbook, /20260722_atomic_document_snapshot_contract\.sql/)
+  assert.match(productionRunbook, /"db", "push", "--linked", "--yes"/)
+  assert.match(productionRunbook, /"db", "push", "--linked", "--dry-run"/)
+  assert.match(productionRunbook, /ExpectedRemotePre/)
+  assert.match(productionRunbook, /ExpectedRemotePost/)
+  assert.match(productionRunbook, /Get-RemoteVersions/)
+  assert.match(productionRunbook, /Assert-ExactVersions/)
+  assert.match(productionRunbook, /atomic_document_snapshot_contract_passed/)
+  assert.ok(productionRunbook.includes("\\d{8}(?:\\d{6})?"))
+  assert.match(productionRunbook, /PRODUCTION_SAFETY\.md/)
 })
 
 test("rollback guard rejects commits, aliases, prepared transactions, and forged comments", () => {
@@ -320,4 +559,7 @@ test("rollback guard rejects commits, aliases, prepared transactions, and forged
     )
   }
   assert.throws(() => assertRollbackOnlyMatrix("BEGIN;\n-- ROLLBACK;"))
+  for (const unsafeMetaCommand of ["\\ir other.sql", "\\gexec", "\\copy x to y", "\\! whoami"]) {
+    assert.throws(() => assertRollbackOnlyMatrix(`${unsafeMetaCommand}\n${safeFixture}`))
+  }
 })

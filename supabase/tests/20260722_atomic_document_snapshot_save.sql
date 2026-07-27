@@ -1,5 +1,22 @@
 -- Owner, idempotency, CAS, atomicity, organization, and publication verification.
--- Run as postgres after 20260722000200. Every fixture and receipt is rolled back.
+-- Run as postgres after 20260722000200 with:
+--   -v wouldkeep_p1b_20260722000200_disposable=true
+-- Every fixture and receipt is rolled back.
+
+\set ON_ERROR_STOP on
+\if :{?wouldkeep_p1b_20260722000200_disposable}
+\else
+\set wouldkeep_p1b_20260722000200_disposable false
+\endif
+\if :wouldkeep_p1b_20260722000200_disposable
+\else
+\echo 'Refusing to run: pass the exact disposable-environment confirmation variable.'
+DO $p1b_disposable_guard$
+BEGIN
+  RAISE EXCEPTION 'Disposable environment confirmation is required';
+END;
+$p1b_disposable_guard$;
+\endif
 
 BEGIN;
 
@@ -9,6 +26,7 @@ BEGIN;
 GRANT SELECT ON public.knowledge_bases, public.documents, public.document_versions,
   public.tags, public.document_tags, public.document_links, public.document_sources,
   public.document_publications TO authenticated;
+GRANT INSERT ON public.tags TO authenticated;
 
 CREATE TEMP TABLE atomic_save_state (
   key TEXT PRIMARY KEY,
@@ -105,6 +123,236 @@ SELECT CASE name
   ELSE 'other_kb_id'
 END, id::TEXT
 FROM inserted;
+
+DO $$
+DECLARE
+  historical_rejected BOOLEAN := FALSE;
+BEGIN
+  BEGIN
+    ALTER TABLE public.tags
+      DROP CONSTRAINT tags_knowledge_base_owner_fkey;
+
+    INSERT INTO public.tags (knowledge_base_id, owner_id, name, normalized_name)
+    VALUES (
+      (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_kb_id'),
+      (SELECT value::UUID FROM atomic_save_state WHERE key = 'other_id'),
+      'p1b historical cross owner squat',
+      'p1b historical cross owner squat'
+    );
+
+    IF EXISTS (
+      SELECT 1
+      FROM public.tags tag
+      LEFT JOIN public.knowledge_bases knowledge_base
+        ON knowledge_base.id = tag.knowledge_base_id
+       AND knowledge_base.owner_id = tag.owner_id
+      WHERE knowledge_base.id IS NULL
+    ) THEN
+      RAISE EXCEPTION USING
+        ERRCODE = 'P1B01',
+        MESSAGE = 'tag owner/knowledge-base owner invariant preflight failed';
+    END IF;
+  EXCEPTION WHEN SQLSTATE 'P1B01' THEN
+    historical_rejected := TRUE;
+  END;
+
+  INSERT INTO atomic_save_results VALUES (
+    'historical_cross_owner_tag_is_detected_without_residue',
+    historical_rejected
+      AND EXISTS (
+        SELECT 1
+        FROM pg_catalog.pg_constraint catalog_constraint
+        WHERE catalog_constraint.conrelid = 'public.tags'::REGCLASS
+          AND catalog_constraint.conname = 'tags_knowledge_base_owner_fkey'
+          AND catalog_constraint.convalidated
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM public.tags
+        WHERE normalized_name = 'p1b historical cross owner squat'
+      ),
+    'The migration/preflight invariant rejects a simulated historical mismatch and its subtransaction leaves no row or DDL residue.'
+  );
+END;
+$$;
+
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.role', 'authenticated', TRUE);
+SELECT set_config(
+  'request.jwt.claim.sub',
+  (SELECT value FROM atomic_save_state WHERE key = 'owner_id'),
+  TRUE
+);
+
+DO $$
+DECLARE
+  returned_state TEXT;
+BEGIN
+  BEGIN
+    INSERT INTO public.tags (knowledge_base_id, owner_id, name, normalized_name)
+    VALUES (
+      (SELECT value::UUID FROM atomic_save_state WHERE key = 'other_kb_id'),
+      (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_id'),
+      'p1b authenticated cross account squat',
+      'p1b authenticated cross account squat'
+    );
+  EXCEPTION WHEN foreign_key_violation THEN
+    GET STACKED DIAGNOSTICS returned_state = RETURNED_SQLSTATE;
+  END;
+
+  INSERT INTO atomic_save_results VALUES (
+    'authenticated_cross_account_tag_squat_is_rejected',
+    returned_state = '23503'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.tags
+        WHERE normalized_name = 'p1b authenticated cross account squat'
+      ),
+    'An authenticated owner passing RLS still cannot place a tag in another account knowledge base.'
+  );
+END;
+$$;
+
+RESET ROLE;
+
+DO $$
+DECLARE
+  returned_state TEXT;
+BEGIN
+  BEGIN
+    INSERT INTO public.tags (knowledge_base_id, owner_id, name, normalized_name)
+    VALUES (
+      (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_kb_id'),
+      (SELECT value::UUID FROM atomic_save_state WHERE key = 'other_id'),
+      'p1b cross owner squat',
+      'p1b cross owner squat'
+    );
+  EXCEPTION WHEN foreign_key_violation THEN
+    GET STACKED DIAGNOSTICS returned_state = RETURNED_SQLSTATE;
+  END;
+
+  INSERT INTO atomic_save_results VALUES (
+    'cross_owner_tag_insert_is_rejected_without_residue',
+    returned_state = '23503'
+      AND NOT EXISTS (
+        SELECT 1 FROM public.tags
+        WHERE normalized_name = 'p1b cross owner squat'
+      ),
+    'The composite tag owner FK rejects an account-scoped tag squat with SQLSTATE 23503 and zero residue.'
+  );
+END;
+$$;
+
+INSERT INTO public.tags (knowledge_base_id, owner_id, name, normalized_name)
+VALUES (
+  (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_kb_id'),
+  (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_id'),
+  'p1b reverse owner guard',
+  'p1b reverse owner guard'
+);
+
+DO $$
+DECLARE
+  owner_update_state TEXT;
+  knowledge_base_update_state TEXT;
+BEGIN
+  BEGIN
+    UPDATE public.tags
+    SET owner_id = (SELECT value::UUID FROM atomic_save_state WHERE key = 'other_id')
+    WHERE normalized_name = 'p1b reverse owner guard';
+  EXCEPTION WHEN foreign_key_violation THEN
+    GET STACKED DIAGNOSTICS owner_update_state = RETURNED_SQLSTATE;
+  END;
+
+  BEGIN
+    UPDATE public.tags
+    SET knowledge_base_id = (
+      SELECT value::UUID FROM atomic_save_state WHERE key = 'other_kb_id'
+    )
+    WHERE normalized_name = 'p1b reverse owner guard';
+  EXCEPTION WHEN foreign_key_violation THEN
+    GET STACKED DIAGNOSTICS knowledge_base_update_state = RETURNED_SQLSTATE;
+  END;
+
+  INSERT INTO atomic_save_results VALUES (
+    'tag_owner_and_knowledge_base_updates_are_rejected',
+    owner_update_state = '23503'
+      AND knowledge_base_update_state = '23503'
+      AND EXISTS (
+        SELECT 1 FROM public.tags
+        WHERE normalized_name = 'p1b reverse owner guard'
+          AND owner_id = (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_id')
+          AND knowledge_base_id = (
+            SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_kb_id'
+          )
+      ),
+    'Both child-key columns reject updates that would break the composite owner invariant.'
+  );
+END;
+$$;
+
+WITH inserted AS (
+  INSERT INTO public.knowledge_bases (owner_id, name, description)
+  VALUES (
+    (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_id'),
+    'Atomic save cascade library',
+    'Rollback-only duplicate FK cascade fixture'
+  )
+  RETURNING id
+)
+INSERT INTO atomic_save_state (key, value)
+SELECT 'cascade_kb_id', id::TEXT FROM inserted;
+
+INSERT INTO public.tags (knowledge_base_id, owner_id, name, normalized_name)
+VALUES (
+  (SELECT value::UUID FROM atomic_save_state WHERE key = 'cascade_kb_id'),
+  (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_id'),
+  'p1b duplicate cascade tag',
+  'p1b duplicate cascade tag'
+);
+
+DELETE FROM public.knowledge_bases
+WHERE id = (SELECT value::UUID FROM atomic_save_state WHERE key = 'cascade_kb_id');
+
+INSERT INTO atomic_save_results VALUES (
+  'knowledge_base_deletion_cascades_tag_once',
+  NOT EXISTS (
+    SELECT 1 FROM public.knowledge_bases
+    WHERE id = (SELECT value::UUID FROM atomic_save_state WHERE key = 'cascade_kb_id')
+  )
+    AND NOT EXISTS (
+      SELECT 1 FROM public.tags WHERE normalized_name = 'p1b duplicate cascade tag'
+    ),
+  'The existing and composite knowledge-base FKs coexist and delete the child tag without error or residue.'
+);
+
+DO $$
+DECLARE
+  returned_state TEXT;
+BEGIN
+  BEGIN
+    UPDATE public.knowledge_bases
+    SET owner_id = (SELECT value::UUID FROM atomic_save_state WHERE key = 'other_id')
+    WHERE id = (SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_kb_id');
+  EXCEPTION WHEN foreign_key_violation THEN
+    GET STACKED DIAGNOSTICS returned_state = RETURNED_SQLSTATE;
+  END;
+
+  INSERT INTO atomic_save_results VALUES (
+    'knowledge_base_owner_change_with_tags_is_rejected',
+    returned_state = '23503'
+      AND EXISTS (
+        SELECT 1
+        FROM public.knowledge_bases knowledge_base
+        WHERE knowledge_base.id = (
+          SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_kb_id'
+        )
+          AND knowledge_base.owner_id = (
+            SELECT value::UUID FROM atomic_save_state WHERE key = 'owner_id'
+          )
+      ),
+    'ON UPDATE RESTRICT prevents a knowledge-base owner change from stranding existing tags.'
+  );
+END;
+$$;
 
 WITH inserted AS (
   INSERT INTO public.documents (
@@ -1307,6 +1555,14 @@ WITH inserted AS (
 INSERT INTO atomic_save_state (key, value)
 SELECT 'cleanup_kb_id', id::TEXT FROM inserted;
 
+INSERT INTO public.tags (knowledge_base_id, owner_id, name, normalized_name)
+VALUES (
+  (SELECT value::UUID FROM atomic_save_state WHERE key = 'cleanup_kb_id'),
+  (SELECT value::UUID FROM atomic_save_state WHERE key = 'cleanup_owner_id'),
+  'p1b account cascade tag',
+  'p1b account cascade tag'
+);
+
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.role', 'authenticated', TRUE);
 SELECT set_config(
@@ -1356,12 +1612,28 @@ BEGIN
       SELECT 1 FROM public.documents WHERE owner_id = cleanup_owner
     )
     AND NOT EXISTS (
+      SELECT 1 FROM public.tags WHERE owner_id = cleanup_owner
+    )
+    AND NOT EXISTS (
       SELECT 1 FROM wouldkeep_private.document_save_receipts WHERE owner_id = cleanup_owner
     ),
     'Deleting an account still cascades private receipts and all rollback-only owner fixtures.'
   );
 END;
 $$;
+
+INSERT INTO atomic_save_results VALUES (
+  'same_owner_tag_save_preserves_global_owner_invariant',
+  NOT EXISTS (
+    SELECT 1
+    FROM public.tags tag
+    LEFT JOIN public.knowledge_bases knowledge_base
+      ON knowledge_base.id = tag.knowledge_base_id
+     AND knowledge_base.owner_id = tag.owner_id
+    WHERE knowledge_base.id IS NULL
+  ),
+  'Normal same-owner RPC saves and direct fixture tags preserve the global owner invariant.'
+);
 
 SELECT test_name, passed, detail
 FROM atomic_save_results
@@ -1372,11 +1644,16 @@ DECLARE
   expected_names TEXT[] := ARRAY[
     'account_deletion_cascades_saved_receipts',
     'anonymous_execute_is_denied',
+    'authenticated_cross_account_tag_squat_is_rejected',
     'authenticated_cannot_access_private_receipts_directly',
     'canonical_replay_returns_exact_saved_response',
     'core_and_organization_commit_together',
+    'cross_owner_tag_insert_is_rejected_without_residue',
     'cross_knowledge_base_relationship_is_rejected',
     'downstream_failure_rolls_back_every_table',
+    'historical_cross_owner_tag_is_detected_without_residue',
+    'knowledge_base_owner_change_with_tags_is_rejected',
+    'knowledge_base_deletion_cascades_tag_once',
     'new_deleted_target_relationship_is_rejected',
     'new_document_hard_delete_replay_does_not_recreate',
     'new_document_lost_ack_replay_creates_exactly_once',
@@ -1395,9 +1672,11 @@ DECLARE
     'relationship_tombstone_and_continues_are_preserved',
     'saved_receipts_contain_no_document_body',
     'saved_receipts_reject_malformed_inserts',
+    'same_owner_tag_save_preserves_global_owner_invariant',
     'soft_deleted_source_is_not_writable',
     'source_duplicate_ignores_fragment_but_preserves_path_case',
     'stale_revision_returns_read_only_conflict',
+    'tag_owner_and_knowledge_base_updates_are_rejected',
     'unpersisted_conflict_recomputes_without_write_amplification',
     'unsafe_expected_revision_is_rejected'
   ]::TEXT[];
