@@ -1,5 +1,5 @@
 -- Production-safe, read-only preflight for 20260722000200.
--- Run only after 20260722000100 is deployed and the Supabase migration ledger is zero.
+-- Run only after 20260722000150 is deployed and the Supabase migration ledger is zero.
 
 DO $$
 DECLARE
@@ -9,7 +9,7 @@ DECLARE
     '20260718000400', '20260718000500', '20260718000600',
     '20260718000700', '20260718000800', '20260718000900',
     '20260718001000', '20260718001100', '20260718001200',
-    '20260721000100', '20260722000100'
+    '20260721000100', '20260722000100', '20260722000150'
   ]::TEXT[];
   actual_ledger TEXT[];
   source_record RECORD;
@@ -281,16 +281,22 @@ BEGIN
   FROM supabase_migrations.schema_migrations;
 
   IF actual_ledger IS DISTINCT FROM expected_ledger
-    OR (SELECT count(*) FROM supabase_migrations.schema_migrations) <> 19
+    OR (SELECT count(*) FROM supabase_migrations.schema_migrations) <> 20
     OR (
       SELECT count(DISTINCT version)
       FROM supabase_migrations.schema_migrations
-    ) <> 19
+    ) <> 20
     OR (
       SELECT count(*)
       FROM supabase_migrations.schema_migrations
       WHERE version = '20260722000100'
         AND name = 'site_owner_role_invariant'
+    ) <> 1
+    OR (
+      SELECT count(*)
+      FROM supabase_migrations.schema_migrations
+      WHERE version = '20260722000150'
+        AND name = 'normalize_existing_tags_for_atomic_save'
     ) <> 1
     OR EXISTS (
       SELECT 1
