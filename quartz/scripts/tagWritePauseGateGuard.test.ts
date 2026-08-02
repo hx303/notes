@@ -24,6 +24,9 @@ const disposableSetup = readRepositoryFile(
 const disposableExtended = readRepositoryFile(
   "supabase/tests/20260722_tag_write_pause_disposable_extended.sql",
 )
+const disposableDeploymentPermit = readRepositoryFile(
+  "supabase/tests/20260722_tag_write_pause_disposable_deployment_permit.sql",
+)
 const disposableCopyFrom = readRepositoryFile(
   "supabase/tests/20260722_tag_write_pause_disposable_copy_from.sql",
 )
@@ -117,11 +120,27 @@ test("enable drains writers in fixed order and installs two exact ALWAYS stateme
   assert.match(enable, /trigger\.tgenabled = 'A'/)
   assert.match(enable, /relowner[\s\S]*current_user/)
   assert.match(enable, /gate_owner_oid[\s\S]*public\.tags[\s\S]*public\.document_tags/)
+  assert.match(
+    enable,
+    /CREATE FUNCTION wouldkeep_maintenance\.open_tag_normalization_00150_permit\(\)/,
+  )
+  assert.match(enable, /wouldkeep_tag_normalization_permit_lock_mismatch/)
+  assert.match(enable, /relation_lock\.mode = 'ShareRowExclusiveLock'/)
+  assert.match(enable, /CREATE TEMP TABLE pg_temp\.wouldkeep_tag_normalization_00150_permit/)
+  assert.match(enable, /ON COMMIT DROP/)
+  assert.match(enable, /permit_relation\.relowner = tags_owner_oid/)
+  assert.match(enable, /permit_relation\.relnamespace = pg_my_temp_schema\(\)/)
+  assert.match(enable, /permit_relation\.relpersistence = 't'/)
+  assert.match(enable, /pg_current_xact_id_if_assigned\(\)/)
+  assert.doesNotMatch(enable, /current_setting\([^)]*wouldkeep/i)
 })
 
 test("state is read-only, fingerprints the baseline, and rejects partial or catalog drift", () => {
+  const stateWithoutExpectedBodies = state
+    .replace(/\$expected_body\$[\s\S]*?\$expected_body\$/g, "")
+    .replace(/\$expected_permit_body\$[\s\S]*?\$expected_permit_body\$/g, "")
   assert.doesNotMatch(
-    state,
+    stateWithoutExpectedBodies,
     /^\s*(?:INSERT|UPDATE|DELETE|TRUNCATE|CREATE|ALTER|DROP|GRANT|REVOKE)\b/im,
   )
   for (const fingerprint of ["|catalog=", "|acl=", "|rls_policies=", "|nongate_triggers="]) {
@@ -145,6 +164,9 @@ test("state is read-only, fingerprints the baseline, and rejects partial or cata
   assert.match(state, /aclexplode/)
   assert.match(state, /pg_catalog\.pg_depend/)
   assert.match(state, /gate_owner_oid[\s\S]*tags_oid[\s\S]*document_tags_oid/)
+  assert.match(state, /function_count <> 2/)
+  assert.match(state, /function\.prosrc = expected_permit_body/)
+  assert.match(state, /open_tag_normalization_00150_permit/)
 })
 
 test("production behavior probe is zero-row INSERT/UPDATE/DELETE for four roles", () => {
@@ -209,6 +231,7 @@ test("disposable matrix covers extended writes, drift recovery, cleanup, and exa
   const disposableSqlFiles = [
     disposableBaseline,
     disposableSetup,
+    disposableDeploymentPermit,
     disposableExtended,
     disposableCopyFrom,
     disposableCommentDrift,
@@ -227,6 +250,28 @@ test("disposable matrix covers extended writes, drift recovery, cleanup, and exa
   }
 
   assert.match(disposableSetup, /tag_write_pause_disposable_setup_passed/)
+  assert.match(disposableDeploymentPermit, /wouldkeep_tag_normalization_permit_lock_mismatch/)
+  assert.match(
+    disposableDeploymentPermit,
+    /GRANT SELECT, UPDATE ON public\.tags, public\.document_tags TO authenticated/,
+  )
+  assert.match(
+    disposableDeploymentPermit,
+    /SET LOCAL ROLE authenticated[\s\S]*CREATE TEMP TABLE pg_temp\.wouldkeep_tag_normalization_00150_permit/,
+  )
+  assert.match(disposableDeploymentPermit, /forged_permit_direct_update_blocked/)
+  assert.match(disposableDeploymentPermit, /forged_permit_security_definer_blocked/)
+  assert.match(
+    disposableDeploymentPermit,
+    /LOCK TABLE public\.tags, public\.document_tags IN SHARE ROW EXCLUSIVE MODE;[\s\S]*open_tag_normalization_00150_permit\(\)/,
+  )
+  assert.match(disposableDeploymentPermit, /permit_does_not_open_document_tags/)
+  assert.match(disposableDeploymentPermit, /permit_does_not_open_other_tag_operations/)
+  assert.match(disposableDeploymentPermit, /permit_row_is_exact/)
+  assert.match(disposableDeploymentPermit, /permit_closed/)
+  assert.match(disposableDeploymentPermit, /tag_write_pause_disposable_deployment_permit_passed/)
+  assert.match(disposable, /\$Files\.DeploymentPermit/)
+  assert.match(disposable, /"deployment-permit"[\s\S]*\$Files\.DeploymentPermit/)
   assert.match(disposableExtended, /ON CONFLICT/)
   assert.match(disposableExtended, /MERGE INTO public\.tags/)
   assert.match(disposableExtended, /TRUNCATE TABLE public\.document_tags/)
@@ -309,6 +354,7 @@ test("disable validates exact active ownership, ACL, body, comments and dependen
     /LOCK TABLE public\.tags IN SHARE ROW EXCLUSIVE MODE NOWAIT;[\s\S]*LOCK TABLE public\.document_tags IN SHARE ROW EXCLUSIVE MODE NOWAIT;/,
   )
   assert.match(disable, /function\.prosrc = expected_body/)
+  assert.match(disable, /function\.prosrc = expected_permit_body/)
   assert.match(disable, /function\.proowner = gate_owner_oid/)
   assert.match(disable, /gate_owner_oid[\s\S]*tags_oid[\s\S]*document_tags_oid/)
   assert.match(disable, /pg_catalog\.aclexplode/)
@@ -321,6 +367,10 @@ test("disable validates exact active ownership, ACL, body, comments and dependen
   assert.match(disable, /DROP TRIGGER wouldkeep_tags_write_pause ON public\.tags/)
   assert.match(disable, /DROP TRIGGER wouldkeep_document_tags_write_pause ON public\.document_tags/)
   assert.match(disable, /DROP FUNCTION wouldkeep_maintenance\.reject_tag_write_while_paused\(\)/)
+  assert.match(
+    disable,
+    /DROP FUNCTION wouldkeep_maintenance\.open_tag_normalization_00150_permit\(\)/,
+  )
   assert.match(disable, /DROP SCHEMA wouldkeep_maintenance/)
 })
 
@@ -367,9 +417,12 @@ test("runbook keeps the pause active around every preflight read and always rest
   assert.match(runbook, /stops application and API writes outside PostgreSQL/i)
   assert.match(runbook, /Never compare restored-object OIDs/i)
   assert.match(runbook, /section 2 must restart in a fresh evidence directory/i)
-  assert.doesNotMatch(runbook, /Invoke-Capture\s+"db-push"/)
-  assert.doesNotMatch(runbook, /db", "push", "--linked", "--yes"/)
-  assert.doesNotMatch(runbook, /"migration",\s*"repair"/)
+  assert.match(runbook, /Invoke-Capture "db-push-00150"/)
+  assert.match(runbook, /db", "push", "--linked", "--yes"/)
+  assert.match(runbook, /same backend and transaction/i)
+  assert.match(runbook, /forged same-named temporary table/i)
+  assert.match(runbook, /leave the gate active/i)
+  assert.match(runbook, /must never run proactively/i)
 })
 
 test("sealed snapshot is content-addressed and physically excludes pending migrations and credentials", () => {
@@ -380,7 +433,7 @@ test("sealed snapshot is content-addressed and physically excludes pending migra
     return { hash: match[1], path: match[2] }
   })
   const paths = entries.map((entry) => entry.path)
-  assert.equal(paths.length, 50)
+  assert.equal(paths.length, 51)
   assert.deepEqual(
     paths,
     [...paths].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0)),
@@ -394,8 +447,12 @@ test("sealed snapshot is content-addressed and physically excludes pending migra
   assert.ok(paths.includes("supabase/tests/20260722_tag_write_pause_sealed.ps1"))
   assert.ok(paths.includes("supabase/tests/20260722_tag_write_pause_sealed_container.ps1"))
   assert.ok(paths.includes("supabase/tests/20260722_tag_write_pause_disposable.ps1"))
+  assert.ok(
+    paths.includes("supabase/tests/20260722_tag_write_pause_disposable_deployment_permit.sql"),
+  )
   assert.ok(paths.includes("supabase/tests/20260722_tag_write_pause_disposable_writer_release.sql"))
   assert.match(sealedHost, /20260722_tag_write_pause_disposable_writer_release\.sql/)
+  assert.match(sealedHost, /20260722_tag_write_pause_disposable_deployment_permit\.sql/)
   assert.ok(paths.includes("supabase/operations/20260722_tag_write_pause_enable.sql"))
   assert.ok(paths.includes("supabase/operations/20260722_tag_write_pause_disable.sql"))
   assert.doesNotMatch(paths.join("\n"), /20260722000150|20260722000200|(?:^|\/)\.env|project-ref/)

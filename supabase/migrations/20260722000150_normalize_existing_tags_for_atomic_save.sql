@@ -20,6 +20,8 @@ DECLARE
   document_tag_fingerprint_before TEXT;
   expected_tag_fingerprint TEXT;
   actual_tag_fingerprint TEXT;
+  deployment_gate_present BOOLEAN := false;
+  deployment_permit_opened BOOLEAN := false;
 BEGIN
   IF current_setting('server_encoding') <> 'UTF8' THEN
     RAISE EXCEPTION 'tag normalization requires a UTF8 database'
@@ -65,6 +67,61 @@ BEGIN
   -- fingerprints are computed. Readers remain available; concurrent DML fails the
   -- five-second lock gate instead of racing this one-time repair.
   LOCK TABLE public.tags, public.document_tags IN SHARE ROW EXCLUSIVE MODE;
+
+  deployment_gate_present :=
+    to_regnamespace('wouldkeep_maintenance') IS NOT NULL
+    OR to_regprocedure(
+      'wouldkeep_maintenance.open_tag_normalization_00150_permit()'
+    ) IS NOT NULL
+    OR to_regprocedure(
+      'wouldkeep_maintenance.reject_tag_write_while_paused()'
+    ) IS NOT NULL
+    OR EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_trigger trigger
+      WHERE trigger.tgname IN (
+        'wouldkeep_tags_write_pause',
+        'wouldkeep_document_tags_write_pause'
+      )
+    );
+
+  IF deployment_gate_present THEN
+    IF to_regnamespace('wouldkeep_maintenance') IS NULL
+       OR to_regprocedure(
+         'wouldkeep_maintenance.open_tag_normalization_00150_permit()'
+       ) IS NULL
+       OR to_regprocedure(
+         'wouldkeep_maintenance.reject_tag_write_while_paused()'
+       ) IS NULL
+       OR (SELECT count(*)
+           FROM pg_catalog.pg_trigger trigger
+           WHERE trigger.tgname IN (
+             'wouldkeep_tags_write_pause',
+             'wouldkeep_document_tags_write_pause'
+           )
+          ) <> 2
+       OR (SELECT count(*)
+           FROM pg_catalog.pg_trigger trigger
+           WHERE (
+             (trigger.tgrelid = 'public.tags'::regclass
+              AND trigger.tgname = 'wouldkeep_tags_write_pause')
+             OR
+             (trigger.tgrelid = 'public.document_tags'::regclass
+              AND trigger.tgname = 'wouldkeep_document_tags_write_pause')
+           )
+             AND trigger.tgenabled = 'A'
+             AND trigger.tgtype = 62
+             AND NOT trigger.tgisinternal
+             AND trigger.tgfoid =
+               'wouldkeep_maintenance.reject_tag_write_while_paused()'::regprocedure
+          ) <> 2 THEN
+      RAISE EXCEPTION 'the tag-write pause deployment gate is partial or drifted'
+        USING ERRCODE = 'object_not_in_prerequisite_state';
+    END IF;
+
+    PERFORM wouldkeep_maintenance.open_tag_normalization_00150_permit();
+    deployment_permit_opened := true;
+  END IF;
 
   SELECT
     count(*),
@@ -297,6 +354,15 @@ BEGIN
   THEN
     RAISE EXCEPTION 'tag identity, metadata, or document references changed unexpectedly'
       USING ERRCODE = 'data_exception';
+  END IF;
+
+  IF deployment_permit_opened THEN
+    EXECUTE 'DROP TABLE pg_temp.wouldkeep_tag_normalization_00150_permit';
+
+    IF to_regclass('pg_temp.wouldkeep_tag_normalization_00150_permit') IS NOT NULL THEN
+      RAISE EXCEPTION 'the tag-normalization deployment permit was not closed'
+        USING ERRCODE = 'object_not_in_prerequisite_state';
+    END IF;
   END IF;
 END;
 $tag_normalization$;

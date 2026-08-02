@@ -112,3 +112,10 @@ BEGIN
     'tag_normalization_contract_passed tags=462 candidates=0 collisions=0 ledger=20';
 END;
 $tag_normalization_contract$;
+
+SELECT
+  'tag_normalization_contract_passed' AS result,
+  462::bigint AS tags,
+  0::bigint AS candidates,
+  0::bigint AS collisions,
+  20::bigint AS ledger_versions;

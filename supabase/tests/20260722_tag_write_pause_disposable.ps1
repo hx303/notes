@@ -124,6 +124,7 @@ $Files = [ordered]@{
   State = "supabase/tests/20260722_tag_write_pause_state.sql"
   Enable = "supabase/operations/20260722_tag_write_pause_enable.sql"
   Behavior = "supabase/tests/20260722_tag_write_pause_behavior.sql"
+  DeploymentPermit = "supabase/tests/20260722_tag_write_pause_disposable_deployment_permit.sql"
   Extended = "supabase/tests/20260722_tag_write_pause_disposable_extended.sql"
   CopyFrom = "supabase/tests/20260722_tag_write_pause_disposable_copy_from.sql"
   CommentDrift = "supabase/tests/20260722_tag_write_pause_disposable_comment_drift.sql"
@@ -481,6 +482,10 @@ try {
     "(?:^|,)24(?:,|$)",
     "55000",
     "42501"
+  ) | Out-Null
+
+  Invoke-PsqlFile "deployment-permit" $Files.DeploymentPermit 0 @(
+    "tag_write_pause_disposable_deployment_permit_passed"
   ) | Out-Null
 
   Invoke-PsqlFile "extended-matrix" $Files.Extended 0 @(

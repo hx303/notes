@@ -799,11 +799,60 @@ The schema backup is deliberately self-contained: it covers both `public` and th
 
 Section 2 must restart in a fresh evidence directory after any session interruption. If active-state verification or disable/released-state verification fails, stop with tag writes treated as paused; do not continue to section 3 and do not issue hand-written DDL.
 
-## 3. Production deployment is closed in this artifact
+## 3. Dedicated continuous-pause deployment channel
 
-There is intentionally no executable production migration or postflight command here. The hard pause rejects `00150`'s `UPDATE public.tags` with SQLSTATE `55000`; section 2 then restores normal writes after the authorized backup and read-only preflight. Therefore a later operator must not append a push command to this session or reuse its evidence.
+This channel is specific to `20260722000150`; it is not a general operator bypass. The hard pause remains active from the first backup checkpoint until the final postflight checkpoint. The reviewed owner-only helper `wouldkeep_maintenance.open_tag_normalization_00150_permit()` can create one transaction-local temporary permit only after the same backend holds exact `SHARE ROW EXCLUSIVE` locks on both `public.tags` and `public.document_tags`. The trigger accepts that permit only for statement-level `BEFORE UPDATE` on `public.tags`, by the common table owner, in the same backend and transaction. It continues to reject `INSERT`, `DELETE`, `TRUNCATE`, every `document_tags` write, ordinary roles, a forged same-named temporary table, and a security-definer call through an unprivileged session. The migration drops the permit and proves it absent before its single `DO` statement ends.
 
-Production deployment requires a new review and fresh authorization for a design that preserves a continuous write exclusion while allowing only the exact migration statement—for example, a precisely scoped operator exception or a single reviewed transaction. That future artifact must repeat fresh backup/preflight evidence, define failure recovery, prove the exact 20-version ledger and zero pending state, and add postflight separately. Until then, Dashboard SQL, a linked CLI push, migration-ledger repair, and manual trigger changes are forbidden.
+Supabase CLI `db push` queues all statements from one migration and then the `supabase_migrations.schema_migrations` insert in one implicit transaction. The reviewed implementation is the official CLI `MigrationFile.ExecBatch` path; data changes and the `00150` ledger row therefore commit or roll back together. References: [Supabase `db push` documentation](https://supabase.com/docs/reference/cli/supabase-db-push) and [Supabase CLI migration batch source](https://github.com/supabase/cli/blob/bd0d25023ed2/pkg/migration/file.go).
+
+### Fresh-window requirements
+
+- Start from a new evidence directory and rerun every identity, gate, behavior, backup, migration-list, dry-run, activity, aggregate preflight, and state-fingerprint step from section 2. Never reuse a prior preflight directory.
+- Pin the exact reviewed PR-head Git object. Its isolated snapshot must contain exactly the 19 remote migrations plus `20260722000150`; `20260722000200` must be physically absent even if a newer `main` contains it.
+- Keep the gate active. Immediately before the push, rerun the exact gate state, 24-statement behavior probe, migration list, dry-run, activity gate, preflight, and state fingerprint.
+- Initialize a deployment-release flag to false. The `finally` path may run the reviewed disable operation only after a complete postflight or an unambiguous all-pre-state rollback. If data/ledger state is mixed, cannot be read, or fails an exact fingerprint, leave the gate active and stop for recovery review.
+
+The only authorized write command in this channel is:
+
+```powershell
+Assert-GateActiveAtCheckpoint "before-db-push-00150"
+$Push00150 = Invoke-Capture "db-push-00150" @(
+  "db", "push", "--linked", "--yes", "--agent", "no", "--output-format", "text"
+)
+$PushText = $Push00150 -join "`n"
+$AppliedFiles = @([regex]::Matches(
+  $PushText,
+  'Applying migration\s+(\d{14}_[A-Za-z0-9_]+\.sql)'
+) | ForEach-Object { $_.Groups[1].Value })
+if ($AppliedFiles.Count -ne 1 -or
+    $AppliedFiles[0] -cne "20260722000150_normalize_existing_tags_for_atomic_save.sql") {
+  throw "Push output did not name exactly the approved 00150 migration"
+}
+Assert-GateActiveAtCheckpoint "after-db-push-00150"
+```
+
+No Dashboard SQL, direct execution of the migration file, hand-written DDL, or broad trigger disable is allowed. The pinned CLI and pinned workdir rules from section 2 still apply to the push.
+
+### Mandatory postflight before write release
+
+While the gate is still active:
+
+1. `migration list --linked --output-format json` must show the identical exact 20-version set on both local and remote sides, ending at `20260722000150`, with no unmatched row and no `20260722000200`.
+2. A second `db push --linked --dry-run` must report no pending migration.
+3. `20260722_tag_normalization_contract.sql` must return exactly one `tag_normalization_contract_passed` row with `tags=462`, `candidates=0`, `collisions=0`, and `ledger_versions=20`.
+4. `20260722_tag_normalization_state_fingerprint.sql` must preserve the preflight tag count, reference count, immutable tag fingerprint, and document-tag fingerprint; it must return `candidates=0`, `affected_refs=0`, `actual=projected`, and its final actual fingerprint must equal the preflight projected fingerprint.
+5. `20260722_tag_normalization_residue.sql` must return seven zero counts and `tag_normalization_rollback_residue_zero`.
+6. The exact gate state and 24-statement behavior probe must still pass. Only then set the deployment-release flag true, run the reviewed disable operation, and require the released catalog state to equal the initial absent state byte-for-byte.
+
+Preserve the push output, every before/after gate checkpoint, both migration lists, both dry-runs, pre/post tag fingerprints, the contract/residue results, backup hashes, and final release proof. Record only aggregate results in the repository; never commit or display `public-data.sql`.
+
+### Failure classification and ledger boundary
+
+- If the push command fails and both the tag fingerprint and ledger are still exactly at the reviewed pre-state, classify it as a clean rollback, retain the evidence, and the reviewed disable operation may restore writes.
+- If the client reports failure but both data and ledger exactly satisfy the complete post-state, run the full postflight and treat the server commit as authoritative.
+- Any mixed state—especially canonical data without the `00150` ledger row, or a ledger row without the canonical fingerprint—is blocking. Keep the pause active. Do not guess, rerun `db push`, or repair history inside this channel.
+
+Migration-ledger repair is not part of the normal path and must never run proactively. The current production ledger is healthy with only `00150` pending. A repair is considered only if fresh postflight proves an actual data/ledger mismatch and a separately reviewed recovery identifies the exact server transaction outcome. Successful deployment requires no repair.
 
 ## Recovery
 

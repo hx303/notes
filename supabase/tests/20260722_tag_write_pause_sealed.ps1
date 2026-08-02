@@ -1528,6 +1528,7 @@ $ExpectedInputPaths = @(
   "supabase/tests/20260722_tag_write_pause_disposable_comment_drift.sql",
   "supabase/tests/20260722_tag_write_pause_disposable_comment_restore.sql",
   "supabase/tests/20260722_tag_write_pause_disposable_copy_from.sql",
+  "supabase/tests/20260722_tag_write_pause_disposable_deployment_permit.sql",
   "supabase/tests/20260722_tag_write_pause_disposable_extended.sql",
   "supabase/tests/20260722_tag_write_pause_disposable_residue.sql",
   "supabase/tests/20260722_tag_write_pause_disposable_setup.sql",
