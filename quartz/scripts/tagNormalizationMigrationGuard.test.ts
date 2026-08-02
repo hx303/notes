@@ -179,8 +179,10 @@ test("migration is a bounded two-phase in-place tag update", () => {
   assert.equal((executable.match(/\bUPDATE\b/gi) ?? []).length, 2)
   assert.doesNotMatch(
     executable,
-    /\b(?:INSERT|DELETE|MERGE|TRUNCATE|COPY|EXECUTE|ALTER|CREATE|DROP|GRANT|REVOKE|COMMENT)\b/i,
+    /\b(?:INSERT|DELETE|MERGE|TRUNCATE|COPY|ALTER|CREATE|DROP|GRANT|REVOKE|COMMENT)\b/i,
   )
+  assert.equal((executable.match(/\bEXECUTE\b/gi) ?? []).length, 1)
+  assert.match(migration, /EXECUTE 'DROP TABLE pg_temp\.wouldkeep_tag_normalization_00150_permit'/)
   assert.match(
     migration,
     /LOCK TABLE public\.tags, public\.document_tags IN SHARE ROW EXCLUSIVE MODE/,
@@ -188,6 +190,13 @@ test("migration is a bounded two-phase in-place tag update", () => {
   assert.match(migration, /SET lock_timeout = '5s'/)
   assert.match(migration, /SET statement_timeout = '5min'/)
   assert.equal((migration.match(/GET DIAGNOSTICS phase_row_count = ROW_COUNT/g) ?? []).length, 2)
+  assert.equal((migration.match(/open_tag_normalization_00150_permit\(\)/g) ?? []).length, 3)
+  assert.match(migration, /deployment_gate_present BOOLEAN := false/)
+  assert.match(migration, /deployment_permit_opened BOOLEAN := false/)
+  assert.match(
+    migration,
+    /LOCK TABLE public\.tags, public\.document_tags IN SHARE ROW EXCLUSIVE MODE;[\s\S]*PERFORM wouldkeep_maintenance\.open_tag_normalization_00150_permit\(\);/,
+  )
   assert.match(migration, /SET normalized_name =\s*'__wouldkeep_tmp_22000150_'/)
   assert.match(
     migration,
@@ -199,6 +208,37 @@ test("migration is a bounded two-phase in-place tag update", () => {
     /left\([\s\S]*char_length\('__wouldkeep_tmp_22000150_'\)[\s\S]*= '__wouldkeep_tmp_22000150_'/,
   )
   assert.doesNotMatch(migration, /\b(?:462|65)\b/)
+})
+
+test("migration permit is conditional, lock-bound, and closed after both exact updates", () => {
+  const firstUpdate = migration.indexOf("UPDATE public.tags tag")
+  const secondUpdate = migration.indexOf("UPDATE public.tags tag", firstUpdate + 1)
+  const openPermit = migration.indexOf(
+    "PERFORM wouldkeep_maintenance.open_tag_normalization_00150_permit();",
+  )
+  const closePermit = migration.indexOf(
+    "EXECUTE 'DROP TABLE pg_temp.wouldkeep_tag_normalization_00150_permit';",
+  )
+
+  assert.ok(openPermit > -1 && openPermit < firstUpdate)
+  assert.ok(secondUpdate > firstUpdate && closePermit > secondUpdate)
+  assert.match(
+    migration,
+    /IF deployment_gate_present THEN[\s\S]*tag-write pause deployment gate is partial or drifted[\s\S]*open_tag_normalization_00150_permit\(\)/,
+  )
+  assert.match(migration, /trigger\.tgenabled = 'A'/)
+  assert.match(migration, /trigger\.tgtype = 62/)
+  assert.match(migration, /NOT trigger\.tgisinternal/)
+  assert.match(
+    migration,
+    /trigger\.tgfoid =[\s\S]*wouldkeep_maintenance\.reject_tag_write_while_paused\(\)'::regprocedure/,
+  )
+  assert.match(
+    migration,
+    /IF deployment_permit_opened THEN[\s\S]*DROP TABLE pg_temp\.wouldkeep_tag_normalization_00150_permit[\s\S]*deployment permit was not closed/,
+  )
+  assert.doesNotMatch(migration, /\b(?:SET LOCAL ROLE|SET ROLE|session_replication_role)\b/i)
+  assert.doesNotMatch(migration, /migration\s+repair/i)
 })
 
 test("all failures precede writes and all immutable state is verified after writes", () => {
@@ -232,7 +272,7 @@ test("migration and the future atomic-save contract use the identical canonical 
   assert.match(migration, /char_length\(intended\.canonical_name\) > 80/)
 })
 
-test("production gates are single-statement read-only aggregate contracts", () => {
+test("production gates are bounded read-only aggregate contracts", () => {
   for (const sql of [
     productionPreflight,
     productionContract,
@@ -241,8 +281,12 @@ test("production gates are single-statement read-only aggregate contracts", () =
     residueCheck,
   ]) {
     assertReadOnlyGate(sql)
+  }
+  for (const sql of [productionActivityGate, productionStateFingerprint, residueCheck]) {
     assert.equal(topLevelStatements(sql).length, 1)
   }
+  assert.equal(topLevelStatements(productionContract).length, 2)
+  assert.equal(topLevelStatements(productionPreflight).length, 2)
 
   for (const sql of [productionPreflight, productionContract, productionStateFingerprint]) {
     assert.doesNotMatch(
@@ -255,9 +299,15 @@ test("production gates are single-statement read-only aggregate contracts", () =
   assert.match(productionPreflight, /candidate_count <> 6/)
   assert.match(productionPreflight, /affected_reference_count <> 65/)
   assert.match(productionPreflight, /transient_collision_count <> 0/)
+  assert.match(productionContract, /'tag_normalization_contract_passed' AS result/)
+  assert.match(productionContract, /462::bigint AS tags/)
+  assert.match(productionContract, /20::bigint AS ledger_versions/)
   assert.match(productionPreflight, /count\(\*\).*schema_migrations[\s\S]*<> 19/)
   assert.match(productionPreflight, /version IN \('20260722000150', '20260722000200'\)/)
-  assert.match(productionPreflight, /tag_normalization_preflight_passed/)
+  assert.match(
+    productionPreflight,
+    /SELECT\s+'tag_normalization_preflight_passed' AS result,\s+462::BIGINT AS tags,\s+6::BIGINT AS candidates,\s+65::BIGINT AS affected_references,\s+0::BIGINT AS collisions;/,
+  )
 
   assert.match(productionContract, /count\(\*\) FROM public\.tags\) <> 462/)
   assert.match(productionContract, /count\(\*\).*schema_migrations[\s\S]*<> 20/)
@@ -328,9 +378,9 @@ test("negative fixtures fail inside open disposable transactions and residue is 
   assert.match(residueCheck, /temporary_keys/)
 })
 
-test("runbook pins the isolated branch, three backups, single write, and 19-to-20 ledger", () => {
+test("runbook pins the isolated gate branch, three backups, and read-only preflight", () => {
   assert.match(productionRunbook, /Validated Supabase CLI: `2\.109\.1`/)
-  assert.match(productionRunbook, /release\/p1b-tag-normalization-22000150/)
+  assert.match(productionRunbook, /release\/p1b-00150-tag-write-pause-gate/)
   assert.match(productionRunbook, /19571ca19dabc80aeacac7a1ac016667dcaa9f0f/)
   assert.match(productionRunbook, /ApprovedSha/)
   assert.match(productionRunbook, /ApprovedProjectRef/)
@@ -340,22 +390,20 @@ test("runbook pins the isolated branch, three backups, single write, and 19-to-2
   assert.match(productionRunbook, /Get-FileHash[\s\S]*-Algorithm SHA256/)
   assert.match(productionRunbook, /20260722000150_normalize_existing_tags_for_atomic_save\.sql/)
   assert.match(productionRunbook, /20260722_tag_normalization_preflight\.sql/)
-  assert.match(productionRunbook, /20260722_tag_normalization_contract\.sql/)
   assert.match(productionRunbook, /20260722_tag_normalization_state_fingerprint\.sql/)
+  assert.match(productionRunbook, /CREATE SCHEMA\\s\+\(\?:IF NOT EXISTS\\s\+\)\?/)
+  assert.equal((productionRunbook.match(/CREATE\(\?: OR REPLACE\)\? TRIGGER/g) ?? []).length, 2)
+  assert.match(productionRunbook, /CREATE\(\?: OR REPLACE\)\? FUNCTION/)
   assert.match(productionRunbook, /\$ExpectedRemotePre = @\([\s\S]*"20260722000100"\s*\)/)
   assert.match(
     productionRunbook,
     /\$ExpectedLocalPre = @\(\$ExpectedRemotePre \+ "20260722000150"\)/,
   )
-  assert.match(productionRunbook, /\$ExpectedRemotePost = @\(\$ExpectedLocalPre\)/)
   for (const helper of [
     "function Invoke-Capture",
     "function Assert-Identity",
-    "function Get-RemoteVersions",
     "function Assert-OnlyTargetPending",
-    "function Assert-SameEvidence",
     "function Get-TagState",
-    "function Assert-PostTagState",
     "function Assert-ResidueZero",
     "function Invoke-PsqlCapture",
   ]) {
@@ -371,15 +419,13 @@ test("runbook pins the isolated branch, three backups, single write, and 19-to-2
     /\) 3 "canonical tag names would collide inside a knowledge base"/,
   )
   assert.match(productionRunbook, /\) 3 "a tag cannot be represented by the v1 canonical contract"/)
-  assert.match(
-    productionRunbook,
-    /Assert-SameEvidence \$MigrationListImmediate \$MigrationListInitial/,
-  )
-  assert.match(productionRunbook, /Assert-SameEvidence \$DryRunImmediate \$DryRunInitial/)
-  assert.match(productionRunbook, /Assert-SameEvidence \$PreflightImmediate \$PreflightInitial/)
-  assert.match(productionRunbook, /Assert-SameEvidence \$StateImmediate \$StateInitial/)
-  assert.equal((productionRunbook.match(/db", "push", "--linked", "--yes"/g) ?? []).length, 1)
-  assert.match(productionRunbook, /zero pending/i)
-  assert.match(productionRunbook, /PRODUCTION_SAFETY\.md/)
-  assert.match(productionRunbook, /does not authorize production deployment/i)
+  assert.match(productionRunbook, /Dedicated continuous-pause deployment channel/)
+  assert.match(productionRunbook, /open_tag_normalization_00150_permit/)
+  assert.match(productionRunbook, /Invoke-Capture "db-push-00150"/)
+  assert.match(productionRunbook, /"db", "push", "--linked", "--yes"/)
+  assert.match(productionRunbook, /Applying migration/)
+  assert.match(productionRunbook, /20260722_tag_normalization_contract\.sql/)
+  assert.match(productionRunbook, /20260722_tag_normalization_residue\.sql/)
+  assert.match(productionRunbook, /leave the gate active and stop/i)
+  assert.match(productionRunbook, /Migration-ledger repair is not part of the normal path/)
 })
