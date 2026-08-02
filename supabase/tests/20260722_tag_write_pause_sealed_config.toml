@@ -1,0 +1,18 @@
+project_id = "__PROJECT_ID__"
+
+[db]
+port = __DB_PORT__
+shadow_port = __SHADOW_PORT__
+major_version = 17
+
+[db.seed]
+enabled = false
+
+[realtime]
+enabled = false
+
+[auth]
+enabled = true
+
+[storage]
+enabled = true

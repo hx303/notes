@@ -100,3 +100,14 @@ Append new entries; never rewrite prior decisions. Each reversal must cite new e
 - Reason: silently hiding the row traps users who need to remove it, while relying on browser validation alone permits forged cross-owner or cross-library REST writes.
 - Impact: P06 includes forward migration `20260721000100`, command-specific owner RLS, anonymous denial, owner/other/anon/service-role verification, same-library candidate filtering, and fail-before-core-write relationship checks. The migration remains a separate production approval gate.
 - Re-evaluate when: document restoration semantics or a reviewed relationship-history model requires a different tombstone lifecycle.
+
+## D-011 — Keep the tag pause continuous with a transaction-local `00150` permit
+
+- Date: 2026-08-02.
+- Question: How can `20260722000150` update six legacy tags while production tag writes remain continuously paused?
+- Decision: keep both ALWAYS statement triggers active and add one owner-only, security-invoker helper that opens a transaction-local temporary permit only after the migration backend holds exact `SHARE ROW EXCLUSIVE` locks on both tag relations. The trigger recognizes the exact permit only for statement-level `BEFORE UPDATE` on `public.tags` in the same backend, transaction, session user, invoker, and table owner. The migration closes the permit before completion.
+- Reason: temporarily disabling the hard pause creates an application-write race. A narrowly catalog-validated permit preserves continuous exclusion and remains unavailable to ordinary roles, forged temporary tables, security-definer indirection, other operations, and `document_tags`.
+- Atomicity decision: pinned Supabase CLI `db push` executes every statement in one migration and its ledger insert in one implicit batch transaction. Data and the `00150` ledger row therefore commit or roll back together. Normal deployment never repairs the ledger; any observed mixed state is blocking and keeps the pause active.
+- Evidence: static migration/gate contracts, disposable spoof/ACL/operation matrix, and the sealed PostgreSQL 17 flow. Official implementation references: [Supabase `db push`](https://supabase.com/docs/reference/cli/supabase-db-push) and [`MigrationFile.ExecBatch`](https://github.com/supabase/cli/blob/bd0d25023ed2/pkg/migration/file.go).
+- Impact: the deployment window must use the isolated exact-20-migration snapshot, repeat fresh backups and preflight, apply only `00150`, prove the exact 20/20 ledger and canonical fingerprints while the pause remains active, then run the reviewed disable operation. `00200` remains a later gate.
+- Re-evaluate when: the migration runner stops providing batch transaction atomicity, the tag ownership model changes, or another migration needs a separately named permit.
