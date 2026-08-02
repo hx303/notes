@@ -341,6 +341,9 @@ test("runbook pins the isolated gate branch, three backups, and read-only prefli
   assert.match(productionRunbook, /20260722000150_normalize_existing_tags_for_atomic_save\.sql/)
   assert.match(productionRunbook, /20260722_tag_normalization_preflight\.sql/)
   assert.match(productionRunbook, /20260722_tag_normalization_state_fingerprint\.sql/)
+  assert.match(productionRunbook, /CREATE SCHEMA\\s\+\(\?:IF NOT EXISTS\\s\+\)\?/)
+  assert.equal((productionRunbook.match(/CREATE\(\?: OR REPLACE\)\? TRIGGER/g) ?? []).length, 2)
+  assert.match(productionRunbook, /CREATE\(\?: OR REPLACE\)\? FUNCTION/)
   assert.match(productionRunbook, /\$ExpectedRemotePre = @\([\s\S]*"20260722000100"\s*\)/)
   assert.match(
     productionRunbook,

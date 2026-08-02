@@ -639,10 +639,10 @@ try {
   $BackupFiles = @($SchemaBackup, $DataBackup, $LedgerBackup)
   if ($BackupFiles.Count -ne 3) { throw "Exactly three backups are required" }
   Assert-DumpArtifact $SchemaBackup @(
-    '(?i)^\s*CREATE SCHEMA\s+(?:"wouldkeep_maintenance"|wouldkeep_maintenance)\s*;',
-    '(?i)^\s*CREATE FUNCTION\s+(?:"wouldkeep_maintenance"|wouldkeep_maintenance)\.(?:"reject_tag_write_while_paused"|reject_tag_write_while_paused)\s*\(',
-    '(?i)^\s*CREATE TRIGGER\s+(?:"wouldkeep_tags_write_pause"|wouldkeep_tags_write_pause)\b',
-    '(?i)^\s*CREATE TRIGGER\s+(?:"wouldkeep_document_tags_write_pause"|wouldkeep_document_tags_write_pause)\b',
+    '(?i)^\s*CREATE SCHEMA\s+(?:IF NOT EXISTS\s+)?(?:"wouldkeep_maintenance"|wouldkeep_maintenance)\s*;',
+    '(?i)^\s*CREATE(?: OR REPLACE)? FUNCTION\s+(?:"wouldkeep_maintenance"|wouldkeep_maintenance)\.(?:"reject_tag_write_while_paused"|reject_tag_write_while_paused)\s*\(',
+    '(?i)^\s*CREATE(?: OR REPLACE)? TRIGGER\s+(?:"wouldkeep_tags_write_pause"|wouldkeep_tags_write_pause)\s+',
+    '(?i)^\s*CREATE(?: OR REPLACE)? TRIGGER\s+(?:"wouldkeep_document_tags_write_pause"|wouldkeep_document_tags_write_pause)\s+',
     '(?i)^\s*ALTER TABLE(?: ONLY)?\s+(?:"public"|public)\.(?:"tags"|tags)\s+ENABLE ALWAYS TRIGGER\s+(?:"wouldkeep_tags_write_pause"|wouldkeep_tags_write_pause)\s*;',
     '(?i)^\s*ALTER TABLE(?: ONLY)?\s+(?:"public"|public)\.(?:"document_tags"|document_tags)\s+ENABLE ALWAYS TRIGGER\s+(?:"wouldkeep_document_tags_write_pause"|wouldkeep_document_tags_write_pause)\s*;',
     '(?i)^\s*CREATE TABLE\s+(?:IF NOT EXISTS\s+)?(?:"public"|public)\.(?:"tags"|tags)\s*\('
