@@ -18,7 +18,8 @@ DECLARE
     '20260718000400', '20260718000500', '20260718000600',
     '20260718000700', '20260718000800', '20260718000900',
     '20260718001000', '20260718001100', '20260718001200',
-    '20260721000100', '20260722000100', '20260722000200'
+    '20260721000100', '20260722000100', '20260722000150',
+    '20260722000200'
   ]::TEXT[];
   expected_columns CONSTANT TEXT[] := ARRAY[
     'created', 'document_id', 'knowledge_base_id', 'operation_id', 'owner_id',
@@ -554,11 +555,17 @@ BEGIN
   FROM supabase_migrations.schema_migrations;
 
   IF actual_ledger IS DISTINCT FROM expected_ledger
-    OR (SELECT count(*) FROM supabase_migrations.schema_migrations) <> 20
+    OR (SELECT count(*) FROM supabase_migrations.schema_migrations) <> 21
     OR (
       SELECT count(DISTINCT version)
       FROM supabase_migrations.schema_migrations
-    ) <> 20
+    ) <> 21
+    OR (
+      SELECT count(*)
+      FROM supabase_migrations.schema_migrations
+      WHERE version = '20260722000150'
+        AND name = 'normalize_existing_tags_for_atomic_save'
+    ) <> 1
     OR (
       SELECT count(*)
       FROM supabase_migrations.schema_migrations
