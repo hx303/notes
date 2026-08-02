@@ -179,3 +179,10 @@ BEGIN
     'tag_normalization_preflight_passed tags=462 candidates=6 affected_references=65 collisions=0';
 END;
 $tag_normalization_preflight$;
+
+SELECT
+  'tag_normalization_preflight_passed' AS result,
+  462::BIGINT AS tags,
+  6::BIGINT AS candidates,
+  65::BIGINT AS affected_references,
+  0::BIGINT AS collisions;

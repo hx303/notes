@@ -232,7 +232,7 @@ test("migration and the future atomic-save contract use the identical canonical 
   assert.match(migration, /char_length\(intended\.canonical_name\) > 80/)
 })
 
-test("production gates are single-statement read-only aggregate contracts", () => {
+test("production gates are bounded read-only aggregate contracts", () => {
   for (const sql of [
     productionPreflight,
     productionContract,
@@ -241,8 +241,16 @@ test("production gates are single-statement read-only aggregate contracts", () =
     residueCheck,
   ]) {
     assertReadOnlyGate(sql)
+  }
+  for (const sql of [
+    productionContract,
+    productionActivityGate,
+    productionStateFingerprint,
+    residueCheck,
+  ]) {
     assert.equal(topLevelStatements(sql).length, 1)
   }
+  assert.equal(topLevelStatements(productionPreflight).length, 2)
 
   for (const sql of [productionPreflight, productionContract, productionStateFingerprint]) {
     assert.doesNotMatch(
@@ -257,7 +265,10 @@ test("production gates are single-statement read-only aggregate contracts", () =
   assert.match(productionPreflight, /transient_collision_count <> 0/)
   assert.match(productionPreflight, /count\(\*\).*schema_migrations[\s\S]*<> 19/)
   assert.match(productionPreflight, /version IN \('20260722000150', '20260722000200'\)/)
-  assert.match(productionPreflight, /tag_normalization_preflight_passed/)
+  assert.match(
+    productionPreflight,
+    /SELECT\s+'tag_normalization_preflight_passed' AS result,\s+462::BIGINT AS tags,\s+6::BIGINT AS candidates,\s+65::BIGINT AS affected_references,\s+0::BIGINT AS collisions;/,
+  )
 
   assert.match(productionContract, /count\(\*\) FROM public\.tags\) <> 462/)
   assert.match(productionContract, /count\(\*\).*schema_migrations[\s\S]*<> 20/)
