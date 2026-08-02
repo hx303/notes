@@ -328,9 +328,9 @@ test("negative fixtures fail inside open disposable transactions and residue is 
   assert.match(residueCheck, /temporary_keys/)
 })
 
-test("runbook pins the isolated branch, three backups, single write, and 19-to-20 ledger", () => {
+test("runbook pins the isolated gate branch, three backups, and read-only preflight", () => {
   assert.match(productionRunbook, /Validated Supabase CLI: `2\.109\.1`/)
-  assert.match(productionRunbook, /release\/p1b-tag-normalization-22000150/)
+  assert.match(productionRunbook, /release\/p1b-00150-tag-write-pause-gate/)
   assert.match(productionRunbook, /19571ca19dabc80aeacac7a1ac016667dcaa9f0f/)
   assert.match(productionRunbook, /ApprovedSha/)
   assert.match(productionRunbook, /ApprovedProjectRef/)
@@ -340,22 +340,17 @@ test("runbook pins the isolated branch, three backups, single write, and 19-to-2
   assert.match(productionRunbook, /Get-FileHash[\s\S]*-Algorithm SHA256/)
   assert.match(productionRunbook, /20260722000150_normalize_existing_tags_for_atomic_save\.sql/)
   assert.match(productionRunbook, /20260722_tag_normalization_preflight\.sql/)
-  assert.match(productionRunbook, /20260722_tag_normalization_contract\.sql/)
   assert.match(productionRunbook, /20260722_tag_normalization_state_fingerprint\.sql/)
   assert.match(productionRunbook, /\$ExpectedRemotePre = @\([\s\S]*"20260722000100"\s*\)/)
   assert.match(
     productionRunbook,
     /\$ExpectedLocalPre = @\(\$ExpectedRemotePre \+ "20260722000150"\)/,
   )
-  assert.match(productionRunbook, /\$ExpectedRemotePost = @\(\$ExpectedLocalPre\)/)
   for (const helper of [
     "function Invoke-Capture",
     "function Assert-Identity",
-    "function Get-RemoteVersions",
     "function Assert-OnlyTargetPending",
-    "function Assert-SameEvidence",
     "function Get-TagState",
-    "function Assert-PostTagState",
     "function Assert-ResidueZero",
     "function Invoke-PsqlCapture",
   ]) {
@@ -371,15 +366,8 @@ test("runbook pins the isolated branch, three backups, single write, and 19-to-2
     /\) 3 "canonical tag names would collide inside a knowledge base"/,
   )
   assert.match(productionRunbook, /\) 3 "a tag cannot be represented by the v1 canonical contract"/)
-  assert.match(
-    productionRunbook,
-    /Assert-SameEvidence \$MigrationListImmediate \$MigrationListInitial/,
-  )
-  assert.match(productionRunbook, /Assert-SameEvidence \$DryRunImmediate \$DryRunInitial/)
-  assert.match(productionRunbook, /Assert-SameEvidence \$PreflightImmediate \$PreflightInitial/)
-  assert.match(productionRunbook, /Assert-SameEvidence \$StateImmediate \$StateInitial/)
-  assert.equal((productionRunbook.match(/db", "push", "--linked", "--yes"/g) ?? []).length, 1)
-  assert.match(productionRunbook, /zero pending/i)
-  assert.match(productionRunbook, /PRODUCTION_SAFETY\.md/)
+  assert.match(productionRunbook, /Production deployment is closed in this artifact/)
+  assert.doesNotMatch(productionRunbook, /db", "push", "--linked", "--yes"/)
+  assert.doesNotMatch(productionRunbook, /Invoke-Capture\s+"db-push"/)
   assert.match(productionRunbook, /does not authorize production deployment/i)
 })
