@@ -345,6 +345,14 @@ test("runbook keeps the pause active around every preflight read and always rest
   assert.match(runbook, /Assert-GateActiveAtCheckpoint "after-state"/)
   assert.match(runbook, /git archive --format=zip/)
   assert.match(runbook, /Copy-Item -LiteralPath \$SupabaseSource -Destination \$ApprovedSupabase/)
+  assert.match(
+    runbook,
+    /Copy-Item -LiteralPath \$SupabaseGoSource -Destination \$ApprovedSupabaseGo/,
+  )
+  assert.match(runbook, /22C0F28F013411C7A7B880116CD33636EDB955A64278914692EEA010BCC98DC7/)
+  assert.match(runbook, /0137BE4315460587A01D045011EBC4FCA6E16458B2171EFB27330F177375693B/)
+  assert.match(runbook, /SUPABASE_GO_BINARY/)
+  assert.match(runbook, /"supabase\.exe", "supabase-go\.exe"/)
   assert.match(runbook, /function Assert-ApprovedSnapshot/)
   assert.match(runbook, /\$script:SnapshotHashes/)
   assert.match(runbook, /"--workdir" \$script:ApprovedWorkdir/)

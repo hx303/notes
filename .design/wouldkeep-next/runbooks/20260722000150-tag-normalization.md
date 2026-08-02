@@ -252,6 +252,8 @@ $ApprovedProjectRef = "<approved-project-ref>"
 $EvidenceRoot = "<absolute-protected-path-outside-repository>"
 $ExpectedMigrationFile = "20260722000150_normalize_existing_tags_for_atomic_save.sql"
 $CreationBase = "19571ca19dabc80aeacac7a1ac016667dcaa9f0f"
+$ExpectedSupabaseShimSha256 = "22C0F28F013411C7A7B880116CD33636EDB955A64278914692EEA010BCC98DC7"
+$ExpectedSupabaseGoSha256 = "0137BE4315460587A01D045011EBC4FCA6E16458B2171EFB27330F177375693B"
 $ExpectedRemotePre = @(
   "20260712", "20260714", "20260715", "20260716", "20260717",
   "20260718000100", "20260718000200", "20260718000300",
@@ -322,8 +324,12 @@ function Assert-IdentityMatchesInitial([string]$Label) {
 
 function Assert-ApprovedSnapshot {
   if ((Get-FileHash -LiteralPath $script:Supabase -Algorithm SHA256 -ErrorAction Stop).Hash -cne
-      $script:SupabaseHash) {
-    throw "Pinned Supabase executable changed"
+      $script:SupabaseHash -or
+      (Get-FileHash -LiteralPath $script:SupabaseGo -Algorithm SHA256 -ErrorAction Stop).Hash -cne
+        $script:SupabaseGoHash -or
+      [Environment]::GetEnvironmentVariable("SUPABASE_GO_BINARY", "Process") -cne
+        $script:SupabaseGo) {
+    throw "Pinned Supabase toolchain changed"
   }
   foreach ($Entry in $script:SnapshotHashes.GetEnumerator()) {
     $Path = Join-Path $script:ApprovedWorkdir $Entry.Key
@@ -502,21 +508,39 @@ New-Item -ItemType Directory -Path $EvidenceDir -ErrorAction Stop | Out-Null
 $script:EvidenceDir = $EvidenceDir
 $ResolvedSupabase = Get-Command $SupabaseCommand -CommandType Application -ErrorAction Stop
 $SupabaseSource = [IO.Path]::GetFullPath($ResolvedSupabase.Source)
-$SupabaseSourceHash = (Get-FileHash -LiteralPath $SupabaseSource -Algorithm SHA256).Hash
-$ApprovedSupabase = Join-Path $EvidenceDir "supabase-2.109.1.exe"
-Copy-Item -LiteralPath $SupabaseSource -Destination $ApprovedSupabase -ErrorAction Stop
-$script:Supabase = $ApprovedSupabase
-$script:SupabaseHash = (Get-FileHash -LiteralPath $script:Supabase -Algorithm SHA256).Hash
-if ($script:SupabaseHash -cne $SupabaseSourceHash) {
-  throw "Pinned Supabase executable copy mismatch"
+$SupabaseGoSource = Join-Path (Split-Path -Parent $SupabaseSource) "supabase-go.exe"
+if (-not (Test-Path -LiteralPath $SupabaseGoSource -PathType Leaf)) {
+  throw "Supabase companion executable is missing"
 }
+$SupabaseSourceHash = (Get-FileHash -LiteralPath $SupabaseSource -Algorithm SHA256).Hash
+$SupabaseGoSourceHash = (Get-FileHash -LiteralPath $SupabaseGoSource -Algorithm SHA256).Hash
+if ($SupabaseSourceHash -cne $ExpectedSupabaseShimSha256 -or
+    $SupabaseGoSourceHash -cne $ExpectedSupabaseGoSha256) {
+  throw "Supabase 2.109.1 toolchain hash mismatch"
+}
+$ApprovedSupabase = Join-Path $EvidenceDir "supabase.exe"
+$ApprovedSupabaseGo = Join-Path $EvidenceDir "supabase-go.exe"
+Copy-Item -LiteralPath $SupabaseSource -Destination $ApprovedSupabase -ErrorAction Stop
+Copy-Item -LiteralPath $SupabaseGoSource -Destination $ApprovedSupabaseGo -ErrorAction Stop
+$script:Supabase = $ApprovedSupabase
+$script:SupabaseGo = $ApprovedSupabaseGo
+$script:SupabaseHash = (Get-FileHash -LiteralPath $script:Supabase -Algorithm SHA256).Hash
+$script:SupabaseGoHash = (Get-FileHash -LiteralPath $script:SupabaseGo -Algorithm SHA256).Hash
+if ($script:SupabaseHash -cne $SupabaseSourceHash -or
+    $script:SupabaseGoHash -cne $SupabaseGoSourceHash) {
+  throw "Pinned Supabase toolchain copy mismatch"
+}
+[Environment]::SetEnvironmentVariable("SUPABASE_GO_BINARY", $script:SupabaseGo, "Process")
 
 $Identity = Assert-Identity
 $script:InitialIdentity = $Identity
 Write-Evidence "git-sha.txt" @($Identity.Sha)
 Write-Evidence "supabase-version.txt" @($Identity.Cli)
 Write-Evidence "project-ref.txt" @($Identity.Ref)
-Write-Evidence "supabase-cli-sha256.txt" @($script:SupabaseHash)
+Write-Evidence "supabase-cli-sha256.txt" @(
+  "supabase.exe=$($script:SupabaseHash)",
+  "supabase-go.exe=$($script:SupabaseGoHash)"
+)
 Write-Evidence "started-utc.txt" @((Get-Date).ToUniversalTime().ToString("o"))
 
 # Materialize the reviewed Git object, not the mutable worktree. Every linked
@@ -744,7 +768,7 @@ finally {
 Write-Evidence "completed-utc.txt" @((Get-Date).ToUniversalTime().ToString("o"))
 $RequiredEvidence = @(
   "git-sha.txt", "supabase-version.txt", "supabase-cli-sha256.txt", "project-ref.txt",
-  "supabase-2.109.1.exe", "approved-supabase.zip", "approved-archive-sha256.txt",
+  "supabase.exe", "supabase-go.exe", "approved-supabase.zip", "approved-archive-sha256.txt",
   "approved-inputs-sha256.txt",
   "started-utc.txt",
   "gate-state-initial.txt", "gate-enable.txt", "gate-state-after-enable.txt",
