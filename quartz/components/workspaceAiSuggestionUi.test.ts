@@ -72,13 +72,16 @@ test("gate-sensitive document transitions refresh the AI availability copy", () 
     script.indexOf("const startNewDocument"),
     script.indexOf("[data-new-document]"),
   )
-  assert.equal((startNewDocument.match(/refreshAiSelectionStatus\(\)/g) ?? []).length, 2)
+  assert.equal((startNewDocument.match(/refreshAiSelectionStatus\(\)/g) ?? []).length, 1)
 
   const clearDocument = script.slice(
     script.indexOf('root.querySelector("[data-editor-clear]")'),
     script.indexOf("if (workspace && workspaceSection"),
   )
-  assert.match(clearDocument, /allowEditorSaves\("new"\)[\s\S]*?refreshAiSelectionStatus\(\)/)
+  assert.match(
+    clearDocument,
+    /const nextScope = bindFreshEditorDraftScope\(\)[\s\S]*?allowEditorSaves\(nextScope\)[\s\S]*?refreshAiSelectionStatus\(\)/,
+  )
   assert.match(script, /setAiSuggestionStatus\(message\)/)
 })
 

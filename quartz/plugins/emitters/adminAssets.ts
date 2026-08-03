@@ -3,16 +3,7 @@ import { dirname } from "path"
 import { FilePath, joinSegments } from "../../util/path"
 import { QuartzEmitterPlugin } from "../types"
 
-const browserFiles = [
-  "index.html",
-  "admin.css",
-  "admin-shell.js",
-  "auth.js",
-  "icon-192.png",
-  "icon-512.png",
-  "manifest.json",
-  "sw.js",
-] as const
+const browserFiles = ["index.html", "sw.js"] as const
 
 export const AdminAssets: QuartzEmitterPlugin = () => ({
   name: "AdminAssets",

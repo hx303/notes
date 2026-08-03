@@ -63,7 +63,9 @@ export default ((opts?: Partial<FolderContentOptions>) => {
 
     if (
       /^account(?:\/(?:signup|forgot|recover))?\/index$/.test(fileData.slug ?? "") ||
-      /^workspace(?:\/(?:knowledge|write|settings(?:\/ai)?))?\/index$/.test(fileData.slug ?? "")
+      /^workspace(?:\/(?:knowledge|write|site|settings(?:\/ai)?))?\/index$/.test(
+        fileData.slug ?? "",
+      )
     ) {
       return <AccountPage {...props} />
     }

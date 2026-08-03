@@ -52,7 +52,7 @@ Date: 2026-07-16
 
 ## Operations, Privacy & Quality
 
-- [ ] **站长运行健康页**：在 `/admin/` 仅展示调用量、成功率、延迟、错误码和估算费用，不展示普通用户正文、提示词或模型完整输出。 _Modifies: existing admin shell; creates: aggregated metrics RPC._
+- [ ] **站长运行健康页**：在 `/workspace/site/` 仅展示调用量、成功率、延迟、错误码和估算费用，不展示普通用户正文、提示词或模型完整输出。 _Modifies: workspace site operations; creates: aggregated metrics RPC._
 - [ ] **AI 数据查看与删除**：用户可以查看最近 AI 活动并删除建议、运行元数据和向量；账户删除时验证级联清理。 _Modifies: AI settings page; creates: deletion RPC and confirmation state._
 - [ ] **50 条中文评估集**：覆盖标签、链接、重复、引用正确性、拒答和跨账户隔离，记录基准模型、提示词版本和通过阈值。 _Creates: eval fixtures and repeatable evaluation command._
 - [ ] **可访问性与失败状态**：完成键盘操作、焦点恢复、屏幕阅读器状态、流式取消、超时、离线、限额、服务不可用和 reduced-motion 验收。 _Modifies: all new AI surfaces; reuses: current design tokens and accessible status patterns._

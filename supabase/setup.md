@@ -15,6 +15,7 @@
 进入项目 Dashboard → Settings → API：
 
 记下两个值：
+
 - **Project URL**: `https://xxxxxxxxxxxx.supabase.co`
 - **anon public key**: `eyJhbGciOiJIUzI1NiIs...`
 
@@ -35,19 +36,15 @@
 3. 粘贴，点击 **Run**
 4. 应该看到全部执行成功
 
-## 第 5 步：配置 admin/index.html
+## 第 5 步：配置账户与工作区客户端
 
-打开 `static/admin/index.html`，找到以下两行并替换：
+账户入口是 `/account/`，站点运营入口是 `/workspace/site/`。浏览器只可配置 Project URL 与 publishable/anon key；不要把 `service_role` key 写入任何 Quartz 组件或静态文件。
 
-```javascript
-// 把 YOUR_SUPABASE_URL 和 YOUR_SUPABASE_ANON_KEY 替换为实际值
-```
-
-替换为你在第 2 步获取的值。
+旧 `static/admin/index.html` 已退役为迁移跳转页，不再承载认证、评论或数据库配置。
 
 ## 第 6 步：创建第一个管理员
 
-1. 在 admin 页面注册一个账号（邮箱 + 密码）
+1. 在 `/account/signup/` 注册一个账号（邮箱 + 密码）
 2. 在 Supabase Dashboard → Table Editor → `auth.users` 中找到你的 `id`
 3. 在 SQL Editor 中执行：
 
@@ -55,11 +52,12 @@
 INSERT INTO public.user_roles (user_id, role) VALUES ('你复制过来的UUID', 'admin');
 ```
 
-之后你就可以在 admin 页面给其他用户分配 admin 权限了。
+部署站点所有者权限迁移后，站长可在 `/workspace/site/` 使用受保护的角色 RPC 分配或撤销站点角色。普通用户直接访问该页面会被拒绝。
 
 ## 第 7 步：部署
 
 按照正常流程部署：
+
 ```powershell
 cd G:\OpenClaw-Workspace\notes-website
 npx quartz build
@@ -68,12 +66,13 @@ npx quartz build
 
 ## 文件清单
 
-| 文件 | 用途 |
-|------|------|
-| `supabase/schema.sql` | 数据库建表脚本 |
-| `supabase/setup.md` | 本文件 |
-| `static/admin/auth.js` | 认证 + 评论 JS 模块 |
-| `static/admin/index.html` | 已修改的 admin 编辑器 |
+| 文件                                              | 用途                                  |
+| ------------------------------------------------- | ------------------------------------- |
+| `supabase/schema.sql`                             | 数据库建表脚本                        |
+| `supabase/setup.md`                               | 本文件                                |
+| `quartz/components/AccountPage.tsx`               | 账户、个人工作区与站点运营界面        |
+| `quartz/components/scripts/accountPage.inline.ts` | 登录、评论软删除与角色 RPC 客户端逻辑 |
+| `static/admin/index.html`                         | 旧 `/admin/` 的无依赖迁移跳转页       |
 
 ## 环境变量参考
 

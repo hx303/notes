@@ -8,24 +8,51 @@ import {
   type AiSettingsDraft,
   type ProfileSettingsDraft,
 } from "./accountSettingsPersistence.ts"
-import { bindDocumentEditorRoute } from "./editorDraftRoute.ts"
+import {
+  EDITOR_DRAFT_SCOPE_PREFIX,
+  bindDocumentEditorRoute,
+  bindNewEditorDraftRoute,
+  createEditorDraftId,
+  editorDraftScope,
+  parseEditorDraftId,
+  resolveEditorRouteDecision,
+  workspaceAuthReturnRoute,
+  type EditorDraftMode,
+} from "./editorDraftRoute.ts"
+import {
+  readFlatDraftSessionRecovery,
+  removeFlatDraftSessionRecovery,
+  writeFlatDraftSessionRecovery,
+} from "./flatDraftRecovery.ts"
 import {
   addEditorBackupMetadata,
   createEditorTabDraftState,
   createSerializedSaveQueue,
   inspectEditorBackup,
-  materializeEditorOutboxFormIdentity,
   removeStorageItemIfUnchanged,
+  selectRecoverableEditorBackup,
   setStorageItemSafely,
   type EditorBackup,
 } from "./editorRecovery.ts"
 import { createEditorCoordinator, type EditorCoordinator } from "./editorCoordinator.ts"
 import {
-  createEditorOutbox,
   createIndexedDbEditorOutboxRepository,
-  type EditorOutboxClaim,
+  createReplaySafeEditorOutbox,
+  createReplaySafeIndexedDbEditorOutboxRepository,
+  type EditorOutboxConflictResolutionToken,
   type EditorOutboxRecord,
 } from "./editorOutbox.ts"
+import {
+  EDITOR_ATOMIC_SAVE_PROTOCOL,
+  materializeAtomicEditorSavePayload,
+  type AtomicEditorSavePayload,
+} from "./editorAtomicSave.ts"
+import {
+  createEditorSaveController,
+  editorAtomicSaveRetryDelay,
+  inspectLegacyEditorPersistence,
+  type EditorSaveControllerOutcome,
+} from "./editorSaveController.ts"
 import {
   assertImportComplexity,
   createLatestImportRequestGate,
@@ -58,8 +85,16 @@ import {
   type AiSuggestionPreview,
 } from "./workspaceAiSuggestion.ts"
 
-const localDraftKey = (userId: string, documentId = "new") =>
+const localDraftKey = (userId: string, documentId: string) =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
+
+const availableSessionStorage = () => {
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
 
 const loadExternalScript = (
   src: string,
@@ -315,6 +350,7 @@ type WorkspaceFormData = {
 type WorkspaceConflictSnapshot = WorkspaceFormData & {
   __sources?: WorkspaceSource[]
   organizationLoaded?: boolean
+  cloudAvailable?: boolean
 }
 
 type PublicationState = {
@@ -323,6 +359,34 @@ type PublicationState = {
   share_token?: string | null
   source_revision: number
   published_at: string
+}
+
+type AccountCapabilities = {
+  role?: string
+  is_site_owner?: boolean
+  can_edit_site?: boolean
+  can_manage_roles?: boolean
+  can_moderate_comments?: boolean
+  can_moderate_publications?: boolean
+  can_read_other_private_documents?: boolean
+}
+
+type SiteReviewRow = {
+  id: string
+  file_path: string
+  section_title?: string | null
+  content: string
+  user_id: string
+  created_at: string
+  profiles?: { display_name?: string | null } | null
+}
+
+type SiteRoleRow = {
+  user_id: string
+  email: string
+  role: string
+  display_name?: string | null
+  granted_at?: string | null
 }
 
 const init = async () => {
@@ -342,7 +406,7 @@ const init = async () => {
   const recoverySuccess = root.querySelector<HTMLElement>("[data-account-recovery-success]")
   const session = root.querySelector<HTMLElement>("[data-account-session]")
   const email = root.querySelector<HTMLElement>("[data-account-email]")
-  const siteOwnerNavItems = root.querySelectorAll<HTMLElement>("[data-site-owner-nav]")
+  const siteOperationsNavItems = root.querySelectorAll<HTMLElement>("[data-site-operations-nav]")
   const accountMode = root.dataset.accountMode ?? "signin"
   const workspace = accountMode === "workspace"
   const workspaceSection = root.dataset.workspaceSection ?? "overview"
@@ -359,6 +423,32 @@ const init = async () => {
   const aiSave = root.querySelector<HTMLButtonElement>("[data-ai-save]")
   const aiTestGateway = root.querySelector<HTMLButtonElement>("[data-ai-test-gateway]")
   const aiGatewayStatus = root.querySelector<HTMLElement>("[data-ai-gateway-status]")
+  const siteOperations = root.querySelector<HTMLElement>("[data-site-operations]")
+  const siteRefresh = root.querySelector<HTMLButtonElement>("[data-site-refresh]")
+  const siteAccessLoading = root.querySelector<HTMLElement>("[data-site-access-loading]")
+  const siteAccessDenied = root.querySelector<HTMLElement>("[data-site-access-denied]")
+  const siteAccessMessage = root.querySelector<HTMLElement>("[data-site-access-message]")
+  const siteOperationsContent = root.querySelector<HTMLElement>("[data-site-operations-content]")
+  const siteRoleLabel = root.querySelector<HTMLElement>("[data-site-role-label]")
+  const siteScopeCopy = root.querySelector<HTMLElement>("[data-site-scope-copy]")
+  const siteReviewSection = root.querySelector<HTMLElement>("[data-site-review-section]")
+  const siteReviewRefresh = root.querySelector<HTMLButtonElement>("[data-site-review-refresh]")
+  const siteReviewLimit = root.querySelector<HTMLSelectElement>("[data-site-review-limit]")
+  const siteReviewSummary = root.querySelector<HTMLElement>("[data-site-review-summary]")
+  const siteReviewStatus = root.querySelector<HTMLElement>("[data-site-review-status]")
+  const siteReviewList = root.querySelector<HTMLElement>("[data-site-review-list]")
+  const siteRoleSection = root.querySelector<HTMLElement>("[data-site-role-section]")
+  const siteRoleRefresh = root.querySelector<HTMLButtonElement>("[data-site-role-refresh]")
+  const siteRoleForm = root.querySelector<HTMLFormElement>("[data-site-role-form]")
+  const siteRoleEmail = root.querySelector<HTMLInputElement>("[data-site-role-email]")
+  const siteRoleSelect = root.querySelector<HTMLSelectElement>("[data-site-role-select]")
+  const siteRoleConsequence = root.querySelector<HTMLElement>("[data-site-role-consequence]")
+  const siteRoleSubmit = root.querySelector<HTMLButtonElement>("[data-site-role-submit]")
+  const siteRoleStatus = root.querySelector<HTMLElement>("[data-site-role-status]")
+  const siteRoleList = root.querySelector<HTMLElement>("[data-site-role-list]")
+  const siteSystemSection = root.querySelector<HTMLElement>("[data-site-system-section]")
+  const siteStatusTime = root.querySelector<HTMLTimeElement>("[data-site-status-time]")
+  const siteStatusList = root.querySelector<HTMLElement>("[data-site-status-list]")
   const profileSettingsForm = root.querySelector<HTMLFormElement>("[data-profile-settings-form]")
   const profileAvatarInput = root.querySelector<HTMLInputElement>("[data-profile-avatar-input]")
   const profileAvatarPreview = root.querySelector<HTMLImageElement>("[data-profile-avatar-preview]")
@@ -420,10 +510,25 @@ const init = async () => {
   const aiSuggestionDiscard = root.querySelector<HTMLButtonElement>("[data-ai-suggestion-discard]")
   const state = root.querySelector<HTMLElement>("[data-editor-state]")
   const editorLoadRecovery = root.querySelector<HTMLElement>("[data-editor-load-recovery]")
+  const editorLoadRecoveryTitle = root.querySelector<HTMLElement>(
+    "[data-editor-load-recovery-title]",
+  )
   const editorLoadRecoveryMessage = root.querySelector<HTMLElement>(
     "[data-editor-load-recovery-message]",
   )
   const editorRetryLoad = root.querySelector<HTMLButtonElement>("[data-editor-retry-load]")
+  const editorManualRecoveryActions = root.querySelector<HTMLElement>(
+    "[data-editor-manual-recovery-actions]",
+  )
+  const editorRecoveryExport = root.querySelector<HTMLButtonElement>(
+    "[data-editor-recovery-export]",
+  )
+  const editorRecoveryArchive = root.querySelector<HTMLButtonElement>(
+    "[data-editor-recovery-archive]",
+  )
+  const editorManualRecoveryStatus = root.querySelector<HTMLElement>(
+    "[data-editor-manual-recovery-status]",
+  )
   const conflictSection = root.querySelector<HTMLElement>("[data-editor-conflict]")
   const conflictHeading = root.querySelector<HTMLElement>("[data-editor-conflict-title]")
   const conflictMeta = root.querySelector<HTMLElement>("[data-editor-conflict-meta]")
@@ -437,6 +542,10 @@ const init = async () => {
   const conflictCloudOrganization = root.querySelector<HTMLElement>(
     "[data-editor-conflict-cloud-organization]",
   )
+  const conflictUseLocal = root.querySelector<HTMLButtonElement>("[data-conflict-use-local]")
+  const conflictUseCloud = root.querySelector<HTMLButtonElement>("[data-conflict-use-cloud]")
+  const conflictSaveCopy = root.querySelector<HTMLButtonElement>("[data-conflict-save-copy]")
+  const conflictExportLocal = root.querySelector<HTMLButtonElement>("[data-conflict-export-local]")
   const tagInput = root.querySelector<HTMLInputElement>("[data-tag-input]")
   const tagList = root.querySelector<HTMLElement>("[data-tag-list]")
   const tagValues = root.querySelector<HTMLInputElement>("[data-tag-values]")
@@ -468,8 +577,25 @@ const init = async () => {
   const flatSave = root.querySelector<HTMLButtonElement>("[data-flat-save]")
   let client: any = null
   let currentUser: any = null
+  let currentCapabilities: AccountCapabilities | null = null
   let authEpoch = 0
   let autosaveTimer: number | undefined
+  let editorRetryTimer: number | undefined
+  let editorRetryTimerEpoch = 0
+  let serializedSaveIntent: {
+    ownerId: string
+    authEpoch: number
+    documentScopeId: string
+    saveEpoch: number
+    generation: number
+    enqueue: boolean
+    explicit: boolean
+  } | null = null
+  const cancelEditorRetryTimer = () => {
+    editorRetryTimerEpoch += 1
+    if (editorRetryTimer !== undefined) window.clearTimeout(editorRetryTimer)
+    editorRetryTimer = undefined
+  }
   let editorChangeGeneration = 0
   let aiSuggestionRequestEpoch = 0
   let aiSuggestionGenerationInFlight = false
@@ -481,25 +607,53 @@ const init = async () => {
     monthlyBudgetCents: number
   } | null = null
   const editorTabDrafts = createEditorTabDraftState()
-  const pendingNewBackupCleanup = new Map<string, string>()
+  let currentDraftId = ""
   let editorConflictResolutionPending = false
   let editorConflict: {
     ownerId: string
     documentId: string
     backup: EditorBackup
-    reason: "unknown-base" | "stale-base" | "remote-write"
+    reason: "unknown-base" | "stale-base" | "remote-write" | "not-found" | "request-rejected"
     cloud: WorkspaceConflictSnapshot
     operationId?: string
   } | null = null
   let editorSaveEpoch = 0
   let editorSaveReadyDocumentId: string | null = null
+  let editorManualSaveGate: {
+    ownerId: string
+    authEpoch: number
+    documentScopeId: string
+  } | null = null
   let editorLoadFailureDocumentId = ""
   const conflictInertedFormChildren = new Set<HTMLElement>()
+  const clearEditorManualSaveGate = () => {
+    editorManualSaveGate = null
+  }
+  const editorManualSaveIsRequired = (documentScopeId: string) =>
+    Boolean(
+      editorManualSaveGate &&
+      currentUser?.id === editorManualSaveGate.ownerId &&
+      authEpoch === editorManualSaveGate.authEpoch &&
+      documentScopeId === editorManualSaveGate.documentScopeId,
+    )
+  const requireExplicitEditorSave = (documentScopeId: string) => {
+    if (!currentUser) return false
+    editorManualSaveGate = {
+      ownerId: String(currentUser.id),
+      authEpoch,
+      documentScopeId,
+    }
+    cancelEditorRetryTimer()
+    return true
+  }
   const invalidateEditorSaves = () => {
+    cancelEditorRetryTimer()
+    clearEditorManualSaveGate()
     editorSaveEpoch += 1
     editorSaveReadyDocumentId = null
   }
   const allowEditorSaves = (documentId: string) => {
+    cancelEditorRetryTimer()
     editorSaveEpoch += 1
     editorSaveReadyDocumentId = documentId
   }
@@ -510,11 +664,36 @@ const init = async () => {
   const hideEditorLoadRecovery = () => {
     editorLoadFailureDocumentId = ""
     if (editorLoadRecovery) editorLoadRecovery.hidden = true
+    if (editorLoadRecoveryTitle) editorLoadRecoveryTitle.textContent = "这条知识还没有完整载入"
+    if (editorRetryLoad) {
+      editorRetryLoad.hidden = false
+      editorRetryLoad.textContent = "重新加载文档"
+    }
+    if (editorManualRecoveryActions) editorManualRecoveryActions.hidden = true
   }
   const showEditorLoadRecovery = (documentId: string, message: string) => {
     editorLoadFailureDocumentId = documentId
     if (editorLoadRecoveryMessage) editorLoadRecoveryMessage.textContent = message
     if (editorLoadRecovery) editorLoadRecovery.hidden = false
+  }
+  const showEditorManualRecoveryGate = (message: string) => {
+    invalidateEditorSaves()
+    editorLoadFailureDocumentId = ""
+    if (form) {
+      form.inert = true
+      form.setAttribute("aria-busy", "false")
+    }
+    if (editorLoadRecoveryTitle) editorLoadRecoveryTitle.textContent = "先处理旧版恢复内容"
+    if (editorLoadRecoveryMessage) editorLoadRecoveryMessage.textContent = message
+    if (editorRetryLoad) editorRetryLoad.hidden = true
+    if (editorManualRecoveryActions) editorManualRecoveryActions.hidden = false
+    editorManualRecoveryExported = false
+    if (editorRecoveryArchive) editorRecoveryArchive.disabled = true
+    if (editorManualRecoveryStatus)
+      editorManualRecoveryStatus.textContent =
+        "必须先导出；只有再次明确确认后才会归档并清除原记录。"
+    if (editorLoadRecovery) editorLoadRecovery.hidden = false
+    if (state) state.textContent = "旧版恢复内容待人工处理，云端保存已暂停"
   }
   let editorUiMutationTail: Promise<void> = Promise.resolve()
   const runEditorUiExclusive = <T>(operation: () => Promise<T>): Promise<T> => {
@@ -542,7 +721,6 @@ const init = async () => {
     retainedUnavailableRelationTargetIds.related.clear()
     retainedUnavailableRelationDocumentId = ""
   }
-  let sourcesMigrationAvailable: boolean | null = null
   let currentPublication: PublicationState | null = null
   let editorKnowledgeBaseBinding: { documentId: string; knowledgeBaseId: string } | null = null
   let importedDraft: ImportedDraft | null = null
@@ -558,20 +736,36 @@ const init = async () => {
   let profileCropper: any = null
   let profilePersonalizationAvailable = true
   let authSubscription: { unsubscribe?: () => void } | null = null
+  let resumeWorkspaceRouteAfterAuth: (() => Promise<boolean>) | null = null
   let onlineHandler: (() => void) | null = null
   let editorCoordinator: EditorCoordinator | null = null
-  const editorOutbox = (() => {
+  let editorSaveController: ReturnType<typeof createEditorSaveController> | null = null
+  let editorManualRecoveryBlocked = false
+  let editorManualRecoveryExported = false
+  let editorManualRecoveryPackage: {
+    ownerId: string
+    generatedAt: string
+    legacyRows: unknown[]
+    genericBackupKey: string | null
+    genericBackup: string | null
+  } | null = null
+  const replaySafeEditorRepository = (() => {
     try {
-      return createEditorOutbox(createIndexedDbEditorOutboxRepository())
+      return createReplaySafeIndexedDbEditorOutboxRepository()
     } catch {
       return null
     }
   })()
-  const activeOutboxClaims = new Map<string, EditorOutboxClaim>()
-  const durableSaveOutcomes = new Map<
-    string,
-    { ownerId: string; documentId: string; revision: number; complete: boolean }
-  >()
+  const editorOutbox = replaySafeEditorRepository
+    ? createReplaySafeEditorOutbox(replaySafeEditorRepository)
+    : null
+  const legacyEditorRepository = (() => {
+    try {
+      return createIndexedDbEditorOutboxRepository()
+    } catch {
+      return null
+    }
+  })()
   let disposed = false
 
   const captureAuthContext = () => ({
@@ -593,9 +787,11 @@ const init = async () => {
     openDocumentRequests.invalidate()
     importedDraft = null
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    cancelEditorRetryTimer()
     authSubscription?.unsubscribe?.()
     if (onlineHandler) window.removeEventListener("online", onlineHandler)
     editorCoordinator?.close()
+    editorSaveController?.close()
     profileCropper?.destroy?.()
     if (profilePreviewObjectUrl) URL.revokeObjectURL(profilePreviewObjectUrl)
     if (profileCropSourceUrl) URL.revokeObjectURL(profileCropSourceUrl)
@@ -921,7 +1117,7 @@ const init = async () => {
         setStatus("")
         return
       }
-      location.assign("/workspace/")
+      location.assign(workspaceAuthReturnRoute(window.location.href, Boolean(workspace)))
     } catch {
       setStatus("网络连接中断，输入内容仍然保留；请检查网络后重试。", "error")
     } finally {
@@ -1081,17 +1277,529 @@ const init = async () => {
     renderDocuments((result.data ?? []) as WorkspaceDocument[])
   }
 
-  const loadCapabilities = async (isCurrent = () => true) => {
-    if (!client || !currentUser || !workspace) return
-    const context = captureAuthContext()
-    const result = await context.client.rpc("current_account_capabilities")
-    if (!authContextIsCurrent(context) || !isCurrent()) return
-    const capabilities = result.data as { is_site_owner?: boolean; role?: string } | null
-    const isSiteOwner = !result.error && capabilities?.is_site_owner === true
-    siteOwnerNavItems.forEach((item) => {
-      item.hidden = !isSiteOwner
-    })
+  const canAccessSiteOperations = (capabilities: AccountCapabilities | null) =>
+    Boolean(
+      capabilities?.can_edit_site ||
+      capabilities?.can_manage_roles ||
+      capabilities?.can_moderate_comments ||
+      capabilities?.can_moderate_publications,
+    )
+
+  const setSiteInlineStatus = (
+    target: HTMLElement | null,
+    message: string,
+    state: "info" | "error" | "success" = "info",
+  ) => {
+    if (!target) return
+    target.textContent = message
+    target.dataset.state = message ? state : ""
+    target.setAttribute("role", state === "error" ? "alert" : "status")
+    target.setAttribute("aria-live", state === "error" ? "assertive" : "polite")
   }
+
+  const siteRoleName = (role: string | undefined, isOwner = false) => {
+    if (isOwner) return "站长"
+    if (role === "admin") return "管理员"
+    if (role === "editor") return "编辑者"
+    return "普通用户"
+  }
+
+  const resetSiteOperations = () => {
+    currentCapabilities = null
+    siteOperationsNavItems.forEach((item) => {
+      item.hidden = true
+    })
+    if (siteRefresh) siteRefresh.hidden = true
+    if (siteAccessLoading) siteAccessLoading.hidden = false
+    if (siteAccessDenied) siteAccessDenied.hidden = true
+    if (siteOperationsContent) siteOperationsContent.hidden = true
+    if (siteReviewSection) siteReviewSection.hidden = true
+    if (siteRoleSection) siteRoleSection.hidden = true
+    siteReviewList?.replaceChildren()
+    siteRoleList?.replaceChildren()
+    siteStatusList?.replaceChildren()
+    setSiteInlineStatus(siteReviewStatus, "")
+    setSiteInlineStatus(siteRoleStatus, "")
+  }
+
+  const renderSiteAccess = (
+    capabilities: AccountCapabilities | null,
+    failure: "none" | "verification" = "none",
+  ) => {
+    const allowed = failure === "none" && canAccessSiteOperations(capabilities)
+    if (siteAccessLoading) siteAccessLoading.hidden = true
+    if (siteRefresh) siteRefresh.hidden = false
+    if (siteAccessDenied) siteAccessDenied.hidden = allowed
+    if (siteOperationsContent) siteOperationsContent.hidden = !allowed
+    if (!allowed) {
+      if (siteAccessMessage) {
+        siteAccessMessage.textContent =
+          failure === "verification"
+            ? "暂时无法验证当前账户的站点权限。为保护站点数据，本页已保持关闭；请检查网络后刷新。"
+            : "你仍然可以正常管理自己的知识库；站点运营仅对经过授权的协作者开放。"
+      }
+      if (siteReviewSection) siteReviewSection.hidden = true
+      if (siteRoleSection) siteRoleSection.hidden = true
+      queueMicrotask(() => {
+        if (siteAccessDenied && !siteAccessDenied.hidden) siteAccessDenied.focus()
+      })
+      return
+    }
+
+    const isOwner = capabilities?.is_site_owner === true
+    if (siteRoleLabel) siteRoleLabel.textContent = siteRoleName(capabilities?.role, isOwner)
+    if (siteScopeCopy) {
+      siteScopeCopy.textContent = isOwner
+        ? "可处理公开反馈与协作者角色；任何站点角色都不能读取其他账户的私密草稿。"
+        : capabilities?.can_moderate_comments
+          ? "可处理公开反馈并查看非敏感状态；不能查看其他账户的私密草稿或管理角色。"
+          : "可查看非敏感发布状态；不能处理反馈、管理角色或读取其他账户的私密草稿。"
+    }
+    if (siteReviewSection) siteReviewSection.hidden = capabilities?.can_moderate_comments !== true
+    if (siteRoleSection)
+      siteRoleSection.hidden = !(isOwner && capabilities?.can_manage_roles === true)
+    if (siteSystemSection) siteSystemSection.hidden = false
+  }
+
+  const renderSiteEmptyState = (target: HTMLElement | null, message: string) => {
+    if (!target) return
+    const empty = globalThis.document.createElement("p")
+    empty.className = "site-empty-state"
+    empty.textContent = message
+    target.replaceChildren(empty)
+  }
+
+  const loadSiteReviewQueue = async (isCurrent = () => true) => {
+    if (!client || !currentUser || currentCapabilities?.can_moderate_comments !== true) return
+    const context = captureAuthContext()
+    const limit = Number(siteReviewLimit?.value) === 50 ? 50 : 20
+    setSiteInlineStatus(siteReviewStatus, "正在读取公开反馈……")
+    let result: any
+    try {
+      result = await context.client
+        .from("comments")
+        .select("id,file_path,section_title,content,user_id,created_at,profiles(display_name)", {
+          count: "exact",
+        })
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false })
+        .limit(limit)
+      if (result.error) {
+        result = await context.client
+          .from("comments")
+          .select("id,file_path,section_title,content,user_id,created_at", { count: "exact" })
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false })
+          .limit(limit)
+      }
+    } catch {
+      if (!authContextIsCurrent(context) || !isCurrent()) return
+      setSiteInlineStatus(siteReviewStatus, "公开反馈读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteReviewList, "暂时无法显示反馈；页面不会改为读取私密内容。")
+      return
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (result.error) {
+      setSiteInlineStatus(siteReviewStatus, "公开反馈读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteReviewList, "暂时无法显示反馈；页面不会改为读取私密内容。")
+      return
+    }
+
+    const rows = (result.data ?? []) as SiteReviewRow[]
+    const total = typeof result.count === "number" ? result.count : rows.length
+    if (siteReviewSummary) {
+      siteReviewSummary.textContent = total
+        ? `共 ${total} 条公开反馈，当前显示最近 ${rows.length} 条。`
+        : "目前没有待查看的公开反馈。"
+    }
+    setSiteInlineStatus(siteReviewStatus, "")
+    if (!rows.length) {
+      renderSiteEmptyState(siteReviewList, "暂时没有评论或纠错建议。新的公开反馈会出现在这里。")
+      return
+    }
+
+    const fragment = globalThis.document.createDocumentFragment()
+    rows.forEach((row) => {
+      const article = globalThis.document.createElement("article")
+      article.className = "site-review-item"
+
+      const meta = globalThis.document.createElement("div")
+      meta.className = "site-review-meta"
+      const author = globalThis.document.createElement("strong")
+      author.textContent = row.profiles?.display_name || "wouldkeep 用户"
+      const kind = globalThis.document.createElement("span")
+      kind.className = "site-review-kind"
+      kind.textContent = row.section_title?.startsWith("纠错建议") ? "纠错建议" : "公开评论"
+      const time = globalThis.document.createElement("time")
+      time.dateTime = row.created_at
+      const createdAt = new Date(row.created_at)
+      time.textContent = Number.isNaN(createdAt.getTime())
+        ? "时间未知"
+        : createdAt.toLocaleString("zh-CN", {
+            month: "numeric",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+      meta.append(author, kind, time)
+
+      const body = globalThis.document.createElement("div")
+      body.className = "site-review-body"
+      const location = globalThis.document.createElement("strong")
+      location.textContent = `${row.file_path} · ${row.section_title || "整篇知识记录"}`
+      const content = globalThis.document.createElement("p")
+      content.textContent = row.content
+      body.append(location, content)
+
+      const remove = globalThis.document.createElement("button")
+      remove.type = "button"
+      remove.className = "site-review-remove"
+      remove.textContent = "移出公开讨论"
+      remove.addEventListener("click", async () => {
+        if (currentCapabilities?.can_moderate_comments !== true) {
+          setSiteInlineStatus(siteReviewStatus, "权限已变化，请刷新后重试。", "error")
+          return
+        }
+        if (
+          !window.confirm(
+            `将这条来自“${row.file_path}”的公开反馈移出公开页面？\n\n此操作只会将记录标记为已删除，不会物理删除数据。`,
+          )
+        )
+          return
+        remove.disabled = true
+        setSiteInlineStatus(siteReviewStatus, "正在将反馈移出公开页面……")
+        const deleteContext = captureAuthContext()
+        try {
+          const deletion = await deleteContext.client
+            .from("comments")
+            .update({ is_deleted: true })
+            .eq("id", row.id)
+            .eq("is_deleted", false)
+            .select("id")
+            .maybeSingle()
+          if (!authContextIsCurrent(deleteContext) || !isCurrent()) return
+          if (deletion.error || !deletion.data?.id) {
+            setSiteInlineStatus(siteReviewStatus, "操作失败；反馈仍保持原状。", "error")
+            return
+          }
+          setSiteInlineStatus(siteReviewStatus, "已从公开讨论中移除，原记录仍保留。", "success")
+          await loadSiteReviewQueue(isCurrent)
+        } catch {
+          if (authContextIsCurrent(deleteContext) && isCurrent())
+            setSiteInlineStatus(siteReviewStatus, "操作失败；反馈仍保持原状。", "error")
+        } finally {
+          remove.disabled = false
+        }
+      })
+
+      article.append(meta, body, remove)
+      fragment.append(article)
+    })
+    siteReviewList?.replaceChildren(fragment)
+  }
+
+  const updateSiteRoleConsequence = () => {
+    if (!siteRoleConsequence) return
+    const messages: Record<string, string> = {
+      user: "对方将只能访问自己的账户与个人知识工作区，不能再进入站点运营。",
+      editor: "对方可进入站点运营并查看非敏感状态；不能处理反馈、管理角色或读取他人私密草稿。",
+      admin: "对方可查看非敏感状态并软删除公开反馈；不能管理角色或读取他人私密草稿。",
+    }
+    siteRoleConsequence.textContent = messages[siteRoleSelect?.value ?? "user"] ?? messages.user
+  }
+
+  const loadSiteRoles = async (isCurrent = () => true) => {
+    if (
+      !client ||
+      !currentUser ||
+      currentCapabilities?.is_site_owner !== true ||
+      currentCapabilities?.can_manage_roles !== true
+    )
+      return
+    const context = captureAuthContext()
+    setSiteInlineStatus(siteRoleStatus, "正在读取账户目录……")
+    let result: any
+    try {
+      result = await context.client.rpc("list_roles", { admin_uid: context.ownerId })
+    } catch {
+      if (!authContextIsCurrent(context) || !isCurrent()) return
+      setSiteInlineStatus(siteRoleStatus, "账户目录读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteRoleList, "目录保持关闭；没有回退到公开账户查询。")
+      return
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return
+    if (result.error) {
+      setSiteInlineStatus(siteRoleStatus, "账户目录读取失败，请稍后重试。", "error")
+      renderSiteEmptyState(siteRoleList, "目录保持关闭；没有回退到公开账户查询。")
+      return
+    }
+    const rows = (result.data ?? []) as SiteRoleRow[]
+    setSiteInlineStatus(siteRoleStatus, `${rows.length} 个账户；角色目录仅站长可见。`)
+    if (!rows.length) {
+      renderSiteEmptyState(siteRoleList, "当前没有可显示的账户。")
+      return
+    }
+    const fragment = globalThis.document.createDocumentFragment()
+    rows.forEach((row) => {
+      const isOwner = row.user_id === context.ownerId
+      const item = globalThis.document.createElement("div")
+      item.className = "site-role-row"
+      const identity = globalThis.document.createElement("div")
+      identity.className = "site-role-identity"
+      const name = globalThis.document.createElement("strong")
+      name.textContent = row.display_name || row.email
+      const address = globalThis.document.createElement("small")
+      address.textContent = row.email
+      identity.append(name, address)
+      const badge = globalThis.document.createElement("span")
+      badge.className = "site-role-badge"
+      badge.textContent = siteRoleName(row.role, isOwner)
+      const action = globalThis.document.createElement("button")
+      action.type = "button"
+      action.className = "account-secondary"
+      action.disabled = isOwner
+      action.textContent = isOwner ? "站长角色受保护" : "更改角色"
+      if (!isOwner) {
+        action.addEventListener("click", () => {
+          if (siteRoleEmail) siteRoleEmail.value = row.email
+          if (siteRoleSelect) siteRoleSelect.value = row.role || "user"
+          updateSiteRoleConsequence()
+          siteRoleEmail?.focus()
+        })
+      }
+      item.append(identity, badge, action)
+      fragment.append(item)
+    })
+    siteRoleList?.replaceChildren(fragment)
+  }
+
+  const appendSiteStatus = (
+    label: string,
+    detail: string,
+    state: "ok" | "error",
+    checkedAt: Date,
+  ) => {
+    if (!siteStatusList) return
+    const row = globalThis.document.createElement("div")
+    row.className = "site-status-row"
+    const dot = globalThis.document.createElement("span")
+    dot.className = "site-status-dot"
+    dot.dataset.state = state
+    dot.setAttribute("aria-hidden", "true")
+    const copy = globalThis.document.createElement("div")
+    copy.className = "site-status-copy"
+    const name = globalThis.document.createElement("strong")
+    name.textContent = label
+    const description = globalThis.document.createElement("small")
+    description.textContent = detail
+    copy.append(name, description)
+    const time = globalThis.document.createElement("time")
+    time.dateTime = checkedAt.toISOString()
+    time.textContent = checkedAt.toLocaleTimeString("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    row.append(dot, copy, time)
+    siteStatusList.append(row)
+  }
+
+  const loadSiteSystemStatus = async (isCurrent = () => true) => {
+    if (!client || !currentUser || !canAccessSiteOperations(currentCapabilities)) return
+    const context = captureAuthContext()
+    const startedAt = new Date()
+    siteStatusList?.replaceChildren()
+    appendSiteStatus(
+      "登录会话",
+      `已确认当前账户 ${currentUser.email || "（未公开邮箱）"}`,
+      "ok",
+      startedAt,
+    )
+    appendSiteStatus("权限服务", "能力范围已由 current_account_capabilities 确认", "ok", startedAt)
+
+    let publicationResult: any
+    try {
+      publicationResult = await context.client.rpc("list_public_documents", {
+        p_limit: 1,
+        p_offset: 0,
+      })
+    } catch {
+      publicationResult = { error: true }
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return
+    const checkedAt = new Date()
+    appendSiteStatus(
+      "公开发布读取",
+      publicationResult.error
+        ? "公开摘要读取失败；未尝试读取任何私密正文"
+        : "公开摘要 RPC 响应正常；本检查不显示正文",
+      publicationResult.error ? "error" : "ok",
+      checkedAt,
+    )
+    if (siteStatusTime) {
+      siteStatusTime.dateTime = checkedAt.toISOString()
+      siteStatusTime.textContent = `检查于 ${checkedAt.toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`
+    }
+  }
+
+  const loadCapabilities = async (isCurrent = () => true) => {
+    if (!client || !currentUser || !workspace) {
+      resetSiteOperations()
+      return null
+    }
+    const context = captureAuthContext()
+    let result: any
+    try {
+      result = await context.client.rpc("current_account_capabilities")
+    } catch {
+      if (!authContextIsCurrent(context) || !isCurrent()) return null
+      currentCapabilities = null
+      siteOperationsNavItems.forEach((item) => {
+        item.hidden = true
+      })
+      if (workspaceSection === "site") renderSiteAccess(null, "verification")
+      return null
+    }
+    if (!authContextIsCurrent(context) || !isCurrent()) return null
+    if (result.error || !result.data) {
+      currentCapabilities = null
+      siteOperationsNavItems.forEach((item) => {
+        item.hidden = true
+      })
+      if (workspaceSection === "site") renderSiteAccess(null, "verification")
+      return null
+    }
+    currentCapabilities = result.data as AccountCapabilities
+    const allowed = canAccessSiteOperations(currentCapabilities)
+    siteOperationsNavItems.forEach((item) => {
+      item.hidden = !allowed
+    })
+    if (workspaceSection === "site") renderSiteAccess(currentCapabilities)
+    return currentCapabilities
+  }
+
+  const loadSiteOperations = async (isCurrent = () => true) => {
+    if (!canAccessSiteOperations(currentCapabilities)) return
+    await Promise.all([
+      currentCapabilities?.can_moderate_comments ? loadSiteReviewQueue(isCurrent) : undefined,
+      currentCapabilities?.is_site_owner && currentCapabilities.can_manage_roles
+        ? loadSiteRoles(isCurrent)
+        : undefined,
+      loadSiteSystemStatus(isCurrent),
+    ])
+  }
+
+  siteRoleSelect?.addEventListener("change", updateSiteRoleConsequence)
+  updateSiteRoleConsequence()
+
+  siteReviewRefresh?.addEventListener("click", async () => {
+    siteReviewRefresh.disabled = true
+    try {
+      await loadSiteReviewQueue()
+    } catch {
+      setSiteInlineStatus(siteReviewStatus, "公开反馈刷新失败，请稍后重试。", "error")
+    } finally {
+      siteReviewRefresh.disabled = false
+    }
+  })
+  siteReviewLimit?.addEventListener("change", async () => {
+    siteReviewLimit.disabled = true
+    try {
+      await loadSiteReviewQueue()
+    } catch {
+      setSiteInlineStatus(siteReviewStatus, "公开反馈刷新失败，请稍后重试。", "error")
+    } finally {
+      siteReviewLimit.disabled = false
+    }
+  })
+  siteRoleRefresh?.addEventListener("click", async () => {
+    siteRoleRefresh.disabled = true
+    try {
+      await loadSiteRoles()
+    } catch {
+      setSiteInlineStatus(siteRoleStatus, "账户目录刷新失败，请稍后重试。", "error")
+    } finally {
+      siteRoleRefresh.disabled = false
+    }
+  })
+  siteRefresh?.addEventListener("click", async () => {
+    siteRefresh.disabled = true
+    if (siteAccessLoading) siteAccessLoading.hidden = false
+    if (siteAccessDenied) siteAccessDenied.hidden = true
+    if (siteOperationsContent) siteOperationsContent.hidden = true
+    try {
+      await loadCapabilities()
+      await loadSiteOperations()
+    } catch {
+      renderSiteAccess(null, "verification")
+    } finally {
+      siteRefresh.disabled = false
+    }
+  })
+
+  siteRoleForm?.addEventListener("submit", async (event) => {
+    event.preventDefault()
+    if (
+      !client ||
+      !currentUser ||
+      currentCapabilities?.is_site_owner !== true ||
+      currentCapabilities?.can_manage_roles !== true
+    ) {
+      setSiteInlineStatus(siteRoleStatus, "当前账户不能管理角色，请刷新后重试。", "error")
+      return
+    }
+    const targetEmail = siteRoleEmail?.value.trim() ?? ""
+    const targetRole = siteRoleSelect?.value ?? "user"
+    if (!targetEmail || !siteRoleEmail?.checkValidity()) {
+      siteRoleEmail?.reportValidity()
+      return
+    }
+    if (
+      targetEmail.toLocaleLowerCase("en-US") ===
+      String(currentUser.email ?? "").toLocaleLowerCase("en-US")
+    ) {
+      setSiteInlineStatus(siteRoleStatus, "站长角色受服务端保护，不能在这里更改。", "error")
+      return
+    }
+    const consequence = siteRoleConsequence?.textContent?.trim() ?? "角色权限将立即变化。"
+    if (
+      !window.confirm(`确认将 ${targetEmail} 设为“${siteRoleName(targetRole)}”？\n\n${consequence}`)
+    )
+      return
+
+    if (siteRoleSubmit) siteRoleSubmit.disabled = true
+    setSiteInlineStatus(siteRoleStatus, "正在应用角色变更……")
+    const context = captureAuthContext()
+    try {
+      const result =
+        targetRole === "user"
+          ? await context.client.rpc("revoke_role", {
+              admin_uid: context.ownerId,
+              target_email: targetEmail,
+            })
+          : await context.client.rpc("grant_role", {
+              admin_uid: context.ownerId,
+              target_email: targetEmail,
+              target_role: targetRole,
+            })
+      if (!authContextIsCurrent(context)) return
+      if (result.error) {
+        setSiteInlineStatus(siteRoleStatus, "角色变更失败；原权限保持不变。", "error")
+        return
+      }
+      setSiteInlineStatus(siteRoleStatus, "角色已更新并立即生效。", "success")
+      siteRoleForm.reset()
+      updateSiteRoleConsequence()
+      await loadSiteRoles()
+    } catch {
+      if (authContextIsCurrent(context))
+        setSiteInlineStatus(siteRoleStatus, "角色变更失败；原权限保持不变。", "error")
+    } finally {
+      if (siteRoleSubmit) siteRoleSubmit.disabled = false
+    }
+  })
 
   const fillForm = (data: Record<string, unknown>) => {
     if (!form) return
@@ -1177,7 +1885,7 @@ const init = async () => {
 
   const relationDocumentsForParsing = (
     relationType: "prerequisite" | "related",
-    documentId = readForm().documentId || "new",
+    documentId = currentEditorScopeId(),
   ) => [
     ...relationDocumentOptions,
     ...selectedRelations[relationType]
@@ -1446,43 +2154,20 @@ const init = async () => {
       .order("sort_order", { ascending: true })
     if (!authContextIsCurrent(context) || !isCurrent()) return false
     if (result.error) {
-      sourcesMigrationAvailable = false
       return false
     }
-    sourcesMigrationAvailable = true
     renderSources((result.data ?? []) as WorkspaceSource[])
-    return true
-  }
-
-  const saveDocumentSources = async (
-    documentId: string,
-    saveClient = client,
-    sources?: WorkspaceSource[],
-  ) => {
-    const sourceSnapshot = validateSources(sources ?? collectSources())
-    if (!sourceSnapshot) return false
-    if (!sourceSnapshot.length && sourcesMigrationAvailable !== true) return true
-    const result = await saveClient.rpc("replace_document_sources", {
-      p_document_id: documentId,
-      p_sources: sourceSnapshot,
-    })
-    if (result.error) {
-      if (sourceStatus) sourceStatus.textContent = "正文已保存，整理信息暂未同步，请稍后重试。"
-      setStatus("正文已保存，但来源暂未同步；本地恢复副本仍然保留。", "error")
-      return false
-    }
-    sourcesMigrationAvailable = true
-    if (sourceStatus)
-      sourceStatus.textContent = sourceSnapshot.length
-        ? `已保存 ${sourceSnapshot.length} 条来源。`
-        : "来源已清空并同步。"
     return true
   }
 
   const writeLocalBackup = () => {
     if (!form) return null
     const data = readForm()
-    const documentId = data.documentId || "new"
+    const documentId = data.documentId || currentEditorScopeId()
+    if (!documentId) {
+      if (state) state.textContent = "新草稿编号尚未准备好，本地备份与云端保存均已暂停"
+      return null
+    }
     // Once a conflict is visible, its local side is immutable until the user
     // explicitly chooses a recovery action. Form input may currently reflect
     // the cloud side, so rewriting this key would destroy the recoverable copy.
@@ -1528,51 +2213,46 @@ const init = async () => {
     }
   }
 
-  const currentEditorOutboxPayload = () => ({
-    form: form ? Object.fromEntries(new FormData(form).entries()) : {},
-    sources: redactWorkspaceSourcesForRecovery(collectSources()),
-  })
-
   const restoreDurableOutboxBackup = async (documentId: string, isCurrent = () => true) => {
     if (!editorOutbox || !currentUser || !form) return false
     const ownerId = String(currentUser.id)
     const existingRaw = localStorage.getItem(localDraftKey(ownerId, documentId))
     try {
+      if (existingRaw) return true
       const records = await editorOutbox.listForOwner(ownerId)
       if (!isCurrent()) return false
       const record = records
-        .filter(
-          (candidate) => candidate.documentId === documentId && candidate.status !== "conflict",
-        )
+        .filter((candidate) => candidate.documentScopeId === documentId)
         .sort(
           (left, right) =>
+            Number(right.status === "queued") - Number(left.status === "queued") ||
             right.updatedAt - left.updatedAt ||
             right.createdAt - left.createdAt ||
             right.operationId.localeCompare(left.operationId),
         )[0]
       if (!record) return false
-      let payloadForm = materializeEditorOutboxFormIdentity(record.payload.form, record)
-      if (!payloadForm) return false
-      let existingSources: WorkspaceSource[] | null = null
-      if (existingRaw) {
-        const inspection = inspectEditorBackup(
-          existingRaw,
-          ownerId,
-          documentId,
-          record.baseRevision,
-        )
-        if (inspection.state !== "conflict" || !inspection.backup.__editorRecovery) return false
-        if (inspection.backup.__editorRecovery.baseRevision >= record.baseRevision) return false
-        payloadForm = materializeEditorOutboxFormIdentity(inspection.backup, record)
-        if (!payloadForm) return false
-        if (Array.isArray(inspection.backup.__sources))
-          existingSources = inspection.backup.__sources as WorkspaceSource[]
+      const payload = materializeAtomicEditorSavePayload(record.payload, {
+        documentId: record.documentId === "new" ? null : record.documentId,
+      })
+      const snapshot = payload.snapshot
+      const payloadForm = {
+        title: snapshot.title,
+        body: snapshot.body,
+        topic: snapshot.topic,
+        maturity: snapshot.maturity,
+        visibility: snapshot.visibility,
+        tags: JSON.stringify(snapshot.tags),
+        prerequisites: JSON.stringify(snapshot.prerequisites),
+        related: JSON.stringify(snapshot.related),
+        documentId: record.documentId === "new" ? "" : record.documentId,
+        revision: record.baseRevision,
+        status: "draft",
       }
-      const sources = redactWorkspaceSourcesForRecovery(
-        existingSources ?? (Array.isArray(record.payload.sources) ? record.payload.sources : []),
-      )
       const backup = addEditorBackupMetadata(
-        { ...payloadForm, __sources: sources },
+        {
+          ...payloadForm,
+          __sources: redactWorkspaceSourcesForRecovery(snapshot.sources),
+        },
         ownerId,
         documentId,
         record.baseRevision,
@@ -1607,6 +2287,36 @@ const init = async () => {
     if (conflictSection) conflictSection.hidden = true
   }
 
+  const materializeDurableConflictBackup = (
+    conflict: NonNullable<typeof editorConflict>,
+    durableRecord: EditorOutboxRecord,
+  ) => {
+    const payload = materializeAtomicEditorSavePayload(durableRecord.payload, {
+      documentId: durableRecord.documentId === "new" ? null : durableRecord.documentId,
+    })
+    const snapshot = payload.snapshot
+    return addEditorBackupMetadata(
+      {
+        title: snapshot.title,
+        body: snapshot.body,
+        topic: snapshot.topic,
+        maturity: snapshot.maturity,
+        visibility: snapshot.visibility,
+        tags: JSON.stringify(snapshot.tags),
+        prerequisites: JSON.stringify(snapshot.prerequisites),
+        related: JSON.stringify(snapshot.related),
+        documentId: durableRecord.documentId === "new" ? "" : durableRecord.documentId,
+        revision: durableRecord.baseRevision,
+        status: "draft",
+        __sources: redactWorkspaceSourcesForRecovery(snapshot.sources),
+      },
+      conflict.ownerId,
+      conflict.documentId,
+      durableRecord.baseRevision,
+      durableRecord.createdAt,
+    )
+  }
+
   const recoverableConflictBackup = (
     conflict: NonNullable<typeof editorConflict>,
     durableRecord?: EditorOutboxRecord | null,
@@ -1626,29 +2336,17 @@ const init = async () => {
         candidates.push({ backup: inspection.backup, priority: 1 })
     }
     if (durableRecord) {
-      const form = materializeEditorOutboxFormIdentity(durableRecord.payload.form, durableRecord)
-      if (form)
+      try {
         candidates.push({
-          backup: addEditorBackupMetadata(
-            {
-              ...form,
-              __sources: Array.isArray(durableRecord.payload.sources)
-                ? durableRecord.payload.sources
-                : [],
-            },
-            conflict.ownerId,
-            conflict.documentId,
-            durableRecord.baseRevision,
-            durableRecord.updatedAt,
-          ),
+          backup: materializeDurableConflictBackup(conflict, durableRecord),
           priority: 2,
         })
+      } catch {
+        // The in-memory/localStorage candidates remain available; malformed
+        // durable data stays frozen and is never silently rewritten.
+      }
     }
-    return candidates.sort(
-      (left, right) =>
-        Number(right.backup.__editorRecovery?.savedAt ?? 0) -
-          Number(left.backup.__editorRecovery?.savedAt ?? 0) || right.priority - left.priority,
-    )[0]!.backup
+    return selectRecoverableEditorBackup(candidates) ?? conflict.backup
   }
 
   const redactEditorBackupSources = (backup: EditorBackup): EditorBackup => ({
@@ -1676,6 +2374,68 @@ const init = async () => {
     }
   }
 
+  const editorConflictActionIsCurrent = (
+    conflict: NonNullable<typeof editorConflict>,
+    context: ReturnType<typeof captureAuthContext>,
+  ) =>
+    editorConflict === conflict &&
+    conflict.ownerId === context.ownerId &&
+    authContextIsCurrent(context)
+
+  const prepareEditorConflictArchive = async (
+    conflict: NonNullable<typeof editorConflict>,
+    context = captureAuthContext(),
+  ): Promise<
+    | {
+        ok: true
+        backup: EditorBackup
+        durableToken: EditorOutboxConflictResolutionToken | null
+      }
+    | { ok: false }
+  > => {
+    if (!editorConflictActionIsCurrent(conflict, context)) {
+      return { ok: false }
+    }
+    let durableRecord: EditorOutboxRecord | null = null
+    if (editorOutbox) {
+      try {
+        const records = await editorOutbox.listForOwner(conflict.ownerId)
+        if (!editorConflictActionIsCurrent(conflict, context)) {
+          return { ok: false }
+        }
+        durableRecord =
+          records
+            .filter(
+              (record) =>
+                record.ownerId === conflict.ownerId &&
+                record.documentScopeId === conflict.documentId &&
+                (record.status === "queued" || record.status === "conflict"),
+            )
+            .sort(
+              (left, right) =>
+                Number(right.status === "queued") - Number(left.status === "queued") ||
+                right.updatedAt - left.updatedAt ||
+                right.createdAt - left.createdAt ||
+                right.operationId.localeCompare(left.operationId),
+            )[0] ?? null
+        if (durableRecord) materializeDurableConflictBackup(conflict, durableRecord)
+      } catch {
+        setStatus("无法安全核对持久冲突稿；没有归档或删除任何恢复记录，请稍后重试。", "error")
+        return { ok: false }
+      }
+    }
+    if (!editorConflictActionIsCurrent(conflict, context)) return { ok: false }
+    const backup = recoverableConflictBackup(conflict, durableRecord)
+    if (!archiveEditorConflict(conflict, backup)) return { ok: false }
+    return {
+      ok: true,
+      backup,
+      durableToken: durableRecord
+        ? { operationId: durableRecord.operationId, updatedAt: durableRecord.updatedAt }
+        : null,
+    }
+  }
+
   const conflictListCount = (value: unknown) => {
     if (Array.isArray(value)) return value.filter((item) => typeof item === "string").length
     const raw = String(value ?? "").trim()
@@ -1700,17 +2460,28 @@ const init = async () => {
     return `标签 ${conflictListCount(snapshot.tags)} 个 · 前置 ${conflictListCount(snapshot.prerequisites)} 条 · 相关 ${conflictListCount(snapshot.related)} 条 · 来源 ${sourceCount} 条`
   }
 
+  const applyEditorConflictActionAvailability = () => {
+    const conflict = editorConflict
+    if (!conflict) return
+    const cloudAvailable = conflict.cloud.cloudAvailable !== false
+    const localRecoveryAllowed = conflict.reason !== "not-found"
+    if (conflictUseLocal) conflictUseLocal.disabled = !localRecoveryAllowed
+    if (conflictUseCloud) conflictUseCloud.disabled = !cloudAvailable
+    if (conflictSaveCopy) conflictSaveCopy.disabled = false
+    if (conflictExportLocal) conflictExportLocal.disabled = false
+  }
+
   const freezeEditorConflict = (
     documentId: string,
     backup: EditorBackup,
-    reason: "unknown-base" | "stale-base" | "remote-write",
+    reason: "unknown-base" | "stale-base" | "remote-write" | "not-found" | "request-rejected",
     cloud: WorkspaceConflictSnapshot,
   ) => {
     if (!currentUser) return
     const ownerId = String(currentUser.id)
     const liveForm = form ? readForm() : null
     const frozenBackup =
-      reason === "remote-write" && liveForm && (liveForm.documentId || "new") === documentId
+      reason === "remote-write" && liveForm && currentEditorScopeId() === documentId
         ? addEditorBackupMetadata(
             {
               ...liveForm,
@@ -1754,19 +2525,35 @@ const init = async () => {
         cloudSnapshot as unknown as Record<string, unknown>,
         cloudSnapshot.organizationLoaded,
       )
+    const cloudAvailable = cloudSnapshot.cloudAvailable !== false
+    applyEditorConflictActionAvailability()
     if (conflictMeta)
       conflictMeta.textContent = `本地基于第 ${Number(frozenBackup.revision ?? 0)} 版 · 云端第 ${cloudSnapshot.revision} 版`
     if (conflictSection) conflictSection.hidden = false
-    setStatus("检测到另一处修改。本地稿已冻结保留；选择处理方式前不会覆盖任何一方。", "error")
+    setStatus(
+      cloudAvailable
+        ? "检测到保存冲突。本地稿已冻结保留；选择处理方式前不会覆盖任何一方。"
+        : "云端版本不可采用；本地稿已冻结，可先导出或另存为私密副本。",
+      "error",
+    )
   }
 
   const restoreLocalBackup = (
-    documentId = "new",
+    documentId: string,
     cloudRevision?: number,
     options: { deferConflict?: boolean } = {},
   ) => {
     if (!form || !currentUser) return false
-    const raw = localStorage.getItem(localDraftKey(currentUser.id, documentId))
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem(localDraftKey(currentUser.id, documentId))
+    } catch {
+      setStatus(
+        "浏览器无法读取常规恢复副本；如果这是自由工作台，将继续尝试当前标签页的备用副本。",
+        "error",
+      )
+      return false
+    }
     if (!raw) return false
     const inspection = inspectEditorBackup(raw, currentUser.id, documentId, cloudRevision)
     if (inspection.state === "invalid") {
@@ -1831,6 +2618,27 @@ const init = async () => {
       revision: Number(data.revision ?? 0),
       status: String(data.status ?? "draft"),
     }
+  }
+
+  const currentEditorScopeId = () => {
+    const documentId = readForm().documentId
+    if (documentId) return documentId
+    return currentDraftId ? editorDraftScope(currentDraftId) : ""
+  }
+
+  const bindFreshEditorDraftScope = (
+    preferredDraftId?: string,
+    historyMode: "replace" | "push" = "replace",
+    routeMode?: EditorDraftMode,
+  ) => {
+    const draftId = parseEditorDraftId(preferredDraftId) ?? createEditorDraftId()
+    currentDraftId = draftId
+    window.history[historyMode === "push" ? "pushState" : "replaceState"](
+      window.history.state,
+      "",
+      bindNewEditorDraftRoute(window.location.href, draftId, routeMode),
+    )
+    return editorDraftScope(draftId)
   }
 
   const editorBodyField = () =>
@@ -2175,100 +2983,6 @@ const init = async () => {
     )
   }
 
-  const workspaceFormFromOutboxClaim = (claim: EditorOutboxClaim | undefined) => {
-    const value = claim?.record.payload.form
-    if (!claim) return null
-    const data = materializeEditorOutboxFormIdentity(value, claim.record)
-    if (!data) return null
-    return {
-      title: String(data.title ?? ""),
-      body: String(data.body ?? ""),
-      topic: String(data.topic ?? ""),
-      maturity: String(data.maturity ?? "seed"),
-      visibility: String(data.visibility ?? "private"),
-      tags: String(data.tags ?? ""),
-      prerequisites: String(data.prerequisites ?? ""),
-      related: String(data.related ?? ""),
-      documentId: String(data.documentId ?? ""),
-      revision: Number(data.revision ?? 0),
-      status: String(data.status ?? "draft"),
-    } satisfies WorkspaceFormData
-  }
-
-  const workspaceSourcesFromOutboxClaim = (claim: EditorOutboxClaim | undefined) => {
-    const value = claim?.record.payload.sources
-    if (!Array.isArray(value)) return null
-    const sources = value.filter(
-      (source): source is WorkspaceSource =>
-        Boolean(source) &&
-        typeof source === "object" &&
-        !Array.isArray(source) &&
-        ((source as WorkspaceSource).kind === "web" ||
-          (source as WorkspaceSource).kind === "personal") &&
-        ["url", "title", "author", "note"].every(
-          (key) => typeof (source as unknown as Record<string, unknown>)[key] === "string",
-        ),
-    )
-    return sources.length === value.length ? sources : null
-  }
-
-  const saveTags = async (
-    documentId: string,
-    knowledgeBaseId: string,
-    rawTags: string,
-    ownerId: string,
-    saveClient: any,
-  ) => {
-    if (!saveClient) return false
-    const parsed = parseWorkspaceTags(rawTags)
-    if (!parsed.ok) {
-      if (tagStatus) tagStatus.textContent = organizationIssueMessage(parsed.issues[0]?.code)
-      return false
-    }
-    const desiredTagIds: string[] = []
-    for (const tagValue of parsed.value) {
-      const tag = await saveClient
-        .from("tags")
-        .upsert(
-          {
-            knowledge_base_id: knowledgeBaseId,
-            owner_id: ownerId,
-            name: tagValue.name,
-            normalized_name: tagValue.normalizedKey,
-          },
-          { onConflict: "knowledge_base_id,normalized_name" },
-        )
-        .select("id")
-        .single()
-      if (tag.error || !tag.data?.id) return false
-      desiredTagIds.push(String(tag.data.id))
-      const assignment = await saveClient
-        .from("document_tags")
-        .upsert({ document_id: documentId, tag_id: tag.data.id, owner_id: ownerId })
-      if (assignment.error) return false
-    }
-    const existing = await saveClient
-      .from("document_tags")
-      .select("tag_id")
-      .eq("document_id", documentId)
-      .eq("owner_id", ownerId)
-    if (existing.error) return false
-    const staleTagIds = (existing.data ?? [])
-      .map((row: { tag_id?: string }) => row.tag_id)
-      .filter((id: string | undefined): id is string => typeof id === "string" && id.length > 0)
-      .filter((id: string) => !desiredTagIds.includes(id))
-    if (staleTagIds.length) {
-      const deletion = await saveClient
-        .from("document_tags")
-        .delete()
-        .eq("document_id", documentId)
-        .eq("owner_id", ownerId)
-        .in("tag_id", staleTagIds)
-      if (deletion.error) return false
-    }
-    return true
-  }
-
   const loadLinkOptions = async (
     currentDocumentId: string,
     knowledgeBaseId: string,
@@ -2317,12 +3031,14 @@ const init = async () => {
     const ownerId = String(currentUser.id)
     const contextClient = client
     const contextEpoch = authEpoch
+    const documentScopeId = currentEditorScopeId()
+    if (!documentScopeId.startsWith("draft:")) return false
     const isCurrentNewDocument = () =>
       !disposed &&
       authEpoch === contextEpoch &&
       currentUser?.id === ownerId &&
       client === contextClient &&
-      (readForm().documentId || "new") === "new" &&
+      currentEditorScopeId() === documentScopeId &&
       editorKnowledgeBaseBinding === null
     const knowledgeBaseId = await ensureKnowledgeBase(isCurrentNewDocument)
     if (!knowledgeBaseId || !isCurrentNewDocument()) return false
@@ -2367,72 +3083,6 @@ const init = async () => {
     if (!parsed.ok) return false
     if (tagValues) tagValues.value = serializeWorkspaceTags(parsed.value)
     renderTagSelections(parsed.value)
-    return true
-  }
-
-  const saveLinks = async (
-    documentId: string,
-    rawSelections: string,
-    relationType: "prerequisite" | "related",
-    knowledgeBaseId: string,
-    ownerId: string,
-    saveClient: any,
-  ) => {
-    if (!saveClient) return false
-    const parsed = parseWorkspaceRelations(rawSelections, {
-      currentDocumentId: documentId,
-      documents: relationDocumentsForParsing(relationType, documentId),
-    })
-    if (!parsed.ok) {
-      const status =
-        relationEditorFor(relationType)?.querySelector<HTMLElement>("[data-relation-status]")
-      if (status) status.textContent = organizationIssueMessage(parsed.issues[0]?.code)
-      return false
-    }
-    const targetIds = parsed.value.map((selection) => selection.documentId)
-    const activeTargetIds = targetIds.filter(
-      (targetId) => !retainedUnavailableRelationTargetIds[relationType].has(targetId),
-    )
-    if (activeTargetIds.length) {
-      const targets = await saveClient
-        .from("documents")
-        .select("id")
-        .eq("owner_id", ownerId)
-        .eq("knowledge_base_id", knowledgeBaseId)
-        .in("id", activeTargetIds)
-        .is("deleted_at", null)
-      if (targets.error || (targets.data ?? []).length !== activeTargetIds.length) return false
-      const rows = activeTargetIds.map((toDocumentId) => ({
-        from_document_id: documentId,
-        to_document_id: toDocumentId,
-        owner_id: ownerId,
-        relation_type: relationType,
-      }))
-      const assignment = await saveClient.from("document_links").upsert(rows)
-      if (assignment.error) return false
-    }
-    const existing = await saveClient
-      .from("document_links")
-      .select("to_document_id")
-      .eq("from_document_id", documentId)
-      .eq("owner_id", ownerId)
-      .eq("relation_type", relationType)
-    if (existing.error) return false
-    const staleTargetIds = (existing.data ?? [])
-      .map((row: { to_document_id?: string }) => row.to_document_id)
-      .filter(
-        (id: string | undefined): id is string => Boolean(id) && !targetIds.includes(String(id)),
-      )
-    if (staleTargetIds.length) {
-      const deletion = await saveClient
-        .from("document_links")
-        .delete()
-        .eq("from_document_id", documentId)
-        .eq("owner_id", ownerId)
-        .eq("relation_type", relationType)
-        .in("to_document_id", staleTargetIds)
-      if (deletion.error) return false
-    }
     return true
   }
 
@@ -2503,46 +3153,43 @@ const init = async () => {
     documentId: string,
     ownerId: string,
   ) => {
-    try {
-      const [tagResult, linkResult, sourceResult] = await Promise.all([
-        saveClient
-          .from("document_tags")
-          .select("tags(name)")
-          .eq("document_id", documentId)
-          .eq("owner_id", ownerId),
-        saveClient
-          .from("document_links")
-          .select("relation_type,to_document_id")
-          .eq("from_document_id", documentId)
-          .eq("owner_id", ownerId),
-        saveClient
-          .from("document_sources")
-          .select("kind,url,title,author,note")
-          .eq("document_id", documentId)
-          .eq("owner_id", ownerId)
-          .order("sort_order", { ascending: true }),
-      ])
-      if (tagResult.error || linkResult.error || sourceResult.error) return null
-      const tags = (tagResult.data ?? [])
-        .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
-        .filter((name: string | undefined): name is string => typeof name === "string")
-      const prerequisites: string[] = []
-      const related: string[] = []
-      ;(linkResult.data ?? []).forEach(
-        (item: { relation_type?: string; to_document_id?: string }) => {
-          if (!item.to_document_id) return
-          if (item.relation_type === "prerequisite") prerequisites.push(String(item.to_document_id))
-          if (item.relation_type === "related") related.push(String(item.to_document_id))
-        },
-      )
-      return {
-        tags: JSON.stringify(tags),
-        prerequisites: JSON.stringify(prerequisites),
-        related: JSON.stringify(related),
-        __sources: (sourceResult.data ?? []) as WorkspaceSource[],
-      }
-    } catch {
-      return null
+    const [tagResult, linkResult, sourceResult] = await Promise.all([
+      saveClient
+        .from("document_tags")
+        .select("tags(name)")
+        .eq("document_id", documentId)
+        .eq("owner_id", ownerId),
+      saveClient
+        .from("document_links")
+        .select("relation_type,to_document_id")
+        .eq("from_document_id", documentId)
+        .eq("owner_id", ownerId),
+      saveClient
+        .from("document_sources")
+        .select("kind,url,title,author,note")
+        .eq("document_id", documentId)
+        .eq("owner_id", ownerId)
+        .order("sort_order", { ascending: true }),
+    ])
+    if (tagResult.error || linkResult.error || sourceResult.error)
+      throw new Error("cloud organization snapshot unavailable")
+    const tags = (tagResult.data ?? [])
+      .map((item: { tags?: { name?: string } | null }) => item.tags?.name)
+      .filter((name: string | undefined): name is string => typeof name === "string")
+    const prerequisites: string[] = []
+    const related: string[] = []
+    ;(linkResult.data ?? []).forEach(
+      (item: { relation_type?: string; to_document_id?: string }) => {
+        if (!item.to_document_id) return
+        if (item.relation_type === "prerequisite") prerequisites.push(String(item.to_document_id))
+        if (item.relation_type === "related") related.push(String(item.to_document_id))
+      },
+    )
+    return {
+      tags: JSON.stringify(tags),
+      prerequisites: JSON.stringify(prerequisites),
+      related: JSON.stringify(related),
+      __sources: (sourceResult.data ?? []) as WorkspaceSource[],
     }
   }
 
@@ -2706,25 +3353,12 @@ const init = async () => {
     await loadDocuments()
   }
 
-  const saveDocumentOnce = async () => {
-    if (!form || !currentUser || !client) return false
-    const liveDocumentIdentity = readForm().documentId || "new"
-    const outboxClaim = activeOutboxClaims.get(liveDocumentIdentity)
-    const data = workspaceFormFromOutboxClaim(outboxClaim) ?? readForm()
-    const rawSourceSnapshot = outboxClaim
-      ? workspaceSourcesFromOutboxClaim(outboxClaim)
-      : collectSources()
-    if (!rawSourceSnapshot) {
-      setStatus("持久恢复队列中的来源数据无法验证；已停止保存并保留原始记录。", "error")
-      return false
-    }
+  const materializeCurrentAtomicSave = async (
+    data: WorkspaceFormData,
+    documentScopeId: string,
+    isCurrent: () => boolean,
+  ): Promise<AtomicEditorSavePayload | null> => {
     const parsedTags = parseWorkspaceTags(data.tags)
-    if (!parsedTags.ok) {
-      if (tagStatus) tagStatus.textContent = organizationIssueMessage(parsedTags.issues[0]?.code)
-      tagInput?.focus()
-      setStatus("标签尚未通过检查；文档没有写入云端。", "error")
-      return false
-    }
     const parsedPrerequisites = parseWorkspaceRelations(data.prerequisites, {
       currentDocumentId: data.documentId,
       documents: relationDocumentsForParsing("prerequisite"),
@@ -2733,578 +3367,643 @@ const init = async () => {
       currentDocumentId: data.documentId,
       documents: relationDocumentsForParsing("related"),
     })
-    if (!parsedPrerequisites.ok) {
-      const editor = relationEditorFor("prerequisite")
-      const relationStatus = editor?.querySelector<HTMLElement>("[data-relation-status]")
-      if (relationStatus)
-        relationStatus.textContent = organizationIssueMessage(parsedPrerequisites.issues[0]?.code)
-      editor?.querySelector<HTMLSelectElement>("[data-relation-select]")?.focus()
-      setStatus("知识关系尚未通过检查；文档没有写入云端。", "error")
-      return false
+    const sources = validateSources()
+    if (!parsedTags.ok || !parsedPrerequisites.ok || !parsedRelated.ok || !sources) {
+      setStatus("整理信息尚未通过检查；云端未写入，本地备份仍保留。", "error")
+      return null
     }
-    if (!parsedRelated.ok) {
-      const editor = relationEditorFor("related")
-      const relationStatus = editor?.querySelector<HTMLElement>("[data-relation-status]")
-      if (relationStatus)
-        relationStatus.textContent = organizationIssueMessage(parsedRelated.issues[0]?.code)
-      editor?.querySelector<HTMLSelectElement>("[data-relation-select]")?.focus()
-      setStatus("知识关系尚未通过检查；文档没有写入云端。", "error")
-      return false
+
+    let knowledgeBaseId = ""
+    if (
+      editorKnowledgeBaseBinding &&
+      (editorKnowledgeBaseBinding.documentId === data.documentId ||
+        editorKnowledgeBaseBinding.documentId === documentScopeId)
+    ) {
+      knowledgeBaseId = editorKnowledgeBaseBinding.knowledgeBaseId
+    } else if (data.documentId) {
+      const binding = await client
+        .from("documents")
+        .select("knowledge_base_id")
+        .eq("id", data.documentId)
+        .eq("owner_id", currentUser.id)
+        .single()
+      if (!isCurrent() || binding.error || !binding.data?.knowledge_base_id) {
+        setStatus("无法确认文档所属知识库；原子保存未发起。", "error")
+        return null
+      }
+      knowledgeBaseId = String(binding.data.knowledge_base_id)
+    } else {
+      knowledgeBaseId = String((await ensureKnowledgeBase(isCurrent)) ?? "")
     }
-    const sourceSnapshot = validateSources(rawSourceSnapshot)
-    if (!sourceSnapshot) {
-      setStatus("来源尚未通过检查；文档没有写入云端。", "error")
-      return false
+    if (!knowledgeBaseId || !isCurrent()) return null
+
+    try {
+      const payload = materializeAtomicEditorSavePayload(
+        {
+          requestVersion: 1,
+          knowledgeBaseId,
+          snapshot: {
+            title: data.title,
+            body: data.body,
+            topic: data.topic,
+            maturity: data.maturity,
+            visibility: data.visibility,
+            tags: parsedTags.value.map((tag) => tag.name),
+            prerequisites: parsedPrerequisites.value.map((item) => item.documentId),
+            related: parsedRelated.value.map((item) => item.documentId),
+            sources: sources.map(({ kind, url, title, author, note }) => ({
+              kind,
+              url,
+              title,
+              author,
+              note,
+            })),
+          },
+        },
+        { documentId: data.documentId || null },
+      )
+      editorKnowledgeBaseBinding = { documentId: documentScopeId, knowledgeBaseId }
+      return payload
+    } catch {
+      setStatus("保存快照不符合原子协议；云端未写入，本地备份仍保留。", "error")
+      return null
     }
-    data.tags = serializeWorkspaceTags(parsedTags.value)
-    data.prerequisites = serializeWorkspaceRelations(parsedPrerequisites.value)
-    data.related = serializeWorkspaceRelations(parsedRelated.value)
+  }
+
+  const atomicOutcomeMessage = (outcome: EditorSaveControllerOutcome) => {
+    const messages: Partial<Record<EditorSaveControllerOutcome["status"], string>> = {
+      manual_recovery: "检测到旧版恢复记录；已停止保存，绝不回退到旧版多表写入。",
+      protocol_mismatch: "页面与原子保存协议不匹配；请刷新页面，本地备份仍保留。",
+      rpc_unavailable: "原子保存 RPC 尚未部署；未尝试旧版写入。",
+      request_rejected: "云端明确拒绝了这次原子请求；本地快照已冻结等待恢复。",
+      outbox_unavailable: "原子恢复队列不可用；未尝试直接写库。",
+      response_mismatch: "云端响应无法通过操作身份核对；恢复操作保持冻结。",
+      settlement_failed: "云端已响应，但本地持久化结算尚未确认。",
+      acknowledgement_unknown: "网络中断；同一操作会按退避计划安全重放。",
+      retry_later: "保存正在等待持久化退避窗口，不会立即重复请求。",
+      offline: "当前离线；未发送云端请求，本地备份仍保留。",
+      idle: "当前没有待重放的原子保存操作。",
+    }
+    return messages[outcome.status] ?? "原子保存尚未完成；本地备份仍保留。"
+  }
+
+  const enterAtomicSaveRecovery = async (
+    outcome: EditorSaveControllerOutcome & {
+      status: "conflict" | "not_found" | "request_rejected"
+    },
+    documentScopeId: string,
+    ownerId: string,
+    saveClient: any,
+    isCurrent: () => boolean,
+  ) => {
+    const claim = outcome.claim
+    if (!claim) {
+      invalidateEditorSaves()
+      showEditorLoadRecovery(
+        documentScopeId,
+        "云端拒绝了保存，但缺少可核对的本地操作快照；编辑器已锁定。",
+      )
+      return
+    }
+    let payload: AtomicEditorSavePayload
+    try {
+      payload = materializeAtomicEditorSavePayload(claim.record.payload, {
+        documentId: claim.record.documentId === "new" ? null : claim.record.documentId,
+      })
+    } catch {
+      invalidateEditorSaves()
+      showEditorLoadRecovery(
+        documentScopeId,
+        "持久化快照无法通过协议核对；编辑器已锁定且不会自动重放。",
+      )
+      return
+    }
+    const recoveryDocumentId =
+      claim.record.documentId === "new" ? documentScopeId : claim.record.documentId
+    const snapshot = payload.snapshot
+    const backup = addEditorBackupMetadata(
+      {
+        title: snapshot.title,
+        body: snapshot.body,
+        topic: snapshot.topic,
+        maturity: snapshot.maturity,
+        visibility: snapshot.visibility,
+        tags: JSON.stringify(snapshot.tags),
+        prerequisites: JSON.stringify(snapshot.prerequisites),
+        related: JSON.stringify(snapshot.related),
+        documentId: claim.record.documentId === "new" ? "" : claim.record.documentId,
+        revision: claim.record.baseRevision,
+        status: "draft",
+        __sources: redactWorkspaceSourcesForRecovery(snapshot.sources),
+      },
+      ownerId,
+      recoveryDocumentId,
+      claim.record.baseRevision,
+      claim.record.createdAt,
+    )
+    let cloudRow: Record<string, unknown> | null = null
+    let cloudOrganization: Awaited<ReturnType<typeof loadCloudOrganizationSnapshot>> | null = null
+    if (claim.record.documentId !== "new") {
+      try {
+        const latest = await saveClient
+          .from("documents")
+          .select("id,title,body,topic,maturity,status,visibility,revision")
+          .eq("id", claim.record.documentId)
+          .eq("owner_id", ownerId)
+          .maybeSingle()
+        if (latest.error) throw latest.error
+        if (latest.data) {
+          cloudRow = latest.data as Record<string, unknown>
+          cloudOrganization = await loadCloudOrganizationSnapshot(
+            saveClient,
+            claim.record.documentId,
+            ownerId,
+          )
+        }
+      } catch {
+        if (!isCurrent()) return
+        invalidateEditorSaves()
+        if (form) {
+          form.inert = true
+          form.setAttribute("aria-busy", "false")
+        }
+        showEditorLoadRecovery(
+          documentScopeId,
+          "无法安全核对云端版本；编辑器已锁定，持久恢复记录仍保持冻结。",
+        )
+        if (state) state.textContent = "云端版本尚未安全核对，编辑与自动保存已暂停"
+        return
+      }
+    }
+    if (!isCurrent()) return
+    const cloudAvailable = Boolean(cloudRow)
+    const cloudRevision =
+      outcome.status === "conflict"
+        ? outcome.response.current_revision
+        : Number(cloudRow?.revision ?? claim.record.baseRevision)
+    freezeEditorConflict(
+      recoveryDocumentId,
+      backup,
+      outcome.status === "not_found"
+        ? "not-found"
+        : outcome.status === "request_rejected"
+          ? "request-rejected"
+          : "remote-write",
+      {
+        title: String(cloudRow?.title ?? snapshot.title),
+        body: String(cloudRow?.body ?? snapshot.body),
+        topic: String(cloudRow?.topic ?? snapshot.topic),
+        maturity: String(cloudRow?.maturity ?? snapshot.maturity),
+        visibility: String(cloudRow?.visibility ?? snapshot.visibility),
+        status: String(cloudRow?.status ?? "draft"),
+        tags: cloudOrganization?.tags ?? JSON.stringify(snapshot.tags),
+        prerequisites: cloudOrganization?.prerequisites ?? JSON.stringify(snapshot.prerequisites),
+        related: cloudOrganization?.related ?? JSON.stringify(snapshot.related),
+        documentId: claim.record.documentId === "new" ? "" : claim.record.documentId,
+        revision: cloudRevision,
+        __sources: cloudOrganization?.__sources ?? snapshot.sources,
+        organizationLoaded: cloudAvailable && Boolean(cloudOrganization),
+        cloudAvailable,
+      },
+    )
+    if (editorConflict) editorConflict.operationId = claim.record.operationId
+  }
+
+  const restoreAtomicConflictForScope = async (
+    documentScopeId: string,
+    isCurrent = () => true,
+  ): Promise<"none" | "conflict" | "blocked"> => {
+    if (!editorOutbox || !currentUser || !client || !documentScopeId) return "blocked"
     const ownerId = String(currentUser.id)
     const saveClient = client
-    const documentIdentity = data.documentId || "new"
+    const saveAuthEpoch = authEpoch
+    const scopeIsCurrent = () =>
+      isCurrent() &&
+      currentUser?.id === ownerId &&
+      client === saveClient &&
+      authEpoch === saveAuthEpoch &&
+      currentEditorScopeId() === documentScopeId
+    const blockRecoveryInspection = (message: string) => {
+      if (!scopeIsCurrent()) return "blocked" as const
+      invalidateEditorSaves()
+      if (form) {
+        form.inert = true
+        form.setAttribute("aria-busy", "false")
+      }
+      showEditorLoadRecovery(documentScopeId, message)
+      if (state) state.textContent = "持久冲突状态尚未安全核对，编辑已暂停"
+      return "blocked" as const
+    }
+    let records: EditorOutboxRecord[]
+    try {
+      records = await editorOutbox.listForOwner(ownerId)
+    } catch {
+      return blockRecoveryInspection(
+        "无法读取持久恢复队列；编辑器已锁定，且没有把读取失败当作无冲突。",
+      )
+    }
+    if (!scopeIsCurrent()) return "blocked"
+    const frozen = records.find(
+      (record) =>
+        record.ownerId === ownerId &&
+        record.documentScopeId === documentScopeId &&
+        record.status === "conflict",
+    )
+    if (!frozen) return "none"
+    try {
+      await enterAtomicSaveRecovery(
+        {
+          status: "request_rejected",
+          claim: { record: frozen, updatedAt: frozen.updatedAt },
+        } as EditorSaveControllerOutcome & { status: "request_rejected" },
+        documentScopeId,
+        ownerId,
+        saveClient,
+        scopeIsCurrent,
+      )
+    } catch {
+      return blockRecoveryInspection(
+        "持久冲突稿或云端快照无法安全读取；编辑器已锁定，恢复记录仍保持冻结。",
+      )
+    }
+    if (!scopeIsCurrent() && editorConflict?.documentId !== documentScopeId) return "blocked"
+    return editorConflict?.documentId === documentScopeId
+      ? "conflict"
+      : blockRecoveryInspection("持久冲突稿未能完整物化；编辑器已锁定，恢复记录不会自动重放。")
+  }
+
+  const scheduleAtomicSaveFlush = (input: {
+    ownerId: string
+    documentScopeId: string
+    saveClient: any
+    saveAuthEpoch: number
+    saveEpoch: number
+    runAt: number
+  }) => {
+    cancelEditorRetryTimer()
+    const timerEpoch = editorRetryTimerEpoch
+    const delay = Math.max(0, input.runAt - Date.now())
+    editorRetryTimer = window.setTimeout(() => {
+      editorRetryTimer = undefined
+      if (
+        disposed ||
+        editorRetryTimerEpoch !== timerEpoch ||
+        navigator.onLine === false ||
+        currentUser?.id !== input.ownerId ||
+        client !== input.saveClient ||
+        authEpoch !== input.saveAuthEpoch ||
+        currentEditorScopeId() !== input.documentScopeId ||
+        !editorSaveIsAllowed(input.documentScopeId, input.saveEpoch)
+      )
+        return
+      void requestDocumentSave({ enqueue: false })
+    }, delay)
+  }
+
+  const scheduleAtomicOutcomeRetry = (
+    outcome: EditorSaveControllerOutcome,
+    context: {
+      ownerId: string
+      documentScopeId: string
+      saveClient: any
+      saveAuthEpoch: number
+      saveEpoch: number
+    },
+  ) => {
+    if (outcome.status === "offline") {
+      cancelEditorRetryTimer()
+      return
+    }
+    const retryable =
+      outcome.status === "acknowledgement_unknown" ||
+      outcome.status === "rpc_unavailable" ||
+      outcome.status === "response_mismatch" ||
+      outcome.status === "settlement_failed" ||
+      outcome.status === "retry_later"
+    if (!retryable) return
+    const runAt =
+      outcome.retryAt ??
+      (outcome.claim
+        ? outcome.claim.updatedAt +
+          editorAtomicSaveRetryDelay(
+            outcome.claim.record.attempts,
+            outcome.claim.record.operationId,
+          )
+        : 0)
+    if (!runAt) return
+    scheduleAtomicSaveFlush({ ...context, runAt })
+  }
+
+  async function saveDocumentOnce(flushOnly = false, explicit = false) {
+    if (!form || !currentUser || !client || !editorSaveController) {
+      setStatus("原子保存控制器尚未就绪；未尝试旧版多表写入。", "error")
+      return false
+    }
+    cancelEditorRetryTimer()
+    const data = readForm()
+    const documentScopeId = data.documentId || currentEditorScopeId() || bindFreshEditorDraftScope()
+    const pageStartedAsDraft =
+      !data.documentId && documentScopeId.startsWith(EDITOR_DRAFT_SCOPE_PREFIX)
+    const ownerId = String(currentUser.id)
+    const saveClient = client
+    const saveAuthEpoch = authEpoch
     const saveEpochAtStart = editorSaveEpoch
-    let boundDocumentIdentity = ""
-    const identityIsCurrent = () =>
+    const generationAtStart = editorChangeGeneration
+    const backupTokenAtStart = writeLocalBackup()
+    const targetIsCurrent = () =>
       !disposed &&
       currentUser?.id === ownerId &&
       client === saveClient &&
-      ((readForm().documentId || "new") === documentIdentity ||
-        (Boolean(boundDocumentIdentity) && readForm().documentId === boundDocumentIdentity))
-    const saveTargetIsCurrent = () =>
-      identityIsCurrent() &&
-      saveEpochAtStart === editorSaveEpoch &&
-      (editorSaveReadyDocumentId === documentIdentity ||
-        (Boolean(boundDocumentIdentity) && editorSaveReadyDocumentId === boundDocumentIdentity)) &&
-      editorConflict?.documentId !== documentIdentity &&
-      (!boundDocumentIdentity || editorConflict?.documentId !== boundDocumentIdentity)
-    if (!saveTargetIsCurrent()) {
-      if (state) state.textContent = "本地稿与云端版本冲突，自动同步已暂停"
-      setStatus("文档尚未完整加载或版本冲突待处理；本次保存已安全取消。", "error")
+      authEpoch === saveAuthEpoch &&
+      currentEditorScopeId() === documentScopeId &&
+      editorSaveIsAllowed(documentScopeId, saveEpochAtStart)
+    if (!targetIsCurrent()) return false
+    const requiresExplicitSave = editorManualSaveIsRequired(documentScopeId)
+    if (requiresExplicitSave && !explicit) {
+      if (state) state.textContent = "恢复稿等待你明确点击保存，自动同步仍保持暂停"
       return false
     }
-    const generationAtStart = editorChangeGeneration
-    if (!outboxClaim) writeLocalBackup()
-    const backupTokenAtStart = editorTabDrafts.backupToken(documentIdentity)
-    let boundBackupToken: string | null = null
-    let knowledgeBaseId = ""
-    if (data.documentId) {
-      if (editorKnowledgeBaseBinding?.documentId === data.documentId) {
-        knowledgeBaseId = editorKnowledgeBaseBinding.knowledgeBaseId
-      } else {
-        const knowledgeBase = await saveClient
-          .from("documents")
-          .select("knowledge_base_id")
-          .eq("id", data.documentId)
-          .eq("owner_id", ownerId)
-          .single()
-        if (knowledgeBase.error || !knowledgeBase.data?.knowledge_base_id) return false
-        knowledgeBaseId = String(knowledgeBase.data.knowledge_base_id)
-      }
-    } else if (editorKnowledgeBaseBinding?.documentId === "new") {
-      knowledgeBaseId = editorKnowledgeBaseBinding.knowledgeBaseId
-    } else {
-      knowledgeBaseId = String((await ensureKnowledgeBase()) ?? "")
-    }
-    if (!knowledgeBaseId || !saveTargetIsCurrent()) return false
-    if (data.documentId)
-      editorKnowledgeBaseBinding = { documentId: data.documentId, knowledgeBaseId }
-    const activeRelationshipTargetIds = [
-      ...parsedPrerequisites.value
-        .filter(
-          (selection) =>
-            retainedUnavailableRelationDocumentId !== documentIdentity ||
-            !retainedUnavailableRelationTargetIds.prerequisite.has(selection.documentId),
-        )
-        .map((selection) => selection.documentId),
-      ...parsedRelated.value
-        .filter(
-          (selection) =>
-            retainedUnavailableRelationDocumentId !== documentIdentity ||
-            !retainedUnavailableRelationTargetIds.related.has(selection.documentId),
-        )
-        .map((selection) => selection.documentId),
-    ].filter((targetId, index, targetIds) => targetIds.indexOf(targetId) === index)
-    if (activeRelationshipTargetIds.length) {
-      const relationshipTargets = await saveClient
-        .from("documents")
-        .select("id")
-        .eq("owner_id", ownerId)
-        .eq("knowledge_base_id", knowledgeBaseId)
-        .in("id", activeRelationshipTargetIds)
-        .is("deleted_at", null)
+
+    const payload = flushOnly
+      ? null
+      : await materializeCurrentAtomicSave(data, documentScopeId, targetIsCurrent)
+    if (!flushOnly && !payload) return false
+    if (requiresExplicitSave && explicit) clearEditorManualSaveGate()
+    const outcome = (
+      flushOnly
+        ? await editorSaveController.flush(documentScopeId)
+        : await editorSaveController.enqueueAndSave({
+            ownerId,
+            documentId: data.documentId || "new",
+            documentScopeId,
+            baseRevision: data.documentId ? data.revision : 0,
+            payload: payload!,
+          })
+    ) as EditorSaveControllerOutcome
+
+    if (!targetIsCurrent()) return false
+    if (outcome.status !== "saved") {
+      const frozen =
+        outcome.status === "conflict" ||
+        outcome.status === "not_found" ||
+        outcome.status === "request_rejected"
+      editorCoordinator?.publishStatus({
+        documentId: documentScopeId,
+        operationId: outcome.claim?.record.operationId,
+        status: frozen ? "conflict" : "queued",
+      })
       if (
-        relationshipTargets.error ||
-        (relationshipTargets.data ?? []).length !== activeRelationshipTargetIds.length ||
-        !saveTargetIsCurrent()
+        outcome.status === "conflict" ||
+        outcome.status === "not_found" ||
+        outcome.status === "request_rejected"
       ) {
-        setStatus("关系目标已失效或不属于当前知识库；正文尚未写入，请移除该关系后重试。", "error")
+        await enterAtomicSaveRecovery(
+          outcome as EditorSaveControllerOutcome & {
+            status: "conflict" | "not_found" | "request_rejected"
+          },
+          documentScopeId,
+          ownerId,
+          saveClient,
+          targetIsCurrent,
+        )
         return false
       }
-    }
-    const visibility =
-      data.visibility === "public" ||
-      data.visibility === "unlisted" ||
-      data.visibility === "private"
-        ? data.visibility
-        : "private"
-    const documentStatus = data.status === "published" ? "published" : "draft"
-    const payload = {
-      title: data.title,
-      body: data.body,
-      topic: data.topic,
-      maturity: data.maturity,
-      owner_id: ownerId,
-      knowledge_base_id: knowledgeBaseId,
-      status: documentStatus,
-      visibility,
-    }
-    if (!saveTargetIsCurrent()) return false
-    const result = data.documentId
-      ? await saveClient
-          .from("documents")
-          .update({ ...payload, revision: data.revision + 1 })
-          .eq("id", data.documentId)
-          .eq("owner_id", ownerId)
-          .eq("knowledge_base_id", knowledgeBaseId)
-          .eq("revision", data.revision)
-          .select("id,revision")
-          .maybeSingle()
-      : await saveClient.from("documents").insert(payload).select("id,revision").single()
-    if (result.error) {
-      if (!saveTargetIsCurrent()) return false
-      setStatus("云端保存失败，已保留本地备份；请检查工作区迁移是否已执行。")
+      scheduleAtomicOutcomeRetry(outcome, {
+        ownerId,
+        documentScopeId,
+        saveClient,
+        saveAuthEpoch,
+        saveEpoch: saveEpochAtStart,
+      })
+      setStatus(atomicOutcomeMessage(outcome), "error")
       return false
     }
-    if (data.documentId && !result.data) {
-      if (!saveTargetIsCurrent()) return false
-      const conflictBackup = addEditorBackupMetadata(
+    const savedDocumentId = outcome.response.document_id
+    const nextDocumentScopeId = outcome.nextDocumentScopeId
+    const revisionField = form.elements.namedItem("revision") as HTMLInputElement | null
+    let finalBackupToken = backupTokenAtStart
+    let retainedDraftBackupAfterMigrationFailure = false
+    if (pageStartedAsDraft) {
+      const draftBackupToken = editorTabDrafts.backupToken(documentScopeId)
+      const migratedBackup = addEditorBackupMetadata(
         {
-          ...(outboxClaim?.record.payload.form as Record<string, unknown> | undefined),
-          ...data,
-          __sources: sourceSnapshot,
+          ...readForm(),
+          documentId: savedDocumentId,
+          revision: outcome.response.revision,
+          __sources: redactWorkspaceSourcesForRecovery(collectSources()),
         },
         ownerId,
-        data.documentId,
-        data.revision,
+        savedDocumentId,
+        outcome.response.revision,
       )
-      const latest = await saveClient
-        .from("documents")
-        .select("id,title,body,topic,maturity,status,visibility,revision")
-        .eq("id", data.documentId)
-        .eq("owner_id", ownerId)
-        .single()
-      const cloudOrganization = latest.data
-        ? await loadCloudOrganizationSnapshot(saveClient, data.documentId, ownerId)
-        : null
-      if (!saveTargetIsCurrent()) return false
-      const cloud = latest.data
-        ? ({
-            ...data,
-            tags: cloudOrganization?.tags ?? "",
-            prerequisites: cloudOrganization?.prerequisites ?? "",
-            related: cloudOrganization?.related ?? "",
-            __sources: cloudOrganization?.__sources ?? [],
-            organizationLoaded: Boolean(cloudOrganization),
-            ...latest.data,
-            documentId: data.documentId,
-            revision: Number(latest.data.revision ?? data.revision),
-          } satisfies WorkspaceConflictSnapshot)
-        : ({
-            ...data,
-            __sources: sourceSnapshot,
-            organizationLoaded: false,
-          } satisfies WorkspaceConflictSnapshot)
-      freezeEditorConflict(data.documentId, conflictBackup, "remote-write", cloud)
-      return false
-    }
-    let authoritativeClaim = outboxClaim
-    if (!data.documentId && result.data?.id) {
-      const firstInsertClaim = activeOutboxClaims.get("new")
-      if (editorOutbox && firstInsertClaim) {
-        try {
-          const boundClaim = await editorOutbox.bindCreatedDocument(
-            ownerId,
-            firstInsertClaim,
-            result.data.id,
-            Number(result.data.revision ?? 0),
-          )
-          if (boundClaim) {
-            activeOutboxClaims.set("new", boundClaim)
-            authoritativeClaim = boundClaim
-          }
-        } catch {
-          if (identityIsCurrent())
-            setStatus("云端已创建文档，但恢复队列正在核对新编号；请暂时不要关闭页面。", "error")
+      const migratedRaw = JSON.stringify(migratedBackup)
+      const migratedBackupStored = setStorageItemSafely(
+        localStorage,
+        localDraftKey(ownerId, savedDocumentId),
+        migratedRaw,
+      )
+      if (migratedBackupStored) {
+        editorTabDrafts.rememberBackup(savedDocumentId, migratedRaw)
+        finalBackupToken = migratedRaw
+        if (draftBackupToken) {
+          removeTabBackupIfUnchanged(ownerId, documentScopeId, draftBackupToken)
         }
+      } else {
+        finalBackupToken = null
+        retainedDraftBackupAfterMigrationFailure = draftBackupToken !== null
       }
-    }
-    const authoritativeDocumentId = String(result.data?.id ?? data.documentId)
-    const authoritativeRevision = Number(result.data?.revision ?? data.revision)
-    if (authoritativeClaim && authoritativeDocumentId) {
-      durableSaveOutcomes.set(authoritativeClaim.record.operationId, {
-        ownerId,
-        documentId: authoritativeDocumentId,
-        revision: authoritativeRevision,
-        complete: false,
-      })
-    }
-    if (!saveTargetIsCurrent()) return false
-    if (!data.documentId && result.data?.id) {
-      boundDocumentIdentity = result.data.id
+      editorTabDrafts.moveDirty(documentScopeId, savedDocumentId)
+      const documentField = form.elements.namedItem("documentId") as HTMLInputElement | null
+      if (documentField) documentField.value = savedDocumentId
+      if (revisionField) revisionField.value = String(outcome.response.revision)
+      currentDraftId = ""
+      editorKnowledgeBaseBinding = {
+        documentId: savedDocumentId,
+        knowledgeBaseId: outcome.response.knowledge_base_id,
+      }
+      allowEditorSaves(savedDocumentId)
       if (
-        saveEpochAtStart === editorSaveEpoch &&
-        editorSaveReadyDocumentId === documentIdentity &&
-        editorConflict?.documentId !== documentIdentity
-      )
-        editorSaveReadyDocumentId = boundDocumentIdentity
-      const field = form.elements.namedItem("documentId") as HTMLInputElement | null
-      if (field) field.value = result.data.id
-      editorKnowledgeBaseBinding = { documentId: String(result.data.id), knowledgeBaseId }
-      const revisionField = form.elements.namedItem("revision") as HTMLInputElement | null
-      if (revisionField) revisionField.value = String(result.data.revision ?? 0)
-      const newBackupTokenAtBind = editorTabDrafts.backupToken("new")
-      editorTabDrafts.moveDirty("new", result.data.id)
-      let idBackupWritten = false
-      try {
-        const migratedBackup = addEditorBackupMetadata(
-          {
-            ...(outboxClaim?.record.payload.form as Record<string, unknown> | undefined),
-            ...data,
-            documentId: result.data.id,
-            revision: Number(result.data.revision ?? 0),
-            __sources: sourceSnapshot,
-          },
-          ownerId,
-          result.data.id,
-          Number(result.data.revision ?? 0),
-        )
-        const migratedRaw = JSON.stringify(migratedBackup)
-        if (
-          !setStorageItemSafely(localStorage, localDraftKey(ownerId, result.data.id), migratedRaw)
-        )
-          throw new Error("created-document-backup-write-failed")
-        editorTabDrafts.rememberBackup(result.data.id, migratedRaw)
-        boundBackupToken = migratedRaw
-        if (editorChangeGeneration !== generationAtStart) {
-          boundBackupToken = writeLocalBackup()
+        serializedSaveIntent?.ownerId === ownerId &&
+        serializedSaveIntent.authEpoch === saveAuthEpoch &&
+        serializedSaveIntent.documentScopeId === documentScopeId
+      ) {
+        serializedSaveIntent = {
+          ...serializedSaveIntent,
+          documentScopeId: savedDocumentId,
+          saveEpoch: editorSaveEpoch,
         }
-        idBackupWritten = Boolean(boundBackupToken)
-      } catch {
-        setStatus("云端文档已创建；浏览器备份编号尚未迁移，请保持页面开启直到保存完成。", "error")
-      }
-      if (newBackupTokenAtBind) {
-        if (idBackupWritten) removeTabBackupIfUnchanged(ownerId, "new", newBackupTokenAtBind)
-        else pendingNewBackupCleanup.set(result.data.id, newBackupTokenAtBind)
       }
       window.history.replaceState(
         window.history.state,
         "",
-        bindDocumentEditorRoute(window.location.href, result.data.id),
+        bindDocumentEditorRoute(window.location.href, savedDocumentId),
       )
+    } else {
+      if (revisionField) revisionField.value = String(outcome.response.revision)
     }
-    if (result.data?.revision !== undefined) {
-      const revision = form.elements.namedItem("revision") as HTMLInputElement | null
-      if (revision) revision.value = String(result.data.revision)
-    }
-    if (result.data?.id) {
-      if (!saveTargetIsCurrent()) return false
-      const version = await saveClient.from("document_versions").insert({
-        document_id: result.data.id,
-        owner_id: ownerId,
-        created_by: ownerId,
-        version_no: result.data.revision ?? 0,
-        snapshot: {
-          title: data.title,
-          body: data.body,
-          topic: data.topic,
-          maturity: data.maturity,
-          visibility: payload.visibility,
-          tags: data.tags,
-          prerequisites: data.prerequisites,
-          related: data.related,
-          __sources: sourceSnapshot,
-        },
-      })
-      if (!saveTargetIsCurrent()) return false
-      const tagsSaved = await saveTags(
-        result.data.id,
-        knowledgeBaseId,
-        data.tags ?? "",
-        ownerId,
-        saveClient,
-      )
-      if (!saveTargetIsCurrent()) return false
-      const prerequisitesSaved = await saveLinks(
-        result.data.id,
-        data.prerequisites ?? "",
-        "prerequisite",
-        knowledgeBaseId,
-        ownerId,
-        saveClient,
-      )
-      if (!saveTargetIsCurrent()) return false
-      const relatedSaved = await saveLinks(
-        result.data.id,
-        data.related ?? "",
-        "related",
-        knowledgeBaseId,
-        ownerId,
-        saveClient,
-      )
-      if (!saveTargetIsCurrent()) return false
-      const sourcesSaved = await saveDocumentSources(result.data.id, saveClient, sourceSnapshot)
-      if (!saveTargetIsCurrent()) return false
-      if (version.error || !tagsSaved || !prerequisitesSaved || !relatedSaved || !sourcesSaved) {
-        if (!identityIsCurrent()) return false
-        await loadDocuments()
-        if (state) state.textContent = "正文已保存，关联信息仍待同步"
-        setStatus("部分内容尚未同步完整，本地恢复副本已保留；稍后可安全重试。", "error")
-        return false
-      }
-    }
-    if (authoritativeClaim) {
-      const outcome = durableSaveOutcomes.get(authoritativeClaim.record.operationId)
-      if (outcome) outcome.complete = true
-    }
-    if (!saveTargetIsCurrent()) return false
-    if (editorChangeGeneration === generationAtStart) {
-      const savedDocumentId = String(result.data?.id || data.documentId || "new")
-      editorTabDrafts.clearDirtyIfGeneration(savedDocumentId, generationAtStart)
-      const pendingNewToken = pendingNewBackupCleanup.get(savedDocumentId)
-      if (pendingNewToken) {
-        removeTabBackupIfUnchanged(ownerId, "new", pendingNewToken)
-        pendingNewBackupCleanup.delete(savedDocumentId)
-      }
-      if (data.documentId) removeTabBackupIfUnchanged(ownerId, data.documentId, backupTokenAtStart)
-      else {
-        if (result.data?.id) removeTabBackupIfUnchanged(ownerId, result.data.id, boundBackupToken)
-      }
-    }
-    updatePublicationUI(currentPublication, Number(result.data?.revision ?? data.revision))
-    await loadDocuments()
-    return saveTargetIsCurrent()
-  }
 
-  const saveQueue = createSerializedSaveQueue(saveDocumentOnce)
-  const requestDocumentSave = async (options: { enqueue?: boolean } = {}) => {
-    const documentId = readForm().documentId || "new"
-    const ownerId = currentUser?.id ? String(currentUser.id) : ""
-    const requestSaveEpoch = editorSaveEpoch
-    if (!editorSaveIsAllowed(documentId, requestSaveEpoch)) {
-      if (state) state.textContent = "文档尚未完整加载，自动同步保持暂停"
-      setStatus("请等待文档完整载入或先处理版本冲突；本次保存未进入队列。", "error")
+    const settledSaveEpoch = editorSaveEpoch
+    const settledTargetIsCurrent = () =>
+      !disposed &&
+      currentUser?.id === ownerId &&
+      client === saveClient &&
+      authEpoch === saveAuthEpoch &&
+      currentEditorScopeId() === nextDocumentScopeId &&
+      editorSaveIsAllowed(nextDocumentScopeId, settledSaveEpoch)
+    if (!settledTargetIsCurrent()) return false
+
+    const hasPendingFollowUp = outcome.followUpState !== "none"
+    const localRecoveryUnavailable = finalBackupToken === null
+    let finalized = false
+    if (!hasPendingFollowUp && editorChangeGeneration === generationAtStart) {
+      let backupCleanupConfirmed = localRecoveryUnavailable
+      if (finalBackupToken === null) {
+        // No tab-owned token means there is nothing this tab can safely delete.
+        // A shared key may belong to another tab, so acknowledge the cloud save
+        // while leaving all browser storage untouched.
+      } else if (editorTabDrafts.backupToken(nextDocumentScopeId) === finalBackupToken) {
+        backupCleanupConfirmed = removeTabBackupIfUnchanged(
+          ownerId,
+          nextDocumentScopeId,
+          finalBackupToken,
+        )
+      }
+      if (backupCleanupConfirmed) {
+        finalized = editorTabDrafts.clearDirtyIfGeneration(nextDocumentScopeId, generationAtStart)
+      }
+    }
+
+    if (!finalized) {
+      if (!hasPendingFollowUp && editorChangeGeneration !== generationAtStart) writeLocalBackup()
+      editorCoordinator?.publishStatus({
+        documentId: nextDocumentScopeId,
+        operationId: outcome.claim.record.operationId,
+        status: "queued",
+        revision: outcome.response.revision,
+      })
+      if (state)
+        state.textContent = hasPendingFollowUp
+          ? "云端已确认当前版本，仍有更新的本地改动等待同步"
+          : "云端已确认当前版本，新的本地改动仍在保留"
+      if (hasPendingFollowUp) {
+        scheduleAtomicSaveFlush({
+          ownerId,
+          documentScopeId: nextDocumentScopeId,
+          saveClient,
+          saveAuthEpoch,
+          saveEpoch: settledSaveEpoch,
+          runAt: Date.now(),
+        })
+      }
+      updatePublicationUI(currentPublication, outcome.response.revision)
       return false
     }
-    let durableEnqueueSucceeded = false
-    let queuedOperationId: string | undefined
-    if (editorOutbox && ownerId && options.enqueue !== false) {
-      try {
-        const queued = await editorOutbox.enqueue({
-          ownerId,
-          documentId,
-          baseRevision: readForm().revision,
-          payload: currentEditorOutboxPayload(),
-        })
-        durableEnqueueSucceeded = true
-        queuedOperationId = queued.operationId
-      } catch {
-        setStatus("持久恢复队列暂时不可用；仍会尝试保存到云端并保留浏览器备份。", "error")
-      }
-    }
-    const run = async () => {
-      if (!editorSaveIsAllowed(documentId, requestSaveEpoch)) return false
-      if ((readForm().documentId || "new") !== documentId) {
-        if (state) state.textContent = "编辑目标已切换，本次旧保存已取消"
-        return false
-      }
-      let claim: EditorOutboxClaim | null = null
-      if (editorOutbox && ownerId && (durableEnqueueSucceeded || options.enqueue === false)) {
-        try {
-          await editorOutbox.recoverInterrupted(ownerId, documentId)
-          claim = await editorOutbox.claimNext(ownerId, documentId)
-          if (!claim) {
-            const pending = (await editorOutbox.listForOwner(ownerId)).filter(
-              (record) => record.documentId === documentId,
-            )
-            const conflict = pending.find((record) => record.status === "conflict")
-            if (conflict) {
-              if (editorConflict?.documentId === documentId)
-                editorConflict.operationId = conflict.operationId
-              return false
-            }
-            if (pending.length) {
-              setStatus("恢复队列仍有未完成的保存记录；已停止报告成功并保留待恢复内容。", "error")
-              return false
-            }
-            return true
-          }
-          activeOutboxClaims.set(documentId, claim)
-        } catch {
-          if (options.enqueue === false) return false
-          claim = null
-        }
-      }
-      editorCoordinator?.publishStatus({
-        documentId,
-        operationId: claim?.record.operationId ?? queuedOperationId,
-        status: "saving",
-      })
-      const saved = await saveQueue.request()
-      let finalClaim = activeOutboxClaims.get(documentId) ?? claim
-      activeOutboxClaims.delete(documentId)
-      let durableComplete = false
-      let durableRevision: number | undefined
-      if (editorOutbox && ownerId && finalClaim) {
-        try {
-          const outcome = durableSaveOutcomes.get(finalClaim.record.operationId)
-          if (outcome?.ownerId === ownerId) {
-            if (finalClaim.record.documentId === "new" && outcome.documentId !== "new") {
-              const rebound = await editorOutbox.bindCreatedDocument(
-                ownerId,
-                finalClaim,
-                outcome.documentId,
-                outcome.revision,
-              )
-              if (rebound) finalClaim = rebound
-              else {
-                const records = await editorOutbox.listForOwner(ownerId)
-                for (const record of records.filter(
-                  (candidate) => candidate.documentId === "new" && candidate.status !== "conflict",
-                )) {
-                  await editorOutbox.migrateNewDocument(
-                    ownerId,
-                    record.operationId,
-                    outcome.documentId,
-                    outcome.revision,
-                  )
-                }
-                const migratedClaim = await editorOutbox.claimNext(ownerId, outcome.documentId)
-                if (!migratedClaim) throw new Error("created-document-binding-unavailable")
-                finalClaim = migratedClaim
-              }
-            }
-            durableRevision = outcome.revision
-            if (outcome.complete) {
-              durableComplete = await editorOutbox.completeAfterSuccess(
-                ownerId,
-                finalClaim,
-                outcome.revision,
-              )
-            } else {
-              await editorOutbox.advanceAfterPartialSuccess(ownerId, finalClaim, outcome.revision)
-            }
-            durableSaveOutcomes.delete(finalClaim.record.operationId)
-          } else if (saved) {
-            setStatus("云端已保存，但缺少可验证的响应版本；恢复队列会保守保留并再次核对。", "error")
-            await editorOutbox.requeueAfterFailure(ownerId, finalClaim)
-          } else if (editorConflict?.documentId === documentId) {
-            const conflict = await editorOutbox.markConflict(ownerId, finalClaim.record.operationId)
-            if (conflict && editorConflict) editorConflict.operationId = conflict.operationId
-          } else await editorOutbox.requeueAfterFailure(ownerId, finalClaim)
-        } catch {
-          setStatus("云端结果已返回，但恢复队列尚未确认；下次打开时会保守地再次核对。", "error")
-        }
-      }
-      editorCoordinator?.publishStatus({
-        documentId,
-        operationId: finalClaim?.record.operationId ?? queuedOperationId,
-        status:
-          editorConflict?.documentId === documentId
-            ? "conflict"
-            : durableComplete || (saved && !finalClaim)
-              ? "saved"
-              : "queued",
-        revision: durableComplete
-          ? durableRevision
-          : saved && !finalClaim
-            ? readForm().revision
-            : undefined,
-      })
-      if (saved)
-        window.setTimeout(() => {
-          void flushDurableOutboxForCurrentDocument()
-        }, 0)
-      return saved
-    }
+
     editorCoordinator?.publishStatus({
-      documentId,
-      operationId: queuedOperationId,
-      status: "queued",
+      documentId: nextDocumentScopeId,
+      operationId: outcome.claim.record.operationId,
+      status: "saved",
+      revision: outcome.response.revision,
     })
-    return runEditorUiExclusive(() => editorCoordinator?.runExclusive(documentId, run) ?? run())
+    if (localRecoveryUnavailable) {
+      if (retainedDraftBackupAfterMigrationFailure) {
+        if (state) state.textContent = "云端草稿已保存，原草稿恢复副本仍保留"
+        setStatus(
+          "云端保存和文档身份已确认；浏览器未能迁移恢复副本，因此原 draft 备份未删除。",
+          "error",
+        )
+      } else {
+        if (state) state.textContent = "云端草稿已保存，但本地恢复副本不可用"
+        setStatus("云端保存已确认；浏览器未能建立本标签页的恢复副本，请检查存储空间。", "error")
+      }
+    } else if (state) state.textContent = "云端草稿已保存"
+    updatePublicationUI(currentPublication, outcome.response.revision)
+    await loadDocuments()
+    return true
+  }
+
+  const serializedEditorSaves = createSerializedSaveQueue(async () => {
+    const intent = serializedSaveIntent
+    serializedSaveIntent = null
+    if (
+      !intent ||
+      disposed ||
+      currentUser?.id !== intent.ownerId ||
+      authEpoch !== intent.authEpoch ||
+      currentEditorScopeId() !== intent.documentScopeId ||
+      !editorSaveIsAllowed(intent.documentScopeId, intent.saveEpoch)
+    )
+      return false
+    return saveDocumentOnce(!intent.enqueue, intent.explicit)
+  })
+  const requestDocumentSave = async (options: { enqueue?: boolean; explicit?: boolean } = {}) => {
+    if (!currentUser) return false
+    const documentScopeId = currentEditorScopeId()
+    if (!documentScopeId) return false
+    if (editorManualSaveIsRequired(documentScopeId) && options.explicit !== true) return false
+    const nextIntent = {
+      ownerId: String(currentUser.id),
+      authEpoch,
+      documentScopeId,
+      saveEpoch: editorSaveEpoch,
+      generation: editorChangeGeneration,
+      enqueue: options.enqueue !== false,
+      explicit: options.explicit === true,
+    }
+    const pending = serializedSaveIntent
+    serializedSaveIntent =
+      pending &&
+      pending.ownerId === nextIntent.ownerId &&
+      pending.authEpoch === nextIntent.authEpoch &&
+      pending.documentScopeId === nextIntent.documentScopeId &&
+      pending.saveEpoch === nextIntent.saveEpoch
+        ? {
+            ...nextIntent,
+            generation: Math.max(pending.generation, nextIntent.generation),
+            enqueue: pending.enqueue || nextIntent.enqueue,
+            explicit: pending.explicit || nextIntent.explicit,
+          }
+        : nextIntent
+    return serializedEditorSaves.request()
   }
 
   const flushDurableOutboxForCurrentDocument = async () => {
-    if (!editorOutbox || !currentUser || !form) return false
-    const ownerId = String(currentUser.id)
-    const documentId = readForm().documentId || "new"
-    if (editorConflict?.documentId === documentId) return false
-    try {
-      const hasPendingOperation = (await editorOutbox.listForOwner(ownerId)).some(
-        (record) =>
-          record.documentId === documentId &&
-          (record.status === "queued" || record.status === "saving"),
-      )
-      if (!hasPendingOperation) return false
-      return requestDocumentSave()
-    } catch {
-      return false
-    }
+    if (!editorOutbox || !currentUser || !form || !editorSaveController) return false
+    const documentScopeId = currentEditorScopeId()
+    if (!documentScopeId || editorConflict?.documentId === documentScopeId) return false
+    return requestDocumentSave({ enqueue: false })
   }
 
-  const resolveDurableEditorConflict = async (conflict: NonNullable<typeof editorConflict>) => {
-    if (!editorOutbox) return { ok: true as const, latest: null }
+  const resolveDurableEditorConflict = async (
+    conflict: NonNullable<typeof editorConflict>,
+    expectedLatest: EditorOutboxConflictResolutionToken | null,
+  ) => {
+    if (!editorOutbox)
+      return expectedLatest === null
+        ? { ok: true as const, latest: null }
+        : { ok: false as const, latest: null }
     try {
-      return {
-        ok: true as const,
-        latest: await editorOutbox.resolveDocumentConflict(conflict.ownerId, conflict.documentId),
+      const latest = await editorOutbox.resolveDocumentConflict(
+        conflict.ownerId,
+        conflict.documentId,
+        expectedLatest,
+      )
+      const expectationMatches =
+        expectedLatest === null
+          ? latest === null
+          : latest?.operationId === expectedLatest.operationId &&
+            latest.updatedAt === expectedLatest.updatedAt
+      if (!expectationMatches) {
+        setStatus(
+          "检测到另一标签页在恢复准备后又保存了新修改；没有清除任何队列，请重新比较版本。",
+          "error",
+        )
+        return { ok: false as const, latest }
       }
+      return { ok: true as const, latest }
     } catch {
       setStatus("恢复队列暂时无法确认你的选择；冲突稿仍保持冻结，请稍后重试。", "error")
       return { ok: false as const, latest: null }
-    }
-  }
-
-  const restoreDurableEditorConflict = async (
-    conflict: NonNullable<typeof editorConflict>,
-    backup: EditorBackup,
-    latest: EditorOutboxRecord | null,
-  ) => {
-    const redactedBackup = redactEditorBackupSources(backup)
-    const rememberBackup = (nextBackup: EditorBackup) => {
-      if (editorConflict !== conflict) return
-      editorConflict.backup = nextBackup
-      if (conflictLocalTitle)
-        conflictLocalTitle.textContent = String(nextBackup.title ?? "未命名知识")
-      if (conflictLocalBody) conflictLocalBody.textContent = String(nextBackup.body ?? "")
-      if (conflictLocalOrganization)
-        conflictLocalOrganization.textContent = conflictOrganizationSummary(
-          nextBackup as Record<string, unknown>,
-        )
-    }
-    rememberBackup(redactedBackup)
-    if (!editorOutbox) return
-    try {
-      const frozen = await editorOutbox.restoreConflict({
-        ownerId: conflict.ownerId,
-        documentId: conflict.documentId,
-        baseRevision: Number(
-          latest?.baseRevision ??
-            redactedBackup.__editorRecovery?.baseRevision ??
-            conflict.cloud.revision ??
-            0,
-        ),
-        payload: {
-          form: redactedBackup,
-          sources: Array.isArray(redactedBackup.__sources) ? redactedBackup.__sources : [],
-        },
-      })
-      if (editorConflict === conflict) {
-        editorConflict.operationId = frozen.operationId
-        rememberBackup(recoverableConflictBackup(conflict, frozen))
-      }
-    } catch {
-      setStatus("恢复副本无法归档，持久队列也暂时不可用；请保持页面开启并清理浏览器空间。", "error")
     }
   }
 
@@ -3330,15 +4029,84 @@ const init = async () => {
       editorConflictResolutionPending = false
       conflictSection?.setAttribute("aria-busy", "false")
       for (const control of controls) control.disabled = false
+      applyEditorConflictActionAvailability()
     }
+  }
+
+  const conflictUsesImmediateCas = (conflict: NonNullable<typeof editorConflict>) =>
+    conflict.reason === "remote-write" && conflict.cloud.cloudAvailable !== false
+
+  const materializeEditableConflictBackup = (
+    conflict: NonNullable<typeof editorConflict>,
+    backup: EditorBackup,
+  ) => {
+    const draftScope = conflict.documentId.startsWith(EDITOR_DRAFT_SCOPE_PREFIX)
+    const documentId = draftScope ? "" : conflict.documentId
+    const backupRevision = Number(backup.__editorRecovery?.baseRevision ?? backup.revision ?? 0)
+    const revision =
+      documentId && conflict.cloud.cloudAvailable !== false
+        ? conflict.cloud.revision
+        : Number.isSafeInteger(backupRevision) && backupRevision >= 0
+          ? backupRevision
+          : 0
+    return addEditorBackupMetadata(
+      {
+        ...backup,
+        documentId,
+        revision,
+        status: "draft",
+      },
+      conflict.ownerId,
+      conflict.documentId,
+      revision,
+    )
+  }
+
+  const restoreConflictForExplicitSave = async (
+    conflict: NonNullable<typeof editorConflict>,
+    context: ReturnType<typeof captureAuthContext>,
+  ) => {
+    const prepared = await prepareEditorConflictArchive(conflict, context)
+    if (!prepared.ok || !editorConflictActionIsCurrent(conflict, context)) return false
+    const editableBackup = materializeEditableConflictBackup(conflict, prepared.backup)
+    const raw = JSON.stringify(editableBackup)
+    if (
+      !setStorageItemSafely(localStorage, localDraftKey(conflict.ownerId, conflict.documentId), raw)
+    ) {
+      setStatus("无法建立可编辑恢复副本；冲突仍保持冻结，持久恢复记录没有删除。", "error")
+      return false
+    }
+    if (!editorConflictActionIsCurrent(conflict, context)) return false
+    const resolution = await resolveDurableEditorConflict(conflict, prepared.durableToken)
+    if (!resolution.ok || !editorConflictActionIsCurrent(conflict, context)) return false
+    const backup = editableBackup as Record<string, unknown> & { __sources?: WorkspaceSource[] }
+    fillForm(backup)
+    renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
+    clearEditorConflict()
+    allowEditorSaves(conflict.documentId)
+    editorChangeGeneration += 1
+    editorTabDrafts.markDirty(conflict.documentId, editorChangeGeneration)
+    editorTabDrafts.rememberBackup(conflict.documentId, raw)
+    requireExplicitEditorSave(conflict.documentId)
+    if (state) state.textContent = "本地恢复稿已可编辑；请明确点击保存后再同步"
+    setStatus("恢复稿已保留在浏览器中。系统不会自动重试；检查内容后请明确点击保存。")
+    return true
   }
 
   root.querySelector("[data-conflict-use-local]")?.addEventListener("click", async () => {
     await runEditorConflictResolution(async (conflict) => {
       if (!form || !currentUser || !client) return
-      const resolution = await resolveDurableEditorConflict(conflict)
-      if (!resolution.ok || editorConflict !== conflict) return
-      const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
+      if (conflict.reason === "not-found") return
+      const context = captureAuthContext()
+      if (!conflictUsesImmediateCas(conflict)) {
+        await restoreConflictForExplicitSave(conflict, context)
+        return
+      }
+      const prepared = await prepareEditorConflictArchive(conflict, context)
+      if (!prepared.ok || !editorConflictActionIsCurrent(conflict, context)) return
+      const resolution = await resolveDurableEditorConflict(conflict, prepared.durableToken)
+      if (!resolution.ok || !editorConflictActionIsCurrent(conflict, context)) return
+      const recoverableBackup = prepared.backup
       const backup = recoverableBackup as Record<string, unknown> & {
         __sources?: WorkspaceSource[]
       }
@@ -3363,13 +4131,13 @@ const init = async () => {
   root.querySelector("[data-conflict-use-cloud]")?.addEventListener("click", async () => {
     await runEditorConflictResolution(async (conflict) => {
       if (!form || !currentUser) return
-      const resolution = await resolveDurableEditorConflict(conflict)
-      if (!resolution.ok || editorConflict !== conflict) return
-      const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
-      if (!archiveEditorConflict(conflict, recoverableBackup)) {
-        await restoreDurableEditorConflict(conflict, recoverableBackup, resolution.latest)
-        return
-      }
+      if (conflict.cloud.cloudAvailable === false) return
+      const context = captureAuthContext()
+      const prepared = await prepareEditorConflictArchive(conflict, context)
+      if (!prepared.ok || !editorConflictActionIsCurrent(conflict, context)) return
+      const resolution = await resolveDurableEditorConflict(conflict, prepared.durableToken)
+      if (!resolution.ok || !editorConflictActionIsCurrent(conflict, context)) return
+      const recoverableBackup = prepared.backup
       clearEditorConflict()
       fillForm(conflict.cloud)
       if (state) state.textContent = "正在载入云端版本…"
@@ -3391,78 +4159,152 @@ const init = async () => {
 
   root.querySelector("[data-conflict-save-copy]")?.addEventListener("click", async () => {
     await runEditorConflictResolution(async (conflict) => {
-      if (!form || !currentUser) return
-      const resolution = await resolveDurableEditorConflict(conflict)
-      if (!resolution.ok || editorConflict !== conflict) return
-      const recoverableBackup = recoverableConflictBackup(conflict, resolution.latest)
-      const backup = recoverableBackup as Record<string, unknown> & {
-        __sources?: WorkspaceSource[]
-      }
-      fillForm(backup)
-      renderSources(Array.isArray(backup.__sources) ? backup.__sources : [])
-      const title = form.elements.namedItem("title") as HTMLInputElement | null
-      const documentId = form.elements.namedItem("documentId") as HTMLInputElement | null
-      const revision = form.elements.namedItem("revision") as HTMLInputElement | null
-      const statusField = form.elements.namedItem("status") as HTMLInputElement | null
-      const privateVisibility = form.querySelector<HTMLInputElement>(
-        "[name=visibility][value=private]",
-      )
+      if (!form || !currentUser || !client) return
+      const context = captureAuthContext()
+      const prepared = await prepareEditorConflictArchive(conflict, context)
+      if (!prepared.ok || !editorConflictActionIsCurrent(conflict, context)) return
       let sourceKnowledgeBaseId =
         editorKnowledgeBaseBinding?.documentId === conflict.documentId
           ? editorKnowledgeBaseBinding.knowledgeBaseId
           : ""
-      if (!sourceKnowledgeBaseId) {
-        const sourceDocument = await client
-          .from("documents")
-          .select("knowledge_base_id")
-          .eq("id", conflict.documentId)
-          .eq("owner_id", conflict.ownerId)
-          .single()
-        if (
-          sourceDocument.error ||
-          !sourceDocument.data?.knowledge_base_id ||
-          editorConflict !== conflict
-        ) {
-          setStatus("无法确认原文档所属知识库；尚未创建冲突副本，请稍后重试。", "error")
-          return
+      try {
+        if (!sourceKnowledgeBaseId && conflict.cloud.cloudAvailable !== false) {
+          const sourceDocument = await context.client
+            .from("documents")
+            .select("knowledge_base_id")
+            .eq("id", conflict.documentId)
+            .eq("owner_id", conflict.ownerId)
+            .single()
+          if (
+            sourceDocument.error ||
+            !sourceDocument.data?.knowledge_base_id ||
+            !editorConflictActionIsCurrent(conflict, context)
+          ) {
+            setStatus("无法确认原文档所属知识库；尚未创建冲突副本，请稍后重试。", "error")
+            return
+          }
+          sourceKnowledgeBaseId = String(sourceDocument.data.knowledge_base_id)
         }
-        sourceKnowledgeBaseId = String(sourceDocument.data.knowledge_base_id)
-      }
-      if (title && !title.value.endsWith("（冲突副本）")) title.value += "（冲突副本）"
-      if (documentId) documentId.value = ""
-      if (revision) revision.value = "0"
-      if (statusField) statusField.value = "draft"
-      if (privateVisibility) privateVisibility.checked = true
-      editorKnowledgeBaseBinding = { documentId: "new", knowledgeBaseId: sourceKnowledgeBaseId }
-      clearEditorConflict()
-      allowEditorSaves("new")
-      updatePublicationUI(null)
-      editorChangeGeneration += 1
-      writeLocalBackup()
-      if (state) state.textContent = "正在另存为私密副本…"
-      if (!currentUser || !client) {
-        setStatus("私密副本已保存在当前浏览器；登录服务恢复后可继续同步。")
+        if (!sourceKnowledgeBaseId) {
+          sourceKnowledgeBaseId = String(
+            (await ensureKnowledgeBase(() => editorConflictActionIsCurrent(conflict, context))) ??
+              "",
+          )
+        }
+      } catch {
+        if (editorConflictActionIsCurrent(conflict, context))
+          setStatus("无法确认原文档所属知识库；尚未创建冲突副本，请稍后重试。", "error")
         return
       }
+      if (!sourceKnowledgeBaseId || !editorConflictActionIsCurrent(conflict, context)) {
+        setStatus("无法准备私密副本的知识库；冲突稿仍保持冻结。", "error")
+        return
+      }
+
+      const copyDraftId = createEditorDraftId()
+      const copyScope = editorDraftScope(copyDraftId)
+      const recoverableBackup = redactEditorBackupSources(prepared.backup)
+      const originalTitle = String(recoverableBackup.title ?? "未命名知识")
+      const copyBackup = addEditorBackupMetadata(
+        {
+          ...recoverableBackup,
+          title: originalTitle.endsWith("（冲突副本）")
+            ? originalTitle
+            : `${originalTitle}（冲突副本）`,
+          documentId: "",
+          revision: 0,
+          status: "draft",
+          visibility: "private",
+        },
+        conflict.ownerId,
+        copyScope,
+        0,
+      )
+      let copyRaw = ""
+      try {
+        copyRaw = JSON.stringify(copyBackup)
+      } catch {
+        setStatus("无法建立私密副本快照；旧冲突仍保持冻结。", "error")
+        return
+      }
+      if (
+        !setStorageItemSafely(localStorage, localDraftKey(conflict.ownerId, copyScope), copyRaw)
+      ) {
+        setStatus("浏览器空间不足，未清除旧冲突；请先导出或清理空间。", "error")
+        return
+      }
+      if (!editorConflictActionIsCurrent(conflict, context)) return
+      const resolution = await resolveDurableEditorConflict(conflict, prepared.durableToken)
+      if (!resolution.ok || !editorConflictActionIsCurrent(conflict, context)) return
+
+      fillForm(copyBackup)
+      renderSources(
+        Array.isArray(copyBackup.__sources) ? (copyBackup.__sources as WorkspaceSource[]) : [],
+      )
+      const boundCopyScope = bindFreshEditorDraftScope(copyDraftId)
+      if (boundCopyScope !== copyScope) {
+        setStatus("私密副本编号核对失败；浏览器恢复副本仍已保留。", "error")
+        return
+      }
+      editorKnowledgeBaseBinding = { documentId: copyScope, knowledgeBaseId: sourceKnowledgeBaseId }
+      clearEditorConflict()
+      allowEditorSaves(copyScope)
+      updatePublicationUI(null)
+      editorChangeGeneration += 1
+      editorTabDrafts.markDirty(copyScope, editorChangeGeneration)
+      editorTabDrafts.rememberBackup(copyScope, copyRaw)
+
+      if (!conflictUsesImmediateCas(conflict)) {
+        requireExplicitEditorSave(copyScope)
+        if (state) state.textContent = "私密副本已保存在浏览器中，等待你明确点击保存"
+        setStatus("私密副本已准备好且保持私密；系统不会自动重放，请检查后点击保存。")
+        return
+      }
+      if (state) state.textContent = "正在另存为私密副本…"
       if (await requestDocumentSave()) {
-        const archived = archiveEditorConflict(conflict, recoverableBackup)
         removeTabBackupIfUnchanged(conflict.ownerId, conflict.documentId)
         editorTabDrafts.clearDocument(conflict.documentId)
         if (state) state.textContent = "私密副本已保存"
-        setStatus(
-          archived
-            ? "已创建新的私密副本；原文档和冲突恢复稿都未被覆盖。"
-            : "私密副本已保存到云端，但浏览器恢复归档不可用；请立即确认副本内容。",
-          archived ? "success" : "error",
-        )
+        setStatus("已创建新的私密副本；原文档和冲突恢复稿都未被覆盖。", "success")
       }
     })
   })
 
+  conflictExportLocal?.addEventListener("click", () => {
+    const conflict = editorConflict
+    if (!conflict || !currentUser || currentUser.id !== conflict.ownerId) return
+    const raw = JSON.stringify(
+      {
+        format: "wouldkeep-editor-conflict-v1",
+        ownerId: conflict.ownerId,
+        documentScopeId: conflict.documentId,
+        reason: conflict.reason,
+        exportedAt: new Date().toISOString(),
+        backup: redactEditorBackupSources(recoverableConflictBackup(conflict)),
+      },
+      null,
+      2,
+    )
+    const url = URL.createObjectURL(new Blob([raw], { type: "application/json" }))
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `wouldkeep-conflict-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
+    setStatus("本地恢复稿已导出；冲突仍保持冻结，尚未删除任何操作。", "success")
+  })
+
   const queueAutosave = () => {
     if (!form || !currentUser || !client) return
-    const documentId = readForm().documentId || "new"
-    if (!editorSaveIsAllowed(documentId)) return
+    const documentScopeId = currentEditorScopeId()
+    if (!documentScopeId || !editorSaveIsAllowed(documentScopeId)) return
+    if (editorManualSaveIsRequired(documentScopeId)) {
+      if (autosaveTimer) window.clearTimeout(autosaveTimer)
+      if (state) state.textContent = "恢复稿等待你明确点击保存，自动同步仍保持暂停"
+      return
+    }
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     autosaveTimer = window.setTimeout(async () => {
       if (state) state.textContent = "正在自动保存…"
@@ -3474,9 +4316,15 @@ const init = async () => {
 
   const clearSensitiveEditorState = () => {
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
+    serializedSaveIntent = null
+    editorSaveController?.close()
+    editorSaveController = null
+    editorManualRecoveryBlocked = false
+    editorManualRecoveryExported = false
+    editorManualRecoveryPackage = null
+    currentDraftId = ""
     invalidateEditorSaves()
     editorTabDrafts.clearAll()
-    pendingNewBackupCleanup.clear()
     hideEditorLoadRecovery()
     clearEditorConflict()
     aiSuggestionPreferences = null
@@ -3556,10 +4404,7 @@ const init = async () => {
           if (state) state.textContent = "离线编辑中，本地稿等待同步"
           setStatus("暂时无法连接云端。你可以继续编辑，本地稿会保留并在联网后核对版本。")
         } else {
-          if (
-            previousSaveReadyDocumentId &&
-            (readForm().documentId || "new") === previousSaveReadyDocumentId
-          )
+          if (previousSaveReadyDocumentId && currentEditorScopeId() === previousSaveReadyDocumentId)
             allowEditorSaves(previousSaveReadyDocumentId)
           showEditorLoadRecovery(documentId, "云端正文读取失败；原编辑内容没有被替换。")
           setStatus("这条知识暂时无法打开；原编辑内容仍保持不变，请重试。")
@@ -3567,6 +4412,7 @@ const init = async () => {
         setOpenBusy(false)
         return false
       }
+      currentDraftId = ""
       editorKnowledgeBaseBinding = {
         documentId: String(result.data.id),
         knowledgeBaseId: String(result.data.knowledge_base_id),
@@ -3650,7 +4496,13 @@ const init = async () => {
       if (!options.ignoreLocalBackup)
         restoreLocalBackup(documentId, Number(result.data?.revision ?? 0))
       if (editorConflict?.documentId !== documentId) allowEditorSaves(documentId)
-      if (!options.ignoreLocalBackup) void flushDurableOutboxForCurrentDocument()
+      const atomicConflictState = options.ignoreLocalBackup
+        ? "none"
+        : await restoreAtomicConflictForScope(documentId, isCurrentOpen)
+      if (!isCurrentOpen()) return false
+      if (atomicConflictState === "blocked") return false
+      if (!options.ignoreLocalBackup && atomicConflictState === "none")
+        void flushDurableOutboxForCurrentDocument()
       editor?.scrollIntoView({ behavior: "smooth", block: "start" })
       setOpenBusy(false)
       hideEditorLoadRecovery()
@@ -3685,12 +4537,69 @@ const init = async () => {
   })
 
   const prepareEditorPersistence = async (ownerId: string) => {
+    editorSaveController?.close()
+    editorSaveController = null
+    if (!editorOutbox || !legacyEditorRepository || !client) {
+      editorManualRecoveryBlocked = true
+      showEditorManualRecoveryGate("浏览器持久化存储不可用；原子保存已暂停，本地页面内容仍保留。")
+    } else {
+      const inspection = await inspectLegacyEditorPersistence({
+        ownerId,
+        legacyRepository: legacyEditorRepository,
+        storage: localStorage,
+      })
+      editorManualRecoveryBlocked = inspection.blocked
+      if (inspection.blocked) {
+        try {
+          const physicalRows = await legacyEditorRepository.getAll()
+          const legacyRows = physicalRows.filter((row) => {
+            if (!row || typeof row !== "object" || Array.isArray(row)) return true
+            const rowOwnerId = (row as { ownerId?: unknown }).ownerId
+            return typeof rowOwnerId !== "string" || rowOwnerId === ownerId
+          })
+          const genericBackup = inspection.genericNewBackupKey
+            ? localStorage.getItem(inspection.genericNewBackupKey)
+            : null
+          editorManualRecoveryPackage = {
+            ownerId,
+            generatedAt: new Date().toISOString(),
+            legacyRows,
+            genericBackupKey: inspection.genericNewBackupKey,
+            genericBackup,
+          }
+        } catch {
+          editorManualRecoveryPackage = null
+        }
+      } else {
+        editorManualRecoveryPackage = null
+      }
+      editorSaveController = createEditorSaveController({
+        ownerId,
+        outbox: editorOutbox,
+        rpcClient: client,
+        protocolMarker:
+          root.dataset.editorSaveProtocol === EDITOR_ATOMIC_SAVE_PROTOCOL
+            ? EDITOR_ATOMIC_SAVE_PROTOCOL
+            : root.dataset.editorSaveProtocol,
+        manualRecoveryBlocked: inspection.blocked,
+        isOnline: () => navigator.onLine !== false,
+      })
+      if (inspection.blocked) {
+        showEditorManualRecoveryGate(
+          "检测到当前账户的旧版恢复记录；原子保存保持关闭，且不会回退到旧版多表写入。",
+        )
+      } else {
+        if (form) form.inert = false
+        hideEditorLoadRecovery()
+      }
+    }
     if (editorCoordinator?.ownerId !== ownerId || editorCoordinator.isClosed()) {
       editorCoordinator?.close()
       editorCoordinator = createEditorCoordinator({ ownerId })
       editorCoordinator.subscribe((message) => {
         if (!form) return
-        const currentDocumentId = readForm().documentId || "new"
+        const currentDocumentId = currentEditorScopeId()
+        if (!currentDocumentId) return
         if (message.documentId !== currentDocumentId) return
         if (message.status === "saving") {
           if (state) state.textContent = "另一标签页正在保存这条知识…"
@@ -3711,13 +4620,7 @@ const init = async () => {
             hasSharedBackup = true
           }
           const hasTabLocalChanges = editorTabDrafts.isDirty(currentDocumentId)
-          if (
-            hasTabLocalChanges ||
-            hasSharedBackup ||
-            currentDocumentId === "new" ||
-            form.inert ||
-            saveQueue.isSaving()
-          ) {
+          if (hasTabLocalChanges || hasSharedBackup || form.inert || editorManualRecoveryBlocked) {
             if (state) state.textContent = "另一标签页已保存新版本；当前本地改动仍保留"
           } else {
             if (state) state.textContent = "另一标签页已保存，正在刷新当前版本…"
@@ -3727,6 +4630,105 @@ const init = async () => {
       })
     }
   }
+
+  editorRecoveryExport?.addEventListener("click", () => {
+    const recoveryPackage = editorManualRecoveryPackage
+    if (!recoveryPackage || !currentUser || currentUser.id !== recoveryPackage.ownerId) {
+      if (editorManualRecoveryStatus)
+        editorManualRecoveryStatus.textContent =
+          "恢复记录暂时无法安全读取；没有清除任何数据，请保持页面开启后重试。"
+      return
+    }
+    const raw = JSON.stringify(
+      {
+        format: "wouldkeep-legacy-editor-recovery-v1",
+        ...recoveryPackage,
+      },
+      null,
+      2,
+    )
+    const url = URL.createObjectURL(new Blob([raw], { type: "application/json" }))
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `wouldkeep-editor-recovery-${recoveryPackage.ownerId}-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
+    editorManualRecoveryExported = true
+    if (editorRecoveryArchive) editorRecoveryArchive.disabled = false
+    if (editorManualRecoveryStatus)
+      editorManualRecoveryStatus.textContent =
+        "恢复包已导出。确认文件已保存后，可再次点击归档并清除旧记录。"
+  })
+
+  editorRecoveryArchive?.addEventListener("click", async () => {
+    const recoveryPackage = editorManualRecoveryPackage
+    if (
+      !editorManualRecoveryExported ||
+      !recoveryPackage ||
+      !legacyEditorRepository ||
+      !currentUser ||
+      currentUser.id !== recoveryPackage.ownerId
+    )
+      return
+    if (
+      !window.confirm(
+        "请确认恢复包 JSON 已安全保存。继续后会先在本浏览器归档，再清除这些旧版记录；此操作不会自动写入云端。确定继续吗？",
+      )
+    )
+      return
+    editorRecoveryArchive.disabled = true
+    try {
+      const archiveRaw = JSON.stringify({
+        format: "wouldkeep-legacy-editor-recovery-v1",
+        ...recoveryPackage,
+        archivedAt: new Date().toISOString(),
+      })
+      const archiveKey = `wouldkeep:editor-legacy-archive:${recoveryPackage.ownerId}:${Date.now()}`
+      if (!setStorageItemSafely(localStorage, archiveKey, archiveRaw)) {
+        throw new Error("legacy-recovery-archive-write-failed")
+      }
+      for (const row of recoveryPackage.legacyRows) {
+        const operationId =
+          row && typeof row === "object" && !Array.isArray(row)
+            ? (row as { operationId?: unknown }).operationId
+            : null
+        if (typeof operationId !== "string" || !operationId) {
+          throw new Error("legacy-recovery-row-key-unavailable")
+        }
+        await legacyEditorRepository.delete(operationId)
+      }
+      if (recoveryPackage.genericBackupKey && recoveryPackage.genericBackup !== null) {
+        const removed = removeStorageItemIfUnchanged(
+          localStorage,
+          recoveryPackage.genericBackupKey,
+          recoveryPackage.genericBackup,
+        )
+        if (!removed) throw new Error("legacy-recovery-backup-changed")
+      }
+      const after = await inspectLegacyEditorPersistence({
+        ownerId: recoveryPackage.ownerId,
+        legacyRepository: legacyEditorRepository,
+        storage: localStorage,
+      })
+      if (after.blocked) throw new Error("legacy-recovery-clear-not-verified")
+      editorManualRecoveryBlocked = false
+      editorManualRecoveryExported = false
+      editorManualRecoveryPackage = null
+      editorSaveController?.setManualRecoveryBlocked(false)
+      if (form) form.inert = false
+      hideEditorLoadRecovery()
+      setStatus("旧版恢复记录已归档并经复查清除；现在可以继续使用原子保存。", "success")
+    } catch {
+      editorManualRecoveryBlocked = true
+      editorSaveController?.setManualRecoveryBlocked(true)
+      showEditorManualRecoveryGate("归档或清除未能完整验证；保存仍保持关闭，原记录不会被自动重放。")
+      if (editorManualRecoveryStatus)
+        editorManualRecoveryStatus.textContent =
+          "未能确认全部旧记录均已安全清除；请重新导出并重试，保存仍处于阻断状态。"
+    }
+  })
 
   const sync = async () => {
     if (disposed) return
@@ -3743,6 +4745,7 @@ const init = async () => {
           currentUser = null
           authEpoch += 1
           clearSensitiveEditorState()
+          resetSiteOperations()
           editorCoordinator?.close()
           editorCoordinator = null
         }
@@ -3757,6 +4760,7 @@ const init = async () => {
       if (nextOwnerId !== previousOwnerId) {
         authEpoch += 1
         clearSensitiveEditorState()
+        resetSiteOperations()
       }
       if (currentUser) {
         await prepareEditorPersistence(String(currentUser.id))
@@ -3775,10 +4779,8 @@ const init = async () => {
         if (writeLauncher && !preserveWriteSurface) writeLauncher.hidden = !currentUser
         if (profileSettings) profileSettings.hidden = !currentUser
         if (aiSettings) aiSettings.hidden = !currentUser
-        if (!currentUser)
-          siteOwnerNavItems.forEach((item) => {
-            item.hidden = true
-          })
+        if (siteOperations) siteOperations.hidden = !currentUser
+        if (!currentUser) resetSiteOperations()
         if (!preserveWriteSurface) {
           if (editor) editor.hidden = true
           if (flatWorkbench) flatWorkbench.hidden = true
@@ -3787,16 +4789,16 @@ const init = async () => {
           try {
             await loadCapabilities(isCurrentSync)
             if (!isCurrentSync()) return
+            if (workspaceSection === "site") {
+              await loadSiteOperations(isCurrentSync)
+              if (!isCurrentSync()) return
+              return
+            }
             const knowledgeBaseId = await ensureKnowledgeBase(isCurrentSync)
             if (!isCurrentSync()) return
             if (!knowledgeBaseId) setStatus("个人知识库暂时无法准备，请稍后刷新重试。", "error")
             await loadDocuments(isCurrentSync)
             if (!isCurrentSync()) return
-            if (!preserveWriteSurface) {
-              await restoreDurableOutboxBackup("new", isCurrentSync)
-              if (!isCurrentSync()) return
-              restoreLocalBackup()
-            }
             void flushDurableOutboxForCurrentDocument()
             if (knowledgeBaseId) await loadLinkOptions("", knowledgeBaseId, isCurrentSync)
             if (!isCurrentSync()) return
@@ -3815,8 +4817,10 @@ const init = async () => {
               if (!isCurrentSync()) return
             }
           } catch {
-            if (isCurrentSync())
+            if (isCurrentSync()) {
+              if (workspaceSection === "site") renderSiteAccess(null, "verification")
               setStatus("登录已确认，但工作区数据暂时无法加载；请检查网络后刷新重试。", "error")
+            }
           }
         }
       }
@@ -3841,10 +4845,13 @@ const init = async () => {
         authEpoch += 1
         currentUser = null
         clearSensitiveEditorState()
+        resetSiteOperations()
         editorCoordinator?.close()
         editorCoordinator = null
         void sync()
-      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") void sync()
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        void sync().then(() => resumeWorkspaceRouteAfterAuth?.())
+      }
     })
     authSubscription = listener?.data?.subscription ?? null
   }
@@ -4359,49 +5366,67 @@ const init = async () => {
     librarySearch?.focus()
   })
 
-  const startNewDocument = (showEditor = true, preferRecovery = true) => {
-    const previousSaveReadyDocumentId = editorSaveReadyDocumentId
+  const startNewDocument = (
+    showEditor = true,
+    preferRecovery = true,
+    preferredDraftId?: string,
+    routeMode?: EditorDraftMode,
+  ) => {
+    if (editorManualRecoveryBlocked) {
+      showEditorManualRecoveryGate(
+        "请先导出并明确归档旧版恢复记录；处理完成前不能开始新的云端保存。",
+      )
+      return ""
+    }
+    const previousScope = currentEditorScopeId()
+    const previousData = readForm()
+    if (
+      previousScope.startsWith("draft:") &&
+      (previousData.title.trim() || previousData.body.trim())
+    ) {
+      const ownerId = currentUser?.id ? String(currentUser.id) : "anonymous"
+      const previousRaw = writeLocalBackup()
+      if (!previousRaw) {
+        setStatus("当前草稿无法可靠备份；已取消新建操作。", "error")
+        return ""
+      }
+      if (!preferRecovery) {
+        try {
+          const archiveKey = `wouldkeep:editor-draft-archive:${ownerId}:${previousScope}:${Date.now()}`
+          if (!setStorageItemSafely(localStorage, archiveKey, previousRaw)) {
+            throw new Error("draft-archive-write-failed")
+          }
+          if (
+            !removeStorageItemIfUnchanged(
+              localStorage,
+              localDraftKey(ownerId, previousScope),
+              previousRaw,
+            )
+          ) {
+            throw new Error("draft-archive-source-changed")
+          }
+          editorTabDrafts.clearDocument(previousScope)
+        } catch {
+          setStatus("无法先归档当前草稿；已取消新建操作。", "error")
+          return ""
+        }
+      }
+    }
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     invalidateEditorSaves()
     discardAiSuggestion("")
     openDocumentRequests.invalidate()
     hideEditorLoadRecovery()
+    clearEditorConflict()
+    const documentScopeId = bindFreshEditorDraftScope(
+      preferredDraftId,
+      previousScope && !preferredDraftId ? "push" : "replace",
+      routeMode,
+    )
     if (form) {
       form.inert = false
       form.setAttribute("aria-busy", "false")
     }
-    const ownerId = currentUser?.id ? String(currentUser.id) : ""
-    const pendingNewDraft = ownerId ? localStorage.getItem(localDraftKey(ownerId, "new")) : null
-    if (preferRecovery && pendingNewDraft && restoreLocalBackup("new")) {
-      allowEditorSaves("new")
-      if (writeLauncher && showEditor) writeLauncher.hidden = true
-      if (flatWorkbench && showEditor) flatWorkbench.hidden = true
-      if (editor) editor.hidden = !showEditor
-      if (state) state.textContent = "已恢复尚未保存的新知识草稿"
-      refreshAiSelectionStatus()
-      if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
-      return
-    }
-    if (!preferRecovery && pendingNewDraft && ownerId) {
-      try {
-        localStorage.setItem(
-          `wouldkeep:editor-draft-archive:${ownerId}:new:${Date.now()}`,
-          pendingNewDraft,
-        )
-        localStorage.removeItem(localDraftKey(ownerId, "new"))
-        editorTabDrafts.clearDocument("new")
-      } catch {
-        if (
-          previousSaveReadyDocumentId &&
-          (readForm().documentId || "new") === previousSaveReadyDocumentId
-        )
-          allowEditorSaves(previousSaveReadyDocumentId)
-        setStatus("浏览器空间不足，无法安全归档现有新草稿；已取消新建操作。", "error")
-        return
-      }
-    }
-    clearEditorConflict()
-    editorTabDrafts.clearDocument("new")
     form?.reset()
     editorKnowledgeBaseBinding = null
     clearRelationDocumentOptions()
@@ -4419,12 +5444,201 @@ const init = async () => {
     if (flatWorkbench && showEditor) flatWorkbench.hidden = true
     if (editor) editor.hidden = !showEditor
     if (history) history.hidden = true
-    allowEditorSaves("new")
-    if (state) state.textContent = "新建云端草稿"
+    allowEditorSaves(documentScopeId)
+    if (preferRecovery && restoreLocalBackup(documentScopeId)) {
+      if (state) state.textContent = "已恢复这条尚未保存的新知识草稿"
+    } else if (state) {
+      state.textContent = "新建云端草稿"
+    }
     refreshAiSelectionStatus()
     void prepareNewDocumentRelationOptions()
     if (showEditor) editor?.scrollIntoView({ behavior: "smooth", block: "start" })
+    return documentScopeId
   }
+
+  const openStableDraftScope = async (
+    draftId: string,
+    requestedMode: EditorDraftMode = "detailed",
+  ) => {
+    if (!currentUser || !form || !client) return false
+    const ownerId = String(currentUser.id)
+    const routeClient = client
+    const routeAuthEpoch = authEpoch
+    const documentScopeId = editorDraftScope(draftId)
+    const authIsCurrent = () =>
+      !disposed &&
+      currentUser?.id === ownerId &&
+      client === routeClient &&
+      authEpoch === routeAuthEpoch
+    const draftRouteIsCurrent = () => {
+      if (!authIsCurrent()) return false
+      const params = new URLSearchParams(location.search)
+      return parseEditorDraftId(params.get("draft")) === draftId
+    }
+    try {
+      let bindingReadTimeout: number | undefined
+      const bindingRead = replaySafeEditorRepository?.getScopeBinding(ownerId, documentScopeId)
+      const binding = await Promise.race([
+        bindingRead ?? Promise.resolve(null),
+        new Promise<never>((_, reject) => {
+          bindingReadTimeout = window.setTimeout(
+            () => reject(new Error("draft-binding-read-timeout")),
+            4_000,
+          )
+        }),
+      ]).finally(() => {
+        if (bindingReadTimeout !== undefined) window.clearTimeout(bindingReadTimeout)
+      })
+      if (!draftRouteIsCurrent()) return false
+      if (binding) {
+        if (!draftRouteIsCurrent()) return false
+        const draftKey = localDraftKey(ownerId, documentScopeId)
+        const documentKey = localDraftKey(ownerId, binding.documentId)
+        if (!draftRouteIsCurrent()) return false
+        const draftRaw = localStorage.getItem(draftKey)
+        if (draftRaw) {
+          const draftInspection = inspectEditorBackup(
+            draftRaw,
+            ownerId,
+            documentScopeId,
+            binding.baseRevision,
+          )
+          if (draftInspection.state === "invalid") {
+            showEditorLoadRecovery(
+              documentScopeId,
+              "已找到草稿绑定，但原草稿备份无法安全解析；没有删除任何数据。",
+            )
+            return false
+          }
+          if (draftInspection.state === "conflict") {
+            showEditorLoadRecovery(
+              documentScopeId,
+              "原草稿备份的版本或作用域无法与持久绑定核对；已保留原始数据，请先导出恢复稿再处理。",
+            )
+            return false
+          }
+          if (!draftRouteIsCurrent()) return false
+          let documentRaw = localStorage.getItem(documentKey)
+          let documentInspection = documentRaw
+            ? inspectEditorBackup(documentRaw, ownerId, binding.documentId, binding.baseRevision)
+            : null
+          if (documentInspection?.state === "conflict") {
+            showEditorLoadRecovery(
+              documentScopeId,
+              "目标文档备份的版本或作用域无法与持久绑定核对；两份备份均已保留，未执行迁移。",
+            )
+            return false
+          }
+          if (documentRaw && documentInspection?.state === "invalid") {
+            const quarantineKey = `wouldkeep:editor-recovery-quarantine:${ownerId}:${binding.documentId}:${Date.now()}`
+            if (
+              !draftRouteIsCurrent() ||
+              !setStorageItemSafely(localStorage, quarantineKey, documentRaw)
+            ) {
+              showEditorLoadRecovery(
+                documentScopeId,
+                "目标文档存在无法解析的备份，且未能安全隔离；两份原始数据均未覆盖。",
+              )
+              return false
+            }
+            if (
+              !draftRouteIsCurrent() ||
+              !removeStorageItemIfUnchanged(localStorage, documentKey, documentRaw)
+            ) {
+              showEditorLoadRecovery(
+                documentScopeId,
+                "目标文档备份在隔离期间发生变化；隔离副本与原始数据均保留，未执行迁移。",
+              )
+              return false
+            }
+            editorTabDrafts.forgetBackup(binding.documentId, documentRaw)
+            documentRaw = null
+            documentInspection = null
+          }
+          const draftSavedAt = Number(draftInspection.backup.__editorRecovery?.savedAt ?? 0)
+          const documentSavedAt =
+            documentInspection?.state === "restore"
+              ? Number(documentInspection.backup.__editorRecovery?.savedAt ?? 0)
+              : -1
+          if (draftSavedAt >= documentSavedAt) {
+            const migrated = addEditorBackupMetadata(
+              {
+                ...draftInspection.backup,
+                documentId: binding.documentId,
+                revision: binding.baseRevision,
+              },
+              ownerId,
+              binding.documentId,
+              binding.baseRevision,
+            )
+            const migratedRaw = JSON.stringify(migrated)
+            if (!draftRouteIsCurrent()) return false
+            if (!setStorageItemSafely(localStorage, documentKey, migratedRaw)) {
+              showEditorLoadRecovery(
+                documentScopeId,
+                "云端绑定已找到，但浏览器备份迁移失败；仍保留原 draft 地址与备份。",
+              )
+              return false
+            }
+          }
+          if (!draftRouteIsCurrent()) return false
+          if (!removeStorageItemIfUnchanged(localStorage, draftKey, draftRaw)) {
+            showEditorLoadRecovery(
+              documentScopeId,
+              "草稿备份在迁移期间发生变化；仍保留原数据，请刷新后重试。",
+            )
+            return false
+          }
+        }
+        if (!draftRouteIsCurrent()) return false
+        window.history.replaceState(
+          window.history.state,
+          "",
+          bindDocumentEditorRoute(window.location.href, binding.documentId),
+        )
+        if (
+          !authIsCurrent() ||
+          new URLSearchParams(location.search).get("document") !== binding.documentId
+        )
+          return false
+        return openDocument(binding.documentId)
+      }
+    } catch {
+      if (!draftRouteIsCurrent()) return false
+      const activeScope = startNewDocument(true, true, draftId, requestedMode)
+      if (!activeScope || !authIsCurrent() || currentEditorScopeId() !== activeScope) return false
+      if (requestedMode === "free") restoreFlatWorkbenchFromDetailed()
+      invalidateEditorSaves()
+      showEditorLoadRecovery(
+        documentScopeId,
+        "草稿持久绑定暂时无法核对；浏览器恢复内容仍可编辑，但云端保存保持暂停。",
+      )
+      if (state) state.textContent = "浏览器恢复可用，云端保存已暂停"
+      if (requestedMode === "free")
+        setFlatStatus(
+          "已留在原自由工作台并尝试恢复浏览器副本；云端绑定暂时无法核对，保存到云端已暂停。",
+          "error",
+        )
+      return true
+    }
+
+    const activeScope = startNewDocument(true, true, draftId, requestedMode)
+    if (!activeScope || !authIsCurrent() || currentEditorScopeId() !== activeScope) return false
+    await restoreDurableOutboxBackup(activeScope)
+    if (!authIsCurrent() || currentEditorScopeId() !== activeScope) return false
+    restoreLocalBackup(activeScope)
+    if (!authIsCurrent() || currentEditorScopeId() !== activeScope) return false
+    const atomicConflictState = await restoreAtomicConflictForScope(
+      activeScope,
+      () => authIsCurrent() && currentEditorScopeId() === activeScope,
+    )
+    if (!authIsCurrent() || currentEditorScopeId() !== activeScope) return false
+    if (atomicConflictState === "blocked") return false
+    if (atomicConflictState === "none") void flushDurableOutboxForCurrentDocument()
+    if (requestedMode === "free") restoreFlatWorkbenchFromDetailed()
+    return true
+  }
+
   root
     .querySelectorAll<HTMLButtonElement>("[data-new-document]")
     .forEach((button) => button.addEventListener("click", () => startNewDocument()))
@@ -4782,17 +5996,96 @@ const init = async () => {
     flatBody.setRangeText(`${prefix}${content}${suffix}`, start, end, "end")
     flatBody.dispatchEvent(new Event("input", { bubbles: true }))
   }
-  const syncFlatToDetailed = () => {
+  const mirrorFlatToDetailed = (trimValues: boolean) => {
     if (!form || !flatTitle || !flatBody) return
     const title = form.elements.namedItem("title") as HTMLInputElement | null
     const body = form.elements.namedItem("body") as HTMLTextAreaElement | null
     const privateVisibility = form.querySelector<HTMLInputElement>(
       "[name=visibility][value=private]",
     )
-    if (title) title.value = flatTitle.value.trim()
-    if (body) body.value = flatBody.value.trim()
+    if (title) title.value = trimValues ? flatTitle.value.trim() : flatTitle.value
+    if (body) body.value = trimValues ? flatBody.value.trim() : flatBody.value
     if (privateVisibility) privateVisibility.checked = true
-    form.dispatchEvent(new Event("input", { bubbles: true }))
+  }
+  const syncFlatToDetailed = () => {
+    mirrorFlatToDetailed(true)
+    form?.dispatchEvent(new Event("input", { bubbles: true }))
+  }
+  const persistFlatDraft = (): "browser" | "tab" | null => {
+    const documentScopeId = currentEditorScopeId()
+    const ownerId = currentUser?.id ? String(currentUser.id) : ""
+    if (!ownerId || !documentScopeId.startsWith(EDITOR_DRAFT_SCOPE_PREFIX)) {
+      setFlatStatus("草稿恢复编号尚未准备好；请先复制当前内容，页面没有把它标记为已保存。", "error")
+      return null
+    }
+    mirrorFlatToDetailed(false)
+    editorChangeGeneration += 1
+    editorTabDrafts.markDirty(documentScopeId, editorChangeGeneration)
+    const localPersisted = Boolean(writeLocalBackup())
+    const session = availableSessionStorage()
+    const sessionPersisted = session
+      ? writeFlatDraftSessionRecovery(session, {
+          ownerId,
+          documentScopeId,
+          title: flatTitle?.value ?? "",
+          body: flatBody?.value ?? "",
+        })
+      : false
+    if (!localPersisted && !sessionPersisted) {
+      setFlatStatus("浏览器无法建立恢复副本；内容仍在当前页面，请复制备份后再继续。", "error")
+      return null
+    }
+    return localPersisted ? "browser" : "tab"
+  }
+  function restoreFlatWorkbenchFromDetailed() {
+    if (!flatForm || !flatTitle || !flatBody) return false
+    const documentScopeId = currentEditorScopeId()
+    const ownerId = currentUser?.id ? String(currentUser.id) : ""
+    const session = availableSessionStorage()
+    const sessionRecovery =
+      session && ownerId && documentScopeId.startsWith(EDITOR_DRAFT_SCOPE_PREFIX)
+        ? readFlatDraftSessionRecovery(session, ownerId, documentScopeId)
+        : null
+    let localSavedAt = -1
+    if (sessionRecovery) {
+      try {
+        const raw = localStorage.getItem(localDraftKey(ownerId, documentScopeId))
+        if (raw) {
+          const inspection = inspectEditorBackup(raw, ownerId, documentScopeId)
+          if (inspection.state === "restore")
+            localSavedAt = Number(inspection.backup.__editorRecovery?.savedAt ?? -1)
+        }
+      } catch {
+        localSavedAt = -1
+      }
+    }
+    const existing = readForm()
+    if (
+      sessionRecovery &&
+      ((!existing.title.trim() && !existing.body.trim()) || sessionRecovery.savedAt >= localSavedAt)
+    ) {
+      const title = form?.elements.namedItem("title") as HTMLInputElement | null
+      const body = form?.elements.namedItem("body") as HTMLTextAreaElement | null
+      const privateVisibility = form?.querySelector<HTMLInputElement>(
+        "[name=visibility][value=private]",
+      )
+      if (title) title.value = sessionRecovery.title
+      if (body) body.value = sessionRecovery.body
+      if (privateVisibility) privateVisibility.checked = true
+    }
+    const data = readForm()
+    flatTitle.value = data.title
+    flatBody.value = data.body
+    flatDirty = Boolean(data.title.trim() || data.body.trim())
+    if (writeLauncher) writeLauncher.hidden = true
+    if (editor) editor.hidden = true
+    if (flatWorkbench) flatWorkbench.hidden = false
+    setFlatStatus(
+      flatDirty
+        ? "已恢复浏览器中的私密草稿；尚未确认保存到云端。"
+        : "当前草稿还没有可恢复内容；输入后会立即保存在当前浏览器中。",
+    )
+    return true
   }
   const convertPastedContent = async (html: string, plainText: string, imageFiles: File[]) => {
     let content = plainText.replace(/\r\n?/g, "\n")
@@ -4883,6 +6176,19 @@ const init = async () => {
 
   const openFlatWorkbench = () => {
     const existing = readForm()
+    const params = new URLSearchParams(location.search)
+    const routeDraftId = parseEditorDraftId(params.get("draft"))
+    const currentScope = currentEditorScopeId()
+    if (
+      routeDraftId &&
+      params.get("mode") === "free" &&
+      currentScope === editorDraftScope(routeDraftId)
+    ) {
+      restoreFlatWorkbenchFromDetailed()
+      flatWorkbench?.scrollIntoView({ behavior: "smooth", block: "start" })
+      window.setTimeout(() => flatBody?.focus(), 0)
+      return
+    }
     if (
       editor &&
       !editor.hidden &&
@@ -4890,7 +6196,8 @@ const init = async () => {
       !window.confirm("自由工作台会开始一条新的知识。确定离开当前详细编辑内容吗？")
     )
       return
-    startNewDocument(false)
+    const activeScope = startNewDocument(false, true, undefined, "free")
+    if (!activeScope) return
     flatForm?.reset()
     flatDirty = false
     setFlatStatus("等待粘贴或书写。")
@@ -4913,8 +6220,19 @@ const init = async () => {
     })
   flatForm?.addEventListener("input", () => {
     flatDirty = true
-    setFlatStatus("有未保存的内容。")
+    const persistence = persistFlatDraft()
+    if (persistence)
+      setFlatStatus(
+        persistence === "browser"
+          ? "已保存在当前浏览器；点击保存后才会确认同步到云端。"
+          : "已保存在当前标签页的备用副本；请勿关闭此标签页，点击保存后才会同步到云端。",
+      )
   })
+  const persistFlatDraftBeforePageExit = () => {
+    if (flatDirty) persistFlatDraft()
+  }
+  window.addEventListener("pagehide", persistFlatDraftBeforePageExit)
+  window.addCleanup(() => window.removeEventListener("pagehide", persistFlatDraftBeforePageExit))
   flatBody?.addEventListener("paste", (event) => {
     const clipboard = event.clipboardData
     if (!clipboard) return
@@ -4974,6 +6292,15 @@ const init = async () => {
       setFlatStatus("登录状态已失效，请重新登录后保存。", "error")
       return
     }
+    const recoveryScope = currentEditorScopeId()
+    if (!recoveryScope || !editorSaveIsAllowed(recoveryScope)) {
+      persistFlatDraft()
+      setFlatStatus(
+        "内容仍保存在浏览器恢复副本中，但云端绑定尚未核对完成；本次云端保存已取消，请稍后刷新重试。",
+        "error",
+      )
+      return
+    }
     syncFlatToDetailed()
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     if (flatSave) {
@@ -4981,15 +6308,21 @@ const init = async () => {
       flatSave.textContent = "正在保存…"
     }
     setFlatStatus("正在保存到你的私密知识库…")
-    const saved = await requestDocumentSave()
+    const saved = await requestDocumentSave({ explicit: true })
     if (flatSave) {
       flatSave.disabled = false
       flatSave.textContent = "保存为私密草稿"
     }
     if (saved) {
       flatDirty = false
-      setFlatStatus("私密草稿已保存。你可以继续修改，或进入详细整理。", "success")
-    } else setFlatStatus("云端保存失败，内容仍保留在当前页面。请检查网络后重试。", "error")
+      const session = availableSessionStorage()
+      if (session) removeFlatDraftSessionRecovery(session, String(currentUser.id), recoveryScope)
+      setFlatStatus("私密草稿已由云端确认。你可以继续修改，或进入详细整理。", "success")
+    } else
+      setFlatStatus(
+        "云端尚未确认保存；内容已保留在当前浏览器的恢复副本中，请检查网络后重试。",
+        "error",
+      )
   })
   root.querySelector<HTMLButtonElement>("[data-flat-organize]")?.addEventListener("click", () => {
     if (!flatTitle?.value.trim() || !flatBody?.value.trim()) {
@@ -5010,7 +6343,7 @@ const init = async () => {
       return
     flatForm?.reset()
     flatDirty = false
-    setFlatStatus("已清空，可以粘贴新的文稿。")
+    if (persistFlatDraft()) setFlatStatus("已清空，并更新了当前浏览器中的恢复副本。")
     flatBody?.focus()
   })
 
@@ -5253,7 +6586,8 @@ const init = async () => {
       if (target?.matches("[data-tag-input],[data-relation-search]")) return
       if (target === aiBody || target?.matches("[name=visibility]")) refreshAiSelectionStatus()
       editorChangeGeneration += 1
-      const documentIdentity = readForm().documentId || "new"
+      const documentIdentity = currentEditorScopeId()
+      if (!documentIdentity) return
       editorTabDrafts.markDirty(documentIdentity, editorChangeGeneration)
       if (editorConflict?.documentId === documentIdentity) {
         if (state) state.textContent = "版本冲突待处理，自动同步保持暂停"
@@ -5263,14 +6597,22 @@ const init = async () => {
         if (state) state.textContent = "文档尚未完整加载，自动同步保持暂停"
         return
       }
-      if (state) state.textContent = currentUser && client ? "即将自动保存" : "有未保存改动"
       writeLocalBackup()
+      if (editorManualSaveIsRequired(documentIdentity)) {
+        if (state) state.textContent = "恢复稿已在浏览器中更新；请明确点击保存后再同步"
+        return
+      }
+      if (state) state.textContent = currentUser && client ? "即将自动保存" : "有未保存改动"
       queueAutosave()
     })
     form.addEventListener("submit", async (event) => {
       event.preventDefault()
       if (autosaveTimer) window.clearTimeout(autosaveTimer)
-      const documentIdentity = readForm().documentId || "new"
+      const documentIdentity = currentEditorScopeId()
+      if (!documentIdentity) {
+        setStatus("新草稿编号尚未准备好；本次保存已取消。", "error")
+        return
+      }
       if (editorConflict?.documentId === documentIdentity) {
         if (state) state.textContent = "版本冲突待处理，自动同步保持暂停"
         setStatus("请先处理版本冲突；在你选择前，本地稿和云端稿都会保留。", "error")
@@ -5288,7 +6630,7 @@ const init = async () => {
         return
       }
       if (state) state.textContent = "正在保存到云端…"
-      if (await requestDocumentSave()) {
+      if (await requestDocumentSave({ explicit: true })) {
         if (state) state.textContent = "云端草稿已保存"
       }
     })
@@ -5306,7 +6648,8 @@ const init = async () => {
       )
         return
       const ownerId = currentUser?.id ? String(currentUser.id) : "anonymous"
-      const activeDocumentId = data.documentId || "new"
+      const activeDocumentId = currentEditorScopeId()
+      if (!activeDocumentId) return
       const activeKey = localDraftKey(ownerId, activeDocumentId)
       const activeBackup = localStorage.getItem(activeKey)
       if (activeBackup) {
@@ -5339,30 +6682,85 @@ const init = async () => {
       syncOrganizationEditorsFromFields()
       updatePublicationUI(null)
       renderSources()
-      allowEditorSaves("new")
+      const nextScope = bindFreshEditorDraftScope()
+      allowEditorSaves(nextScope)
       if (state) state.textContent = "尚未保存"
       refreshAiSelectionStatus()
       void prepareNewDocumentRelationOptions()
     })
   }
 
-  if (workspace && workspaceSection === "write" && currentUser) {
-    const params = new URLSearchParams(location.search)
-    const documentId = params.get("document") ?? ""
-    const requestedMode = params.get("mode")
-    const requestedAction = params.get("action")
-    if (
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(documentId)
-    ) {
-      void openDocument(documentId)
-    } else if (requestedMode === "free") {
-      openFlatWorkbench()
-    } else if (requestedMode === "detailed") {
-      startNewDocument()
-    } else if (requestedAction === "import") {
-      openImportDialog()
+  let workspaceRouteResumeKey = ""
+  let workspaceRouteResumePromise: Promise<boolean> | null = null
+  const resumeWorkspaceWriteRoute = async () => {
+    if (!workspace || workspaceSection !== "write" || !currentUser) return false
+    const ownerId = String(currentUser.id)
+    const routeKey = `${ownerId}:${authEpoch}:${location.pathname}${location.search}${location.hash}`
+    if (workspaceRouteResumePromise && workspaceRouteResumeKey === routeKey)
+      return workspaceRouteResumePromise
+    workspaceRouteResumeKey = routeKey
+    const resumePromise = (async () => {
+      const params = new URLSearchParams(location.search)
+      const routeDecision = resolveEditorRouteDecision({
+        document: params.get("document"),
+        draft: params.get("draft"),
+        hasDraftParameter: params.has("draft"),
+      })
+      const requestedMode = params.get("mode")
+      const requestedAction = params.get("action")
+      if (routeDecision.kind === "document") {
+        if (currentEditorScopeId() === routeDecision.documentId && editor && !editor.hidden)
+          return true
+        const canonicalDocumentRoute = bindDocumentEditorRoute(
+          window.location.href,
+          routeDecision.documentId,
+        )
+        if (canonicalDocumentRoute !== window.location.href) {
+          window.history.replaceState(window.history.state, "", canonicalDocumentRoute)
+        }
+        return openDocument(routeDecision.documentId)
+      } else if (routeDecision.kind === "draft") {
+        const activeScope = editorDraftScope(routeDecision.draftId)
+        if (currentEditorScopeId() === activeScope && editorSaveIsAllowed(activeScope)) {
+          if (requestedMode === "free") restoreFlatWorkbenchFromDetailed()
+          else {
+            if (writeLauncher) writeLauncher.hidden = true
+            if (flatWorkbench) flatWorkbench.hidden = true
+            if (editor) editor.hidden = false
+          }
+          return true
+        }
+        return openStableDraftScope(
+          routeDecision.draftId,
+          requestedMode === "free" ? "free" : "detailed",
+        )
+      } else if (routeDecision.kind === "invalid-draft") {
+        const activeScope = startNewDocument()
+        setStatus(
+          "原 draft 参数不是规范 UUID；已生成新的安全草稿编号，未读取或覆盖任何旧草稿。",
+          "error",
+        )
+        return Boolean(activeScope)
+      } else if (requestedMode === "free") {
+        openFlatWorkbench()
+        return Boolean(currentEditorScopeId())
+      } else if (requestedMode === "detailed") {
+        return Boolean(startNewDocument())
+      } else if (requestedAction === "import") {
+        openImportDialog()
+        return true
+      }
+      return true
+    })()
+    workspaceRouteResumePromise = resumePromise
+    try {
+      return await resumePromise
+    } finally {
+      if (workspaceRouteResumePromise === resumePromise) workspaceRouteResumePromise = null
     }
   }
+  resumeWorkspaceRouteAfterAuth = resumeWorkspaceWriteRoute
+  void resumeWorkspaceWriteRoute()
 
   onlineHandler = async () => {
     if (!client) {
@@ -5375,18 +6773,54 @@ const init = async () => {
       }
     }
     if (!currentUser || !form) return
-    const pendingDocument = readForm().documentId || "new"
+    const pendingDocument = currentEditorScopeId()
+    if (!pendingDocument) return
+    if (editorManualSaveIsRequired(pendingDocument)) {
+      if (state) state.textContent = "网络已恢复；恢复稿仍等待你明确点击保存"
+      setStatus("网络已恢复，但恢复稿不会自动重放。检查内容后请明确点击保存。")
+      return
+    }
     if (editorConflict?.documentId === pendingDocument) {
       if (state) state.textContent = "版本冲突待处理，自动同步保持暂停"
       setStatus("网络已恢复，但检测到版本冲突。请先比较并选择要保留的版本。", "error")
       return
     }
-    if (!localStorage.getItem(localDraftKey(currentUser.id, pendingDocument))) {
+    const ownerId = String(currentUser.id)
+    const onlineClient = client
+    const onlineAuthEpoch = authEpoch
+    const onlineScopeIsCurrent = () =>
+      !disposed &&
+      currentUser?.id === ownerId &&
+      client === onlineClient &&
+      authEpoch === onlineAuthEpoch &&
+      currentEditorScopeId() === pendingDocument
+    let hasLocalBackup = false
+    let hasDurablePending = false
+    try {
+      hasLocalBackup = Boolean(localStorage.getItem(localDraftKey(ownerId, pendingDocument)))
+      const records = await editorOutbox?.listForOwner(ownerId)
+      if (!records || !onlineScopeIsCurrent()) return
+      hasDurablePending = records.some(
+        (record) =>
+          record.documentScopeId === pendingDocument &&
+          (record.status === "queued" || record.status === "saving"),
+      )
+    } catch {
+      if (!onlineScopeIsCurrent()) return
+      setStatus("网络已恢复，但无法安全核对持久保存队列；没有发起新的写入，请稍后重试。", "error")
+      return
+    }
+    if (!hasLocalBackup && !hasDurablePending) {
       setStatus("网络连接已恢复，没有待同步的本地改动。", "success")
       return
     }
+    if (!hasDurablePending) {
+      setStatus("网络已恢复；当前只有本地备份，请点击保存或继续编辑后再安全加入同步队列。")
+      return
+    }
+    cancelEditorRetryTimer()
     setStatus("网络已恢复，正在同步本地备份…")
-    if (await requestDocumentSave()) setStatus("本地备份已同步到云端。")
+    if (await requestDocumentSave({ enqueue: false })) setStatus("本地备份已同步到云端。")
   }
   window.addEventListener("online", onlineHandler)
 }

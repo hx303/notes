@@ -5,11 +5,17 @@ import {
   EDITOR_OUTBOX_DATABASE_VERSION,
   EDITOR_OUTBOX_SCHEMA_VERSION,
   EDITOR_OUTBOX_STORE_NAME,
+  EDITOR_OUTBOX_REPLAY_DATABASE_NAME,
+  EDITOR_OUTBOX_REPLAY_DATABASE_VERSION,
+  EDITOR_OUTBOX_REPLAY_PROTOCOL,
+  EDITOR_OUTBOX_REPLAY_STORE_NAME,
   EditorOutboxConflictFrozenError,
   EditorOutboxOwnershipError,
+  type EditorOutboxScopeBinding,
   createEditorOutbox,
   createIndexedDbEditorOutboxRepository,
   createMemoryEditorOutboxRepository,
+  createReplaySafeIndexedDbEditorOutboxRepository,
   parseEditorOutboxRecord,
 } from "./scripts/editorOutbox"
 
@@ -209,6 +215,13 @@ test("record parsing rejects corruption and unknown schemas", () => {
   assert.equal(parseEditorOutboxRecord(record({ payload: [] })), null)
   assert.equal(parseEditorOutboxRecord(record({ baseRevision: -1 })), null)
   assert.equal(parseEditorOutboxRecord(record({ updatedAt: 9 })), null)
+  assert.equal(parseEditorOutboxRecord(record({ saveProtocol: "unknown" })), null)
+  assert.equal(
+    parseEditorOutboxRecord(
+      record({ saveProtocol: EDITOR_OUTBOX_REPLAY_PROTOCOL, documentScopeId: "document-a" }),
+    )?.saveProtocol,
+    EDITOR_OUTBOX_REPLAY_PROTOCOL,
+  )
   assert.deepEqual(parseEditorOutboxRecord(record()), record())
 })
 
@@ -576,6 +589,56 @@ test("conflicts freeze payload, cannot be claimed, migrated, or deleted by succe
   assert.deepEqual(await outbox.listForOwner("owner-a"), [])
 })
 
+test("guarded document resolution preserves cross-tab intent created or updated after prepare", async () => {
+  const repository = createMemoryEditorOutboxRepository()
+  const runExclusiveMutation = createSharedMutationLock()
+  const resolver = createEditorOutbox(repository, { runExclusiveMutation })
+  const otherTab = createEditorOutbox(repository, {
+    now: clock(20, 40),
+    createOperationId: () => "operation-cross-tab",
+    runExclusiveMutation,
+  })
+
+  const crossTab = await otherTab.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 3,
+    payload: { title: "created after empty prepare" },
+  })
+  const appearedAfterPrepare = await resolver.resolveDocumentConflict("owner-a", "document-a", null)
+  assert.equal(appearedAfterPrepare?.operationId, crossTab.operationId)
+  assert.equal((await resolver.listForOwner("owner-a")).length, 1)
+
+  const preparedToken = {
+    operationId: crossTab.operationId,
+    updatedAt: crossTab.updatedAt,
+  }
+  const updatedCrossTab = await otherTab.enqueue({
+    ownerId: "owner-a",
+    documentId: "document-a",
+    baseRevision: 3,
+    payload: { title: "updated after prepare" },
+  })
+  assert.equal(updatedCrossTab.operationId, crossTab.operationId)
+  assert.ok(updatedCrossTab.updatedAt > preparedToken.updatedAt)
+
+  const changedAfterPrepare = await resolver.resolveDocumentConflict(
+    "owner-a",
+    "document-a",
+    preparedToken,
+  )
+  assert.deepEqual(changedAfterPrepare?.payload, { title: "updated after prepare" })
+  assert.deepEqual((await resolver.listForOwner("owner-a"))[0]?.payload, {
+    title: "updated after prepare",
+  })
+
+  await resolver.resolveDocumentConflict("owner-a", "document-a", {
+    operationId: updatedCrossTab.operationId,
+    updatedAt: updatedCrossTab.updatedAt,
+  })
+  assert.deepEqual(await resolver.listForOwner("owner-a"), [])
+})
+
 test("restoring a conflict atomically replaces every prior row without exposing queued work", async () => {
   const repository = createMemoryEditorOutboxRepository()
   const outbox = createEditorOutbox(repository, {
@@ -770,6 +833,126 @@ test("IndexedDB repository upgrades one versioned store and persists CRUD operat
     { name: EDITOR_OUTBOX_DATABASE_NAME, version: EDITOR_OUTBOX_DATABASE_VERSION },
   ])
   assert.deepEqual(fake.upgrades, [{ name: EDITOR_OUTBOX_STORE_NAME, keyPath: "operationId" }])
+})
+
+test("snapshot-v1 IndexedDB repository uses a database and store invisible to legacy clients", async () => {
+  const fake = createFakeIndexedDb()
+  const repository = createReplaySafeIndexedDbEditorOutboxRepository({ indexedDB: fake.factory })
+  const valid = parseEditorOutboxRecord(
+    record({ saveProtocol: EDITOR_OUTBOX_REPLAY_PROTOCOL, documentScopeId: "document-a" }),
+  )
+  assert.ok(valid)
+
+  await repository.put(valid)
+  assert.deepEqual(await repository.get(valid.operationId), valid)
+  assert.deepEqual(fake.opens, [
+    {
+      name: EDITOR_OUTBOX_REPLAY_DATABASE_NAME,
+      version: EDITOR_OUTBOX_REPLAY_DATABASE_VERSION,
+    },
+  ])
+  assert.deepEqual(fake.upgrades, [
+    { name: EDITOR_OUTBOX_REPLAY_STORE_NAME, keyPath: "operationId" },
+  ])
+  assert.notEqual(EDITOR_OUTBOX_REPLAY_DATABASE_NAME, EDITOR_OUTBOX_DATABASE_NAME)
+  assert.notEqual(EDITOR_OUTBOX_REPLAY_STORE_NAME, EDITOR_OUTBOX_STORE_NAME)
+})
+
+test("snapshot-v1 IndexedDB settles a created draft binding and follow-up in one transaction", async () => {
+  const fake = createFakeIndexedDb()
+  const repository = createReplaySafeIndexedDbEditorOutboxRepository({ indexedDB: fake.factory })
+  const draftScope = "draft:00000000-0000-4000-8000-000000000001"
+  const documentId = "00000000-0000-4000-8000-000000000101"
+  const binding: EditorOutboxScopeBinding = {
+    storageKind: "snapshot-v1-scope-binding",
+    operationId: `snapshot-v1-scope-binding:owner-a:${draftScope}`,
+    ownerId: "owner-a",
+    documentScopeId: draftScope,
+    documentId,
+    baseRevision: 0,
+    updatedAt: 30,
+  }
+  const original = parseEditorOutboxRecord(
+    record({
+      operationId: "operation-create",
+      documentId: "new",
+      documentScopeId: draftScope,
+      baseRevision: 0,
+      status: "saving",
+      attempts: 1,
+      saveProtocol: EDITOR_OUTBOX_REPLAY_PROTOCOL,
+    }),
+  )
+  const followUp = parseEditorOutboxRecord(
+    record({
+      operationId: "operation-follow-up",
+      documentId,
+      documentScopeId: documentId,
+      baseRevision: 0,
+      createdAt: 20,
+      updatedAt: 20,
+      saveProtocol: EDITOR_OUTBOX_REPLAY_PROTOCOL,
+    }),
+  )
+  assert.ok(original)
+  assert.ok(followUp)
+  await repository.put(original)
+
+  await repository.settleCreatedDocument(binding, [followUp], [original.operationId])
+
+  assert.deepEqual(await repository.getScopeBinding("owner-a", draftScope), binding)
+  assert.equal(await repository.get(original.operationId), undefined)
+  assert.deepEqual(await repository.get(followUp.operationId), followUp)
+})
+
+test("a failed snapshot-v1 IndexedDB settlement rolls back binding, delete, and rebind", async () => {
+  const failure = new Error("binding write failed")
+  const fake = createFakeIndexedDb({ request: failure, requestAt: 3 })
+  const repository = createReplaySafeIndexedDbEditorOutboxRepository({ indexedDB: fake.factory })
+  const draftScope = "draft:00000000-0000-4000-8000-000000000002"
+  const documentId = "00000000-0000-4000-8000-000000000102"
+  const binding: EditorOutboxScopeBinding = {
+    storageKind: "snapshot-v1-scope-binding",
+    operationId: `snapshot-v1-scope-binding:owner-a:${draftScope}`,
+    ownerId: "owner-a",
+    documentScopeId: draftScope,
+    documentId,
+    baseRevision: 0,
+    updatedAt: 30,
+  }
+  const original = parseEditorOutboxRecord(
+    record({
+      operationId: "operation-create",
+      documentId: "new",
+      documentScopeId: draftScope,
+      baseRevision: 0,
+      status: "saving",
+      attempts: 1,
+      saveProtocol: EDITOR_OUTBOX_REPLAY_PROTOCOL,
+    }),
+  )
+  const followUp = parseEditorOutboxRecord(
+    record({
+      operationId: "operation-follow-up",
+      documentId,
+      documentScopeId: documentId,
+      baseRevision: 0,
+      createdAt: 20,
+      updatedAt: 20,
+      saveProtocol: EDITOR_OUTBOX_REPLAY_PROTOCOL,
+    }),
+  )
+  assert.ok(original)
+  assert.ok(followUp)
+  await repository.put(original)
+
+  await assert.rejects(
+    () => repository.settleCreatedDocument(binding, [followUp], [original.operationId]),
+    failure,
+  )
+
+  assert.deepEqual(await repository.getAll(), [original])
+  assert.equal(await repository.getScopeBinding("owner-a", draftScope), null)
 })
 
 test("IndexedDB repository propagates open, transaction, and request failures", async () => {

@@ -2,12 +2,13 @@ import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } fro
 import style from "./styles/accountPage.scss"
 // @ts-ignore
 import script from "./scripts/accountPage.inline"
+import { EDITOR_ATOMIC_SAVE_PROTOCOL } from "./scripts/editorAtomicSave"
 
 const supabaseUrl = "https://agocyybolrisqujvjqdj.supabase.co"
 const supabaseAnonKey = "sb_publishable_9gb7jev7Ytwa6xQC75_ShQ_z3TJ6IZc"
 
 type AuthView = "signin" | "signup" | "forgot" | "recover"
-type WorkspaceView = "overview" | "knowledge" | "write" | "settings" | "ai-settings"
+type WorkspaceView = "overview" | "knowledge" | "write" | "settings" | "ai-settings" | "site"
 
 const authViewForSlug = (slug = ""): AuthView => {
   if (slug.includes("account/signup")) return "signup"
@@ -19,6 +20,7 @@ const authViewForSlug = (slug = ""): AuthView => {
 const workspaceViewForSlug = (slug = ""): WorkspaceView => {
   if (/^workspace\/knowledge(?:\/index)?$/.test(slug)) return "knowledge"
   if (/^workspace\/write(?:\/index)?$/.test(slug)) return "write"
+  if (/^workspace\/site(?:\/index)?$/.test(slug)) return "site"
   if (/^workspace\/settings\/ai(?:\/index)?$/.test(slug)) return "ai-settings"
   if (/^workspace\/settings(?:\/index)?$/.test(slug)) return "settings"
   return "overview"
@@ -38,9 +40,11 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
         ? "选择最顺手的方式开始"
         : workspaceView === "ai-settings"
           ? "让 AI 先学会尊重边界"
-          : workspaceView === "settings"
-            ? "让个人空间更像你"
-            : "回到你的个人知识空间"
+          : workspaceView === "site"
+            ? "把站点运营收回同一个工作区"
+            : workspaceView === "settings"
+              ? "让个人空间更像你"
+              : "回到你的个人知识空间"
     : authView === "signup"
       ? "建立属于你的知识库"
       : authView === "forgot"
@@ -56,9 +60,11 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
         ? "快速粘贴整篇文稿，或进入详细编辑器补充标签、关系与来源。"
         : workspaceView === "ai-settings"
           ? "先决定是否启用、可以处理哪些内容和费用上限；在你明确接受前，AI 不会改动或发布知识。"
-          : workspaceView === "settings"
-            ? "设置头像与显示名称；这些信息会用于个人空间和你主动公开的知识。"
-            : "从概览前往知识库或写作工作台；站长工具只对拥有权限的账户显示。"
+          : workspaceView === "site"
+            ? "在这里处理公开反馈、协作者权限与发布链路状态；站点运营权限不会扩大到任何人的私密正文。"
+            : workspaceView === "settings"
+              ? "设置头像与显示名称；这些信息会用于个人空间和你主动公开的知识。"
+              : "从概览前往知识库或写作工作台；站长工具只对拥有权限的账户显示。"
     : authView === "signup"
       ? "一个账户对应一座个人知识库。内容默认仅自己可见，何时分享由你决定。"
       : authView === "forgot"
@@ -74,6 +80,9 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
       data-account-mode={mode}
       data-auth-state="loading"
       data-workspace-section={workspace ? workspaceView : undefined}
+      data-editor-save-protocol={
+        workspaceView === "write" ? EDITOR_ATOMIC_SAVE_PROTOCOL : undefined
+      }
       data-supabase-url={supabaseUrl}
       data-supabase-anon-key={supabaseAnonKey}
     >
@@ -140,11 +149,16 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                 <small>查看大家分享的内容</small>
               </span>
             </a>
-            <a href="/admin/" data-site-owner-nav hidden>
+            <a
+              href="/workspace/site/"
+              aria-current={workspaceView === "site" ? "page" : undefined}
+              data-site-operations-nav
+              hidden
+            >
               <span aria-hidden="true">◆</span>
               <span>
-                <strong>站点管理</strong>
-                <small>站长专用工具</small>
+                <strong>站点运营</strong>
+                <small>反馈、权限与发布状态</small>
               </span>
             </a>
           </div>
@@ -809,6 +823,170 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
         </section>
       )}
 
+      {workspaceView === "site" && (
+        <section
+          class="workspace-site"
+          data-site-operations
+          hidden
+          aria-labelledby="site-operations-title"
+        >
+          <div class="workspace-site-heading">
+            <div>
+              <p class="account-kicker">SITE OPERATIONS / 站点运营</p>
+              <h2 id="site-operations-title">照看公开空间，不越过私密边界</h2>
+              <p>
+                这里仅处理公开反馈、协作者角色和发布链路状态。站点权限不会让任何人读取其他账户的私密草稿。
+              </p>
+            </div>
+            <button type="button" class="account-secondary" data-site-refresh hidden>
+              刷新运营状态
+            </button>
+          </div>
+
+          <div class="site-access-state" data-site-access-loading role="status" aria-live="polite">
+            <strong>正在确认站点权限</strong>
+            <span>权限确认前不会读取反馈、账户目录或运营状态。</span>
+          </div>
+
+          <section
+            class="site-access-denied"
+            data-site-access-denied
+            role="alert"
+            aria-live="assertive"
+            tabIndex={-1}
+            hidden
+          >
+            <p class="account-kicker">ACCESS / 访问范围</p>
+            <h3>当前账户没有站点运营权限</h3>
+            <p data-site-access-message>
+              你仍然可以正常管理自己的知识库；站点运营仅对经过授权的协作者开放。
+            </p>
+            <a class="account-primary" href="/workspace/">
+              返回个人空间
+            </a>
+          </section>
+
+          <div class="site-operations-content" data-site-operations-content hidden>
+            <header class="site-scope-note">
+              <div>
+                <span>当前范围</span>
+                <strong data-site-role-label>正在确认</strong>
+              </div>
+              <p data-site-scope-copy>
+                只显示当前角色可以处理的站点任务，不读取普通用户的私密正文。
+              </p>
+            </header>
+
+            <section
+              class="site-operations-section site-review-section"
+              data-site-review-section
+              hidden
+              aria-labelledby="site-review-title"
+            >
+              <div class="site-section-heading">
+                <div>
+                  <p class="account-kicker">FEEDBACK / 公开反馈</p>
+                  <h3 id="site-review-title">评论与纠错队列</h3>
+                  <p>按最新时间查看公开讨论和结构化纠错；软删除会立即把内容从公开页面隐藏。</p>
+                </div>
+                <button type="button" class="account-secondary" data-site-review-refresh>
+                  刷新反馈
+                </button>
+              </div>
+              <div class="site-review-toolbar">
+                <p data-site-review-summary>尚未读取反馈。</p>
+                <label>
+                  <span>显示数量</span>
+                  <select data-site-review-limit>
+                    <option value="20">最近 20 条</option>
+                    <option value="50">最近 50 条</option>
+                  </select>
+                </label>
+              </div>
+              <p
+                class="site-inline-status"
+                data-site-review-status
+                role="status"
+                aria-live="polite"
+              />
+              <div class="site-review-list" data-site-review-list />
+            </section>
+
+            <section
+              class="site-operations-section site-role-section"
+              data-site-role-section
+              hidden
+              aria-labelledby="site-role-title"
+            >
+              <div class="site-section-heading">
+                <div>
+                  <p class="account-kicker">ACCESS / 协作者权限</p>
+                  <h3 id="site-role-title">账户与站点角色</h3>
+                  <p>
+                    角色变更立即生效。普通用户只管理自己的知识；编辑者可进入运营状态页；管理员还可处理公开反馈。
+                  </p>
+                </div>
+                <button type="button" class="account-secondary" data-site-role-refresh>
+                  刷新账户
+                </button>
+              </div>
+              <form class="site-role-form" data-site-role-form>
+                <label>
+                  <span>账户邮箱</span>
+                  <input
+                    type="email"
+                    name="targetEmail"
+                    autocomplete="off"
+                    placeholder="user@example.com"
+                    required
+                    data-site-role-email
+                  />
+                </label>
+                <label>
+                  <span>新的站点角色</span>
+                  <select name="targetRole" data-site-role-select>
+                    <option value="user">普通用户 — 移除站点权限</option>
+                    <option value="editor">编辑者 — 查看站点运营状态</option>
+                    <option value="admin">管理员 — 可处理公开反馈</option>
+                  </select>
+                </label>
+                <div class="site-role-consequence" data-site-role-consequence>
+                  对方将只能访问自己的账户与个人知识工作区。
+                </div>
+                <button type="submit" class="account-primary" data-site-role-submit>
+                  确认角色变更
+                </button>
+              </form>
+              <p
+                class="site-inline-status"
+                data-site-role-status
+                role="status"
+                aria-live="polite"
+              />
+              <div class="site-role-directory" data-site-role-list />
+            </section>
+
+            <section
+              class="site-operations-section site-system-section"
+              data-site-system-section
+              aria-labelledby="site-system-title"
+            >
+              <div class="site-section-heading">
+                <div>
+                  <p class="account-kicker">STATUS / 非敏感检查</p>
+                  <h3 id="site-system-title">会话与发布链路</h3>
+                  <p>
+                    检查登录会话、权限 RPC 和公开发布读取链路，不显示密钥、提示词或任何私密正文。
+                  </p>
+                </div>
+                <time data-site-status-time />
+              </div>
+              <div class="site-status-list" data-site-status-list aria-live="polite" />
+            </section>
+          </div>
+        </section>
+      )}
+
       {workspaceView === "knowledge" && (
         <section
           class="workspace-library"
@@ -1142,7 +1320,7 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
           </div>
           <section class="editor-load-recovery" data-editor-load-recovery role="alert" hidden>
             <div>
-              <strong>这条知识还没有完整载入</strong>
+              <strong data-editor-load-recovery-title>这条知识还没有完整载入</strong>
               <p data-editor-load-recovery-message>
                 编辑器已暂停，避免用不完整的数据覆盖标签、关系、来源或发布状态。
               </p>
@@ -1150,6 +1328,17 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
             <button type="button" class="account-secondary" data-editor-retry-load>
               重新加载文档
             </button>
+            <div class="editor-recovery-actions" data-editor-manual-recovery-actions hidden>
+              <button type="button" class="account-secondary" data-editor-recovery-export>
+                导出旧版恢复包
+              </button>
+              <button type="button" class="account-secondary" data-editor-recovery-archive disabled>
+                已保存导出文件，归档并清除旧记录
+              </button>
+              <small data-editor-manual-recovery-status>
+                必须先导出；只有再次明确确认后才会清除原记录。
+              </small>
+            </div>
           </section>
           <form class="editor-form" data-editor-form>
             <input type="hidden" name="documentId" />
@@ -1621,6 +1810,9 @@ const AccountPage: QuartzComponent = ({ fileData }: QuartzComponentProps) => {
                 </button>
                 <button type="button" class="account-secondary" data-conflict-save-copy>
                   另存为私密副本
+                </button>
+                <button type="button" class="account-secondary" data-conflict-export-local>
+                  导出本地恢复稿
                 </button>
               </div>
               <small>选择前不会写入云端；采用云端时，本地稿仍会保留为恢复副本。</small>

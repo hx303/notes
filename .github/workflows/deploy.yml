@@ -32,11 +32,6 @@ jobs:
       - name: Clean mp4 video files
         run: find public -name "*.mp4" -delete 2>/dev/null || true
 
-      - name: Copy admin panel
-        run: |
-          mkdir -p public/admin
-          cp -r static/admin/* public/admin/
-
       - name: Deploy to Vercel
         env:
           VERCEL_ORG_ID: team_vSFadBJ2sMBFZzDYrfPY7L58

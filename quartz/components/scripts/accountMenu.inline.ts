@@ -17,11 +17,12 @@ const initAccountMenu = async () => {
   const panel = root.querySelector<HTMLElement>("[data-account-menu-panel]")
   const name = root.querySelector<HTMLElement>("[data-account-menu-name]")
   const email = root.querySelector<HTMLElement>("[data-account-menu-email]")
-  const ownerLink = root.querySelector<HTMLElement>("[data-account-owner-link]")
+  const operationsLink = root.querySelector<HTMLElement>("[data-account-operations-link]")
   const signout = root.querySelector<HTMLButtonElement>("[data-account-menu-signout]")
   let client: any = null
   let closeTimer: number | undefined
   let toggleWasOpenOnPointerDown: boolean | null = null
+  let accountSyncEpoch = 0
 
   const safeAvatarUrl = (value = "") => {
     try {
@@ -79,12 +80,15 @@ const initAccountMenu = async () => {
   }
 
   const syncAccount = async () => {
+    const syncEpoch = ++accountSyncEpoch
+    if (operationsLink) operationsLink.hidden = true
     const user = client ? ((await client.auth.getUser()).data?.user ?? null) : null
+    if (syncEpoch !== accountSyncEpoch) return
     root.dataset.accountState = user ? "signed-in" : "signed-out"
     if (loginLink) loginLink.hidden = Boolean(user)
     if (userSurface) userSurface.hidden = !user
     if (!user) {
-      if (ownerLink) ownerLink.hidden = true
+      if (operationsLink) operationsLink.hidden = true
       closeMenu()
       return
     }
@@ -94,17 +98,31 @@ const initAccountMenu = async () => {
       .select("display_name,avatar_url,signature")
       .eq("id", user.id)
       .maybeSingle()
+    if (syncEpoch !== accountSyncEpoch) return
     if (profileResult.error)
       profileResult = await client
         .from("profiles")
         .select("display_name,avatar_url")
         .eq("id", user.id)
         .maybeSingle()
+    if (syncEpoch !== accountSyncEpoch) return
     renderProfile(profileResult.data ?? null, user.email ?? "")
     const capabilityResult = await client.rpc("current_account_capabilities")
-    const capabilities = capabilityResult.data as { is_site_owner?: boolean } | null
-    if (ownerLink)
-      ownerLink.hidden = Boolean(capabilityResult.error || capabilities?.is_site_owner !== true)
+    if (syncEpoch !== accountSyncEpoch) return
+    const capabilities = capabilityResult.data as {
+      can_edit_site?: boolean
+      can_manage_roles?: boolean
+      can_moderate_comments?: boolean
+      can_moderate_publications?: boolean
+    } | null
+    const canUseOperations = Boolean(
+      !capabilityResult.error &&
+      (capabilities?.can_edit_site ||
+        capabilities?.can_manage_roles ||
+        capabilities?.can_moderate_comments ||
+        capabilities?.can_moderate_publications),
+    )
+    if (operationsLink) operationsLink.hidden = !canUseOperations
   }
 
   root.addEventListener("mouseenter", openMenu)
