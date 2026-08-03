@@ -54,15 +54,25 @@ test("free drafts retain their mode and reopen the same stable scope after refre
     'root\n    .querySelectorAll<HTMLButtonElement>("[data-new-document]")',
   )
   assert.match(stableDraft, /requestedMode: EditorDraftMode = "detailed"/)
+  assert.match(stableDraft, /startNewDocument\(true, true, draftId, requestedMode\)/)
   assert.match(stableDraft, /requestedMode === "free"\) restoreFlatWorkbenchFromDetailed\(\)/)
 
   const startup = sourceSlice(
-    'if (workspace && workspaceSection === "write" && currentUser)',
+    "const resumeWorkspaceWriteRoute = async () =>",
     "onlineHandler = async",
   )
   assert.match(
     startup,
     /openStableDraftScope\([\s\S]*requestedMode === "free" \? "free" : "detailed"/,
+  )
+  assert.match(startup, /resumeWorkspaceRouteAfterAuth = resumeWorkspaceWriteRoute/)
+  assert.match(
+    accountScript,
+    /SIGNED_IN[\s\S]{0,160}sync\(\)\.then\(\(\) => resumeWorkspaceRouteAfterAuth\?\.\(\)\)/,
+  )
+  assert.match(
+    accountScript,
+    /location\.assign\(workspaceAuthReturnRoute\(window\.location\.href, Boolean\(workspace\)\)\)/,
   )
 })
 

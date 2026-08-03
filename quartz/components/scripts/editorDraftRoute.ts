@@ -26,6 +26,12 @@ export const createEditorDraftId = (
 
 export type EditorDraftMode = "free" | "detailed"
 
+export const workspaceAuthReturnRoute = (currentHref: string, workspace: boolean) => {
+  if (!workspace) return "/workspace/"
+  const route = new URL(currentHref)
+  return `${route.pathname}${route.search}${route.hash}`
+}
+
 export const bindNewEditorDraftRoute = (
   currentHref: string,
   draftId: string,

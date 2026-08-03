@@ -16,6 +16,7 @@ import {
   editorDraftScope,
   parseEditorDraftId,
   resolveEditorRouteDecision,
+  workspaceAuthReturnRoute,
   type EditorDraftMode,
 } from "./editorDraftRoute.ts"
 import {
@@ -722,6 +723,7 @@ const init = async () => {
   let profileCropper: any = null
   let profilePersonalizationAvailable = true
   let authSubscription: { unsubscribe?: () => void } | null = null
+  let resumeWorkspaceRouteAfterAuth: (() => Promise<boolean>) | null = null
   let onlineHandler: (() => void) | null = null
   let editorCoordinator: EditorCoordinator | null = null
   let editorSaveController: ReturnType<typeof createEditorSaveController> | null = null
@@ -1102,7 +1104,7 @@ const init = async () => {
         setStatus("")
         return
       }
-      location.assign("/workspace/")
+      location.assign(workspaceAuthReturnRoute(window.location.href, Boolean(workspace)))
     } catch {
       setStatus("网络连接中断，输入内容仍然保留；请检查网络后重试。", "error")
     } finally {
@@ -4825,7 +4827,9 @@ const init = async () => {
         editorCoordinator?.close()
         editorCoordinator = null
         void sync()
-      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") void sync()
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        void sync().then(() => resumeWorkspaceRouteAfterAuth?.())
+      }
     })
     authSubscription = listener?.data?.subscription ?? null
   }
@@ -5575,7 +5579,7 @@ const init = async () => {
       return false
     }
 
-    const activeScope = startNewDocument(true, true, draftId)
+    const activeScope = startNewDocument(true, true, draftId, requestedMode)
     if (!activeScope || !authIsCurrent() || currentEditorScopeId() !== activeScope) return false
     await restoreDurableOutboxBackup(activeScope)
     if (!authIsCurrent() || currentEditorScopeId() !== activeScope) return false
@@ -6576,43 +6580,77 @@ const init = async () => {
     })
   }
 
-  if (workspace && workspaceSection === "write" && currentUser) {
-    const params = new URLSearchParams(location.search)
-    const routeDecision = resolveEditorRouteDecision({
-      document: params.get("document"),
-      draft: params.get("draft"),
-      hasDraftParameter: params.has("draft"),
-    })
-    const requestedMode = params.get("mode")
-    const requestedAction = params.get("action")
-    if (routeDecision.kind === "document") {
-      const canonicalDocumentRoute = bindDocumentEditorRoute(
-        window.location.href,
-        routeDecision.documentId,
-      )
-      if (canonicalDocumentRoute !== window.location.href) {
-        window.history.replaceState(window.history.state, "", canonicalDocumentRoute)
+  let workspaceRouteResumeKey = ""
+  let workspaceRouteResumePromise: Promise<boolean> | null = null
+  const resumeWorkspaceWriteRoute = async () => {
+    if (!workspace || workspaceSection !== "write" || !currentUser) return false
+    const ownerId = String(currentUser.id)
+    const routeKey = `${ownerId}:${authEpoch}:${location.pathname}${location.search}${location.hash}`
+    if (workspaceRouteResumePromise && workspaceRouteResumeKey === routeKey)
+      return workspaceRouteResumePromise
+    workspaceRouteResumeKey = routeKey
+    const resumePromise = (async () => {
+      const params = new URLSearchParams(location.search)
+      const routeDecision = resolveEditorRouteDecision({
+        document: params.get("document"),
+        draft: params.get("draft"),
+        hasDraftParameter: params.has("draft"),
+      })
+      const requestedMode = params.get("mode")
+      const requestedAction = params.get("action")
+      if (routeDecision.kind === "document") {
+        if (currentEditorScopeId() === routeDecision.documentId && editor && !editor.hidden)
+          return true
+        const canonicalDocumentRoute = bindDocumentEditorRoute(
+          window.location.href,
+          routeDecision.documentId,
+        )
+        if (canonicalDocumentRoute !== window.location.href) {
+          window.history.replaceState(window.history.state, "", canonicalDocumentRoute)
+        }
+        return openDocument(routeDecision.documentId)
+      } else if (routeDecision.kind === "draft") {
+        const activeScope = editorDraftScope(routeDecision.draftId)
+        if (currentEditorScopeId() === activeScope && editorSaveIsAllowed(activeScope)) {
+          if (requestedMode === "free") restoreFlatWorkbenchFromDetailed()
+          else {
+            if (writeLauncher) writeLauncher.hidden = true
+            if (flatWorkbench) flatWorkbench.hidden = true
+            if (editor) editor.hidden = false
+          }
+          return true
+        }
+        return openStableDraftScope(
+          routeDecision.draftId,
+          requestedMode === "free" ? "free" : "detailed",
+        )
+      } else if (routeDecision.kind === "invalid-draft") {
+        const activeScope = startNewDocument()
+        setStatus(
+          "原 draft 参数不是规范 UUID；已生成新的安全草稿编号，未读取或覆盖任何旧草稿。",
+          "error",
+        )
+        return Boolean(activeScope)
+      } else if (requestedMode === "free") {
+        openFlatWorkbench()
+        return Boolean(currentEditorScopeId())
+      } else if (requestedMode === "detailed") {
+        return Boolean(startNewDocument())
+      } else if (requestedAction === "import") {
+        openImportDialog()
+        return true
       }
-      void openDocument(routeDecision.documentId)
-    } else if (routeDecision.kind === "draft") {
-      void openStableDraftScope(
-        routeDecision.draftId,
-        requestedMode === "free" ? "free" : "detailed",
-      )
-    } else if (routeDecision.kind === "invalid-draft") {
-      startNewDocument()
-      setStatus(
-        "原 draft 参数不是规范 UUID；已生成新的安全草稿编号，未读取或覆盖任何旧草稿。",
-        "error",
-      )
-    } else if (requestedMode === "free") {
-      openFlatWorkbench()
-    } else if (requestedMode === "detailed") {
-      startNewDocument()
-    } else if (requestedAction === "import") {
-      openImportDialog()
+      return true
+    })()
+    workspaceRouteResumePromise = resumePromise
+    try {
+      return await resumePromise
+    } finally {
+      if (workspaceRouteResumePromise === resumePromise) workspaceRouteResumePromise = null
     }
   }
+  resumeWorkspaceRouteAfterAuth = resumeWorkspaceWriteRoute
+  void resumeWorkspaceWriteRoute()
 
   onlineHandler = async () => {
     if (!client) {
