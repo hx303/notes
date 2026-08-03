@@ -17,6 +17,7 @@
 - Replaced the success-only `RAISE NOTICE` with one aggregate-only `SELECT` row. Any failed assertion still aborts before the sentinel can be returned.
 - Added a static regression assertion that pins two read-only top-level statements and exactly one success marker.
 - Documented why the pinned linked query channel must not rely on notices.
+- Published the verified slice as Draft PR #41; all three initial Vercel checks passed.
 
 ## Changed files and scope
 
@@ -56,7 +57,7 @@
 
 ## Risk and recovery
 
-- Known risks: the corrected branch must be locally verified, reviewed, pushed, merged, and then used from a clean latest-main worktree before any new production evidence can be trusted.
+- Known risks: PR #41 must be explicitly authorized for Ready/merge and then used from a clean latest-main worktree before any new production evidence can be trusted.
 - Rollback or forward-fix path: revert the four-file release-gate-only change; no schema or production state changed.
-- Blockers: pushing, PR creation, Ready/merge, a new backup/preflight batch, and deployment each remain separate authorization gates.
-- Next task prerequisites: commit the verified local slice, then request authorization to push a Draft PR. The already-merged PostgreSQL 17 exact `19 -> 20 -> 21` proof is unchanged; after merge, production evidence must restart from a clean latest-main worktree and a fresh evidence directory.
+- Blockers: Ready/merge, a new backup/preflight batch, and deployment each remain separate authorization gates.
+- Next task prerequisites: request explicit authorization to mark PR #41 Ready and merge it. The already-merged PostgreSQL 17 exact `19 -> 20 -> 21` proof is unchanged; after merge, production evidence must restart from a clean latest-main worktree and a fresh evidence directory.
