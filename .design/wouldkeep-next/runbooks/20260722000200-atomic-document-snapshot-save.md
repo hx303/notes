@@ -325,6 +325,10 @@ if ($PostFiles.Count -ne 0 -or ($DryRunPost -join "`n") -notmatch '(?i)\bup to d
 Write-Evidence "completed-utc.txt" @((Get-Date).ToUniversalTime().ToString("o"))
 ```
 
+Like the preflight, the contract ends with one explicit `SELECT` result row. The
+pinned CLI's linked Management API channel suppresses `RAISE NOTICE`; a failed
+contract assertion aborts before the postflight success sentinel can be returned.
+
 The contract proves the exact 21/21 unique ledger, target name, four function-body
 fingerprints, receipt trigger/constraint fingerprint, owner-only private ACLs, private
 schema non-exposure, and composite tag-owner FK. Record the approved SHA, project ref,
