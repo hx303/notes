@@ -306,13 +306,13 @@ BEGIN
   THEN
     RAISE EXCEPTION 'pre-deployment migration ledger mismatch';
   END IF;
-
-  RAISE NOTICE
-    'atomic_save_preflight_passed documents=% versions=% tags=% links=% sources=%',
-    (SELECT count(*) FROM public.documents),
-    (SELECT count(*) FROM public.document_versions),
-    (SELECT count(*) FROM public.tags),
-    (SELECT count(*) FROM public.document_links),
-    (SELECT count(*) FROM public.document_sources);
 END;
 $$;
+
+SELECT
+  'atomic_save_preflight_passed' AS result,
+  (SELECT count(*) FROM public.documents)::BIGINT AS documents,
+  (SELECT count(*) FROM public.document_versions)::BIGINT AS versions,
+  (SELECT count(*) FROM public.tags)::BIGINT AS tags,
+  (SELECT count(*) FROM public.document_links)::BIGINT AS links,
+  (SELECT count(*) FROM public.document_sources)::BIGINT AS sources;

@@ -391,8 +391,14 @@ test("catalog fingerprints are derived from every reviewed atomic-save function 
 test("production contract pins owners, complete ACLs, exposure, and the exact target ledger", () => {
   for (const sql of [productionPreflight, productionContract]) {
     assertReadOnlyGate(sql)
-    assert.equal(topLevelStatements(sql).length, 1)
   }
+  assert.equal(topLevelStatements(productionPreflight).length, 2)
+  assert.equal(topLevelStatements(productionContract).length, 1)
+  assert.equal((productionPreflight.match(/atomic_save_preflight_passed/g) ?? []).length, 1)
+  assert.match(
+    productionPreflight,
+    /\$\$;\s*SELECT\s+'atomic_save_preflight_passed' AS result,[\s\S]*FROM public\.documents[\s\S]*FROM public\.document_versions[\s\S]*FROM public\.tags[\s\S]*FROM public\.document_links[\s\S]*FROM public\.document_sources/,
+  )
   assert.match(productionContract, /owner\.rolname = 'postgres'/)
   assert.match(
     productionContract,
