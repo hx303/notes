@@ -46,6 +46,12 @@
   }
 }
 
+// The desktop-only utility otherwise resets display to `initial`, which
+// breaks the flex height chain that lets the directory list scroll.
+.explorer.desktop-only {
+  display: flex;
+}
+
 .explorer[data-variant="embedded"] > .explorer-toggle {
   display: none !important;
 }

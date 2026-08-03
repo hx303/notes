@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 
 const baseStyles = readFileSync(new URL("../styles/base.scss", import.meta.url), "utf8")
+const explorerStyles = readFileSync(new URL("./styles/explorer.scss", import.meta.url), "utf8")
 const workspaceStyles = readFileSync(new URL("./styles/accountPage.scss", import.meta.url), "utf8")
 const adminMarkup = readFileSync(new URL("../../static/admin/index.html", import.meta.url), "utf8")
 const adminWorker = readFileSync(new URL("../../static/admin/sw.js", import.meta.url), "utf8")
@@ -26,6 +27,10 @@ test("Quartz side rails form bounded desktop scroll regions and reset in flowing
     baseStyles,
     /@media all and not \(\$desktop\) \{[\s\S]*height: unset;[\s\S]*overflow-y: visible;[\s\S]*scrollbar-gutter: auto;/,
   )
+})
+
+test("desktop explorer keeps its flex height chain for directory scrolling", () => {
+  assert.match(explorerStyles, /\.explorer\.desktop-only\s*\{[\s\S]*display:\s*flex;/)
 })
 
 test("workspace navigation stays viewport-bounded without trapping page scroll", () => {
