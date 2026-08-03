@@ -7,6 +7,7 @@ import {
   editorDraftScope,
   parseEditorDraftId,
   resolveEditorRouteDecision,
+  workspaceAuthReturnRoute,
 } from "./scripts/editorDraftRoute"
 
 const DRAFT_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"
@@ -43,6 +44,35 @@ test("binding a new draft removes conflicting editor actions and preserves unrel
   assert.equal(bound.searchParams.get("mode"), null)
   assert.equal(bound.searchParams.get("keep"), "1")
   assert.equal(bound.hash, "#editor")
+})
+
+test("binding a free draft preserves its stable identity and workbench mode", () => {
+  const bound = new URL(
+    bindNewEditorDraftRoute(
+      `https://wouldkeep.com/workspace/write/?document=${DOCUMENT_ID}&action=import&keep=1`,
+      DRAFT_ID,
+      "free",
+    ),
+  )
+  assert.equal(bound.searchParams.get("draft"), DRAFT_ID)
+  assert.equal(bound.searchParams.get("mode"), "free")
+  assert.equal(bound.searchParams.get("document"), null)
+  assert.equal(bound.searchParams.get("action"), null)
+  assert.equal(bound.searchParams.get("keep"), "1")
+})
+
+test("workspace authentication preserves the interrupted editor destination", () => {
+  assert.equal(
+    workspaceAuthReturnRoute(
+      `https://wouldkeep.com/workspace/write/?draft=${DRAFT_ID}&mode=free#editor`,
+      true,
+    ),
+    `/workspace/write/?draft=${DRAFT_ID}&mode=free#editor`,
+  )
+  assert.equal(
+    workspaceAuthReturnRoute(`https://wouldkeep.com/login/?next=external`, false),
+    "/workspace/",
+  )
 })
 
 test("binding a document removes the draft and conflicting editor actions", () => {
