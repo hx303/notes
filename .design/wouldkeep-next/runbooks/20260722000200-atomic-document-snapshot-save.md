@@ -272,6 +272,11 @@ $ApprovedFingerprint=Get-Fingerprint $StateInitial
 Write-Evidence "approved-fingerprint.txt" @($ApprovedFingerprint)
 ```
 
+The preflight ends with one explicit aggregate-only `SELECT` result row. The pinned
+CLI's linked Management API channel suppresses `RAISE NOTICE`, so a notice must not be
+used as the success sentinel. Any failed assertion aborts the preceding `DO` block
+before the result row can be returned.
+
 The preflight SQL itself proves the exact 20/20 unique remote ledger and exact
 `20260722000150` predecessor. Stop here until the fresh deployment authorization.
 
