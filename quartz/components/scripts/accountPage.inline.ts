@@ -20,6 +20,11 @@ import {
   type EditorDraftMode,
 } from "./editorDraftRoute.ts"
 import {
+  readFlatDraftSessionRecovery,
+  removeFlatDraftSessionRecovery,
+  writeFlatDraftSessionRecovery,
+} from "./flatDraftRecovery.ts"
+import {
   addEditorBackupMetadata,
   createEditorTabDraftState,
   createSerializedSaveQueue,
@@ -82,6 +87,14 @@ import {
 
 const localDraftKey = (userId: string, documentId: string) =>
   `wouldkeep:editor-draft:${userId}:${documentId}`
+
+const availableSessionStorage = () => {
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
 
 const loadExternalScript = (
   src: string,
@@ -2531,7 +2544,16 @@ const init = async () => {
     options: { deferConflict?: boolean } = {},
   ) => {
     if (!form || !currentUser) return false
-    const raw = localStorage.getItem(localDraftKey(currentUser.id, documentId))
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem(localDraftKey(currentUser.id, documentId))
+    } catch {
+      setStatus(
+        "浏览器无法读取常规恢复副本；如果这是自由工作台，将继续尝试当前标签页的备用副本。",
+        "error",
+      )
+      return false
+    }
     if (!raw) return false
     const inspection = inspectEditorBackup(raw, currentUser.id, documentId, cloudRevision)
     if (inspection.state === "invalid") {
@@ -5454,8 +5476,19 @@ const init = async () => {
       return parseEditorDraftId(params.get("draft")) === draftId
     }
     try {
-      const binding =
-        (await replaySafeEditorRepository?.getScopeBinding(ownerId, documentScopeId)) ?? null
+      let bindingReadTimeout: number | undefined
+      const bindingRead = replaySafeEditorRepository?.getScopeBinding(ownerId, documentScopeId)
+      const binding = await Promise.race([
+        bindingRead ?? Promise.resolve(null),
+        new Promise<never>((_, reject) => {
+          bindingReadTimeout = window.setTimeout(
+            () => reject(new Error("draft-binding-read-timeout")),
+            4_000,
+          )
+        }),
+      ]).finally(() => {
+        if (bindingReadTimeout !== undefined) window.clearTimeout(bindingReadTimeout)
+      })
       if (!draftRouteIsCurrent()) return false
       if (binding) {
         if (!draftRouteIsCurrent()) return false
@@ -5572,11 +5605,21 @@ const init = async () => {
       }
     } catch {
       if (!draftRouteIsCurrent()) return false
+      const activeScope = startNewDocument(true, true, draftId, requestedMode)
+      if (!activeScope || !authIsCurrent() || currentEditorScopeId() !== activeScope) return false
+      if (requestedMode === "free") restoreFlatWorkbenchFromDetailed()
+      invalidateEditorSaves()
       showEditorLoadRecovery(
         documentScopeId,
-        "草稿持久绑定无法安全读取；页面没有发起新的文档创建。",
+        "草稿持久绑定暂时无法核对；浏览器恢复内容仍可编辑，但云端保存保持暂停。",
       )
-      return false
+      if (state) state.textContent = "浏览器恢复可用，云端保存已暂停"
+      if (requestedMode === "free")
+        setFlatStatus(
+          "已留在原自由工作台并尝试恢复浏览器副本；云端绑定暂时无法核对，保存到云端已暂停。",
+          "error",
+        )
+      return true
     }
 
     const activeScope = startNewDocument(true, true, draftId, requestedMode)
@@ -5968,23 +6011,68 @@ const init = async () => {
     mirrorFlatToDetailed(true)
     form?.dispatchEvent(new Event("input", { bubbles: true }))
   }
-  const persistFlatDraft = () => {
+  const persistFlatDraft = (): "browser" | "tab" | null => {
     const documentScopeId = currentEditorScopeId()
-    if (!documentScopeId || !editorSaveIsAllowed(documentScopeId)) {
+    const ownerId = currentUser?.id ? String(currentUser.id) : ""
+    if (!ownerId || !documentScopeId.startsWith(EDITOR_DRAFT_SCOPE_PREFIX)) {
       setFlatStatus("草稿恢复编号尚未准备好；请先复制当前内容，页面没有把它标记为已保存。", "error")
-      return false
+      return null
     }
     mirrorFlatToDetailed(false)
     editorChangeGeneration += 1
     editorTabDrafts.markDirty(documentScopeId, editorChangeGeneration)
-    if (!writeLocalBackup()) {
+    const localPersisted = Boolean(writeLocalBackup())
+    const session = availableSessionStorage()
+    const sessionPersisted = session
+      ? writeFlatDraftSessionRecovery(session, {
+          ownerId,
+          documentScopeId,
+          title: flatTitle?.value ?? "",
+          body: flatBody?.value ?? "",
+        })
+      : false
+    if (!localPersisted && !sessionPersisted) {
       setFlatStatus("浏览器无法建立恢复副本；内容仍在当前页面，请复制备份后再继续。", "error")
-      return false
+      return null
     }
-    return true
+    return localPersisted ? "browser" : "tab"
   }
   function restoreFlatWorkbenchFromDetailed() {
     if (!flatForm || !flatTitle || !flatBody) return false
+    const documentScopeId = currentEditorScopeId()
+    const ownerId = currentUser?.id ? String(currentUser.id) : ""
+    const session = availableSessionStorage()
+    const sessionRecovery =
+      session && ownerId && documentScopeId.startsWith(EDITOR_DRAFT_SCOPE_PREFIX)
+        ? readFlatDraftSessionRecovery(session, ownerId, documentScopeId)
+        : null
+    let localSavedAt = -1
+    if (sessionRecovery) {
+      try {
+        const raw = localStorage.getItem(localDraftKey(ownerId, documentScopeId))
+        if (raw) {
+          const inspection = inspectEditorBackup(raw, ownerId, documentScopeId)
+          if (inspection.state === "restore")
+            localSavedAt = Number(inspection.backup.__editorRecovery?.savedAt ?? -1)
+        }
+      } catch {
+        localSavedAt = -1
+      }
+    }
+    const existing = readForm()
+    if (
+      sessionRecovery &&
+      ((!existing.title.trim() && !existing.body.trim()) || sessionRecovery.savedAt >= localSavedAt)
+    ) {
+      const title = form?.elements.namedItem("title") as HTMLInputElement | null
+      const body = form?.elements.namedItem("body") as HTMLTextAreaElement | null
+      const privateVisibility = form?.querySelector<HTMLInputElement>(
+        "[name=visibility][value=private]",
+      )
+      if (title) title.value = sessionRecovery.title
+      if (body) body.value = sessionRecovery.body
+      if (privateVisibility) privateVisibility.checked = true
+    }
     const data = readForm()
     flatTitle.value = data.title
     flatBody.value = data.body
@@ -6132,8 +6220,19 @@ const init = async () => {
     })
   flatForm?.addEventListener("input", () => {
     flatDirty = true
-    if (persistFlatDraft()) setFlatStatus("已保存在当前浏览器；点击保存后才会确认同步到云端。")
+    const persistence = persistFlatDraft()
+    if (persistence)
+      setFlatStatus(
+        persistence === "browser"
+          ? "已保存在当前浏览器；点击保存后才会确认同步到云端。"
+          : "已保存在当前标签页的备用副本；请勿关闭此标签页，点击保存后才会同步到云端。",
+      )
   })
+  const persistFlatDraftBeforePageExit = () => {
+    if (flatDirty) persistFlatDraft()
+  }
+  window.addEventListener("pagehide", persistFlatDraftBeforePageExit)
+  window.addCleanup(() => window.removeEventListener("pagehide", persistFlatDraftBeforePageExit))
   flatBody?.addEventListener("paste", (event) => {
     const clipboard = event.clipboardData
     if (!clipboard) return
@@ -6193,6 +6292,15 @@ const init = async () => {
       setFlatStatus("登录状态已失效，请重新登录后保存。", "error")
       return
     }
+    const recoveryScope = currentEditorScopeId()
+    if (!recoveryScope || !editorSaveIsAllowed(recoveryScope)) {
+      persistFlatDraft()
+      setFlatStatus(
+        "内容仍保存在浏览器恢复副本中，但云端绑定尚未核对完成；本次云端保存已取消，请稍后刷新重试。",
+        "error",
+      )
+      return
+    }
     syncFlatToDetailed()
     if (autosaveTimer) window.clearTimeout(autosaveTimer)
     if (flatSave) {
@@ -6207,6 +6315,8 @@ const init = async () => {
     }
     if (saved) {
       flatDirty = false
+      const session = availableSessionStorage()
+      if (session) removeFlatDraftSessionRecovery(session, String(currentUser.id), recoveryScope)
       setFlatStatus("私密草稿已由云端确认。你可以继续修改，或进入详细整理。", "success")
     } else
       setFlatStatus(

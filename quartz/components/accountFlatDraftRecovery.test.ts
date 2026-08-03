@@ -17,16 +17,19 @@ const sourceSlice = (startMarker: string, endMarker: string) => {
 
 test("free-workbench input writes a browser recovery copy without silently cloud-saving", () => {
   const persistence = sourceSlice(
-    "const persistFlatDraft = () =>",
+    'const persistFlatDraft = (): "browser" | "tab" | null =>',
     "function restoreFlatWorkbenchFromDetailed()",
   )
   const mirror = persistence.indexOf("mirrorFlatToDetailed(false)")
   const generation = persistence.indexOf("editorChangeGeneration += 1")
   const backup = persistence.indexOf("writeLocalBackup()")
+  const tabBackup = persistence.indexOf("writeFlatDraftSessionRecovery(session")
   assert.ok(mirror >= 0)
   assert.ok(generation > mirror)
   assert.ok(backup > generation)
+  assert.ok(tabBackup > backup)
   assert.match(persistence, /浏览器无法建立恢复副本/)
+  assert.doesNotMatch(persistence, /editorSaveIsAllowed/)
 
   const inputHandler = sourceSlice(
     'flatForm?.addEventListener("input", () =>',
@@ -35,6 +38,13 @@ test("free-workbench input writes a browser recovery copy without silently cloud
   assert.match(inputHandler, /persistFlatDraft\(\)/)
   assert.match(inputHandler, /已保存在当前浏览器/)
   assert.doesNotMatch(inputHandler, /requestDocumentSave|queueAutosave/)
+
+  const pageExit = sourceSlice(
+    "const persistFlatDraftBeforePageExit = () =>",
+    'flatBody?.addEventListener("paste"',
+  )
+  assert.match(pageExit, /if \(flatDirty\) persistFlatDraft\(\)/)
+  assert.match(pageExit, /addEventListener\("pagehide", persistFlatDraftBeforePageExit\)/)
 })
 
 test("free drafts retain their mode and reopen the same stable scope after refresh", () => {
@@ -56,6 +66,10 @@ test("free drafts retain their mode and reopen the same stable scope after refre
   assert.match(stableDraft, /requestedMode: EditorDraftMode = "detailed"/)
   assert.match(stableDraft, /startNewDocument\(true, true, draftId, requestedMode\)/)
   assert.match(stableDraft, /requestedMode === "free"\) restoreFlatWorkbenchFromDetailed\(\)/)
+  assert.match(stableDraft, /catch[\s\S]*startNewDocument\(true, true, draftId, requestedMode\)/)
+  assert.match(stableDraft, /catch[\s\S]*invalidateEditorSaves\(\)/)
+  assert.match(stableDraft, /catch[\s\S]*云端保存保持暂停/)
+  assert.match(stableDraft, /draft-binding-read-timeout/)
 
   const startup = sourceSlice(
     "const resumeWorkspaceWriteRoute = async () =>",
@@ -82,10 +96,13 @@ test("free-workbench save is explicit and never reports an unconfirmed cloud wri
     'root.querySelector<HTMLButtonElement>("[data-flat-organize]")',
   )
   assert.match(submit, /requestDocumentSave\(\{ explicit: true \}\)/)
+  assert.match(submit, /!editorSaveIsAllowed\(recoveryScope\)/)
+  assert.match(submit, /persistFlatDraft\(\)/)
   assert.match(submit, /私密草稿已由云端确认/)
   assert.match(submit, /云端尚未确认保存/)
   assert.match(submit, /当前浏览器的恢复副本/)
   assert.doesNotMatch(submit, /私密草稿已保存。/)
+  assert.match(submit, /removeFlatDraftSessionRecovery\(session/)
 })
 
 test("clearing the free workbench also updates its recovery copy", () => {
