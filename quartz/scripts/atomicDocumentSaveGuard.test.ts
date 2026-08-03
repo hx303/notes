@@ -47,6 +47,14 @@ const residueCheck = readFileSync(
   "utf8",
 )
 
+const migrationChain = readFileSync(
+  new URL(
+    "../../supabase/tests/20260722_atomic_document_snapshot_migration_chain.sql",
+    import.meta.url,
+  ),
+  "utf8",
+)
+
 const productionRunbook = readFileSync(
   new URL(
     "../../.design/wouldkeep-next/runbooks/20260722000200-atomic-document-snapshot-save.md",
@@ -258,6 +266,31 @@ function assertRollbackOnlyMatrix(sql: string): void {
   assert.equal(statements.at(-1)?.toUpperCase(), "ROLLBACK")
 }
 
+function assertRollbackOnlyMigrationChain(sql: string): void {
+  const metaCommands = sql.match(/^\s*\\.*$/gm) ?? []
+  const allowedMetaCommand =
+    /^(?:\\set ON_ERROR_STOP on|\\if :\{\?wouldkeep_p1b_20260722000200_chain_disposable\}|\\else|\\set wouldkeep_p1b_20260722000200_chain_disposable false|\\if :wouldkeep_p1b_20260722000200_chain_disposable|\\echo 'Refusing to run: pass the exact disposable migration-chain confirmation variable\.'|\\endif|\\ir \.\.\/migrations\/20260722000150_normalize_existing_tags_for_atomic_save\.sql|\\ir 20260722_atomic_document_snapshot_preflight\.sql|\\ir \.\.\/migrations\/20260722000200_atomic_document_snapshot_save\.sql|\\ir 20260722_atomic_document_snapshot_contract\.sql)$/
+  for (const metaCommand of metaCommands) {
+    assert.match(
+      metaCommand.trim(),
+      allowedMetaCommand,
+      `unsafe chain meta-command: ${metaCommand}`,
+    )
+  }
+
+  const statements = topLevelStatements(sql)
+  const transactionCommands = statements
+    .filter((statement) =>
+      /^(?:BEGIN(?:\s+(?:WORK|TRANSACTION))?|START\s+TRANSACTION|COMMIT(?:\s+(?:WORK|TRANSACTION|PREPARED))?|END(?:\s+(?:WORK|TRANSACTION))?|ROLLBACK(?:\s+(?:WORK|TRANSACTION|PREPARED|TO))?|ABORT(?:\s+(?:WORK|TRANSACTION))?|PREPARE\s+TRANSACTION)\b/i.test(
+        statement,
+      ),
+    )
+    .map((statement) => statement.toUpperCase())
+
+  assert.deepEqual(transactionCommands, ["BEGIN", "ROLLBACK"])
+  assert.equal(statements.at(-1)?.toUpperCase(), "ROLLBACK")
+}
+
 test("atomic save is a strict authenticated-only definer boundary", () => {
   const lockTimeout = migration.indexOf("SET lock_timeout = '5s';")
   const statementTimeout = migration.indexOf("SET statement_timeout = '5min';")
@@ -358,8 +391,22 @@ test("catalog fingerprints are derived from every reviewed atomic-save function 
 test("production contract pins owners, complete ACLs, exposure, and the exact target ledger", () => {
   for (const sql of [productionPreflight, productionContract]) {
     assertReadOnlyGate(sql)
-    assert.equal(topLevelStatements(sql).length, 1)
   }
+  assert.equal(topLevelStatements(productionPreflight).length, 2)
+  assert.equal(topLevelStatements(productionContract).length, 2)
+  assert.equal((productionPreflight.match(/atomic_save_preflight_passed/g) ?? []).length, 1)
+  assert.equal(
+    (productionContract.match(/atomic_document_snapshot_contract_passed/g) ?? []).length,
+    1,
+  )
+  assert.match(
+    productionPreflight,
+    /\$\$;\s*SELECT\s+'atomic_save_preflight_passed' AS result,[\s\S]*FROM public\.documents[\s\S]*FROM public\.document_versions[\s\S]*FROM public\.tags[\s\S]*FROM public\.document_links[\s\S]*FROM public\.document_sources/,
+  )
+  assert.match(
+    productionContract,
+    /\$atomic_save_contract\$;\s*SELECT 'atomic_document_snapshot_contract_passed' AS result;/,
+  )
   assert.match(productionContract, /owner\.rolname = 'postgres'/)
   assert.match(
     productionContract,
@@ -373,10 +420,18 @@ test("production contract pins owners, complete ACLs, exposure, and the exact ta
   assert.match(productionContract, /a1606e84292826e2735ed41a52354a66/)
   assert.match(productionContract, /current_setting\('pgrst\.db_schemas', TRUE\)/)
   assert.match(productionContract, /actual_ledger IS DISTINCT FROM expected_ledger/)
-  assert.match(productionContract, /count\(\*\).*schema_migrations[\s\S]*<> 20/)
+  assert.match(productionContract, /count\(\*\).*schema_migrations[\s\S]*<> 21/)
+  assert.match(
+    productionContract,
+    /version = '20260722000150'[\s\S]*name = 'normalize_existing_tags_for_atomic_save'/,
+  )
   assert.match(productionContract, /name = 'atomic_document_snapshot_save'/)
-  assert.match(productionContract, /atomic_document_snapshot_contract_passed/)
-  assert.match(productionPreflight, /count\(\*\).*schema_migrations[\s\S]*<> 19/)
+  assert.match(productionPreflight, /count\(\*\).*schema_migrations[\s\S]*<> 20/)
+  assert.match(
+    productionPreflight,
+    /version = '20260722000150'[\s\S]*name = 'normalize_existing_tags_for_atomic_save'/,
+  )
+  assert.match(productionPreflight, /version = '20260722000200'/)
 })
 
 test("saved receipts are private, exact, append-only, and content-free", () => {
@@ -503,6 +558,8 @@ test("target-specific activity, fingerprint, residue, and runbook gates are pinn
   assert.match(productionStateFingerprint, /md5\(COALESCE\(string_agg\(/)
   assert.match(productionStateFingerprint, /atomic_document_snapshot_state_fingerprint_passed/)
   assert.match(residueCheck, /p1b historical cross owner squat/)
+  assert.match(residueCheck, /p1b-atomic-save-chain@example\.test/)
+  assert.match(residueCheck, /to_regclass\('wouldkeep_private\.document_save_receipts'\)/)
   assert.match(residueCheck, /atomic_document_snapshot_rollback_residue_zero/)
 
   assert.match(productionRunbook, /Validated Supabase CLI: `2\.109\.1`/)
@@ -516,6 +573,11 @@ test("target-specific activity, fingerprint, residue, and runbook gates are pinn
   assert.match(productionRunbook, /CREATE TABLE\\s\+/)
   assert.match(productionRunbook, /COPY\\s\+/)
   assert.match(productionRunbook, /20260722000100/)
+  assert.match(productionRunbook, /20260722000150/)
+  assert.match(productionRunbook, /19 -> 00150 -> 20 -> 00200 -> 21/)
+  assert.match(productionRunbook, /20260722_atomic_document_snapshot_migration_chain\.sql/)
+  assert.match(productionRunbook, /wouldkeep_p1b_20260722000200_chain_disposable=true/)
+  assert.match(productionRunbook, /atomic_document_snapshot_migration_chain_passed/)
   assert.match(productionRunbook, /Get-FileHash .* -Algorithm SHA256/)
   assert.match(productionRunbook, /20260722_atomic_document_snapshot_activity_gate\.sql/)
   assert.match(productionRunbook, /20260722_atomic_document_snapshot_preflight\.sql/)
@@ -527,9 +589,93 @@ test("target-specific activity, fingerprint, residue, and runbook gates are pinn
   assert.match(productionRunbook, /ExpectedRemotePost/)
   assert.match(productionRunbook, /Get-RemoteVersions/)
   assert.match(productionRunbook, /Assert-ExactVersions/)
+  assert.match(productionRunbook, /\$ExpectedRemotePre = @\([\s\S]*"20260722000150"\s*\)/)
+  assert.match(
+    productionRunbook,
+    /\$ExpectedRemotePost = @\(\$ExpectedRemotePre \+ "20260722000200"\)/,
+  )
+  assert.match(
+    productionRunbook,
+    /\$Versions\.Count -ne 1[\s\S]*\$Versions\[0\] -cne "20260722000200"/,
+  )
+  assert.match(productionRunbook, /Assert-DumpArtifact \$LedgerBackup[\s\S]*'20260722000150'/)
   assert.match(productionRunbook, /atomic_document_snapshot_contract_passed/)
   assert.ok(productionRunbook.includes("\\d{8}(?:\\d{6})?"))
   assert.match(productionRunbook, /PRODUCTION_SAFETY\.md/)
+
+  const candidateStart = productionRunbook.indexOf(
+    "$CandidateOutput = @(& $Psql -X --single-transaction",
+  )
+  const candidateEnd = productionRunbook.indexOf("$CandidateExit = $LASTEXITCODE", candidateStart)
+  assert.ok(candidateStart > -1 && candidateEnd > candidateStart)
+  const candidateProof = productionRunbook.slice(candidateStart, candidateEnd)
+  const candidatePreflight = candidateProof.indexOf(
+    "--file=supabase/tests/20260722_atomic_document_snapshot_preflight.sql",
+  )
+  const candidateMigration = candidateProof.indexOf(
+    "--file=supabase/migrations/20260722000200_atomic_document_snapshot_save.sql",
+  )
+  const candidateBookkeeping = candidateProof.indexOf(
+    "INSERT INTO supabase_migrations.schema_migrations",
+  )
+  const candidateContract = candidateProof.indexOf(
+    "--file=supabase/tests/20260722_atomic_document_snapshot_contract.sql",
+  )
+  assert.ok(
+    candidatePreflight > -1 &&
+      candidateMigration > candidatePreflight &&
+      candidateBookkeeping > candidateMigration &&
+      candidateContract > candidateBookkeeping,
+  )
+  assert.equal((productionRunbook.match(/--single-transaction/g) ?? []).length, 1)
+  assert.match(
+    candidateProof,
+    /\(version, statements, name\) VALUES \('20260722000200', ARRAY\['disposable candidate bookkeeping'\]::TEXT\[\], 'atomic_document_snapshot_save'\)/,
+  )
+  assert.match(
+    productionRunbook,
+    /\$CandidateExit -ne 0[\s\S]*atomic_save_preflight_passed[\s\S]*atomic_document_snapshot_contract_passed/,
+  )
+})
+
+test("disposable migration chain proves exact 19-to-20-to-21 ordering", () => {
+  assertRollbackOnlyMigrationChain(migrationChain)
+  assert.match(migrationChain, /:\{\?wouldkeep_p1b_20260722000200_chain_disposable\}/)
+  assert.match(migrationChain, /Disposable migration-chain confirmation is required/)
+
+  const normalization = migrationChain.indexOf(
+    "\\ir ../migrations/20260722000150_normalize_existing_tags_for_atomic_save.sql",
+  )
+  const ledger20 = migrationChain.indexOf("'20260722000150'", normalization)
+  const preflight = migrationChain.indexOf("\\ir 20260722_atomic_document_snapshot_preflight.sql")
+  const atomicSave = migrationChain.indexOf(
+    "\\ir ../migrations/20260722000200_atomic_document_snapshot_save.sql",
+  )
+  const ledger21 = migrationChain.indexOf("'20260722000200'", atomicSave)
+  const contract = migrationChain.indexOf("\\ir 20260722_atomic_document_snapshot_contract.sql")
+
+  assert.ok(
+    normalization > -1 &&
+      ledger20 > normalization &&
+      preflight > ledger20 &&
+      atomicSave > preflight &&
+      ledger21 > atomicSave &&
+      contract > ledger21,
+  )
+  assert.equal(
+    (migrationChain.match(/INSERT INTO supabase_migrations\.schema_migrations/g) ?? []).length,
+    2,
+  )
+  for (const count of [19, 20, 21]) {
+    assert.match(
+      migrationChain,
+      new RegExp(`count\\(\\*\\).*schema_migrations[\\s\\S]*?<> ${count}`),
+    )
+  }
+  assert.match(migrationChain, /'Ａ　Ｂ'[\s\S]*'legacy-chain-key'/)
+  assert.match(migrationChain, /name = 'A B'[\s\S]*normalized_name = 'a b'/)
+  assert.match(migrationChain, /atomic_save_chain_reference_before/)
+  assert.match(migrationChain, /atomic_document_snapshot_migration_chain_passed/)
 })
 
 test("rollback guard rejects commits, aliases, prepared transactions, and forged comments", () => {

@@ -5,15 +5,18 @@ Validated Supabase CLI: `2.109.1`. This runbook deploys exactly
 the operator must have a fresh written production authorization naming this version.
 
 Stop before any write if the approved main SHA, linked project ref, CLI version, clean
-worktree, three backups, activity gate, preflight, state fingerprint, 19-row remote
+worktree, three backups, activity gate, preflight, state fingerprint, 20-row remote
 ledger, or single pending migration check differs. Never use `--include-all`, SQL
 Editor, `migration repair`, a second push, or a production rollback matrix.
 
 ## 1. Disposable candidate proof
 
-Run the exact migration, contract, and rollback matrix only on an explicitly disposable
-loopback PostgreSQL database. Omitting the unique matrix variable must fail with psql
-exit code `3`; then the residue probe must still pass.
+Use two explicitly disposable loopback PostgreSQL databases. The chain database must be
+at the exact 19-row `20260722000100` baseline; it proves the rollback-only sequence
+`19 -> 00150 -> 20 -> 00200 -> 21`. The candidate database must already be at the exact
+20-row `20260722000150` baseline; it runs the exact `00200` preflight, migration,
+contract, and behavior matrix. Omitting either unique confirmation variable must fail
+with psql exit code `3`; the residue probe must pass after every rollback-only run.
 
 ```powershell
 Set-StrictMode -Version Latest
@@ -21,22 +24,66 @@ $ErrorActionPreference = "Stop"
 if ($PSVersionTable.PSVersion.Major -lt 7) { throw "PowerShell 7 or newer is required" }
 
 $Psql = "psql"
+$ChainDbUrl = "<postgresql://...@127.0.0.1:port/chain>"
 $DisposableDbUrl = "<postgresql://...@127.0.0.1:port/postgres>"
-$Uri = [Uri]$DisposableDbUrl
-$Address = [Net.Dns]::GetHostAddresses($Uri.Host)[0]
-if (-not [Net.IPAddress]::IsLoopback($Address)) {
-  throw "Refusing a non-loopback disposable database target"
+
+function Assert-LoopbackPostgresUrl([string]$Url) {
+  try { $Uri = [Uri]$Url } catch { throw "Disposable database URL is invalid" }
+  if ($Uri.Scheme -notin @("postgres", "postgresql")) {
+    throw "Disposable database URL must use postgres or postgresql"
+  }
+  if ($Uri.Host -ieq "localhost") { return }
+  $Address = $null
+  $HostText = $Uri.Host.Trim([char[]]"[]")
+  if (-not [Net.IPAddress]::TryParse($HostText, [ref]$Address) -or
+      -not [Net.IPAddress]::IsLoopback($Address)) {
+    throw "Refusing a non-loopback disposable database target"
+  }
 }
 
-& $Psql -X --dbname=$DisposableDbUrl --set=ON_ERROR_STOP=1 `
-  --file=supabase/tests/20260722_atomic_document_snapshot_preflight.sql
-if ($LASTEXITCODE -ne 0) { throw "Disposable preflight failed" }
-& $Psql -X --dbname=$DisposableDbUrl --set=ON_ERROR_STOP=1 `
-  --file=supabase/migrations/20260722000200_atomic_document_snapshot_save.sql
-if ($LASTEXITCODE -ne 0) { throw "Disposable migration failed" }
-& $Psql -X --dbname=$DisposableDbUrl --set=ON_ERROR_STOP=1 `
-  --file=supabase/tests/20260722_atomic_document_snapshot_contract.sql
-if ($LASTEXITCODE -ne 0) { throw "Disposable contract failed" }
+Assert-LoopbackPostgresUrl $ChainDbUrl
+Assert-LoopbackPostgresUrl $DisposableDbUrl
+
+# The chain proof includes both exact migrations, their production-safe 00200
+# preflight/contract, synthetic tag normalization, and transaction-scoped ledger
+# bookkeeping. It must roll back to the untouched 19-row baseline.
+& $Psql -X --dbname=$ChainDbUrl `
+  --file=supabase/tests/20260722_atomic_document_snapshot_migration_chain.sql
+$ChainGuardExit = $LASTEXITCODE
+if ($ChainGuardExit -ne 3) { throw "Missing chain confirmation did not fail closed" }
+& $Psql -X --dbname=$ChainDbUrl --set=ON_ERROR_STOP=1 `
+  --file=supabase/tests/20260722_atomic_document_snapshot_residue.sql
+if ($LASTEXITCODE -ne 0) { throw "Chain guard residue probe failed" }
+
+$ChainOutput = @(& $Psql -X --dbname=$ChainDbUrl --set=ON_ERROR_STOP=1 `
+  --set=wouldkeep_p1b_20260722000200_chain_disposable=true `
+  --file=supabase/tests/20260722_atomic_document_snapshot_migration_chain.sql 2>&1)
+$ChainExit = $LASTEXITCODE
+if ($ChainExit -ne 0 -or
+    [regex]::Matches(($ChainOutput -join "`n"),
+      '19,20,21,atomic_document_snapshot_migration_chain_passed').Count -ne 1) {
+  throw "Exact 19-to-20-to-21 disposable migration chain failed"
+}
+& $Psql -X --dbname=$ChainDbUrl --set=ON_ERROR_STOP=1 `
+  --file=supabase/tests/20260722_atomic_document_snapshot_residue.sql
+if ($LASTEXITCODE -ne 0) { throw "Migration-chain residue probe failed" }
+
+# The second database is independently provisioned at exact ledger 20 after 00150.
+# This keeps the full 00200 behavior matrix available after the chain proof rolls back.
+
+$CandidateOutput = @(& $Psql -X --single-transaction --dbname=$DisposableDbUrl `
+  --set=ON_ERROR_STOP=1 `
+  --file=supabase/tests/20260722_atomic_document_snapshot_preflight.sql `
+  --file=supabase/migrations/20260722000200_atomic_document_snapshot_save.sql `
+  --command="INSERT INTO supabase_migrations.schema_migrations (version, statements, name) VALUES ('20260722000200', ARRAY['disposable candidate bookkeeping']::TEXT[], 'atomic_document_snapshot_save');" `
+  --file=supabase/tests/20260722_atomic_document_snapshot_contract.sql 2>&1)
+$CandidateExit = $LASTEXITCODE
+$CandidateText = $CandidateOutput -join "`n"
+if ($CandidateExit -ne 0 -or
+    [regex]::Matches($CandidateText, 'atomic_save_preflight_passed').Count -ne 1 -or
+    [regex]::Matches($CandidateText, 'atomic_document_snapshot_contract_passed').Count -ne 1) {
+  throw "Single-transaction disposable 00200 candidate proof failed"
+}
 
 & $Psql -X --dbname=$DisposableDbUrl `
   --file=supabase/tests/20260722_atomic_document_snapshot_save.sql
@@ -74,7 +121,7 @@ $ExpectedRemotePre = @(
   "20260718000400", "20260718000500", "20260718000600",
   "20260718000700", "20260718000800", "20260718000900",
   "20260718001000", "20260718001100", "20260718001200",
-  "20260721000100", "20260722000100"
+  "20260721000100", "20260722000100", "20260722000150"
 )
 $ExpectedRemotePost = @($ExpectedRemotePre + "20260722000200")
 
@@ -161,9 +208,13 @@ function Assert-SameEvidence([object[]]$Actual, [object[]]$Expected, [string]$La
   }
 }
 function Assert-OnlyTargetPending([object[]]$Output) {
-  $Files = @([regex]::Matches(($Output -join "`n"), '\b\d{8}(?:\d{6})?_[A-Za-z0-9_]+\.sql\b') |
+  $Text = $Output -join "`n"
+  $Files = @([regex]::Matches($Text, '\b\d{8}(?:\d{6})?_[A-Za-z0-9_]+\.sql\b') |
     ForEach-Object Value | Sort-Object -Unique)
-  if ($Files.Count -ne 1 -or $Files[0] -cne $ExpectedMigrationFile) {
+  $Versions = @([regex]::Matches($Text, '(?<!\d)\d{14}(?!\d)') |
+    ForEach-Object Value | Sort-Object -Unique)
+  if ($Files.Count -ne 1 -or $Files[0] -cne $ExpectedMigrationFile -or
+      $Versions.Count -ne 1 -or $Versions[0] -cne "20260722000200") {
     throw "Dry-run is not exactly the approved target migration"
   }
 }
@@ -201,7 +252,8 @@ Assert-DumpArtifact $DataBackup @(
 ) "Public data"
 Assert-DumpArtifact $LedgerBackup @(
   '(?i)^\s*COPY\s+(?:"supabase_migrations"|supabase_migrations)\.(?:"schema_migrations"|schema_migrations)\s*\(',
-  '20260722000100'
+  '20260722000100',
+  '20260722000150'
 ) "Migration ledger"
 $Hashes=@($BackupFiles | ForEach-Object { Get-FileHash $_ -Algorithm SHA256 })
 if ($Hashes.Count -ne 3) { throw "Exactly three backup hashes are required" }
@@ -220,8 +272,13 @@ $ApprovedFingerprint=Get-Fingerprint $StateInitial
 Write-Evidence "approved-fingerprint.txt" @($ApprovedFingerprint)
 ```
 
-The preflight SQL itself proves the exact 19/19 unique remote ledger and exact
-`20260722000100` predecessor. Stop here until the fresh deployment authorization.
+The preflight ends with one explicit aggregate-only `SELECT` result row. The pinned
+CLI's linked Management API channel suppresses `RAISE NOTICE`, so a notice must not be
+used as the success sentinel. Any failed assertion aborts the preceding `DO` block
+before the result row can be returned.
+
+The preflight SQL itself proves the exact 20/20 unique remote ledger and exact
+`20260722000150` predecessor. Stop here until the fresh deployment authorization.
 
 ## 3. Single production migration write
 
@@ -268,9 +325,13 @@ if ($PostFiles.Count -ne 0 -or ($DryRunPost -join "`n") -notmatch '(?i)\bup to d
 Write-Evidence "completed-utc.txt" @((Get-Date).ToUniversalTime().ToString("o"))
 ```
 
-The contract proves the exact 20/20 unique ledger, target name, four function-body
+Like the preflight, the contract ends with one explicit `SELECT` result row. The
+pinned CLI's linked Management API channel suppresses `RAISE NOTICE`; a failed
+contract assertion aborts before the postflight success sentinel can be returned.
+
+The contract proves the exact 21/21 unique ledger, target name, four function-body
 fingerprints, receipt trigger/constraint fingerprint, owner-only private ACLs, private
 schema non-exposure, and composite tag-owner FK. Record the approved SHA, project ref,
-CLI, three backup hashes, initial/immediate/post evidence, exact 19 -> 20 ledger result,
+CLI, three backup hashes, initial/immediate/post evidence, exact 20 -> 21 ledger result,
 single write result, and zero-pending dry-run in `PRODUCTION_SAFETY.md`. Keep raw evidence
 outside the repository and never include credentials or database URLs.
