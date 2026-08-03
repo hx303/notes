@@ -391,6 +391,7 @@
 .workspace-nav {
   position: sticky;
   top: 1.5rem;
+  box-sizing: border-box;
   grid-column: 1;
   grid-row: 1 / span 20;
   display: grid;
@@ -399,7 +400,7 @@
   min-width: 0;
   max-height: calc(100dvh - 3rem);
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
   scrollbar-gutter: stable;
   padding: 1rem 0;
 }

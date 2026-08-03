@@ -28,11 +28,15 @@ test("Quartz side rails form bounded desktop scroll regions and reset in flowing
   )
 })
 
-test("workspace navigation scrolls only while it is sticky", () => {
-  assert.match(
-    workspaceStyles,
-    /\.workspace-nav \{[\s\S]*max-height: calc\(100dvh - 3rem\);[\s\S]*overflow-y: auto;[\s\S]*overscroll-behavior-y: contain;[\s\S]*scrollbar-gutter: stable;/,
-  )
+test("workspace navigation stays viewport-bounded without trapping page scroll", () => {
+  const workspaceNavRule = workspaceStyles.match(/\.workspace-nav \{([\s\S]*?)\}/)?.[1] ?? ""
+
+  assert.match(workspaceNavRule, /box-sizing: border-box;/)
+  assert.match(workspaceNavRule, /max-height: calc\(100dvh - 3rem\);/)
+  assert.match(workspaceNavRule, /overflow-y: auto;/)
+  assert.match(workspaceNavRule, /overscroll-behavior-y: auto;/)
+  assert.doesNotMatch(workspaceNavRule, /overscroll-behavior-y: contain;/)
+  assert.match(workspaceNavRule, /scrollbar-gutter: stable;/)
   assert.match(
     workspaceStyles,
     /@media \(max-width: 1180px\)[\s\S]*\.workspace-nav \{[\s\S]*position: static;[\s\S]*max-height: none;[\s\S]*overflow-y: visible;[\s\S]*scrollbar-gutter: auto;/,
