@@ -24,12 +24,19 @@ export const createEditorDraftId = (
   return draftId
 }
 
-export const bindNewEditorDraftRoute = (currentHref: string, draftId: string) => {
+export type EditorDraftMode = "free" | "detailed"
+
+export const bindNewEditorDraftRoute = (
+  currentHref: string,
+  draftId: string,
+  mode?: EditorDraftMode,
+) => {
   const route = new URL(currentHref)
   route.searchParams.delete("action")
-  route.searchParams.delete("mode")
   route.searchParams.delete("document")
   route.searchParams.set("draft", editorDraftScope(draftId).slice(EDITOR_DRAFT_SCOPE_PREFIX.length))
+  if (mode) route.searchParams.set("mode", mode)
+  else route.searchParams.delete("mode")
   return route.toString()
 }
 

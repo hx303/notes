@@ -16,6 +16,7 @@ import {
   editorDraftScope,
   parseEditorDraftId,
   resolveEditorRouteDecision,
+  type EditorDraftMode,
 } from "./editorDraftRoute.ts"
 import {
   addEditorBackupMetadata,
@@ -2604,13 +2605,14 @@ const init = async () => {
   const bindFreshEditorDraftScope = (
     preferredDraftId?: string,
     historyMode: "replace" | "push" = "replace",
+    routeMode?: EditorDraftMode,
   ) => {
     const draftId = parseEditorDraftId(preferredDraftId) ?? createEditorDraftId()
     currentDraftId = draftId
     window.history[historyMode === "push" ? "pushState" : "replaceState"](
       window.history.state,
       "",
-      bindNewEditorDraftRoute(window.location.href, draftId),
+      bindNewEditorDraftRoute(window.location.href, draftId, routeMode),
     )
     return editorDraftScope(draftId)
   }
@@ -5342,6 +5344,7 @@ const init = async () => {
     showEditor = true,
     preferRecovery = true,
     preferredDraftId?: string,
+    routeMode?: EditorDraftMode,
   ) => {
     if (editorManualRecoveryBlocked) {
       showEditorManualRecoveryGate(
@@ -5392,6 +5395,7 @@ const init = async () => {
     const documentScopeId = bindFreshEditorDraftScope(
       preferredDraftId,
       previousScope && !preferredDraftId ? "push" : "replace",
+      routeMode,
     )
     if (form) {
       form.inert = false
@@ -5426,7 +5430,10 @@ const init = async () => {
     return documentScopeId
   }
 
-  const openStableDraftScope = async (draftId: string) => {
+  const openStableDraftScope = async (
+    draftId: string,
+    requestedMode: EditorDraftMode = "detailed",
+  ) => {
     if (!currentUser || !form || !client) return false
     const ownerId = String(currentUser.id)
     const routeClient = client
@@ -5581,6 +5588,7 @@ const init = async () => {
     if (!authIsCurrent() || currentEditorScopeId() !== activeScope) return false
     if (atomicConflictState === "blocked") return false
     if (atomicConflictState === "none") void flushDurableOutboxForCurrentDocument()
+    if (requestedMode === "free") restoreFlatWorkbenchFromDetailed()
     return true
   }
 
@@ -5941,17 +5949,51 @@ const init = async () => {
     flatBody.setRangeText(`${prefix}${content}${suffix}`, start, end, "end")
     flatBody.dispatchEvent(new Event("input", { bubbles: true }))
   }
-  const syncFlatToDetailed = () => {
+  const mirrorFlatToDetailed = (trimValues: boolean) => {
     if (!form || !flatTitle || !flatBody) return
     const title = form.elements.namedItem("title") as HTMLInputElement | null
     const body = form.elements.namedItem("body") as HTMLTextAreaElement | null
     const privateVisibility = form.querySelector<HTMLInputElement>(
       "[name=visibility][value=private]",
     )
-    if (title) title.value = flatTitle.value.trim()
-    if (body) body.value = flatBody.value.trim()
+    if (title) title.value = trimValues ? flatTitle.value.trim() : flatTitle.value
+    if (body) body.value = trimValues ? flatBody.value.trim() : flatBody.value
     if (privateVisibility) privateVisibility.checked = true
-    form.dispatchEvent(new Event("input", { bubbles: true }))
+  }
+  const syncFlatToDetailed = () => {
+    mirrorFlatToDetailed(true)
+    form?.dispatchEvent(new Event("input", { bubbles: true }))
+  }
+  const persistFlatDraft = () => {
+    const documentScopeId = currentEditorScopeId()
+    if (!documentScopeId || !editorSaveIsAllowed(documentScopeId)) {
+      setFlatStatus("草稿恢复编号尚未准备好；请先复制当前内容，页面没有把它标记为已保存。", "error")
+      return false
+    }
+    mirrorFlatToDetailed(false)
+    editorChangeGeneration += 1
+    editorTabDrafts.markDirty(documentScopeId, editorChangeGeneration)
+    if (!writeLocalBackup()) {
+      setFlatStatus("浏览器无法建立恢复副本；内容仍在当前页面，请复制备份后再继续。", "error")
+      return false
+    }
+    return true
+  }
+  function restoreFlatWorkbenchFromDetailed() {
+    if (!flatForm || !flatTitle || !flatBody) return false
+    const data = readForm()
+    flatTitle.value = data.title
+    flatBody.value = data.body
+    flatDirty = Boolean(data.title.trim() || data.body.trim())
+    if (writeLauncher) writeLauncher.hidden = true
+    if (editor) editor.hidden = true
+    if (flatWorkbench) flatWorkbench.hidden = false
+    setFlatStatus(
+      flatDirty
+        ? "已恢复浏览器中的私密草稿；尚未确认保存到云端。"
+        : "当前草稿还没有可恢复内容；输入后会立即保存在当前浏览器中。",
+    )
+    return true
   }
   const convertPastedContent = async (html: string, plainText: string, imageFiles: File[]) => {
     let content = plainText.replace(/\r\n?/g, "\n")
@@ -6042,6 +6084,19 @@ const init = async () => {
 
   const openFlatWorkbench = () => {
     const existing = readForm()
+    const params = new URLSearchParams(location.search)
+    const routeDraftId = parseEditorDraftId(params.get("draft"))
+    const currentScope = currentEditorScopeId()
+    if (
+      routeDraftId &&
+      params.get("mode") === "free" &&
+      currentScope === editorDraftScope(routeDraftId)
+    ) {
+      restoreFlatWorkbenchFromDetailed()
+      flatWorkbench?.scrollIntoView({ behavior: "smooth", block: "start" })
+      window.setTimeout(() => flatBody?.focus(), 0)
+      return
+    }
     if (
       editor &&
       !editor.hidden &&
@@ -6049,7 +6104,8 @@ const init = async () => {
       !window.confirm("自由工作台会开始一条新的知识。确定离开当前详细编辑内容吗？")
     )
       return
-    startNewDocument(false)
+    const activeScope = startNewDocument(false, true, undefined, "free")
+    if (!activeScope) return
     flatForm?.reset()
     flatDirty = false
     setFlatStatus("等待粘贴或书写。")
@@ -6072,7 +6128,7 @@ const init = async () => {
     })
   flatForm?.addEventListener("input", () => {
     flatDirty = true
-    setFlatStatus("有未保存的内容。")
+    if (persistFlatDraft()) setFlatStatus("已保存在当前浏览器；点击保存后才会确认同步到云端。")
   })
   flatBody?.addEventListener("paste", (event) => {
     const clipboard = event.clipboardData
@@ -6140,15 +6196,19 @@ const init = async () => {
       flatSave.textContent = "正在保存…"
     }
     setFlatStatus("正在保存到你的私密知识库…")
-    const saved = await requestDocumentSave()
+    const saved = await requestDocumentSave({ explicit: true })
     if (flatSave) {
       flatSave.disabled = false
       flatSave.textContent = "保存为私密草稿"
     }
     if (saved) {
       flatDirty = false
-      setFlatStatus("私密草稿已保存。你可以继续修改，或进入详细整理。", "success")
-    } else setFlatStatus("云端保存失败，内容仍保留在当前页面。请检查网络后重试。", "error")
+      setFlatStatus("私密草稿已由云端确认。你可以继续修改，或进入详细整理。", "success")
+    } else
+      setFlatStatus(
+        "云端尚未确认保存；内容已保留在当前浏览器的恢复副本中，请检查网络后重试。",
+        "error",
+      )
   })
   root.querySelector<HTMLButtonElement>("[data-flat-organize]")?.addEventListener("click", () => {
     if (!flatTitle?.value.trim() || !flatBody?.value.trim()) {
@@ -6169,7 +6229,7 @@ const init = async () => {
       return
     flatForm?.reset()
     flatDirty = false
-    setFlatStatus("已清空，可以粘贴新的文稿。")
+    if (persistFlatDraft()) setFlatStatus("已清空，并更新了当前浏览器中的恢复副本。")
     flatBody?.focus()
   })
 
@@ -6535,7 +6595,10 @@ const init = async () => {
       }
       void openDocument(routeDecision.documentId)
     } else if (routeDecision.kind === "draft") {
-      void openStableDraftScope(routeDecision.draftId)
+      void openStableDraftScope(
+        routeDecision.draftId,
+        requestedMode === "free" ? "free" : "detailed",
+      )
     } else if (routeDecision.kind === "invalid-draft") {
       startNewDocument()
       setStatus(

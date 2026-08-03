@@ -66,7 +66,7 @@ test("workspace startup canonicalizes conflicting document and draft params befo
   )
   assert.match(
     route,
-    /routeDecision\.kind === "draft"[\s\S]*openStableDraftScope\(routeDecision\.draftId\)/,
+    /routeDecision\.kind === "draft"[\s\S]*openStableDraftScope\([\s\S]*routeDecision\.draftId,[\s\S]*requestedMode === "free" \? "free" : "detailed"/,
   )
   assert.match(route, /routeDecision\.kind === "invalid-draft"[\s\S]*startNewDocument\(\)/)
 })

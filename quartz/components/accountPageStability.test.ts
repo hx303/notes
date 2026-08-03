@@ -73,7 +73,7 @@ test("same-account auth refresh preserves the active write surface", () => {
   )
   assert.match(
     script,
-    /routeDecision\.kind === "draft"[\s\S]{0,120}openStableDraftScope\(routeDecision\.draftId\)/,
+    /routeDecision\.kind === "draft"[\s\S]{0,180}openStableDraftScope\([\s\S]{0,120}routeDecision\.draftId,[\s\S]{0,120}requestedMode === "free" \? "free" : "detailed"/,
   )
   assert.doesNotMatch(script, /restoreDurableOutboxBackup\("new"/)
 })
