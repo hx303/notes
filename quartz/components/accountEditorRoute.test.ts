@@ -40,7 +40,7 @@ test("startup opens a stable draft through its durable binding before restoring 
     helper,
     /currentUser\?\.id === ownerId[\s\S]*client === routeClient[\s\S]*authEpoch === routeAuthEpoch/,
   )
-  assert.match(helper, /const activeScope = startNewDocument\(true, true, draftId\)/)
+  assert.match(helper, /const activeScope = startNewDocument\(true, true, draftId, requestedMode\)/)
   assert.match(helper, /await restoreDurableOutboxBackup\(activeScope\)/)
   assert.match(helper, /restoreLocalBackup\(activeScope\)/)
   assert.match(helper, /restoreAtomicConflictForScope\(/)
@@ -52,9 +52,7 @@ test("startup opens a stable draft through its durable binding before restoring 
 })
 
 test("workspace startup canonicalizes conflicting document and draft params before opening", () => {
-  const routeStart = accountScript.indexOf(
-    'if (workspace && workspaceSection === "write" && currentUser)',
-  )
+  const routeStart = accountScript.indexOf("const resumeWorkspaceWriteRoute = async () =>")
   const routeEnd = accountScript.indexOf("onlineHandler = async", routeStart)
   const route = accountScript.slice(routeStart, routeEnd)
   assert.ok(routeStart > 0)
@@ -66,7 +64,11 @@ test("workspace startup canonicalizes conflicting document and draft params befo
   )
   assert.match(
     route,
-    /routeDecision\.kind === "draft"[\s\S]*openStableDraftScope\(routeDecision\.draftId\)/,
+    /routeDecision\.kind === "draft"[\s\S]*const activeScope = editorDraftScope\(routeDecision\.draftId\)/,
+  )
+  assert.match(
+    route,
+    /return openStableDraftScope\([\s\S]*routeDecision\.draftId,[\s\S]*requestedMode === "free" \? "free" : "detailed"/,
   )
   assert.match(route, /routeDecision\.kind === "invalid-draft"[\s\S]*startNewDocument\(\)/)
 })
