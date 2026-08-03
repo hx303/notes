@@ -575,7 +575,7 @@ BEGIN
   THEN
     RAISE EXCEPTION 'post-deployment migration ledger mismatch';
   END IF;
-
-  RAISE NOTICE 'atomic_document_snapshot_contract_passed';
 END;
 $atomic_save_contract$;
+
+SELECT 'atomic_document_snapshot_contract_passed' AS result;

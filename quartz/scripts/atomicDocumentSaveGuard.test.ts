@@ -393,11 +393,19 @@ test("production contract pins owners, complete ACLs, exposure, and the exact ta
     assertReadOnlyGate(sql)
   }
   assert.equal(topLevelStatements(productionPreflight).length, 2)
-  assert.equal(topLevelStatements(productionContract).length, 1)
+  assert.equal(topLevelStatements(productionContract).length, 2)
   assert.equal((productionPreflight.match(/atomic_save_preflight_passed/g) ?? []).length, 1)
+  assert.equal(
+    (productionContract.match(/atomic_document_snapshot_contract_passed/g) ?? []).length,
+    1,
+  )
   assert.match(
     productionPreflight,
     /\$\$;\s*SELECT\s+'atomic_save_preflight_passed' AS result,[\s\S]*FROM public\.documents[\s\S]*FROM public\.document_versions[\s\S]*FROM public\.tags[\s\S]*FROM public\.document_links[\s\S]*FROM public\.document_sources/,
+  )
+  assert.match(
+    productionContract,
+    /\$atomic_save_contract\$;\s*SELECT 'atomic_document_snapshot_contract_passed' AS result;/,
   )
   assert.match(productionContract, /owner\.rolname = 'postgres'/)
   assert.match(
@@ -418,7 +426,6 @@ test("production contract pins owners, complete ACLs, exposure, and the exact ta
     /version = '20260722000150'[\s\S]*name = 'normalize_existing_tags_for_atomic_save'/,
   )
   assert.match(productionContract, /name = 'atomic_document_snapshot_save'/)
-  assert.match(productionContract, /atomic_document_snapshot_contract_passed/)
   assert.match(productionPreflight, /count\(\*\).*schema_migrations[\s\S]*<> 20/)
   assert.match(
     productionPreflight,
