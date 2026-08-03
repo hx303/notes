@@ -62,12 +62,11 @@ Write-Host "`n=== 2/5 Copying image attachments ===" -ForegroundColor Cyan
 node build_images.mjs
 
 # ============================================================
-# Step 3: Copy admin editor + vercel.json
+# Step 3: Copy Vercel config
 # ============================================================
-Write-Host "`n=== 3/5 Copying admin + config ===" -ForegroundColor Cyan
+Write-Host "`n=== 3/5 Copying deployment config ===" -ForegroundColor Cyan
 Copy-Item "$root\static\vercel.json" "$root\public\vercel.json" -Force
-Copy-Item "$root\static\admin" "$root\public\admin" -Recurse -Force
-Write-Host "  Copied vercel.json + admin editor." -ForegroundColor Green
+Write-Host "  Copied vercel.json." -ForegroundColor Green
 
 # ============================================================
 # Step 4: Post-build verification
@@ -95,11 +94,20 @@ if ($htmlCount -lt ($mdCount * 0.8)) {
     $errors += "HTML count ($htmlCount) much less than MD count ($mdCount) - possible build issue"
 }
 
-# Check admin editor
+# Check the retired admin migration entry emitted by Quartz
 if (-not (Test-Path "$root\public\admin\index.html")) {
     $errors += "public/admin/index.html MISSING"
 }
+if (-not (Test-Path "$root\public\admin\sw.js")) {
+    $errors += "public/admin/sw.js MISSING"
+}
 
+$retiredAdminAssets = @("admin.css", "admin-shell.js", "auth.js", "manifest.json", "icon-192.png", "icon-512.png")
+foreach ($asset in $retiredAdminAssets) {
+    if (Test-Path "$root\public\admin\$asset") {
+        $errors += "retired admin asset still emitted: public/admin/$asset"
+    }
+}
 # Check for large files (>10MB, except images in attachments)
 $largeFiles = Get-ChildItem -Path "$root\public" -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object { $_.Length -gt 10MB -and $_.Name -notmatch '\.(jpg|jpeg|png|gif|webp)$' }

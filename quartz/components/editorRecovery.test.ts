@@ -8,6 +8,7 @@ import {
   inspectEditorBackup,
   materializeEditorOutboxFormIdentity,
   removeStorageItemIfUnchanged,
+  selectRecoverableEditorBackup,
   setStorageItemSafely,
 } from "./scripts/editorRecovery"
 
@@ -15,6 +16,60 @@ const accountScript = readFileSync(
   new URL("./scripts/accountPage.inline.ts", import.meta.url),
   "utf8",
 )
+const accountComponent = readFileSync(new URL("./AccountPage.tsx", import.meta.url), "utf8")
+const editorDraftRouteScript = readFileSync(
+  new URL("./scripts/editorDraftRoute.ts", import.meta.url),
+  "utf8",
+)
+const editorOutboxScript = readFileSync(
+  new URL("./scripts/editorOutbox.ts", import.meta.url),
+  "utf8",
+)
+const editorSaveControllerScript = readFileSync(
+  new URL("./scripts/editorSaveController.ts", import.meta.url),
+  "utf8",
+)
+
+const stableDraftScope = "draft:00000000-0000-4000-8000-000000000001"
+
+test("recovery selection follows intent creation time instead of later retry timestamps", () => {
+  const conflict = addEditorBackupMetadata({ body: "old durable" }, "owner-a", "doc-a", 1, 10)
+  const queued = addEditorBackupMetadata({ body: "queued edit" }, "owner-a", "doc-a", 1, 20)
+  const local = addEditorBackupMetadata({ body: "local after RPC" }, "owner-a", "doc-a", 1, 30)
+
+  assert.equal(
+    selectRecoverableEditorBackup([
+      { backup: conflict, priority: 2 },
+      { backup: local, priority: 1 },
+    ])?.body,
+    "local after RPC",
+  )
+  assert.equal(
+    selectRecoverableEditorBackup([
+      { backup: conflict, priority: 0 },
+      { backup: queued, priority: 2 },
+    ])?.body,
+    "queued edit",
+  )
+})
+
+const sourceSection = (source: string, startMarker: string, endMarker: string) => {
+  const start = source.indexOf(startMarker)
+  assert.notEqual(start, -1, `missing source marker: ${startMarker}`)
+  const end = source.indexOf(endMarker, start + startMarker.length)
+  assert.notEqual(end, -1, `missing source marker: ${endMarker}`)
+  return source.slice(start, end)
+}
+
+const assertAppearsInOrder = (source: string, ...markers: string[]) => {
+  let cursor = -1
+  for (const marker of markers) {
+    const next = source.indexOf(marker, cursor + 1)
+    assert.notEqual(next, -1, `missing ordered source marker: ${marker}`)
+    assert.ok(next > cursor, `${marker} must appear after the preceding marker`)
+    cursor = next
+  }
+}
 
 test("an existing-document backup restores only against the revision it was based on", () => {
   const backup = addEditorBackupMetadata(
@@ -38,15 +93,18 @@ test("an existing-document backup restores only against the revision it was base
   assert.equal(inspectEditorBackup(raw, "owner-b", "document-a", 4).state, "invalid")
 })
 
-test("legacy new drafts remain recoverable but legacy cloud drafts fail closed", () => {
-  const raw = JSON.stringify({ title: "legacy", body: "kept" })
-  assert.equal(inspectEditorBackup(raw, "owner-a", "new").state, "restore")
-  assert.deepEqual(inspectEditorBackup(raw, "owner-a", "document-a", 2), {
+test("stable draft backups remain recoverable but legacy cloud backups fail closed", () => {
+  const legacyRaw = JSON.stringify({ title: "legacy", body: "kept" })
+  const stableRaw = JSON.stringify(
+    addEditorBackupMetadata({ title: "stable", body: "kept" }, "owner-a", stableDraftScope, 0, 10),
+  )
+  assert.equal(inspectEditorBackup(stableRaw, "owner-a", stableDraftScope).state, "restore")
+  assert.deepEqual(inspectEditorBackup(legacyRaw, "owner-a", "document-a", 2), {
     state: "conflict",
     backup: { title: "legacy", body: "kept" },
     reason: "unknown-base",
   })
-  assert.equal(inspectEditorBackup("not-json", "owner-a", "new").state, "invalid")
+  assert.equal(inspectEditorBackup("not-json", "owner-a", stableDraftScope).state, "invalid")
 })
 
 test("a tab cannot delete another tab's newer backup or adopt cloud over its dirty form", () => {
@@ -81,43 +139,46 @@ test("a tab clears only its matching generation and matching backup token", () =
     removeItem: (key: string) => void values.delete(key),
   }
   const tab = createEditorTabDraftState()
-  tab.markDirty("new", 4)
-  tab.rememberBackup("new", "same-tab-backup")
+  tab.markDirty(stableDraftScope, 4)
+  tab.rememberBackup(stableDraftScope, "same-tab-backup")
 
-  assert.equal(tab.clearDirtyIfGeneration("new", 3), false)
-  assert.equal(tab.isDirty("new"), true)
-  assert.equal(removeStorageItemIfUnchanged(storage, "draft", tab.backupToken("new")), true)
+  assert.equal(tab.clearDirtyIfGeneration(stableDraftScope, 3), false)
+  assert.equal(tab.isDirty(stableDraftScope), true)
+  assert.equal(
+    removeStorageItemIfUnchanged(storage, "draft", tab.backupToken(stableDraftScope)),
+    true,
+  )
   assert.equal(values.has("draft"), false)
-  assert.equal(tab.clearDirtyIfGeneration("new", 4), true)
+  assert.equal(tab.clearDirtyIfGeneration(stableDraftScope, 4), true)
 })
 
-test("a first insert removes this tab's latest new token before moving dirty state to the cloud id", () => {
-  const values = new Map<string, string>([["new-key", "first-save-start"]])
+test("a first create removes this tab's stable draft token before moving dirty state", () => {
+  const values = new Map<string, string>([["draft-key", "first-save-start"]])
   const storage = {
     getItem: (key: string) => values.get(key) ?? null,
     removeItem: (key: string) => void values.delete(key),
   }
   const tab = createEditorTabDraftState()
-  tab.markDirty("new", 1)
-  tab.rememberBackup("new", "first-save-start")
+  tab.markDirty(stableDraftScope, 1)
+  tab.rememberBackup(stableDraftScope, "first-save-start")
 
   // The same tab keeps typing while the first cloud insert is pending.
-  tab.markDirty("new", 2)
-  tab.rememberBackup("new", "latest-live-input")
-  values.set("new-key", "latest-live-input")
-  const newTokenAtBind = tab.backupToken("new")
+  tab.markDirty(stableDraftScope, 2)
+  tab.rememberBackup(stableDraftScope, "latest-live-input")
+  values.set("draft-key", "latest-live-input")
+  const draftTokenAtBind = tab.backupToken(stableDraftScope)
 
   values.set("cloud-key", "latest-live-input")
-  assert.equal(removeStorageItemIfUnchanged(storage, "new-key", newTokenAtBind), true)
-  tab.moveDirty("new", "cloud-document")
-  assert.equal(values.has("new-key"), false)
-  assert.equal(tab.isDirty("new"), false)
+  assert.equal(removeStorageItemIfUnchanged(storage, "draft-key", draftTokenAtBind), true)
+  tab.moveDirty(stableDraftScope, "cloud-document")
+  assert.equal(values.has("draft-key"), false)
+  assert.equal(tab.isDirty(stableDraftScope), false)
   assert.equal(tab.isDirty("cloud-document"), true)
   assert.equal(tab.clearDirtyIfGeneration("cloud-document", 1), false)
   assert.equal(tab.clearDirtyIfGeneration("cloud-document", 2), true)
 })
 
-test("a failed first id backup write is observable so new cleanup can be deferred", () => {
+test("a failed first id backup write is observable so draft cleanup can be deferred", () => {
   const storage = {
     setItem: () => {
       throw new Error("quota")
@@ -143,13 +204,6 @@ test("outbox record identity overrides stale payload form identity during replay
       documentId: "cloud-document",
       revision: 1,
     },
-  )
-  assert.deepEqual(
-    materializeEditorOutboxFormIdentity(
-      { ...payloadForm, documentId: "stale-document", revision: 4 },
-      { documentId: "new", baseRevision: 0 },
-    ),
-    { ...payloadForm, documentId: "", revision: 0 },
   )
 })
 
@@ -202,32 +256,60 @@ test("a failed save remains failed even when the coalesced follow-up succeeds", 
   assert.equal(await second, false)
 })
 
-test("all editor save entry points use the serialized queue", () => {
-  assert.match(accountScript, /createSerializedSaveQueue\(saveDocumentOnce\)/)
+test("all editor save entry points use the replay-safe atomic controller", () => {
+  const liveSave = sourceSection(
+    accountScript,
+    "async function saveDocumentOnce",
+    "const requestDocumentSave",
+  )
+
+  assert.match(liveSave, /editorSaveController\.enqueueAndSave/)
+  assert.match(liveSave, /editorSaveController\.flush/)
+  assert.doesNotMatch(liveSave, /editorOutbox\./)
+  assert.doesNotMatch(liveSave, /\.from\(/)
+  assert.match(editorSaveControllerScript, /rpcClient\.rpc\(EDITOR_ATOMIC_SAVE_RPC, rpcArguments\)/)
   assert.ok((accountScript.match(/await requestDocumentSave\(\)/g)?.length ?? 0) >= 5)
   assert.doesNotMatch(accountScript, /await saveDocumentOnce\(\)/)
-  assert.match(
-    accountScript,
-    /loadPublication\([\s\S]{0,220}isCurrentOpen[\s\S]{0,900}restoreLocalBackup\(documentId,[\s\S]{0,100}result\.data\?\.revision/,
-  )
 })
 
-test("conflicts freeze the original backup until an explicit recovery action", () => {
-  const conflictGuard = accountScript.indexOf(
-    "if (editorConflict?.documentId === documentId) return null",
-  )
-  const backupWrite = accountScript.indexOf("const backup = addEditorBackupMetadata", conflictGuard)
-  assert.ok(conflictGuard > 0)
-  assert.ok(backupWrite > conflictGuard)
-  assert.match(accountScript, /data-conflict-use-local[\s\S]*fillForm\(backup\)/)
-  assert.match(
+test("CAS, missing-cloud, and rejected saves freeze one strict snapshot for explicit recovery", () => {
+  const recovery = sourceSection(
     accountScript,
-    /data-conflict-use-cloud[\s\S]*archiveEditorConflict\(conflict, recoverableBackup\)/,
+    "const enterAtomicSaveRecovery",
+    "const restoreAtomicConflictForScope",
+  )
+  const freeze = sourceSection(
+    accountScript,
+    "const freezeEditorConflict",
+    "const restoreLocalBackup",
+  )
+  const actionAvailability = sourceSection(
+    accountScript,
+    "const applyEditorConflictActionAvailability",
+    "const freezeEditorConflict",
+  )
+
+  assert.match(recovery, /status: "conflict" \| "not_found" \| "request_rejected"/)
+  assert.match(recovery, /const snapshot = payload\.snapshot/)
+  assert.match(recovery, /outcome\.status === "not_found"[\s\S]{0,180}"request-rejected"/)
+  assert.match(recovery, /: "remote-write"/)
+  assert.match(recovery, /const cloudAvailable = Boolean\(cloudRow\)/)
+  assert.match(actionAvailability, /const localRecoveryAllowed = conflict\.reason !== "not-found"/)
+  assert.match(
+    actionAvailability,
+    /if \(conflictUseLocal\) conflictUseLocal\.disabled = !localRecoveryAllowed/,
   )
   assert.match(
-    accountScript,
-    /data-conflict-save-copy[\s\S]*\[name=visibility\]\[value=private\][\s\S]*requestDocumentSave/,
+    actionAvailability,
+    /if \(conflictUseCloud\) conflictUseCloud\.disabled = !cloudAvailable/,
   )
+  assert.match(
+    actionAvailability,
+    /if \(conflictExportLocal\) conflictExportLocal\.disabled = false/,
+  )
+  assert.match(freeze, /applyEditorConflictActionAvailability\(\)/)
+  assert.match(accountComponent, /data-conflict-save-copy/)
+  assert.match(accountComponent, /data-conflict-export-local/)
 })
 
 test("existing documents restore locally before attempting a cloud read", () => {
@@ -243,30 +325,36 @@ test("existing documents restore locally before attempting a cloud read", () => 
   assert.match(accountScript, /if \(restoredLocally\)[\s\S]*离线编辑中，本地稿等待同步/)
 })
 
-test("partial cloud writes retain recovery data and online sync requires pending work", () => {
-  assert.match(
+test("strict snapshots carry all editor content through one RPC with no partial cloud path", () => {
+  const materialize = sourceSection(
     accountScript,
-    /const sourcesSaved = await saveDocumentSources[\s\S]{0,400}version\.error[\s\S]*!tagsSaved[\s\S]*!prerequisitesSaved[\s\S]*!relatedSaved[\s\S]*!sourcesSaved/,
+    "const materializeCurrentAtomicSave",
+    "const atomicOutcomeMessage",
   )
-  assert.match(accountScript, /const ownerId = String\(currentUser\.id\)/)
-  assert.ok(
-    (accountScript.match(/redactWorkspaceSourcesForRecovery\(collectSources\(\)\)/gu)?.length ??
-      0) >= 4,
-  )
-  assert.match(
+  const liveSave = sourceSection(
     accountScript,
-    /localStorage\.setItem\(archiveKey, JSON\.stringify\(redactEditorBackupSources\(backup\)\)\)/,
+    "async function saveDocumentOnce",
+    "const requestDocumentSave",
   )
-  assert.match(
-    accountScript,
-    /const redactedBackup = redactEditorBackupSources\(backup\)[\s\S]{0,1200}sources: Array\.isArray\(redactedBackup\.__sources\)/,
+
+  assert.match(materialize, /requestVersion: 1/)
+  assert.match(materialize, /knowledgeBaseId/)
+  assertAppearsInOrder(
+    materialize,
+    "snapshot: {",
+    "title: data.title",
+    "body: data.body",
+    "topic: data.topic",
+    "maturity: data.maturity",
+    "visibility: data.visibility",
+    "tags:",
+    "prerequisites:",
+    "related:",
+    "sources:",
   )
-  assert.match(accountScript, /currentUser\?\.id === ownerId/)
-  assert.match(accountScript, /client === saveClient/)
-  assert.match(
-    accountScript,
-    /onlineHandler = async[\s\S]*editorConflict\?\.documentId[\s\S]*localStorage\.getItem\(localDraftKey/,
-  )
+  assert.match(editorSaveControllerScript, /createAtomicEditorSaveRpcArguments\(/)
+  assert.match(editorSaveControllerScript, /rpcClient\.rpc\(EDITOR_ATOMIC_SAVE_RPC, rpcArguments\)/)
+  assert.doesNotMatch(liveSave, /\.from\(|replace_document_sources/)
 })
 
 test("publication status warns that private drafts do not revoke an existing snapshot", () => {
@@ -275,51 +363,69 @@ test("publication status warns that private drafts do not revoke an existing sna
   assert.match(accountScript, /正式发布功能暂不可用；私人草稿不受影响/)
 })
 
-test("relationship options and writes stay inside the current knowledge base", () => {
+test("relationship reads stay knowledge-base scoped and writes remain inside the snapshot", () => {
+  const materialize = sourceSection(
+    accountScript,
+    "const materializeCurrentAtomicSave",
+    "const atomicOutcomeMessage",
+  )
+
   assert.match(
     accountScript,
     /loadLinkOptions[\s\S]{0,900}\.eq\("knowledge_base_id", knowledgeBaseId\)/,
   )
-  assert.match(accountScript, /saveLinks[\s\S]{0,1200}\.eq\("knowledge_base_id", knowledgeBaseId\)/)
-  assert.match(accountScript, /\.in\("relation_type", \["prerequisite", "related"\]\)/)
+  assert.match(materialize, /prerequisites: parsedPrerequisites\.value\.map/)
+  assert.match(materialize, /related: parsedRelated\.value\.map/)
+  assert.match(materialize, /sources: sources\.map/)
+  assert.doesNotMatch(
+    sourceSection(accountScript, "async function saveDocumentOnce", "const requestDocumentSave"),
+    /document_tags|document_links|document_sources/,
+  )
 })
 
-test("existing documents keep their bound knowledge base instead of being moved on save", () => {
+test("existing snapshots preserve the server-read knowledge-base binding", () => {
+  const materialize = sourceSection(
+    accountScript,
+    "const materializeCurrentAtomicSave",
+    "const atomicOutcomeMessage",
+  )
+
   assert.match(
     accountScript,
     /let editorKnowledgeBaseBinding: \{ documentId: string; knowledgeBaseId: string \} \| null/,
   )
   assert.match(
-    accountScript,
-    /if \(data\.documentId\)[\s\S]{0,1100}\.select\("knowledge_base_id"\)[\s\S]{0,700}else \{\s+knowledgeBaseId = String\(\(await ensureKnowledgeBase\(\)\)/,
+    materialize,
+    /else if \(data\.documentId\)[\s\S]{0,180}\.select\("knowledge_base_id"\)[\s\S]{0,240}\.eq\("owner_id", currentUser\.id\)/,
   )
   assert.match(
-    accountScript,
-    /\.eq\("owner_id", ownerId\)\s+\.eq\("knowledge_base_id", knowledgeBaseId\)\s+\.eq\("revision", data\.revision\)/,
+    materialize,
+    /else \{\s+knowledgeBaseId = String\(\(await ensureKnowledgeBase\(isCurrent\)\)/,
   )
   assert.match(
-    accountScript,
-    /editorKnowledgeBaseBinding = \{\s+documentId: String\(result\.data\.id\),\s+knowledgeBaseId: String\(result\.data\.knowledge_base_id\)/,
+    materialize,
+    /editorKnowledgeBaseBinding = \{ documentId: documentScopeId, knowledgeBaseId \}/,
   )
 })
 
-test("new-document transitions cannot reuse stale cross-knowledge-base relationships", () => {
+test("unsaved documents use a stable draft scope and canonical route", () => {
+  const startDraft = sourceSection(
+    accountScript,
+    "const startNewDocument",
+    "const openStableDraftScope",
+  )
+
+  assert.match(editorDraftRouteScript, /EDITOR_DRAFT_SCOPE_PREFIX = "draft:"/)
+  assert.match(editorDraftRouteScript, /route\.searchParams\.set\("draft", editorDraftScope/)
+  assert.match(editorDraftRouteScript, /route\.searchParams\.delete\("draft"\)/)
+  assert.match(accountScript, /return currentDraftId \? editorDraftScope\(currentDraftId\) : ""/)
   assert.match(
     accountScript,
-    /const prepareNewDocumentRelationOptions[\s\S]{0,900}editorKnowledgeBaseBinding === null[\s\S]{0,500}loadLinkOptions\("", knowledgeBaseId/,
+    /const draftId = parseEditorDraftId\(preferredDraftId\) \?\? createEditorDraftId\(\)/,
   )
-  assert.match(
-    accountScript,
-    /form\?\.reset\(\)\s+editorKnowledgeBaseBinding = null\s+clearRelationDocumentOptions\(\)[\s\S]{0,1600}void prepareNewDocumentRelationOptions\(\)/,
-  )
-  assert.match(
-    accountScript,
-    /editorKnowledgeBaseBinding = \{ documentId: "new", knowledgeBaseId: sourceKnowledgeBaseId \}/,
-  )
-  assert.match(
-    accountScript,
-    /const activeRelationshipTargetIds =[\s\S]{0,1300}\.eq\("knowledge_base_id", knowledgeBaseId\)[\s\S]{0,500}正文尚未写入/,
-  )
+  assert.match(startDraft, /previousScope\.startsWith\("draft:"\)/)
+  assert.match(startDraft, /const documentScopeId = bindFreshEditorDraftScope\(/)
+  assert.match(startDraft, /restoreLocalBackup\(documentScopeId\)/)
 })
 
 test("unavailable relationship retention remains bound to the successfully loaded document", () => {
@@ -343,21 +449,61 @@ test("unavailable relationship retention remains bound to the successfully loade
   assert.ok(prematureClear === -1 || prematureClear > coreRead)
 })
 
-test("save coordination is owner scoped, cross-tab exclusive, and SPA safe", () => {
+test("follow-up flushes are owner scoped, guarded, and controller-only", () => {
+  const scheduler = sourceSection(
+    accountScript,
+    "const scheduleAtomicSaveFlush",
+    "const scheduleAtomicOutcomeRetry",
+  )
+  const liveSave = sourceSection(
+    accountScript,
+    "async function saveDocumentOnce",
+    "const requestDocumentSave",
+  )
+
   assert.match(accountScript, /createEditorCoordinator\(\{ ownerId \}\)/)
-  assert.match(accountScript, /editorCoordinator\?\.runExclusive\(documentId, run\)/)
-  assert.match(accountScript, /editorCoordinator\?\.publishStatus\(\{[\s\S]{0,160}status: "queued"/)
   assert.match(accountScript, /editorCoordinator\?\.close\(\)/)
-  assert.match(accountScript, /另一标签页正在保存这条知识/)
-  assert.match(accountScript, /另一标签页已保存新版本；当前本地改动仍保留/)
+  assert.match(scheduler, /window\.setTimeout/)
+  assertAppearsInOrder(
+    scheduler,
+    "disposed ||",
+    "editorRetryTimerEpoch !== timerEpoch",
+    "navigator.onLine === false",
+    "currentUser?.id !== input.ownerId",
+    "client !== input.saveClient",
+    "authEpoch !== input.saveAuthEpoch",
+    "currentEditorScopeId() !== input.documentScopeId",
+    "!editorSaveIsAllowed(input.documentScopeId, input.saveEpoch)",
+    "void requestDocumentSave({ enqueue: false })",
+  )
+  assert.match(liveSave, /const hasPendingFollowUp = outcome\.followUpState !== "none"/)
+  assert.match(liveSave, /if \(hasPendingFollowUp\)[\s\S]{0,260}scheduleAtomicSaveFlush\(/)
 })
 
 test("session changes invalidate private editor reads and clear sensitive UI state", () => {
+  const clearSensitive = sourceSection(
+    accountScript,
+    "const clearSensitiveEditorState",
+    "const openDocumentOnce",
+  )
+
   assert.match(accountScript, /let authEpoch = 0/)
   assert.match(accountScript, /const openEpoch = authEpoch/)
   assert.match(accountScript, /if \(!isCurrentOpen\(\)\) return false/)
   assert.match(accountScript, /event === "SIGNED_OUT"[\s\S]{0,220}clearSensitiveEditorState\(\)/)
-  assert.match(accountScript, /clearSensitiveEditorState[\s\S]{0,500}form\?\.reset\(\)/)
+  assertAppearsInOrder(
+    clearSensitive,
+    "editorSaveController?.close()",
+    "editorSaveController = null",
+    "editorManualRecoveryBlocked = false",
+    "editorManualRecoveryExported = false",
+    "editorManualRecoveryPackage = null",
+    'currentDraftId = ""',
+    "invalidateEditorSaves()",
+    "editorTabDrafts.clearAll()",
+    "clearEditorConflict()",
+    "form?.reset()",
+  )
   assert.match(accountScript, /const ownerId = String\(currentUser\.id\)/)
   assert.match(accountScript, /const syncRequest = authSyncRequests\.begin\(\)/)
   assert.match(accountScript, /if \(!isCurrentSync\(\)\) return\s+currentUser = resolvedUser/)
@@ -388,93 +534,125 @@ test("only the latest document-open request may update document-specific UI", ()
   assert.match(accountScript, /form\.inert = false[\s\S]{0,100}aria-busy", "false"/)
 })
 
-test("conflict recovery controls remain interactive after a gated document open", () => {
+test("ordinary cloud conflicts and no-cloud recoveries expose only safe actions", () => {
   const freezeStart = accountScript.indexOf("const freezeEditorConflict")
   const formUnlocked = accountScript.indexOf("form.inert = false", freezeStart)
   const conflictOnly = accountScript.indexOf("setEditorConflictInteractivity(true)", formUnlocked)
+  const useLocal = sourceSection(
+    accountScript,
+    'root.querySelector("[data-conflict-use-local]")',
+    'root.querySelector("[data-conflict-use-cloud]")',
+  )
+  const saveCopy = sourceSection(
+    accountScript,
+    'root.querySelector("[data-conflict-save-copy]")',
+    'conflictExportLocal?.addEventListener("click"',
+  )
+  const exportOnly = sourceSection(
+    accountScript,
+    'conflictExportLocal?.addEventListener("click"',
+    "const queueAutosave",
+  )
   assert.ok(freezeStart > 0)
   assert.ok(formUnlocked > freezeStart)
   assert.ok(conflictOnly > formUnlocked)
-  assert.match(
-    accountScript,
-    /const saveTargetIsCurrent[\s\S]{0,600}editorConflict\?\.documentId !== documentIdentity[\s\S]{0,300}if \(!saveTargetIsCurrent\(\)\)/,
+  assert.match(useLocal, /if \(conflict\.reason === "not-found"\) return/)
+  assert.match(useLocal, /if \(!conflictUsesImmediateCas\(conflict\)\)/)
+  assert.match(useLocal, /restoreConflictForExplicitSave\(conflict, context\)/)
+  assertAppearsInOrder(
+    useLocal,
+    "prepareEditorConflictArchive(conflict, context)",
+    "resolveDurableEditorConflict(conflict, prepared.durableToken)",
   )
-  assert.match(
-    accountScript,
-    /setEditorConflictInteractivity[\s\S]{0,700}child === conflictSection[\s\S]{0,200}child\.inert = true/,
+  assert.match(saveCopy, /visibility: "private"/)
+  assert.match(saveCopy, /const copyDraftId = createEditorDraftId\(\)/)
+  assert.match(saveCopy, /const copyScope = editorDraftScope\(copyDraftId\)/)
+  assertAppearsInOrder(
+    saveCopy,
+    "setStorageItemSafely(",
+    "resolveDurableEditorConflict(conflict, prepared.durableToken)",
+    "bindFreshEditorDraftScope(copyDraftId)",
   )
-  assert.match(accountScript, /data-editor-clear[\s\S]{0,180}if \(editorConflict\)/)
-  assert.match(accountScript, /data-conflict-use-local/)
-  assert.match(accountScript, /data-conflict-use-cloud/)
-  assert.match(accountScript, /data-conflict-save-copy/)
-  assert.match(accountScript, /latest: await editorOutbox\.resolveDocumentConflict/)
-  assert.match(accountScript, /recoverableConflictBackup\(conflict, resolution\.latest\)/)
+  assert.match(saveCopy, /allowEditorSaves\(copyScope\)/)
+  assert.match(saveCopy, /if \(!conflictUsesImmediateCas\(conflict\)\)/)
+  assert.match(saveCopy, /requireExplicitEditorSave\(copyScope\)/)
+  assert.match(saveCopy, /requestDocumentSave\(\)/)
+  assert.match(exportOnly, /format: "wouldkeep-editor-conflict-v1"/)
+  assert.doesNotMatch(exportOnly, /resolveDurableEditorConflict|clearEditorConflict/)
 })
 
-test("conflict choices are single-flight and storage denial keeps durable recovery usable", () => {
-  assert.match(accountScript, /let editorConflictResolutionPending = false/)
-  assert.match(
+test("legacy recovery is export-first, confirm-second, archive-before-delete", () => {
+  const exportLegacy = sourceSection(
     accountScript,
-    /runEditorConflictResolution[\s\S]{0,500}editorConflictResolutionPending = true[\s\S]{0,300}control\.disabled = true[\s\S]{0,500}editorConflictResolutionPending = false/,
+    'editorRecoveryExport?.addEventListener("click"',
+    'editorRecoveryArchive?.addEventListener("click"',
   )
-  assert.ok((accountScript.match(/await runEditorConflictResolution/g)?.length ?? 0) >= 3)
-  assert.match(
+  const archiveLegacy = sourceSection(
     accountScript,
-    /let raw: string \| null = null[\s\S]{0,120}localStorage\.getItem\(localDraftKey\(conflict\.ownerId, conflict\.documentId\)\)[\s\S]{0,100}catch/,
+    'editorRecoveryArchive?.addEventListener("click"',
+    "const sync = async",
   )
+
   assert.match(
-    accountScript,
-    /const archived = archiveEditorConflict[\s\S]{0,500}archived[\s\S]{0,180}浏览器恢复归档不可用/,
+    accountComponent,
+    /data-editor-recovery-export[\s\S]{0,280}data-editor-recovery-archive[\s\S]{0,80}disabled/,
   )
-  assert.match(
-    accountScript,
-    /const rememberBackup[\s\S]{0,900}editorOutbox\.restoreConflict[\s\S]{0,900}rememberBackup\(recoverableConflictBackup\(conflict, frozen\)\)/,
+  assert.match(accountComponent, /必须先导出；只有再次明确确认后才会清除原记录。/)
+  assertAppearsInOrder(
+    exportLegacy,
+    'format: "wouldkeep-legacy-editor-recovery-v1"',
+    "link.click()",
+    "editorManualRecoveryExported = true",
+    "editorRecoveryArchive.disabled = false",
+  )
+  assert.match(archiveLegacy, /!editorManualRecoveryExported/)
+  assertAppearsInOrder(
+    archiveLegacy,
+    "window.confirm(",
+    "setStorageItemSafely(localStorage, archiveKey, archiveRaw)",
+    "await legacyEditorRepository.delete(operationId)",
+    "removeStorageItemIfUnchanged(",
+    "inspectLegacyEditorPersistence({",
+    "editorManualRecoveryBlocked = false",
   )
 })
 
-test("document loading invalidates queued saves and stages metadata only after the core read", () => {
-  const openStart = accountScript.indexOf("const openDocumentOnce = async")
-  const invalidate = accountScript.indexOf("invalidateEditorSaves()", openStart)
-  const coreRead = accountScript.indexOf('.from("documents")', openStart)
-  const coreFill = accountScript.indexOf("documentId: result.data?.id ?? documentId", coreRead)
-  const metadataClear = accountScript.indexOf(
-    'for (const name of ["tags", "prerequisites", "related"])',
-    coreFill,
-  )
-  assert.ok(openStart > 0)
-  assert.ok(invalidate > openStart)
-  assert.ok(coreRead > invalidate)
-  assert.ok(coreFill > coreRead)
-  assert.ok(metadataClear > coreFill)
-  assert.match(
+test("startup conflict inspection freezes both document and stable-draft routes before flush", () => {
+  const restoreConflict = sourceSection(
     accountScript,
-    /fillForm\(\{[\s\S]{0,160}\.\.\.\(result\.data \?\? \{\}\)[\s\S]{0,120}documentId: result\.data\?\.id \?\? documentId/,
+    "const restoreAtomicConflictForScope",
+    "const scheduleAtomicSaveFlush",
   )
-  assert.match(
+  const openDocument = sourceSection(
     accountScript,
-    /const requestDocumentSave[\s\S]{0,500}if \(!editorSaveIsAllowed\(documentId, requestSaveEpoch\)\)[\s\S]{0,300}return false[\s\S]{0,500}editorOutbox\.enqueue/,
+    "const openDocumentOnce = async",
+    "const openDocument = (documentId",
   )
-  const saveStart = accountScript.indexOf("const saveDocumentOnce")
-  const knowledgeBase = accountScript.indexOf('let knowledgeBaseId = ""', saveStart)
-  const postAwaitGuard = accountScript.indexOf(
-    "if (!knowledgeBaseId || !saveTargetIsCurrent()) return false",
-    knowledgeBase,
-  )
-  const coreWrite = accountScript.indexOf('.from("documents")', postAwaitGuard)
-  assert.ok(saveStart > 0)
-  assert.ok(knowledgeBase > saveStart)
-  assert.ok(postAwaitGuard > knowledgeBase)
-  assert.ok(coreWrite > postAwaitGuard)
-  assert.match(
+  const openStableDraft = sourceSection(
     accountScript,
-    /const openDocument = \([\s\S]{0,180}runEditorUiExclusive\(\(\) => openDocumentOnce/,
+    "const openStableDraftScope",
+    "root\n    .querySelectorAll<HTMLButtonElement>",
   )
-  assert.match(
-    accountScript,
-    /runEditorUiExclusive\(\(\) => editorCoordinator\?\.runExclusive\(documentId, run\)/,
+
+  assert.match(restoreConflict, /Promise<"none" \| "conflict" \| "blocked">/)
+  assert.match(restoreConflict, /records = await editorOutbox\.listForOwner\(ownerId\)/)
+  assert.match(restoreConflict, /record\.documentScopeId === documentScopeId/)
+  assert.match(restoreConflict, /record\.status === "conflict"/)
+  assert.match(restoreConflict, /status: "request_rejected"/)
+  assert.match(restoreConflict, /catch \{[\s\S]{0,180}blockRecoveryInspection/)
+  assertAppearsInOrder(
+    openDocument,
+    "await restoreAtomicConflictForScope(documentId, isCurrentOpen)",
+    'if (atomicConflictState === "blocked") return false',
+    'if (!options.ignoreLocalBackup && atomicConflictState === "none")',
+    "void flushDurableOutboxForCurrentDocument()",
   )
-  assert.match(accountScript, /if \(options\.deferConflict\) return false/)
-  assert.match(accountScript, /resolveDocumentConflict\(conflict\.ownerId, conflict\.documentId\)/)
+  assertAppearsInOrder(
+    openStableDraft,
+    "await restoreAtomicConflictForScope(",
+    'if (atomicConflictState === "blocked") return false',
+    'if (atomicConflictState === "none") void flushDurableOutboxForCurrentDocument()',
+  )
 })
 
 test("document loading reports related data as pending until every cloud read succeeds", () => {
@@ -497,41 +675,74 @@ test("document loading reports related data as pending until every cloud read su
   assert.ok(unlocked > completed)
 })
 
-test("the durable outbox is wired before network saves and recovered after refresh", () => {
-  assert.match(accountScript, /createIndexedDbEditorOutboxRepository\(\)/)
-  assert.match(accountScript, /await editorOutbox\.recoverInterrupted\(ownerId, documentId\)/)
-  assert.match(accountScript, /await editorOutbox\.enqueue\(\{/)
-  assert.match(accountScript, /await editorOutbox\.claimNext\(ownerId, documentId\)/)
-  assert.match(accountScript, /completeAfterSuccess\(\s*ownerId,\s*finalClaim/)
+test("the strict outbox settles one acknowledgement and restores queued intent first", () => {
+  const savedSettlement = sourceSection(
+    editorSaveControllerScript,
+    'if (response.status === "saved")',
+    "const flush = async",
+  )
+  const restoreConflict = sourceSection(
+    editorOutboxScript,
+    "restoreConflict: (input: EnqueueInput)",
+    "migrateNewDocument:",
+  )
+
+  assert.match(accountScript, /createReplaySafeIndexedDbEditorOutboxRepository\(\)/)
   assert.match(accountScript, /restoreDurableOutboxBackup\(documentId, isCurrentOpen\)/)
-  assert.match(accountScript, /bindCreatedDocument\(/)
-  assert.match(accountScript, /materializeEditorOutboxFormIdentity\(value, claim\.record\)/)
-  assert.match(
-    accountScript,
-    /materializeEditorOutboxFormIdentity\(record\.payload\.form, record\)/,
+  assert.match(savedSettlement, /completeCreatedAfterSuccess\(/)
+  assert.match(savedSettlement, /completeAfterSuccess\(/)
+  assert.match(savedSettlement, /const remaining = await options\.outbox\.listForOwner/)
+  assert.match(savedSettlement, /\? "pending"\s+: "none"/)
+  assert.match(savedSettlement, /followUpState = "unknown"/)
+  assert.match(savedSettlement, /nextDocumentScopeId/)
+  assertAppearsInOrder(
+    restoreConflict,
+    'matching.filter((record) => record.status === "queued")',
+    "matching.sort(newestIntentFirst)",
+    "const conflict: EditorOutboxRecord",
+    "await repository.replace(",
   )
   assert.match(
-    accountScript,
-    /inspection\.backup\.__editorRecovery\.baseRevision >= record\.baseRevision/,
+    restoreConflict,
+    /repository\.replace\([\s\S]{0,100}matching\.map\(\(record\) => record\.operationId\)/,
   )
-  assert.match(accountScript, /materializeEditorOutboxFormIdentity\(inspection\.backup, record\)/)
-  assert.match(accountScript, /const durableSaveOutcomes = new Map/)
-  assert.match(accountScript, /completeAfterSuccess\([\s\S]{0,100}outcome\.revision/)
-  assert.match(accountScript, /advanceAfterPartialSuccess\([\s\S]{0,100}outcome\.revision/)
-  assert.match(accountScript, /form\.inert = busy/)
 })
 
-test("recovered new drafts and historical versions cannot be silently mixed or overwritten", () => {
-  assert.match(accountScript, /preferRecovery && pendingNewDraft && restoreLocalBackup\("new"\)/)
-  assert.match(accountScript, /wouldkeep:editor-draft-archive:/)
-  assert.match(
+test("created acknowledgements migrate the stable backup before binding the document URL", () => {
+  const liveSave = sourceSection(
     accountScript,
-    /const normalizedSnapshot = \{[\s\S]{0,300}tags: ""[\s\S]{0,200}related: ""/,
+    "async function saveDocumentOnce",
+    "const requestDocumentSave",
   )
-  assert.match(accountScript, /renderSources\(\s*Array\.isArray\(snapshotSources\)/)
-  assert.match(
+  const createdSettlement = sourceSection(
+    liveSave,
+    "const draftBackupToken",
+    "const settledSaveEpoch",
+  )
+  const stableDraftOpen = sourceSection(
     accountScript,
-    /if \(\(readForm\(\)\.documentId \|\| "new"\) !== documentId\)[\s\S]{0,160}return false/,
+    "const openStableDraftScope",
+    "root\n    .querySelectorAll<HTMLButtonElement>",
+  )
+
+  assertAppearsInOrder(
+    createdSettlement,
+    "const migratedBackupStored = setStorageItemSafely(",
+    "localDraftKey(ownerId, savedDocumentId)",
+    "migratedRaw",
+    "editorTabDrafts.rememberBackup(savedDocumentId, migratedRaw)",
+    "removeTabBackupIfUnchanged(ownerId, documentScopeId, draftBackupToken)",
+    "editorTabDrafts.moveDirty(documentScopeId, savedDocumentId)",
+    "documentField.value = savedDocumentId",
+    "allowEditorSaves(savedDocumentId)",
+    "bindDocumentEditorRoute(window.location.href, savedDocumentId)",
+  )
+  assertAppearsInOrder(
+    stableDraftOpen,
+    "setStorageItemSafely(localStorage, documentKey, migratedRaw)",
+    "removeStorageItemIfUnchanged(localStorage, draftKey, draftRaw)",
+    "bindDocumentEditorRoute(window.location.href, binding.documentId)",
+    "return openDocument(binding.documentId)",
   )
 })
 
@@ -543,58 +754,42 @@ test("invalid backups are quarantined instead of silently discarded", () => {
   )
 })
 
-test("a successful older save cannot remove a backup written by a newer edit", () => {
-  assert.match(accountScript, /const generationAtStart = editorChangeGeneration/)
-  assert.match(
+test("pending or unknown follow-up intent keeps backup and dirty state until a later flush", () => {
+  const liveSave = sourceSection(
     accountScript,
-    /if \(editorChangeGeneration === generationAtStart\)[\s\S]{0,500}removeTabBackupIfUnchanged/,
+    "async function saveDocumentOnce",
+    "const requestDocumentSave",
   )
+  const finalization = sourceSection(
+    liveSave,
+    'const hasPendingFollowUp = outcome.followUpState !== "none"',
+    "updatePublicationUI(currentPublication, outcome.response.revision)",
+  )
+
+  assert.match(liveSave, /const nextDocumentScopeId = outcome\.nextDocumentScopeId/)
+  assert.match(finalization, /!hasPendingFollowUp/)
+  assert.match(finalization, /editorChangeGeneration === generationAtStart/)
   assert.match(
-    accountScript,
-    /form\.addEventListener\("input", \(event\) => \{[\s\S]{0,320}editorChangeGeneration \+= 1[\s\S]{0,180}editorTabDrafts\.markDirty\(documentIdentity, editorChangeGeneration\)/,
+    finalization,
+    /editorTabDrafts\.backupToken\(nextDocumentScopeId\) === finalBackupToken/,
   )
-  assert.match(accountScript, /const backupTokenAtStart = editorTabDrafts\.backupToken/)
-  const bindToken = accountScript.indexOf(
-    'const newBackupTokenAtBind = editorTabDrafts.backupToken("new")',
+  assertAppearsInOrder(
+    finalization,
+    "removeTabBackupIfUnchanged(",
+    "editorTabDrafts.clearDirtyIfGeneration(",
   )
-  const moveDirty = accountScript.indexOf(
-    'editorTabDrafts.moveDirty("new", result.data.id)',
-    bindToken,
-  )
-  const safeIdWrite = accountScript.indexOf("setStorageItemSafely(", moveDirty)
-  const idWriteResult = accountScript.indexOf(
-    "idBackupWritten = Boolean(boundBackupToken)",
-    safeIdWrite,
-  )
-  const pendingRegistration = accountScript.indexOf(
-    "pendingNewBackupCleanup.set(result.data.id, newBackupTokenAtBind)",
-    idWriteResult,
-  )
-  assert.ok(bindToken > 0)
-  assert.ok(moveDirty > bindToken)
-  assert.ok(safeIdWrite > moveDirty)
-  assert.ok(idWriteResult > safeIdWrite)
-  assert.ok(pendingRegistration > idWriteResult)
+  assert.match(finalization, /if \(!finalized\)[\s\S]{0,360}status: "queued"/)
   assert.match(
-    accountScript,
-    /pendingNewBackupCleanup\.set\(result\.data\.id, newBackupTokenAtBind\)/,
+    finalization,
+    /if \(hasPendingFollowUp\)[\s\S]{0,260}scheduleAtomicSaveFlush\([\s\S]{0,220}runAt: Date\.now\(\)/,
   )
-  assert.match(
-    accountScript,
-    /pendingNewBackupCleanup\.get\(savedDocumentId\)[\s\S]{0,180}removeTabBackupIfUnchanged\(ownerId, "new", pendingNewToken\)/,
+  const savedPublication = liveSave.indexOf('status: "saved"')
+  const queuedPublication = liveSave.indexOf(
+    'status: "queued"',
+    finalization.indexOf("if (!finalized)"),
   )
-  assert.match(accountScript, /removeStorageItemIfUnchanged\([\s\S]{0,180}expectedRaw/)
-  const savedBroadcast = accountScript.indexOf('message.status === "saved"')
-  const tabDirtyGuard = accountScript.indexOf(
-    "editorTabDrafts.isDirty(currentDocumentId)",
-    savedBroadcast,
-  )
-  const inertGuard = accountScript.indexOf("form.inert", tabDirtyGuard)
-  const cloudRefresh = accountScript.indexOf("void openDocument(currentDocumentId)", inertGuard)
-  assert.ok(savedBroadcast > 0)
-  assert.ok(tabDirtyGuard > savedBroadcast)
-  assert.ok(inertGuard > tabDirtyGuard)
-  assert.ok(cloudRefresh > inertGuard)
+  assert.ok(queuedPublication > -1)
+  assert.ok(savedPublication > queuedPublication)
 })
 
 test("failed related-data loading stays fail-closed and exposes a keyboard retry outside the form", () => {

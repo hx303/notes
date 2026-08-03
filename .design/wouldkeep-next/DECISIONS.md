@@ -101,7 +101,16 @@ Append new entries; never rewrite prior decisions. Each reversal must cite new e
 - Impact: P06 includes forward migration `20260721000100`, command-specific owner RLS, anonymous denial, owner/other/anon/service-role verification, same-library candidate filtering, and fail-before-core-write relationship checks. The migration remains a separate production approval gate.
 - Re-evaluate when: document restoration semantics or a reviewed relationship-history model requires a different tombstone lifecycle.
 
-## D-011 — Keep the tag pause continuous with a transaction-local `00150` permit
+## D-011 — Retire the separate admin shell into capability-scoped workspace operations
+
+- Date: 2026-07-22.
+- Question: Should wouldkeep keep a second `/admin/` application for public-site operations?
+- Decision: no. Make `/workspace/site/` the single operations surface and let `current_account_capabilities` reveal only the modules each role may use. Keep `/admin/` only as a bounded cache-cleanup redirect.
+- Reason: one authenticated workspace removes duplicate login/navigation/deployment code while preserving least privilege. Admins moderate public feedback, the site owner alone manages roles, editors see non-sensitive status, and no role gains access to another account's private documents.
+- Impact: legacy Decap/static admin copies and copy steps are retired; comments remain soft-deleted, hardened role RPCs remain authoritative, and capability verification failures close the page.
+- Re-evaluate when: a separately deployed operations application has a proven need that cannot be met without weakening this permission boundary.
+
+## D-012 — Keep the tag pause continuous with a transaction-local `00150` permit
 
 - Date: 2026-08-02.
 - Question: How can `20260722000150` update six legacy tags while production tag writes remain continuously paused?

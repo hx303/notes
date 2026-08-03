@@ -73,8 +73,9 @@ test("same-account auth refresh preserves the active write surface", () => {
   )
   assert.match(
     script,
-    /if \(!preserveWriteSurface\) \{\s*await restoreDurableOutboxBackup\("new", isCurrentSync\)[\s\S]{0,120}restoreLocalBackup\(\)\s*\}/,
+    /routeDecision\.kind === "draft"[\s\S]{0,120}openStableDraftScope\(routeDecision\.draftId\)/,
   )
+  assert.doesNotMatch(script, /restoreDurableOutboxBackup\("new"/)
 })
 
 test("account settings survive SPA navigation and ignore stale account responses", () => {

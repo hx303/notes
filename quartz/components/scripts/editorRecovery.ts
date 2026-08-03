@@ -140,6 +140,21 @@ export const addEditorBackupMetadata = (
   },
 })
 
+export const selectRecoverableEditorBackup = (
+  candidates: ReadonlyArray<{ backup: EditorBackup; priority: number }>,
+): EditorBackup | null => {
+  const savedAt = (backup: EditorBackup) => {
+    const value = Number(backup.__editorRecovery?.savedAt ?? 0)
+    return Number.isFinite(value) && value >= 0 ? value : 0
+  }
+  return (
+    [...candidates].sort(
+      (left, right) =>
+        savedAt(right.backup) - savedAt(left.backup) || right.priority - left.priority,
+    )[0]?.backup ?? null
+  )
+}
+
 export const inspectEditorBackup = (
   raw: string,
   ownerId: string,

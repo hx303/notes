@@ -71,7 +71,7 @@ export default ((opts: Options) => {
             </button>
             <p class="participation-auth-note">
               <span data-auth-copy>提交需要登录。</span>
-              <a href="/admin/" data-auth-link>
+              <a href="/account/" data-auth-link>
                 前往登录
               </a>
             </p>

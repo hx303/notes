@@ -2,6 +2,7 @@ import FlexSearch, { DefaultDocumentSearchResults, Document as FlexDocument } fr
 import type { ContentDetails } from "../plugins/emitters/contentIndex"
 import type { KnowledgeMaturity, KnowledgeTopic, KnowledgeType } from "./knowledgeMetadata"
 import type { FullSlug } from "./path"
+import { isPublicDiscoveryRecord } from "./publicDiscovery"
 
 export type SearchRecord = {
   id: number
@@ -25,8 +26,6 @@ export type SearchEngine = {
   index: FlexDocument<SearchRecord>
   records: SearchRecord[]
 }
-
-const structuralRoots = new Set(["build", "map", "paths", "search", "topics"])
 
 const aliases: Array<{ pattern: RegExp; terms: string[] }> = [
   { pattern: /^(光学建模|薄膜建模)$/i, terms: ["RCWA", "TMM"] },
@@ -99,26 +98,28 @@ export async function createSearchEngine(
   data: Record<string, ContentDetails>,
 ): Promise<SearchEngine> {
   const records = Object.entries(data)
-    .filter(([slug, details]) => {
-      const root = slug.split("/")[0]
-      return (
-        !structuralRoots.has(root) &&
-        details.knowledgeMetadata?.publish !== false &&
-        details.knowledgeMetadata?.primaryTopic !== undefined
-      )
-    })
-    .map(([slug, details], id): SearchRecord => ({
-      id,
-      slug: slug as FullSlug,
-      title: details.title,
-      content: details.content,
-      tags: details.tags ?? [],
-      summary: shortSummary(details),
-      primaryTopic: details.knowledgeMetadata?.primaryTopic,
-      type: details.knowledgeMetadata?.type ?? "concept",
-      maturity: details.knowledgeMetadata?.maturity ?? "seed",
-      updated: details.knowledgeMetadata?.updated,
-    }))
+    .filter(
+      ([slug, details]) =>
+        isPublicDiscoveryRecord({
+          slug,
+          title: details.title,
+          knowledgeMetadata: details.knowledgeMetadata,
+        }) && details.knowledgeMetadata?.primaryTopic !== undefined,
+    )
+    .map(
+      ([slug, details], id): SearchRecord => ({
+        id,
+        slug: slug as FullSlug,
+        title: details.title,
+        content: details.content,
+        tags: details.tags ?? [],
+        summary: shortSummary(details),
+        primaryTopic: details.knowledgeMetadata?.primaryTopic,
+        type: details.knowledgeMetadata?.type ?? "concept",
+        maturity: details.knowledgeMetadata?.maturity ?? "seed",
+        updated: details.knowledgeMetadata?.updated,
+      }),
+    )
 
   const index = new FlexSearch.Document<SearchRecord>({
     encode: searchEncoder,

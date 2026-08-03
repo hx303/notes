@@ -50,6 +50,7 @@ describe("D04 knowledge search", () => {
     "notes/optics": detail("薄膜实验记录", "使用 Fresnel 方程理解薄膜干涉。", ["光学"]),
     "notes/citation": detail("学术写作", "如何核对来源。", ["引用", "文献"]),
     "topics/index": detail("主题索引", "结构页面", []),
+    "workspace/index": detail("我的空间", "系统页面", []),
     "notes/private": detail("私密记录", "不应被搜索", [], metadata({ publish: false })),
   }
 

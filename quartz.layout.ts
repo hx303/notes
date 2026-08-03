@@ -35,9 +35,15 @@ export const defaultContentPageLayout: PageLayout = {
       component: Component.Breadcrumbs(),
       condition: (page) => page.fileData.slug !== "index",
     }),
-    Component.ArticleTitle(),
+    Component.ConditionalRender({
+      component: Component.ArticleTitle(),
+      condition: (page) => page.fileData.slug !== "index",
+    }),
     Component.KnowledgeMeta(),
-    Component.ContentMeta(),
+    Component.ConditionalRender({
+      component: Component.ContentMeta(),
+      condition: (page) => page.fileData.slug !== "index",
+    }),
     Component.TagList(),
     Component.PrerequisiteBlock(),
     Component.TableOfContents({ display: "inline" }),
@@ -57,6 +63,8 @@ export const defaultContentPageLayout: PageLayout = {
 const outsideAccountSurface = (slug = "") =>
   !/^(account(?:\/|$)|workspace(?:\/|$)|knowledge(?:\/|$))/.test(slug)
 
+const showListPageHeading = (slug = "") => outsideAccountSurface(slug) && slug !== "index"
+
 export const defaultListPageLayout: PageLayout = {
   beforeBody: [
     Component.ConditionalRender({
@@ -65,11 +73,11 @@ export const defaultListPageLayout: PageLayout = {
     }),
     Component.ConditionalRender({
       component: Component.ArticleTitle(),
-      condition: (page) => outsideAccountSurface(page.fileData.slug),
+      condition: (page) => showListPageHeading(page.fileData.slug),
     }),
     Component.ConditionalRender({
       component: Component.ContentMeta(),
-      condition: (page) => outsideAccountSurface(page.fileData.slug),
+      condition: (page) => showListPageHeading(page.fileData.slug),
     }),
   ],
   left: [

@@ -1,69 +1,50 @@
-import { FullSlug, resolveRelative } from "../util/path";
-import { knowledgeTopicLabels } from "../util/knowledgeMetadata";
-import {
-  QuartzComponent,
-  QuartzComponentConstructor,
-  QuartzComponentProps,
-} from "./types";
-import style from "./styles/recentGrowth.scss";
+import { FullSlug, resolveRelative } from "../util/path"
+import { knowledgeTopicLabels } from "../util/knowledgeMetadata"
+import { isPublicDiscoveryRecord } from "../util/publicDiscovery"
+import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
+import style from "./styles/recentGrowth.scss"
 // @ts-ignore
-import script from "./scripts/recentGrowth.inline";
+import script from "./scripts/recentGrowth.inline"
 
-type GrowthKind = "new" | "revision" | "polish";
+type GrowthKind = "new" | "revision" | "polish"
 type GrowthRecord = {
-  file: QuartzComponentProps["allFiles"][number];
-  kind: GrowthKind;
-  date: Date;
-  month: string;
-};
+  file: QuartzComponentProps["allFiles"][number]
+  kind: GrowthKind
+  date: Date
+  month: string
+}
 
 const kindLabels: Record<GrowthKind, string> = {
   new: "新记录",
   revision: "实质修订",
   polish: "小修",
-};
-const structuralRoots = new Set(["build", "map", "paths", "search", "topics"]);
-
+}
 function classify(file: GrowthRecord["file"]): GrowthKind {
-  const created = file.dates?.created?.getTime() ?? 0;
-  const modified = file.dates?.modified?.getTime() ?? created;
-  const days = Math.abs(modified - created) / 86400000;
-  if (created === modified) return "new";
-  return days >= 7 ? "revision" : "polish";
+  const created = file.dates?.created?.getTime() ?? 0
+  const modified = file.dates?.modified?.getTime() ?? created
+  const days = Math.abs(modified - created) / 86400000
+  if (created === modified) return "new"
+  return days >= 7 ? "revision" : "polish"
 }
 
 const RecentGrowth: QuartzComponent = ({ fileData, allFiles }) => {
   const records: GrowthRecord[] = allFiles
-    .filter((file) => {
-      const root = file.slug?.split("/")[0];
-      return Boolean(
-        file.slug &&
-        file.frontmatter?.title &&
-        file.dates?.modified &&
-        root &&
-        !structuralRoots.has(root) &&
-        file.slug !== "index",
-      );
-    })
+    .filter((file) => isPublicDiscoveryRecord(file) && file.dates?.modified)
     .map((file) => {
-      const date = file.dates!.modified;
+      const date = file.dates!.modified
       return {
         file,
         kind: classify(file),
         date,
         month: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
-      };
+      }
     })
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
 
   const topics = [
-    ...new Set(
-      records
-        .map(({ file }) => file.knowledgeMetadata?.primaryTopic)
-        .filter(Boolean),
-    ),
-  ];
-  const months = [...new Set(records.map((record) => record.month))];
+    ...new Set(records.map(({ file }) => file.knowledgeMetadata?.primaryTopic).filter(Boolean)),
+  ]
+  const months = [...new Set(records.map((record) => record.month))]
 
   return (
     <div class="recent-growth" data-recent-growth>
@@ -98,9 +79,7 @@ const RecentGrowth: QuartzComponent = ({ fileData, allFiles }) => {
           <select name="topic">
             <option value="">全部主题</option>
             {topics.map((topic) => (
-              <option value={topic!}>
-                {knowledgeTopicLabels[topic!] ?? topic}
-              </option>
+              <option value={topic!}>{knowledgeTopicLabels[topic!] ?? topic}</option>
             ))}
           </select>
         </label>
@@ -119,10 +98,7 @@ const RecentGrowth: QuartzComponent = ({ fileData, allFiles }) => {
       </p>
       <div class="recent-growth-months">
         {months.map((month) => (
-          <section
-            data-growth-month={month}
-            aria-labelledby={`growth-${month}`}
-          >
+          <section data-growth-month={month} aria-labelledby={`growth-${month}`}>
             <h3 id={`growth-${month}`}>{month}</h3>
             <ol>
               {records
@@ -134,26 +110,18 @@ const RecentGrowth: QuartzComponent = ({ fileData, allFiles }) => {
                     data-kind={kind}
                     data-topic={file.knowledgeMetadata?.primaryTopic ?? ""}
                   >
-                    <time dateTime={date.toISOString()}>
-                      {date.toLocaleDateString("zh-CN")}
-                    </time>
-                    <span class={`growth-kind growth-kind-${kind}`}>
-                      {kindLabels[kind]}
-                    </span>
+                    <time dateTime={date.toISOString()}>{date.toLocaleDateString("zh-CN")}</time>
+                    <span class={`growth-kind growth-kind-${kind}`}>{kindLabels[kind]}</span>
                     <a
                       class="internal"
-                      href={resolveRelative(
-                        fileData.slug!,
-                        file.slug as FullSlug,
-                      )}
+                      href={resolveRelative(fileData.slug!, file.slug as FullSlug)}
                     >
                       {file.frontmatter?.title}
                     </a>
                     <span class="growth-topic">
                       {file.knowledgeMetadata?.primaryTopic
-                        ? (knowledgeTopicLabels[
-                            file.knowledgeMetadata.primaryTopic
-                          ] ?? file.knowledgeMetadata.primaryTopic)
+                        ? (knowledgeTopicLabels[file.knowledgeMetadata.primaryTopic] ??
+                          file.knowledgeMetadata.primaryTopic)
                         : "知识记录"}
                     </span>
                   </li>
@@ -166,10 +134,10 @@ const RecentGrowth: QuartzComponent = ({ fileData, allFiles }) => {
         没有符合筛选条件的生长记录。
       </p>
     </div>
-  );
-};
+  )
+}
 
-RecentGrowth.css = style;
-RecentGrowth.afterDOMLoaded = script;
+RecentGrowth.css = style
+RecentGrowth.afterDOMLoaded = script
 
-export default (() => RecentGrowth) satisfies QuartzComponentConstructor;
+export default (() => RecentGrowth) satisfies QuartzComponentConstructor
